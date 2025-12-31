@@ -1,0 +1,143 @@
+{% extends 'base.html' %}
+
+{% block title %}Membres - EEBC{% endblock %}
+{% block page_title %}Membres{% endblock %}
+{% block page_subtitle %}Gestion des membres de l'église{% endblock %}
+
+{% block content %}
+<div class="card mb-4">
+    <div class="card-body">
+        <form method="get" class="row g-3 align-items-end">
+            <div class="col-md-6">
+                <label class="form-label">Rechercher</label>
+                <div class="input-group">
+                    <span class="input-group-text" style="background: var(--eebc-surface); border-color: var(--eebc-border);">
+                        <i class="bi bi-search"></i>
+                    </span>
+                    <input type="text" class="form-control" name="search" value="{{ search }}" 
+                           placeholder="Nom, email ou téléphone...">
+                </div>
+            </div>
+            <div class="col-md-4">
+                <label class="form-label">Statut</label>
+                <select class="form-select" name="status">
+                    <option value="">Tous les statuts</option>
+                    {% for value, label in status_choices %}
+                    <option value="{{ value }}" {% if status == value %}selected{% endif %}>{{ label }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-2">
+                <button type="submit" class="btn btn-primary w-100">Filtrer</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-header d-flex justify-content-between align-items-center">
+        <h6 class="card-title mb-0">{{ members.paginator.count }} membre(s)</h6>
+        <a href="{% url 'admin:members_member_add' %}" class="btn btn-primary btn-sm">
+            <i class="bi bi-plus-lg me-1"></i>Ajouter
+        </a>
+    </div>
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover mb-0">
+                <thead>
+                    <tr>
+                        <th>Nom</th>
+                        <th>Contact</th>
+                        <th>Ville</th>
+                        <th>Statut</th>
+                        <th>Baptisé</th>
+                        <th class="text-end">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for member in members %}
+                    <tr>
+                        <td>
+                            <div class="d-flex align-items-center">
+                                {% if member.photo %}
+                                <img src="{{ member.photo.url }}" alt="{{ member.full_name }}" 
+                                     class="me-3" style="width: 45px; height: 45px; border-radius: 50%; object-fit: cover; border: 2px solid var(--eebc-primary);">
+                                {% else %}
+                                <div class="avatar me-3" style="width: 45px; height: 45px; font-size: 0.85rem;">
+                                    {{ member.first_name|slice:":1"|upper }}{{ member.last_name|slice:":1"|upper }}
+                                </div>
+                                {% endif %}
+                                <div>
+                                    <div class="fw-semibold">{{ member.last_name }} {{ member.first_name }}</div>
+                                    {% if member.age %}<small class="text-muted">{{ member.age }} ans</small>{% endif %}
+                                </div>
+                            </div>
+                        </td>
+                        <td>
+                            <div>{{ member.phone|default:"-" }}</div>
+                            <small class="text-muted">{{ member.email|default:"" }}</small>
+                        </td>
+                        <td>{{ member.city|default:"-" }}</td>
+                        <td>
+                            <span class="badge bg-{% if member.status == 'actif' %}success{% elif member.status == 'inactif' %}secondary{% elif member.status == 'visiteur' %}info{% else %}warning{% endif %}">
+                                {{ member.get_status_display }}
+                            </span>
+                        </td>
+                        <td>
+                            {% if member.is_baptized %}
+                            <i class="bi bi-check-circle text-success"></i>
+                            {% else %}
+                            <i class="bi bi-x-circle text-muted"></i>
+                            {% endif %}
+                        </td>
+                        <td class="text-end">
+                            <a href="{% url 'members:detail' member.pk %}" class="btn btn-sm btn-outline-light">
+                                <i class="bi bi-eye"></i>
+                            </a>
+                            <a href="{% url 'admin:members_member_change' member.pk %}" class="btn btn-sm btn-outline-light">
+                                <i class="bi bi-pencil"></i>
+                            </a>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="6" class="text-center py-5 text-muted">
+                            <i class="bi bi-people fs-1 d-block mb-3"></i>
+                            Aucun membre trouvé
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+    {% if members.has_other_pages %}
+    <div class="card-footer">
+        <nav>
+            <ul class="pagination justify-content-center mb-0">
+                {% if members.has_previous %}
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ members.previous_page_number }}&search={{ search }}&status={{ status }}">
+                        <i class="bi bi-chevron-left"></i>
+                    </a>
+                </li>
+                {% endif %}
+                
+                <li class="page-item disabled">
+                    <span class="page-link">Page {{ members.number }} sur {{ members.paginator.num_pages }}</span>
+                </li>
+                
+                {% if members.has_next %}
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ members.next_page_number }}&search={{ search }}&status={{ status }}">
+                        <i class="bi bi-chevron-right"></i>
+                    </a>
+                </li>
+                {% endif %}
+            </ul>
+        </nav>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}
+

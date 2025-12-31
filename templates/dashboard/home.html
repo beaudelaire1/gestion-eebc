@@ -1,0 +1,746 @@
+{% extends 'base.html' %}
+{% load humanize %}
+
+{% block title %}Tableau de bord - EEBC Guyane{% endblock %}
+{% block page_title %}Tableau de bord{% endblock %}
+{% block page_subtitle %}Bienvenue, {{ request.user.first_name|default:request.user.username }} 👋{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* Hero Stats Row */
+    .hero-stats {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 1.5rem;
+        margin-bottom: 2rem;
+    }
+    
+    @media (max-width: 1200px) {
+        .hero-stats { grid-template-columns: repeat(2, 1fr); }
+    }
+    
+    @media (max-width: 576px) {
+        .hero-stats { grid-template-columns: 1fr; }
+    }
+    
+    /* Stat Cards Premium */
+    .stat-card-premium {
+        background: var(--eebc-white);
+        border-radius: 20px;
+        padding: 1.75rem;
+        position: relative;
+        overflow: hidden;
+        border: none;
+        box-shadow: 0 10px 40px rgba(10, 54, 255, 0.08);
+        transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+    
+    .stat-card-premium::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 5px;
+        background: var(--card-accent, var(--eebc-primary));
+    }
+    
+    .stat-card-premium::after {
+        content: '';
+        position: absolute;
+        top: -50%;
+        right: -50%;
+        width: 100%;
+        height: 100%;
+        background: radial-gradient(circle, var(--card-accent, var(--eebc-primary)) 0%, transparent 70%);
+        opacity: 0.03;
+        pointer-events: none;
+    }
+    
+    .stat-card-premium:hover {
+        transform: translateY(-8px) scale(1.02);
+        box-shadow: 0 25px 60px rgba(10, 54, 255, 0.15);
+    }
+    
+    .stat-card-premium .icon-wrapper {
+        width: 64px;
+        height: 64px;
+        border-radius: 18px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.75rem;
+        color: white;
+        background: var(--card-accent, var(--eebc-primary));
+        box-shadow: 0 8px 20px rgba(var(--card-accent-rgb, 10, 54, 255), 0.3);
+        margin-bottom: 1.25rem;
+    }
+    
+    .stat-card-premium .stat-number {
+        font-size: 2.75rem;
+        font-weight: 800;
+        font-family: 'JetBrains Mono', monospace;
+        letter-spacing: -2px;
+        color: var(--eebc-black);
+        line-height: 1;
+        margin-bottom: 0.5rem;
+    }
+    
+    .stat-card-premium .stat-label {
+        font-size: 0.95rem;
+        font-weight: 600;
+        color: var(--eebc-gray-500);
+    }
+    
+    .stat-card-premium .stat-trend {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.25rem;
+        font-size: 0.8rem;
+        font-weight: 600;
+        padding: 0.25rem 0.5rem;
+        border-radius: 8px;
+        margin-top: 0.75rem;
+    }
+    
+    .stat-trend.up { background: rgba(16, 185, 129, 0.1); color: #059669; }
+    .stat-trend.down { background: rgba(239, 68, 68, 0.1); color: #DC2626; }
+    
+    /* Quick Actions Grid */
+    .quick-actions {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 1rem;
+        margin-bottom: 2rem;
+    }
+    
+    @media (max-width: 992px) {
+        .quick-actions { grid-template-columns: repeat(2, 1fr); }
+    }
+    
+    .quick-action {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        padding: 1.25rem 1.5rem;
+        background: var(--eebc-white);
+        border-radius: 16px;
+        text-decoration: none;
+        color: var(--eebc-black);
+        border: 2px solid transparent;
+        transition: all 0.3s ease;
+        box-shadow: 0 4px 15px rgba(11, 15, 25, 0.04);
+    }
+    
+    .quick-action:hover {
+        border-color: var(--eebc-primary);
+        transform: translateY(-4px);
+        box-shadow: 0 15px 35px rgba(10, 54, 255, 0.12);
+        color: var(--eebc-primary);
+    }
+    
+    .quick-action .action-icon {
+        width: 48px;
+        height: 48px;
+        border-radius: 14px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.25rem;
+        color: white;
+        flex-shrink: 0;
+    }
+    
+    .quick-action .action-text {
+        font-weight: 600;
+        font-size: 0.95rem;
+    }
+    
+    .quick-action .action-desc {
+        font-size: 0.8rem;
+        color: var(--eebc-gray-500);
+        font-weight: 400;
+    }
+    
+    /* Modern Card */
+    .modern-card {
+        background: var(--eebc-white);
+        border-radius: 20px;
+        overflow: hidden;
+        box-shadow: 0 10px 40px rgba(11, 15, 25, 0.06);
+        border: none;
+        height: 100%;
+    }
+    
+    .modern-card .card-header {
+        background: linear-gradient(135deg, var(--eebc-gray-50) 0%, var(--eebc-white) 100%);
+        border-bottom: 1px solid var(--eebc-gray-100);
+        padding: 1.25rem 1.5rem;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+    
+    .modern-card .card-header h6 {
+        font-weight: 700;
+        font-size: 1rem;
+        color: var(--eebc-black);
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        margin: 0;
+    }
+    
+    .modern-card .card-body {
+        padding: 1.5rem;
+    }
+    
+    /* Presence Ring */
+    .presence-ring {
+        position: relative;
+        width: 180px;
+        height: 180px;
+        margin: 0 auto 1.5rem;
+    }
+    
+    .presence-ring svg {
+        transform: rotate(-90deg);
+    }
+    
+    .presence-ring .ring-bg {
+        fill: none;
+        stroke: var(--eebc-gray-200);
+        stroke-width: 12;
+    }
+    
+    .presence-ring .ring-progress {
+        fill: none;
+        stroke: var(--eebc-primary);
+        stroke-width: 12;
+        stroke-linecap: round;
+        stroke-dasharray: 502;
+        stroke-dashoffset: 502;
+        transition: stroke-dashoffset 1.5s ease-out;
+    }
+    
+    .presence-ring .ring-center {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        text-align: center;
+    }
+    
+    .presence-ring .ring-value {
+        font-size: 2.5rem;
+        font-weight: 800;
+        font-family: 'JetBrains Mono', monospace;
+        color: var(--eebc-black);
+    }
+    
+    .presence-ring .ring-label {
+        font-size: 0.85rem;
+        color: var(--eebc-gray-500);
+        font-weight: 500;
+    }
+    
+    /* Event Item Modern */
+    .event-item-modern {
+        display: flex;
+        align-items: flex-start;
+        gap: 1rem;
+        padding: 1rem;
+        border-radius: 14px;
+        transition: all 0.2s ease;
+        text-decoration: none;
+        color: inherit;
+        margin-bottom: 0.75rem;
+        background: var(--eebc-gray-50);
+        border: 1px solid transparent;
+    }
+    
+    .event-item-modern:last-child {
+        margin-bottom: 0;
+    }
+    
+    .event-item-modern:hover {
+        background: var(--eebc-white);
+        border-color: var(--eebc-primary);
+        transform: translateX(4px);
+        box-shadow: 0 8px 25px rgba(10, 54, 255, 0.1);
+    }
+    
+    .event-date-badge {
+        background: var(--eebc-white);
+        border-radius: 12px;
+        padding: 0.75rem;
+        text-align: center;
+        min-width: 60px;
+        border: 1px solid var(--eebc-gray-200);
+        box-shadow: 0 2px 8px rgba(11, 15, 25, 0.05);
+    }
+    
+    .event-date-badge .day {
+        font-size: 1.5rem;
+        font-weight: 800;
+        color: var(--eebc-primary);
+        line-height: 1;
+    }
+    
+    .event-date-badge .month {
+        font-size: 0.7rem;
+        font-weight: 600;
+        text-transform: uppercase;
+        color: var(--eebc-gray-500);
+    }
+    
+    .event-info h6 {
+        font-weight: 600;
+        margin-bottom: 0.25rem;
+        color: var(--eebc-black);
+    }
+    
+    .event-info p {
+        font-size: 0.85rem;
+        color: var(--eebc-gray-500);
+        margin: 0;
+    }
+    
+    /* Campaign Progress */
+    .campaign-item {
+        padding: 1.25rem;
+        background: linear-gradient(135deg, var(--eebc-gray-50) 0%, var(--eebc-white) 100%);
+        border-radius: 14px;
+        margin-bottom: 1rem;
+        border: 1px solid var(--eebc-gray-100);
+        transition: all 0.3s ease;
+    }
+    
+    .campaign-item:last-child {
+        margin-bottom: 0;
+    }
+    
+    .campaign-item:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 10px 30px rgba(11, 15, 25, 0.08);
+    }
+    
+    .campaign-progress {
+        height: 10px;
+        border-radius: 10px;
+        background: var(--eebc-gray-200);
+        overflow: hidden;
+        position: relative;
+    }
+    
+    .campaign-progress-bar {
+        height: 100%;
+        border-radius: 10px;
+        background: linear-gradient(90deg, var(--eebc-primary) 0%, #3b82f6 100%);
+        position: relative;
+        transition: width 1s ease-out;
+    }
+    
+    .campaign-progress-bar::after {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.3) 50%, transparent 100%);
+        animation: shimmer 2s infinite;
+    }
+    
+    @keyframes shimmer {
+        0% { transform: translateX(-100%); }
+        100% { transform: translateX(100%); }
+    }
+    
+    /* Announcement Card */
+    .announcement-card {
+        padding: 1.25rem;
+        background: var(--eebc-gray-50);
+        border-radius: 14px;
+        margin-bottom: 1rem;
+        border-left: 4px solid var(--eebc-primary);
+        transition: all 0.2s ease;
+    }
+    
+    .announcement-card:hover {
+        background: var(--eebc-white);
+        box-shadow: 0 8px 25px rgba(10, 54, 255, 0.08);
+    }
+    
+    .announcement-card.pinned {
+        border-left-color: var(--eebc-warning);
+        background: linear-gradient(135deg, rgba(245, 158, 11, 0.05) 0%, var(--eebc-gray-50) 100%);
+    }
+    
+    /* Alerts Banner */
+    .alert-banner {
+        background: linear-gradient(135deg, rgba(245, 158, 11, 0.1) 0%, rgba(245, 158, 11, 0.05) 100%);
+        border: 1px solid rgba(245, 158, 11, 0.2);
+        border-radius: 16px;
+        padding: 1.25rem 1.5rem;
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        margin-bottom: 2rem;
+    }
+    
+    .alert-banner.danger {
+        background: linear-gradient(135deg, rgba(239, 68, 68, 0.1) 0%, rgba(239, 68, 68, 0.05) 100%);
+        border-color: rgba(239, 68, 68, 0.2);
+    }
+    
+    .alert-banner .alert-icon {
+        width: 48px;
+        height: 48px;
+        border-radius: 14px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.25rem;
+        color: white;
+        background: var(--eebc-warning);
+        flex-shrink: 0;
+    }
+    
+    .alert-banner.danger .alert-icon {
+        background: var(--eebc-danger);
+    }
+    
+    /* Animation classes */
+    .animate-in {
+        animation: slideUp 0.5s ease forwards;
+        opacity: 0;
+    }
+    
+    @keyframes slideUp {
+        from {
+            opacity: 0;
+            transform: translateY(20px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+    
+    .delay-1 { animation-delay: 0.1s; }
+    .delay-2 { animation-delay: 0.2s; }
+    .delay-3 { animation-delay: 0.3s; }
+    .delay-4 { animation-delay: 0.4s; }
+    .delay-5 { animation-delay: 0.5s; }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Alerts Section -->
+{% if alerts %}
+<div class="alert-banner animate-in {% if alerts.0.type == 'danger' %}danger{% endif %}">
+    <div class="alert-icon">
+        <i class="bi bi-{% if alerts.0.type == 'danger' %}exclamation-triangle{% else %}bell{% endif %}"></i>
+    </div>
+    <div class="flex-grow-1">
+        <h6 class="mb-1 fw-bold">{{ alerts.0.title|default:"Attention requise" }}</h6>
+        <p class="mb-0 text-muted">{{ alerts.0.message }}</p>
+    </div>
+    {% if alerts.0.link %}
+    <a href="{{ alerts.0.link }}" class="btn btn-primary">Voir détails</a>
+    {% endif %}
+</div>
+{% endif %}
+
+<!-- Hero Stats -->
+<div class="hero-stats">
+    <div class="stat-card-premium animate-in delay-1" style="--card-accent: #0A36FF; --card-accent-rgb: 10, 54, 255;">
+        <div class="icon-wrapper">
+            <i class="bi bi-people-fill"></i>
+        </div>
+        <div class="stat-number" data-count="{{ stats.total_children }}">0</div>
+        <div class="stat-label">Enfants inscrits</div>
+        <div class="stat-trend up">
+            <i class="bi bi-arrow-up-short"></i> Actifs
+        </div>
+    </div>
+    
+    <div class="stat-card-premium animate-in delay-2" style="--card-accent: #10B981; --card-accent-rgb: 16, 185, 129;">
+        <div class="icon-wrapper" style="background: #10B981;">
+            <i class="bi bi-collection-fill"></i>
+        </div>
+        <div class="stat-number" data-count="{{ stats.total_classes }}">0</div>
+        <div class="stat-label">Classes actives</div>
+    </div>
+    
+    <div class="stat-card-premium animate-in delay-3" style="--card-accent: #F59E0B; --card-accent-rgb: 245, 158, 11;">
+        <div class="icon-wrapper" style="background: #F59E0B;">
+            <i class="bi bi-person-badge-fill"></i>
+        </div>
+        <div class="stat-number" data-count="{{ stats.total_members }}">0</div>
+        <div class="stat-label">Membres église</div>
+    </div>
+    
+    <div class="stat-card-premium animate-in delay-4" style="--card-accent: #8B5CF6; --card-accent-rgb: 139, 92, 246;">
+        <div class="icon-wrapper" style="background: #8B5CF6;">
+            <i class="bi bi-calendar-event-fill"></i>
+        </div>
+        <div class="stat-number" data-count="{{ stats.total_events|default:0 }}">0</div>
+        <div class="stat-label">Événements à venir</div>
+    </div>
+</div>
+
+<!-- Quick Actions -->
+<div class="quick-actions animate-in delay-5">
+    <a href="{% url 'bibleclub:create_session' %}" class="quick-action">
+        <div class="action-icon" style="background: linear-gradient(135deg, #0A36FF 0%, #3b82f6 100%);">
+            <i class="bi bi-plus-lg"></i>
+        </div>
+        <div>
+            <div class="action-text">Nouvelle session</div>
+            <div class="action-desc">Créer un appel</div>
+        </div>
+    </a>
+    
+    <a href="{% url 'bibleclub:children_list' %}" class="quick-action">
+        <div class="action-icon" style="background: linear-gradient(135deg, #10B981 0%, #059669 100%);">
+            <i class="bi bi-people-fill"></i>
+        </div>
+        <div>
+            <div class="action-text">Liste enfants</div>
+            <div class="action-desc">Voir tous les enfants</div>
+        </div>
+    </a>
+    
+    <a href="{% url 'events:calendar' %}" class="quick-action">
+        <div class="action-icon" style="background: linear-gradient(135deg, #EC4899 0%, #BE185D 100%);">
+            <i class="bi bi-calendar3"></i>
+        </div>
+        <div>
+            <div class="action-text">Calendrier</div>
+            <div class="action-desc">Voir les événements</div>
+        </div>
+    </a>
+    
+    <a href="{% url 'admin:index' %}" class="quick-action">
+        <div class="action-icon" style="background: linear-gradient(135deg, #6366F1 0%, #4F46E5 100%);">
+            <i class="bi bi-gear-fill"></i>
+        </div>
+        <div>
+            <div class="action-text">Administration</div>
+            <div class="action-desc">Panel Jazzmin</div>
+        </div>
+    </a>
+</div>
+
+<!-- Main Content Grid -->
+<div class="row g-4">
+    <!-- Presence Card -->
+    <div class="col-lg-5">
+        <div class="modern-card">
+            <div class="card-header">
+                <h6><i class="bi bi-clipboard-check-fill text-primary"></i> Dernière session</h6>
+                <a href="{% url 'bibleclub:session_list' %}" class="btn btn-sm btn-outline-secondary">Historique</a>
+            </div>
+            <div class="card-body text-center">
+                {% if session_stats %}
+                <div class="presence-ring">
+                    <svg width="180" height="180" viewBox="0 0 180 180">
+                        <circle class="ring-bg" cx="90" cy="90" r="80"></circle>
+                        <circle class="ring-progress" cx="90" cy="90" r="80" data-progress="{{ session_stats.rate }}"></circle>
+                    </svg>
+                    <div class="ring-center">
+                        <div class="ring-value">{{ session_stats.rate|floatformat:0 }}%</div>
+                        <div class="ring-label">Présence</div>
+                    </div>
+                </div>
+                
+                <div class="d-flex justify-content-center gap-4 mb-4">
+                    <div class="text-center">
+                        <div class="fs-4 fw-bold text-success">{{ session_stats.present }}</div>
+                        <div class="small text-muted">Présents</div>
+                    </div>
+                    <div class="text-center">
+                        <div class="fs-4 fw-bold text-danger">{{ session_stats.absent }}</div>
+                        <div class="small text-muted">Absents</div>
+                    </div>
+                    <div class="text-center">
+                        <div class="fs-4 fw-bold text-warning">{{ session_stats.late }}</div>
+                        <div class="small text-muted">Retards</div>
+                    </div>
+                </div>
+                
+                <div class="p-3 rounded-4" style="background: var(--eebc-gray-50);">
+                    <div class="fw-bold mb-1">{{ session_stats.session.date|date:"l d F Y" }}</div>
+                    <div class="small text-muted mb-3">{{ session_stats.session.theme|default:"Session du club biblique" }}</div>
+                    <a href="{% url 'bibleclub:session_detail' session_stats.session.pk %}" class="btn btn-primary btn-sm">
+                        <i class="bi bi-eye me-1"></i> Voir détails
+                    </a>
+                </div>
+                {% else %}
+                <div class="py-5 text-muted">
+                    <i class="bi bi-calendar-x fs-1 mb-3 d-block opacity-50"></i>
+                    <p class="mb-3">Aucune session récente</p>
+                    <a href="{% url 'bibleclub:create_session' %}" class="btn btn-primary">
+                        <i class="bi bi-plus-lg me-1"></i> Créer une session
+                    </a>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    
+    <!-- Events & Campaigns -->
+    <div class="col-lg-7">
+        <div class="row g-4">
+            <!-- Upcoming Events -->
+            <div class="col-12">
+                <div class="modern-card">
+                    <div class="card-header">
+                        <h6><i class="bi bi-calendar-event-fill text-danger"></i> Événements à venir</h6>
+                        <a href="{% url 'events:calendar' %}" class="btn btn-sm btn-outline-secondary">Calendrier</a>
+                    </div>
+                    <div class="card-body">
+                        {% if upcoming_events %}
+                        {% for event in upcoming_events %}
+                        <a href="{% url 'events:detail' event.pk %}" class="event-item-modern">
+                            <div class="event-date-badge">
+                                <div class="day">{{ event.start_date|date:"d" }}</div>
+                                <div class="month">{{ event.start_date|date:"M" }}</div>
+                            </div>
+                            <div class="event-info flex-grow-1">
+                                <h6>{{ event.title }}</h6>
+                                <p>
+                                    <i class="bi bi-clock me-1"></i>{% if event.start_time %}{{ event.start_time|time:"H:i" }}{% else %}Journée{% endif %}
+                                    {% if event.location %}<span class="ms-2"><i class="bi bi-geo-alt me-1"></i>{{ event.location }}</span>{% endif %}
+                                </p>
+                            </div>
+                            <div class="rounded-circle" style="width: 14px; height: 14px; background: {{ event.color|default:'#0A36FF' }}; flex-shrink: 0;"></div>
+                        </a>
+                        {% endfor %}
+                        {% else %}
+                        <div class="text-center py-4 text-muted">
+                            <i class="bi bi-calendar-heart fs-1 mb-3 d-block opacity-50"></i>
+                            <p>Aucun événement prévu</p>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Active Campaigns -->
+            <div class="col-12">
+                <div class="modern-card">
+                    <div class="card-header">
+                        <h6><i class="bi bi-graph-up-arrow text-success"></i> Campagnes actives</h6>
+                        <a href="{% url 'campaigns:list' %}" class="btn btn-sm btn-outline-secondary">Toutes</a>
+                    </div>
+                    <div class="card-body">
+                        {% if active_campaigns %}
+                        {% for campaign in active_campaigns %}
+                        <div class="campaign-item">
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <h6 class="mb-0 fw-bold">{{ campaign.name }}</h6>
+                                <span class="badge bg-{{ campaign.status_color }}">{{ campaign.progress_percentage }}%</span>
+                            </div>
+                            <div class="campaign-progress mb-2">
+                                <div class="campaign-progress-bar" style="width: {{ campaign.progress_percentage }}%;"></div>
+                            </div>
+                            <div class="d-flex justify-content-between small text-muted">
+                                <span><strong>{{ campaign.collected_amount|floatformat:0 }}€</strong> / {{ campaign.goal_amount|floatformat:0 }}€</span>
+                                <span><i class="bi bi-calendar me-1"></i>{{ campaign.end_date|date:"d/m/Y" }}</span>
+                            </div>
+                        </div>
+                        {% endfor %}
+                        {% else %}
+                        <div class="text-center py-4 text-muted">
+                            <i class="bi bi-coin fs-1 mb-3 d-block opacity-50"></i>
+                            <p>Aucune campagne active</p>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Announcements -->
+    <div class="col-12">
+        <div class="modern-card">
+            <div class="card-header">
+                <h6><i class="bi bi-megaphone-fill text-warning"></i> Annonces récentes</h6>
+            </div>
+            <div class="card-body">
+                {% if announcements %}
+                <div class="row g-3">
+                    {% for announcement in announcements %}
+                    <div class="col-md-6">
+                        <div class="announcement-card {% if announcement.is_pinned %}pinned{% endif %}">
+                            <div class="d-flex justify-content-between align-items-start mb-2">
+                                <h6 class="mb-0 fw-bold">
+                                    {% if announcement.is_pinned %}<i class="bi bi-pin-angle-fill text-warning me-1"></i>{% endif %}
+                                    {{ announcement.title }}
+                                </h6>
+                                <small class="text-muted">{{ announcement.created_at|naturalday }}</small>
+                            </div>
+                            <p class="mb-0 text-muted small">{{ announcement.content|truncatewords:25 }}</p>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <div class="text-center py-4 text-muted">
+                    <i class="bi bi-chat-dots fs-1 mb-3 d-block opacity-50"></i>
+                    <p>Aucune annonce récente</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Animate numbers
+    document.querySelectorAll('[data-count]').forEach(function(el) {
+        const target = parseInt(el.dataset.count);
+        const duration = 1500;
+        const step = target / (duration / 16);
+        let current = 0;
+        
+        const timer = setInterval(function() {
+            current += step;
+            if (current >= target) {
+                el.textContent = target;
+                clearInterval(timer);
+            } else {
+                el.textContent = Math.floor(current);
+            }
+        }, 16);
+    });
+    
+    // Animate presence ring
+    document.querySelectorAll('.ring-progress').forEach(function(ring) {
+        const progress = parseFloat(ring.dataset.progress) || 0;
+        const circumference = 502; // 2 * π * 80
+        const offset = circumference - (progress / 100 * circumference);
+        
+        setTimeout(function() {
+            ring.style.strokeDashoffset = offset;
+        }, 300);
+    });
+    
+    // Animate campaign progress bars
+    document.querySelectorAll('.campaign-progress-bar').forEach(function(bar) {
+        const width = bar.style.width;
+        bar.style.width = '0%';
+        setTimeout(function() {
+            bar.style.width = width;
+        }, 500);
+    });
+});
+</script>
+{% endblock %}

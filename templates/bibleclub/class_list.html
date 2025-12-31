@@ -1,0 +1,71 @@
+{% extends 'base.html' %}
+
+{% block title %}Classes - Club Biblique{% endblock %}
+{% block page_title %}Classes{% endblock %}
+{% block page_subtitle %}Gestion des classes par tranche d'âge{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-end mb-4">
+    <a href="{% url 'admin:bibleclub_bibleclass_add' %}" class="btn btn-primary">
+        <i class="bi bi-plus-lg me-2"></i>Nouvelle classe
+    </a>
+</div>
+
+<div class="row g-4">
+    {% for bible_class in classes %}
+    <div class="col-md-6 col-lg-4">
+        <div class="card h-100" style="border-top: 4px solid {{ bible_class.age_group.color }};">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-start mb-3">
+                    <div>
+                        <h5 class="mb-1">{{ bible_class }}</h5>
+                        <small class="text-muted">{{ bible_class.age_group.min_age }}-{{ bible_class.age_group.max_age }} ans</small>
+                    </div>
+                    <span class="badge" style="background: {{ bible_class.age_group.color }};">
+                        {{ bible_class.children_count }} enfants
+                    </span>
+                </div>
+                
+                {% if bible_class.room %}
+                <p class="mb-3">
+                    <i class="bi bi-geo-alt me-2 text-muted"></i>
+                    Salle {{ bible_class.room }}
+                </p>
+                {% endif %}
+                
+                <div class="mb-3">
+                    <small class="text-muted d-block mb-2">Moniteurs:</small>
+                    {% for monitor in bible_class.monitors_list %}
+                    <span class="badge bg-secondary me-1">{{ monitor }}</span>
+                    {% empty %}
+                    <span class="text-muted">Aucun moniteur assigné</span>
+                    {% endfor %}
+                </div>
+            </div>
+            <div class="card-footer d-flex gap-2">
+                <a href="{% url 'bibleclub:class_detail' bible_class.pk %}" class="btn btn-outline-light btn-sm flex-grow-1">
+                    <i class="bi bi-eye me-1"></i>Détails
+                </a>
+                <a href="{% url 'admin:bibleclub_bibleclass_change' bible_class.pk %}" class="btn btn-outline-light btn-sm">
+                    <i class="bi bi-pencil"></i>
+                </a>
+            </div>
+        </div>
+    </div>
+    {% empty %}
+    <div class="col-12">
+        <div class="card">
+            <div class="card-body text-center py-5 text-muted">
+                <i class="bi bi-collection fs-1 d-block mb-3"></i>
+                Aucune classe configurée
+                <br><br>
+                <a href="{% url 'admin:bibleclub_bibleclass_add' %}" class="btn btn-primary">
+                    Créer une classe
+                </a>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+{% endblock %}
+

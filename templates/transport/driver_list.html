@@ -1,0 +1,80 @@
+{% extends 'base.html' %}
+
+{% block title %}Chauffeurs - EEBC{% endblock %}
+{% block page_title %}Chauffeurs{% endblock %}
+{% block page_subtitle %}Équipe de transport bénévole{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-end mb-4">
+    <a href="{% url 'admin:transport_driverprofile_add' %}" class="btn btn-primary">
+        <i class="bi bi-plus-lg me-2"></i>Nouveau chauffeur
+    </a>
+</div>
+
+<div class="row g-4">
+    {% for driver in drivers %}
+    <div class="col-md-6 col-lg-4">
+        <div class="card h-100">
+            <div class="card-body">
+                <div class="d-flex align-items-center mb-3">
+                    <div class="avatar me-3" style="width: 50px; height: 50px;">
+                        {{ driver.user.first_name|slice:":1"|upper }}{{ driver.user.last_name|slice:":1"|upper }}
+                    </div>
+                    <div>
+                        <h5 class="mb-0">{{ driver.user.get_full_name }}</h5>
+                        <small class="text-muted">{{ driver.vehicle_type }}</small>
+                    </div>
+                </div>
+                
+                <div class="row text-center mb-3">
+                    <div class="col-6">
+                        <div class="h4 mb-0">{{ driver.capacity }}</div>
+                        <small class="text-muted">Places</small>
+                    </div>
+                    <div class="col-6">
+                        <span class="badge bg-{% if driver.is_available %}success{% else %}danger{% endif %}">
+                            {% if driver.is_available %}Disponible{% else %}Indisponible{% endif %}
+                        </span>
+                    </div>
+                </div>
+                
+                {% if driver.zone %}
+                <p class="mb-2">
+                    <i class="bi bi-geo-alt me-2 text-muted"></i>
+                    {{ driver.zone }}
+                </p>
+                {% endif %}
+                
+                <div class="d-flex gap-2">
+                    {% if driver.available_sunday %}
+                    <span class="badge bg-info">Dimanche</span>
+                    {% endif %}
+                    {% if driver.available_week %}
+                    <span class="badge bg-secondary">Semaine</span>
+                    {% endif %}
+                </div>
+            </div>
+            <div class="card-footer">
+                <a href="{% url 'admin:transport_driverprofile_change' driver.pk %}" class="btn btn-outline-light btn-sm">
+                    <i class="bi bi-pencil me-1"></i>Modifier
+                </a>
+            </div>
+        </div>
+    </div>
+    {% empty %}
+    <div class="col-12">
+        <div class="card">
+            <div class="card-body text-center py-5 text-muted">
+                <i class="bi bi-truck fs-1 d-block mb-3"></i>
+                Aucun chauffeur enregistré
+                <br><br>
+                <a href="{% url 'admin:transport_driverprofile_add' %}" class="btn btn-primary">
+                    Ajouter un chauffeur
+                </a>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+{% endblock %}
+

@@ -1,0 +1,66 @@
+{% extends 'base.html' %}
+
+{% block title %}Départements - EEBC{% endblock %}
+{% block page_title %}Départements{% endblock %}
+{% block page_subtitle %}Organisation interne de l'église{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-end mb-4">
+    <a href="{% url 'admin:departments_department_add' %}" class="btn btn-primary">
+        <i class="bi bi-plus-lg me-2"></i>Nouveau département
+    </a>
+</div>
+
+<div class="row g-4">
+    {% for department in departments %}
+    <div class="col-md-6 col-lg-4">
+        <div class="card h-100">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-start mb-3">
+                    <h5 class="mb-0">{{ department.name }}</h5>
+                    <span class="badge bg-primary">{{ department.member_count }} membres</span>
+                </div>
+                
+                {% if department.description %}
+                <p class="text-muted mb-3">{{ department.description|truncatewords:20 }}</p>
+                {% endif %}
+                
+                {% if department.leader %}
+                <div class="d-flex align-items-center">
+                    <div class="avatar me-2" style="width: 32px; height: 32px; font-size: 0.7rem;">
+                        {{ department.leader.first_name|slice:":1"|upper }}{{ department.leader.last_name|slice:":1"|upper }}
+                    </div>
+                    <div>
+                        <small class="text-muted">Responsable:</small>
+                        <div>{{ department.leader.get_full_name }}</div>
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+            <div class="card-footer">
+                <a href="{% url 'departments:detail' department.pk %}" class="btn btn-outline-light btn-sm">
+                    <i class="bi bi-eye me-1"></i>Détails
+                </a>
+                <a href="{% url 'admin:departments_department_change' department.pk %}" class="btn btn-outline-light btn-sm">
+                    <i class="bi bi-pencil me-1"></i>Modifier
+                </a>
+            </div>
+        </div>
+    </div>
+    {% empty %}
+    <div class="col-12">
+        <div class="card">
+            <div class="card-body text-center py-5 text-muted">
+                <i class="bi bi-building fs-1 d-block mb-3"></i>
+                Aucun département configuré
+                <br><br>
+                <a href="{% url 'admin:departments_department_add' %}" class="btn btn-primary">
+                    Créer un département
+                </a>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+{% endblock %}
+

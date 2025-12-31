@@ -1,0 +1,151 @@
+{% extends 'base.html' %}
+
+{% block title %}Calendrier - EEBC{% endblock %}
+{% block page_title %}Calendrier{% endblock %}
+{% block page_subtitle %}Vue globale des événements{% endblock %}
+
+{% block extra_css %}
+<link href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.10/index.global.min.css" rel="stylesheet">
+<style>
+    #calendar {
+        background: var(--eebc-surface);
+        border-radius: 16px;
+        padding: 1.5rem;
+    }
+    
+    .fc {
+        --fc-border-color: var(--eebc-border);
+        --fc-button-bg-color: var(--eebc-accent);
+        --fc-button-border-color: var(--eebc-accent);
+        --fc-button-hover-bg-color: #1d4ed8;
+        --fc-button-hover-border-color: #1d4ed8;
+        --fc-button-active-bg-color: #1e40af;
+        --fc-today-bg-color: rgba(59, 130, 246, 0.15);
+        --fc-neutral-bg-color: var(--eebc-surface-light);
+        --fc-page-bg-color: transparent;
+        --fc-event-border-color: transparent;
+    }
+    
+    .fc-theme-standard td, .fc-theme-standard th {
+        border-color: var(--eebc-border);
+    }
+    
+    .fc-col-header-cell-cushion,
+    .fc-daygrid-day-number {
+        color: var(--eebc-text);
+    }
+    
+    .fc-daygrid-day.fc-day-today {
+        background: rgba(59, 130, 246, 0.15) !important;
+    }
+    
+    .fc-event {
+        border-radius: 4px;
+        font-size: 0.8rem;
+        padding: 2px 6px;
+    }
+    
+    .fc-toolbar-title {
+        color: var(--eebc-text) !important;
+        font-family: 'Outfit', sans-serif !important;
+        font-weight: 600 !important;
+    }
+    
+    .fc-button {
+        font-family: 'Outfit', sans-serif !important;
+        font-weight: 500 !important;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="row g-4">
+    <div class="col-lg-9">
+        <div id="calendar"></div>
+    </div>
+    
+    <div class="col-lg-3">
+        <div class="card mb-4">
+            <div class="card-header">
+                <h6 class="card-title"><i class="bi bi-plus-circle me-2"></i>Actions</h6>
+            </div>
+            <div class="card-body">
+                <a href="{% url 'admin:events_event_add' %}" class="btn btn-primary w-100 mb-2">
+                    <i class="bi bi-calendar-plus me-2"></i>Nouvel événement
+                </a>
+                <a href="{% url 'events:list' %}" class="btn btn-outline-light w-100">
+                    <i class="bi bi-list-ul me-2"></i>Liste des événements
+                </a>
+            </div>
+        </div>
+        
+        <div class="card mb-4">
+            <div class="card-header">
+                <h6 class="card-title"><i class="bi bi-printer me-2"></i>Imprimer</h6>
+            </div>
+            <div class="card-body">
+                <a href="{% url 'events:calendar_print' %}?mode=month" class="btn btn-outline-light w-100 mb-2">
+                    <i class="bi bi-calendar-month me-2"></i>Calendrier du mois
+                </a>
+                <a href="{% url 'events:calendar_print' %}?mode=quarter" class="btn btn-outline-light w-100">
+                    <i class="bi bi-calendar3 me-2"></i>Calendrier trimestriel
+                </a>
+            </div>
+        </div>
+        
+        <div class="card">
+            <div class="card-header">
+                <h6 class="card-title"><i class="bi bi-palette me-2"></i>Légende</h6>
+            </div>
+            <div class="card-body">
+                {% for category in categories %}
+                <div class="d-flex align-items-center mb-2">
+                    <div class="rounded me-2" style="width: 16px; height: 16px; background: {{ category.color }};"></div>
+                    <span>{{ category.name }}</span>
+                </div>
+                {% empty %}
+                <p class="text-muted mb-0">Aucune catégorie</p>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.10/index.global.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@fullcalendar/core@6.1.10/locales/fr.global.min.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    var calendarEl = document.getElementById('calendar');
+    var calendar = new FullCalendar.Calendar(calendarEl, {
+        initialView: 'dayGridMonth',
+        locale: 'fr',
+        headerToolbar: {
+            left: 'prev,next today',
+            center: 'title',
+            right: 'dayGridMonth,timeGridWeek,listWeek'
+        },
+        buttonText: {
+            today: "Aujourd'hui",
+            month: 'Mois',
+            week: 'Semaine',
+            list: 'Liste'
+        },
+        events: '{% url "events:events_json" %}',
+        eventClick: function(info) {
+            info.jsEvent.preventDefault();
+            if (info.event.url) {
+                window.location.href = info.event.url;
+            }
+        },
+        height: 'auto',
+        navLinks: true,
+        editable: false,
+        dayMaxEvents: 3
+    });
+    calendar.render();
+});
+</script>
+{% endblock %}
+

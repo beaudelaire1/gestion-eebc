@@ -1,0 +1,87 @@
+{% extends 'base.html' %}
+
+{% block title %}Mon Profil - EEBC{% endblock %}
+{% block page_title %}Mon Profil{% endblock %}
+{% block page_subtitle %}Gérez vos informations personnelles{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-lg-4">
+        <div class="card mb-4">
+            <div class="card-body text-center">
+                <div class="avatar mx-auto mb-3" style="width: 100px; height: 100px; font-size: 2.5rem;">
+                    {{ request.user.first_name|slice:":1"|upper }}{{ request.user.last_name|slice:":1"|upper }}
+                </div>
+                <h5 class="mb-1">{{ request.user.get_full_name|default:request.user.username }}</h5>
+                <p class="text-muted mb-3">{{ request.user.get_role_display }}</p>
+                <span class="badge bg-primary">{{ request.user.role }}</span>
+            </div>
+        </div>
+        
+        <div class="card">
+            <div class="card-header">
+                <h6 class="card-title"><i class="bi bi-info-circle me-2"></i>Informations</h6>
+            </div>
+            <div class="card-body">
+                <p class="mb-2">
+                    <i class="bi bi-envelope me-2 text-muted"></i>
+                    {{ request.user.email|default:"Non renseigné" }}
+                </p>
+                <p class="mb-2">
+                    <i class="bi bi-phone me-2 text-muted"></i>
+                    {{ request.user.phone|default:"Non renseigné" }}
+                </p>
+                <p class="mb-0">
+                    <i class="bi bi-calendar me-2 text-muted"></i>
+                    Membre depuis {{ request.user.date_joined|date:"F Y" }}
+                </p>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-lg-8">
+        <div class="card">
+            <div class="card-header">
+                <h6 class="card-title"><i class="bi bi-pencil me-2"></i>Modifier le profil</h6>
+            </div>
+            <div class="card-body">
+                <form method="post" enctype="multipart/form-data">
+                    {% csrf_token %}
+                    
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label class="form-label">Prénom</label>
+                            <input type="text" class="form-control" name="first_name" value="{{ request.user.first_name }}">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Nom</label>
+                            <input type="text" class="form-control" name="last_name" value="{{ request.user.last_name }}">
+                        </div>
+                    </div>
+                    
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label class="form-label">Email</label>
+                            <input type="email" class="form-control" name="email" value="{{ request.user.email }}">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Téléphone</label>
+                            <input type="tel" class="form-control" name="phone" value="{{ request.user.phone }}">
+                        </div>
+                    </div>
+                    
+                    <div class="mb-4">
+                        <label class="form-label">Photo</label>
+                        <input type="file" class="form-control" name="photo" accept="image/*">
+                    </div>
+                    
+                    <button type="submit" class="btn btn-primary">
+                        <i class="bi bi-check-lg me-2"></i>Enregistrer
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+

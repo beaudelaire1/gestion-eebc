@@ -1,0 +1,86 @@
+{% extends 'base.html' %}
+
+{% block title %}Sessions - Club Biblique{% endblock %}
+{% block page_title %}Sessions{% endblock %}
+{% block page_subtitle %}Historique des sessions et appels{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div></div>
+    <a href="{% url 'bibleclub:create_session' %}" class="btn btn-primary">
+        <i class="bi bi-plus-lg me-2"></i>Nouvelle session
+    </a>
+</div>
+
+<div class="card">
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover mb-0">
+                <thead>
+                    <tr>
+                        <th>Date</th>
+                        <th>Thème</th>
+                        <th>Présences</th>
+                        <th>Taux</th>
+                        <th>Statut</th>
+                        <th class="text-end">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for session in sessions %}
+                    <tr>
+                        <td>
+                            <div class="fw-semibold">{{ session.date|date:"l" }}</div>
+                            <small class="text-muted">{{ session.date|date:"d/m/Y" }}</small>
+                        </td>
+                        <td>{{ session.theme|default:"-"|truncatewords:8 }}</td>
+                        <td>
+                            <span class="fw-semibold">{{ session.present_count }}</span>
+                            <span class="text-muted">/ {{ session.total_count }}</span>
+                        </td>
+                        <td>
+                            {% if session.total_count > 0 %}
+                            {% widthratio session.present_count session.total_count 100 as rate %}
+                            <div class="d-flex align-items-center">
+                                <div class="progress flex-grow-1 me-2" style="height: 6px; width: 60px;">
+                                    <div class="progress-bar bg-{% if rate >= 80 %}success{% elif rate >= 50 %}warning{% else %}danger{% endif %}" 
+                                         style="width: {{ rate }}%;"></div>
+                                </div>
+                                <small>{{ rate }}%</small>
+                            </div>
+                            {% else %}
+                            <span class="text-muted">-</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if session.is_cancelled %}
+                            <span class="badge bg-danger">Annulée</span>
+                            {% else %}
+                            <span class="badge bg-success">OK</span>
+                            {% endif %}
+                        </td>
+                        <td class="text-end">
+                            <a href="{% url 'bibleclub:session_detail' session.pk %}" class="btn btn-sm btn-outline-light">
+                                <i class="bi bi-clipboard-check me-1"></i>Appel
+                            </a>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="6" class="text-center py-5 text-muted">
+                            <i class="bi bi-calendar-x fs-1 d-block mb-3"></i>
+                            Aucune session enregistrée
+                            <br><br>
+                            <a href="{% url 'bibleclub:create_session' %}" class="btn btn-primary">
+                                Créer la première session
+                            </a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}
+

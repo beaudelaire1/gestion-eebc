@@ -1,0 +1,46 @@
+{% extends 'base.html' %}
+
+{% block title %}Nouvelle session - Club Biblique{% endblock %}
+{% block page_title %}Créer une nouvelle session{% endblock %}
+{% block page_subtitle %}Préparer l'appel pour un dimanche{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-6">
+        <div class="card">
+            <div class="card-header">
+                <h6 class="card-title"><i class="bi bi-calendar-plus me-2"></i>Nouvelle session</h6>
+            </div>
+            <div class="card-body">
+                <form method="post">
+                    {% csrf_token %}
+                    
+                    <div class="mb-4">
+                        <label class="form-label">Date de la session</label>
+                        <input type="date" name="date" class="form-control" required>
+                        <small class="text-muted">Sélectionnez le dimanche de la session</small>
+                    </div>
+                    
+                    <div class="mb-4">
+                        <label class="form-label">Thème (optionnel)</label>
+                        <input type="text" name="theme" class="form-control" placeholder="Ex: La parabole du semeur...">
+                    </div>
+                    
+                    <div class="alert alert-info">
+                        <i class="bi bi-info-circle me-2"></i>
+                        <strong>Note:</strong> Les présences seront automatiquement créées pour tous les enfants actifs dans leurs classes respectives.
+                    </div>
+                    
+                    <div class="d-flex gap-3">
+                        <a href="{% url 'bibleclub:session_list' %}" class="btn btn-outline-light">Annuler</a>
+                        <button type="submit" class="btn btn-primary flex-grow-1">
+                            <i class="bi bi-plus-lg me-2"></i>Créer la session
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+

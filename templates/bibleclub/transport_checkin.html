@@ -1,0 +1,49 @@
+{% extends 'base.html' %}
+
+{% block title %}Transport - Session {{ session.date|date:"d/m/Y" }}{% endblock %}
+{% block page_title %}Pointage Transport{% endblock %}
+{% block page_subtitle %}Session du {{ session.date|date:"l d F Y" }}{% endblock %}
+
+{% block content %}
+<div class="card">
+    <div class="card-header">
+        <h6 class="card-title"><i class="bi bi-truck me-2"></i>Chauffeurs</h6>
+    </div>
+    <div class="card-body">
+        {% if checkins %}
+        <div class="table-responsive">
+            <table class="table table-hover mb-0">
+                <thead>
+                    <tr>
+                        <th>Chauffeur</th>
+                        <th>Départ</th>
+                        <th>Arrivée</th>
+                        <th>Retour départ</th>
+                        <th>Retour arrivée</th>
+                        <th>Enfants</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for checkin in checkins %}
+                    <tr>
+                        <td>{{ checkin.driver }}</td>
+                        <td>{{ checkin.departure_time|time:"H:i"|default:"-" }}</td>
+                        <td>{{ checkin.arrival_time|time:"H:i"|default:"-" }}</td>
+                        <td>{{ checkin.return_departure_time|time:"H:i"|default:"-" }}</td>
+                        <td>{{ checkin.return_arrival_time|time:"H:i"|default:"-" }}</td>
+                        <td>{{ checkin.children_picked_up.count }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="text-center py-4 text-muted">
+            <i class="bi bi-truck fs-1 d-block mb-3"></i>
+            Aucun pointage chauffeur pour cette session
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
+

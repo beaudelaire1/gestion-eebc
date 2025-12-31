@@ -1,0 +1,31 @@
+/* Fix pour les champs file dans Jazzmin */
+input[type="file"] {
+    display: block !important;
+    opacity: 1 !important;
+    position: relative !important;
+    width: 100% !important;
+    height: auto !important;
+    padding: 10px !important;
+    cursor: pointer !important;
+    z-index: 1 !important;
+}
+
+/* Style du bouton file */
+.custom-file-input,
+.custom-file-label {
+    display: none !important;
+}
+
+/* Assurer que le champ photo est visible */
+#id_photo {
+    display: block !important;
+    opacity: 1 !important;
+    position: relative !important;
+    width: 100% !important;
+    min-height: 38px !important;
+    padding: 6px 12px !important;
+    background: #fff !important;
+    border: 1px solid #ced4da !important;
+    border-radius: 4px !important;
+}
+

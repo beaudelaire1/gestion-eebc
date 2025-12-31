@@ -1,0 +1,52 @@
+{% extends 'base.html' %}
+
+{% block title %}Notifications - EEBC{% endblock %}
+{% block page_title %}Notifications{% endblock %}
+{% block page_subtitle %}{{ unread_count }} non lue(s){% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div></div>
+    {% if unread_count > 0 %}
+    <a href="?mark_all_read=1" class="btn btn-outline-light">
+        <i class="bi bi-check-all me-2"></i>Tout marquer comme lu
+    </a>
+    {% endif %}
+</div>
+
+<div class="card">
+    <div class="card-body p-0">
+        {% if notifications %}
+        <div class="list-group list-group-flush">
+            {% for notification in notifications %}
+            <a href="{% url 'communication:notification_detail' notification.pk %}" 
+               class="list-group-item list-group-item-action d-flex {% if not notification.is_read %}bg-opacity-10 bg-primary{% endif %}"
+               style="background: {% if not notification.is_read %}rgba(59, 130, 246, 0.1){% else %}transparent{% endif %}; border-color: var(--eebc-border);">
+                <div class="me-3">
+                    <i class="bi bi-{% if notification.notification_type == 'success' %}check-circle text-success{% elif notification.notification_type == 'warning' %}exclamation-triangle text-warning{% elif notification.notification_type == 'error' %}x-circle text-danger{% elif notification.notification_type == 'event' %}calendar text-info{% elif notification.notification_type == 'absence' %}person-x text-warning{% else %}bell text-muted{% endif %} fs-4"></i>
+                </div>
+                <div class="flex-grow-1">
+                    <div class="d-flex justify-content-between">
+                        <strong class="{% if not notification.is_read %}text-white{% else %}text-muted{% endif %}">{{ notification.title }}</strong>
+                        <small class="text-muted">{{ notification.created_at|timesince }} ago</small>
+                    </div>
+                    <p class="text-muted mb-0 small">{{ notification.message|truncatewords:20 }}</p>
+                </div>
+                {% if not notification.is_read %}
+                <div class="ms-3">
+                    <span class="badge bg-primary rounded-pill">Nouveau</span>
+                </div>
+                {% endif %}
+            </a>
+            {% endfor %}
+        </div>
+        {% else %}
+        <div class="text-center py-5 text-muted">
+            <i class="bi bi-bell-slash fs-1 d-block mb-3"></i>
+            Aucune notification
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
+

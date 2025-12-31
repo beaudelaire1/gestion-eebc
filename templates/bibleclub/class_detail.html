@@ -1,0 +1,118 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ bible_class }} - Club Biblique{% endblock %}
+{% block page_title %}{{ bible_class }}{% endblock %}
+{% block page_subtitle %}{{ bible_class.age_group.min_age }}-{{ bible_class.age_group.max_age }} ans{% endblock %}
+
+{% block content %}
+<div class="row g-4">
+    <!-- Info Card -->
+    <div class="col-lg-4">
+        <div class="card mb-4" style="border-top: 4px solid {{ bible_class.age_group.color }};">
+            <div class="card-body">
+                <h5 class="mb-3">{{ bible_class }}</h5>
+                
+                <div class="mb-3">
+                    <div class="d-flex justify-content-between mb-1">
+                        <span class="text-muted">Capacité</span>
+                        <span>{{ children|length }} / {{ bible_class.max_capacity }}</span>
+                    </div>
+                    <div class="progress" style="height: 6px;">
+                        <div class="progress-bar" style="width: {% widthratio children|length bible_class.max_capacity 100 %}%;"></div>
+                    </div>
+                </div>
+                
+                {% if bible_class.room %}
+                <p class="mb-2"><i class="bi bi-geo-alt me-2 text-muted"></i>Salle {{ bible_class.room }}</p>
+                {% endif %}
+                
+                <a href="{% url 'admin:bibleclub_bibleclass_change' bible_class.pk %}" class="btn btn-outline-light w-100 mt-3">
+                    <i class="bi bi-pencil me-2"></i>Modifier
+                </a>
+            </div>
+        </div>
+        
+        <!-- Monitors -->
+        <div class="card">
+            <div class="card-header">
+                <h6 class="card-title"><i class="bi bi-person-badge me-2"></i>Moniteurs</h6>
+            </div>
+            <div class="card-body">
+                {% for monitor in monitors %}
+                <div class="d-flex align-items-center mb-3">
+                    <div class="avatar me-3" style="width: 40px; height: 40px;">
+                        {{ monitor.user.first_name|slice:":1"|upper }}{{ monitor.user.last_name|slice:":1"|upper }}
+                    </div>
+                    <div>
+                        <div class="fw-semibold">{{ monitor }}</div>
+                        <small class="text-muted">
+                            {% if monitor.is_lead %}<span class="badge bg-primary">Principal</span>{% endif %}
+                            {{ monitor.phone }}
+                        </small>
+                    </div>
+                </div>
+                {% empty %}
+                <p class="text-muted mb-0">Aucun moniteur assigné</p>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+    
+    <!-- Children List -->
+    <div class="col-lg-8">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h6 class="card-title"><i class="bi bi-people me-2"></i>Enfants ({{ children|length }})</h6>
+                <a href="{% url 'admin:bibleclub_child_add' %}" class="btn btn-primary btn-sm">
+                    <i class="bi bi-plus-lg me-1"></i>Ajouter
+                </a>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0">
+                        <thead>
+                            <tr>
+                                <th>Nom</th>
+                                <th>Âge</th>
+                                <th>Parent</th>
+                                <th class="text-end">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for child in children %}
+                            <tr>
+                                <td>
+                                    <div class="d-flex align-items-center">
+                                        <div class="avatar me-3" style="width: 36px; height: 36px; font-size: 0.75rem; background: {% if child.gender == 'M' %}linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%){% else %}linear-gradient(135deg, #ec4899 0%, #be185d 100%){% endif %};">
+                                            {{ child.first_name|slice:":1"|upper }}{{ child.last_name|slice:":1"|upper }}
+                                        </div>
+                                        <span class="fw-semibold">{{ child.first_name }} {{ child.last_name }}</span>
+                                    </div>
+                                </td>
+                                <td>{{ child.age }} ans</td>
+                                <td>
+                                    <div>{{ child.parent1_name }}</div>
+                                    <small class="text-muted">{{ child.parent1_phone }}</small>
+                                </td>
+                                <td class="text-end">
+                                    <a href="{% url 'bibleclub:child_detail' child.pk %}" class="btn btn-sm btn-outline-light">
+                                        <i class="bi bi-eye"></i>
+                                    </a>
+                                </td>
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="4" class="text-center py-4 text-muted">
+                                    Aucun enfant dans cette classe
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+

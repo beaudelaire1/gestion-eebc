@@ -1,0 +1,92 @@
+{% extends 'base.html' %}
+
+{% block title %}Inventaire - EEBC{% endblock %}
+{% block page_title %}Inventaire{% endblock %}
+{% block page_subtitle %}Matériel et équipements de l'église{% endblock %}
+
+{% block content %}
+<div class="card mb-4">
+    <div class="card-body">
+        <form method="get" class="row g-3 align-items-end">
+            <div class="col-md-4">
+                <label class="form-label">Catégorie</label>
+                <select class="form-select" name="category">
+                    <option value="">Toutes les catégories</option>
+                    {% for category in categories %}
+                    <option value="{{ category.pk }}">{{ category.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-4">
+                <label class="form-label">État</label>
+                <select class="form-select" name="condition">
+                    <option value="">Tous les états</option>
+                    {% for value, label in conditions %}
+                    <option value="{{ value }}">{{ label }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-2">
+                <button type="submit" class="btn btn-primary w-100">Filtrer</button>
+            </div>
+            <div class="col-md-2">
+                <a href="{% url 'admin:inventory_equipment_add' %}" class="btn btn-outline-light w-100">
+                    <i class="bi bi-plus-lg me-1"></i>Ajouter
+                </a>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover mb-0">
+                <thead>
+                    <tr>
+                        <th>Équipement</th>
+                        <th>Catégorie</th>
+                        <th>Quantité</th>
+                        <th>État</th>
+                        <th>Emplacement</th>
+                        <th class="text-end">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for item in equipment %}
+                    <tr>
+                        <td>
+                            <div class="fw-semibold">{{ item.name }}</div>
+                            {% if item.description %}
+                            <small class="text-muted">{{ item.description|truncatewords:10 }}</small>
+                            {% endif %}
+                        </td>
+                        <td>{{ item.category|default:"-" }}</td>
+                        <td>{{ item.quantity }}</td>
+                        <td>
+                            <span class="badge bg-{% if item.condition == 'new' %}success{% elif item.condition == 'good' %}info{% elif item.condition == 'fair' %}warning{% elif item.condition == 'maintenance' %}secondary{% else %}danger{% endif %}">
+                                {{ item.get_condition_display }}
+                            </span>
+                        </td>
+                        <td>{{ item.location|default:"-" }}</td>
+                        <td class="text-end">
+                            <a href="{% url 'admin:inventory_equipment_change' item.pk %}" class="btn btn-sm btn-outline-light">
+                                <i class="bi bi-pencil"></i>
+                            </a>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="6" class="text-center py-5 text-muted">
+                            <i class="bi bi-box-seam fs-1 d-block mb-3"></i>
+                            Aucun équipement trouvé
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}
+

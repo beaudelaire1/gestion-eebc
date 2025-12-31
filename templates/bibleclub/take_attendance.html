@@ -1,0 +1,129 @@
+{% extends 'base.html' %}
+
+{% block title %}Appel - {{ bible_class }} - {{ session.date|date:"d/m/Y" }}{% endblock %}
+{% block page_title %}Appel - {{ bible_class }}{% endblock %}
+{% block page_subtitle %}Session du {{ session.date|date:"l d F Y" }}{% endblock %}
+
+{% block content %}
+<form method="post">
+    {% csrf_token %}
+    
+    <div class="card">
+        <div class="card-header d-flex justify-content-between align-items-center" 
+             style="border-left: 4px solid {{ bible_class.age_group.color }};">
+            <div>
+                <h6 class="mb-0">{{ bible_class }}</h6>
+                <small class="text-muted">{{ attendances|length }} enfants</small>
+            </div>
+            <button type="submit" class="btn btn-primary">
+                <i class="bi bi-check-lg me-2"></i>Enregistrer l'appel
+            </button>
+        </div>
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table mb-0">
+                    <thead>
+                        <tr>
+                            <th style="width: 30%;">Enfant</th>
+                            <th style="width: 25%;">Statut</th>
+                            <th style="width: 15%;">Heure d'arrivée</th>
+                            <th style="width: 30%;">Notes</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for attendance in attendances %}
+                        <tr>
+                            <td>
+                                <div class="d-flex align-items-center">
+                                    <div class="avatar me-3" style="width: 36px; height: 36px; font-size: 0.75rem; background: {% if attendance.child.gender == 'M' %}linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%){% else %}linear-gradient(135deg, #ec4899 0%, #be185d 100%){% endif %};">
+                                        {{ attendance.child.first_name|slice:":1"|upper }}{{ attendance.child.last_name|slice:":1"|upper }}
+                                    </div>
+                                    <div>
+                                        <div class="fw-semibold">{{ attendance.child.first_name }} {{ attendance.child.last_name }}</div>
+                                        <small class="text-muted">{{ attendance.child.age }} ans</small>
+                                    </div>
+                                </div>
+                            </td>
+                            <td>
+                                <select name="status_{{ attendance.id }}" class="form-select form-select-sm">
+                                    {% for value, label in status_choices %}
+                                    <option value="{{ value }}" {% if attendance.status == value %}selected{% endif %}>
+                                        {{ label }}
+                                    </option>
+                                    {% endfor %}
+                                </select>
+                            </td>
+                            <td>
+                                <input type="time" name="checkin_{{ attendance.id }}" 
+                                       value="{{ attendance.check_in_time|time:'H:i' }}"
+                                       class="form-control form-control-sm">
+                            </td>
+                            <td>
+                                <input type="text" name="notes_{{ attendance.id }}" 
+                                       value="{{ attendance.notes }}"
+                                       class="form-control form-control-sm"
+                                       placeholder="Notes...">
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="4" class="text-center py-4 text-muted">
+                                Aucun enfant dans cette classe
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        <div class="card-footer">
+            <div class="d-flex justify-content-between">
+                <a href="{% url 'bibleclub:session_detail' session.pk %}" class="btn btn-outline-light">
+                    <i class="bi bi-arrow-left me-2"></i>Retour
+                </a>
+                <button type="submit" class="btn btn-primary">
+                    <i class="bi bi-check-lg me-2"></i>Enregistrer l'appel
+                </button>
+            </div>
+        </div>
+    </div>
+</form>
+
+<!-- Quick Actions -->
+<div class="row mt-4">
+    <div class="col-md-4">
+        <button type="button" class="btn btn-outline-success w-100" onclick="setAllStatus('present')">
+            <i class="bi bi-check-all me-2"></i>Tous présents
+        </button>
+    </div>
+    <div class="col-md-4">
+        <button type="button" class="btn btn-outline-danger w-100" onclick="setAllStatus('absent')">
+            <i class="bi bi-x-circle me-2"></i>Tous absents
+        </button>
+    </div>
+    <div class="col-md-4">
+        <button type="button" class="btn btn-outline-light w-100" onclick="setCurrentTime()">
+            <i class="bi bi-clock me-2"></i>Heure actuelle
+        </button>
+    </div>
+</div>
+
+<script>
+function setAllStatus(status) {
+    document.querySelectorAll('select[name^="status_"]').forEach(select => {
+        select.value = status;
+    });
+}
+
+function setCurrentTime() {
+    const now = new Date();
+    const time = now.toTimeString().slice(0, 5);
+    document.querySelectorAll('input[type="time"]').forEach(input => {
+        if (!input.value) {
+            input.value = time;
+        }
+    });
+}
+</script>
+{% endblock %}
+

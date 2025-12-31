@@ -1,0 +1,747 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Gestion EEBC{% endblock %}</title>
+    
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    
+    <!-- Bootstrap 5 -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    
+    <!-- Bootstrap Icons -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" rel="stylesheet">
+    
+    <!-- HTMX -->
+    <script src="https://unpkg.com/htmx.org@1.9.10"></script>
+    
+    <!-- Custom Styles -->
+    <style>
+        :root {
+            --eebc-primary: #0A36FF;
+            --eebc-primary-dark: #0829CC;
+            --eebc-primary-light: #3D5FFF;
+            --eebc-white: #FFFFFF;
+            --eebc-black: #0B0F19;
+            --eebc-gray-50: #F8FAFC;
+            --eebc-gray-100: #F1F5F9;
+            --eebc-gray-200: #E2E8F0;
+            --eebc-gray-300: #CBD5E1;
+            --eebc-gray-400: #94A3B8;
+            --eebc-gray-500: #64748B;
+            --eebc-gray-600: #475569;
+            --eebc-gray-700: #334155;
+            --eebc-gray-800: #1E293B;
+            --eebc-success: #10B981;
+            --eebc-warning: #F59E0B;
+            --eebc-danger: #EF4444;
+            --eebc-info: #06B6D4;
+        }
+        
+        * {
+            font-family: 'Poppins', -apple-system, BlinkMacSystemFont, sans-serif;
+        }
+        
+        body {
+            background: var(--eebc-gray-50);
+            min-height: 100vh;
+            color: var(--eebc-black);
+        }
+        
+        /* Sidebar */
+        .sidebar {
+            background: var(--eebc-white);
+            border-right: 1px solid var(--eebc-gray-200);
+            height: 100vh;
+            position: fixed;
+            width: 280px;
+            z-index: 1000;
+            display: flex;
+            flex-direction: column;
+            box-shadow: 4px 0 20px rgba(11, 15, 25, 0.05);
+        }
+        
+        .sidebar-brand {
+            padding: 1.5rem;
+            border-bottom: 1px solid var(--eebc-gray-200);
+            background: var(--eebc-primary);
+            color: var(--eebc-white);
+            flex-shrink: 0;
+        }
+        
+        .sidebar-brand h4 {
+            font-weight: 700;
+            letter-spacing: -0.5px;
+            margin: 0;
+            color: var(--eebc-white);
+        }
+        
+        .sidebar-brand small {
+            opacity: 0.85;
+            font-size: 0.75rem;
+            color: var(--eebc-white);
+        }
+        
+        /* Sidebar Scrollable Content */
+        .sidebar-content {
+            flex: 1;
+            overflow-y: auto;
+            overflow-x: hidden;
+        }
+        
+        .nav-section {
+            padding: 1rem 0;
+            border-bottom: 1px solid var(--eebc-gray-100);
+        }
+        
+        .nav-section:last-child {
+            border-bottom: none;
+        }
+        
+        .nav-section-title {
+            font-size: 0.7rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 1.2px;
+            color: var(--eebc-gray-400);
+            padding: 0 1.25rem;
+            margin-bottom: 0.5rem;
+        }
+        
+        .sidebar .nav-link {
+            color: var(--eebc-gray-600);
+            padding: 0.75rem 1.25rem;
+            border-radius: 0;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            transition: all 0.2s ease;
+            border-left: 3px solid transparent;
+            font-weight: 500;
+            font-size: 0.9rem;
+        }
+        
+        .sidebar .nav-link:hover {
+            background: var(--eebc-gray-50);
+            color: var(--eebc-primary);
+            border-left-color: var(--eebc-primary-light);
+        }
+        
+        .sidebar .nav-link.active {
+            background: linear-gradient(90deg, rgba(10, 54, 255, 0.08) 0%, transparent 100%);
+            color: var(--eebc-primary);
+            border-left-color: var(--eebc-primary);
+            font-weight: 600;
+        }
+        
+        .sidebar .nav-link i {
+            font-size: 1.1rem;
+            width: 24px;
+            text-align: center;
+        }
+        
+        /* Main Content */
+        .main-content {
+            margin-left: 280px;
+            min-height: 100vh;
+            background: var(--eebc-gray-50);
+        }
+        
+        /* Top Bar */
+        .top-bar {
+            background: var(--eebc-white);
+            border-bottom: 1px solid var(--eebc-gray-200);
+            padding: 1rem 2rem;
+            position: sticky;
+            top: 0;
+            z-index: 999;
+            box-shadow: 0 2px 10px rgba(11, 15, 25, 0.03);
+        }
+        
+        /* Cards */
+        .card {
+            background: var(--eebc-white);
+            border: 1px solid var(--eebc-gray-200);
+            border-radius: 16px;
+            overflow: hidden;
+            box-shadow: 0 4px 20px rgba(11, 15, 25, 0.04);
+        }
+        
+        .card-header {
+            background: var(--eebc-white);
+            border-bottom: 1px solid var(--eebc-gray-100);
+            padding: 1.25rem 1.5rem;
+        }
+        
+        .card-title {
+            font-weight: 600;
+            margin: 0;
+            font-size: 1rem;
+            color: var(--eebc-black);
+        }
+        
+        .card-body {
+            padding: 1.5rem;
+        }
+        
+        /* Stat Cards */
+        .stat-card {
+            background: var(--eebc-white);
+            border: 1px solid var(--eebc-gray-200);
+            border-radius: 16px;
+            padding: 1.5rem;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+            box-shadow: 0 4px 20px rgba(11, 15, 25, 0.04);
+        }
+        
+        .stat-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: var(--eebc-primary);
+        }
+        
+        .stat-card:hover {
+            transform: translateY(-4px);
+            border-color: var(--eebc-primary);
+            box-shadow: 0 20px 40px rgba(10, 54, 255, 0.12);
+        }
+        
+        .stat-icon {
+            width: 52px;
+            height: 52px;
+            border-radius: 14px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            color: var(--eebc-white);
+        }
+        
+        .stat-icon.blue { background: var(--eebc-primary); }
+        .stat-icon.green { background: var(--eebc-success); }
+        .stat-icon.orange { background: var(--eebc-warning); }
+        .stat-icon.purple { background: #8B5CF6; }
+        .stat-icon.pink { background: #EC4899; }
+        .stat-icon.cyan { background: var(--eebc-info); }
+        
+        .stat-value {
+            font-size: 2.25rem;
+            font-weight: 700;
+            letter-spacing: -1px;
+            font-family: 'JetBrains Mono', monospace;
+            color: var(--eebc-black);
+        }
+        
+        .stat-label {
+            color: var(--eebc-gray-500);
+            font-size: 0.875rem;
+            font-weight: 500;
+        }
+        
+        /* Buttons */
+        .btn-primary {
+            background: var(--eebc-primary);
+            border: none;
+            font-weight: 600;
+            padding: 0.625rem 1.25rem;
+            border-radius: 10px;
+            transition: all 0.2s ease;
+        }
+        
+        .btn-primary:hover {
+            background: var(--eebc-primary-dark);
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(10, 54, 255, 0.3);
+        }
+        
+        .btn-outline-secondary {
+            border: 1px solid var(--eebc-gray-300);
+            color: var(--eebc-gray-600);
+            font-weight: 500;
+            border-radius: 10px;
+        }
+        
+        .btn-outline-secondary:hover {
+            background: var(--eebc-gray-100);
+            border-color: var(--eebc-gray-400);
+            color: var(--eebc-black);
+        }
+        
+        /* Redéfinition de btn-outline-light pour thème clair */
+        .btn-outline-light {
+            border: 1px solid var(--eebc-gray-300);
+            color: var(--eebc-gray-600);
+            background: transparent;
+            font-weight: 500;
+            border-radius: 10px;
+        }
+        
+        .btn-outline-light:hover {
+            background: var(--eebc-gray-100);
+            border-color: var(--eebc-primary);
+            color: var(--eebc-primary);
+        }
+        
+        .btn-outline-light:focus {
+            box-shadow: 0 0 0 3px rgba(10, 54, 255, 0.15);
+        }
+        
+        /* Tables */
+        .table {
+            --bs-table-bg: var(--eebc-white);
+            --bs-table-color: var(--eebc-black);
+            --bs-table-border-color: var(--eebc-gray-200);
+        }
+        
+        .table thead th {
+            background: var(--eebc-gray-50);
+            font-weight: 600;
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: var(--eebc-gray-500);
+            border-bottom: 2px solid var(--eebc-gray-200);
+            padding: 1rem;
+        }
+        
+        .table tbody td {
+            padding: 1rem;
+            vertical-align: middle;
+            color: var(--eebc-gray-700);
+        }
+        
+        .table tbody tr:hover {
+            background: var(--eebc-gray-50);
+        }
+        
+        /* Forms */
+        .form-control, .form-select {
+            background: var(--eebc-white);
+            border: 1px solid var(--eebc-gray-300);
+            color: var(--eebc-black);
+            border-radius: 10px;
+            padding: 0.75rem 1rem;
+            font-weight: 500;
+        }
+        
+        .form-control:focus, .form-select:focus {
+            background: var(--eebc-white);
+            border-color: var(--eebc-primary);
+            color: var(--eebc-black);
+            box-shadow: 0 0 0 4px rgba(10, 54, 255, 0.12);
+        }
+        
+        .form-control::placeholder {
+            color: var(--eebc-gray-400);
+        }
+        
+        .form-label {
+            font-weight: 600;
+            color: var(--eebc-gray-700);
+            font-size: 0.875rem;
+            margin-bottom: 0.5rem;
+        }
+        
+        /* Badges */
+        .badge {
+            font-weight: 600;
+            padding: 0.4rem 0.8rem;
+            border-radius: 8px;
+            font-size: 0.75rem;
+        }
+        
+        .badge.bg-success { background: var(--eebc-success) !important; }
+        .badge.bg-warning { background: var(--eebc-warning) !important; color: var(--eebc-black); }
+        .badge.bg-danger { background: var(--eebc-danger) !important; }
+        .badge.bg-primary { background: var(--eebc-primary) !important; }
+        .badge.bg-info { background: var(--eebc-info) !important; }
+        
+        /* Progress */
+        .progress {
+            background: var(--eebc-gray-200);
+            border-radius: 10px;
+            height: 10px;
+        }
+        
+        .progress-bar {
+            background: var(--eebc-primary);
+            border-radius: 10px;
+        }
+        
+        /* Alerts */
+        .alert {
+            border: none;
+            border-radius: 12px;
+            padding: 1rem 1.25rem;
+            font-weight: 500;
+        }
+        
+        .alert-warning {
+            background: rgba(245, 158, 11, 0.12);
+            color: #B45309;
+            border-left: 4px solid var(--eebc-warning);
+        }
+        
+        .alert-success {
+            background: rgba(16, 185, 129, 0.12);
+            color: #047857;
+            border-left: 4px solid var(--eebc-success);
+        }
+        
+        .alert-danger {
+            background: rgba(239, 68, 68, 0.12);
+            color: #B91C1C;
+            border-left: 4px solid var(--eebc-danger);
+        }
+        
+        .alert-info {
+            background: rgba(10, 54, 255, 0.08);
+            color: var(--eebc-primary);
+            border-left: 4px solid var(--eebc-primary);
+        }
+        
+        /* Avatar */
+        .avatar {
+            width: 42px;
+            height: 42px;
+            border-radius: 12px;
+            background: var(--eebc-primary);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 600;
+            font-size: 0.9rem;
+            color: var(--eebc-white);
+        }
+        
+        /* Page Header */
+        .page-header {
+            margin-bottom: 2rem;
+        }
+        
+        .page-title {
+            font-size: 1.5rem;
+            font-weight: 700;
+            letter-spacing: -0.5px;
+            color: var(--eebc-black);
+        }
+        
+        .page-subtitle {
+            color: var(--eebc-gray-500);
+            font-size: 0.875rem;
+        }
+        
+        /* Notifications Badge */
+        .notification-badge {
+            position: absolute;
+            top: -5px;
+            right: -5px;
+            background: var(--eebc-danger);
+            color: white;
+            font-size: 0.65rem;
+            font-weight: 700;
+            padding: 0.2rem 0.4rem;
+            border-radius: 10px;
+            min-width: 18px;
+            text-align: center;
+        }
+        
+        /* Dropdown */
+        .dropdown-menu {
+            background: var(--eebc-white);
+            border: 1px solid var(--eebc-gray-200);
+            border-radius: 12px;
+            box-shadow: 0 10px 40px rgba(11, 15, 25, 0.12);
+            padding: 0.5rem;
+        }
+        
+        .dropdown-item {
+            border-radius: 8px;
+            padding: 0.6rem 1rem;
+            font-weight: 500;
+            color: var(--eebc-gray-700);
+        }
+        
+        .dropdown-item:hover {
+            background: var(--eebc-gray-100);
+            color: var(--eebc-primary);
+        }
+        
+        /* HTMX Loading */
+        .htmx-request {
+            opacity: 0.5;
+            pointer-events: none;
+        }
+        
+        /* Scrollbar */
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        
+        ::-webkit-scrollbar-track {
+            background: var(--eebc-gray-100);
+        }
+        
+        ::-webkit-scrollbar-thumb {
+            background: var(--eebc-gray-300);
+            border-radius: 3px;
+        }
+        
+        ::-webkit-scrollbar-thumb:hover {
+            background: var(--eebc-primary);
+        }
+        
+        /* Responsive */
+        @media (max-width: 991.98px) {
+            .sidebar {
+                transform: translateX(-100%);
+            }
+            
+            .sidebar.show {
+                transform: translateX(0);
+            }
+            
+            .main-content {
+                margin-left: 0;
+            }
+        }
+        
+        /* Animations */
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .fade-in {
+            animation: fadeIn 0.3s ease forwards;
+        }
+        
+        .card, .stat-card {
+            animation: fadeIn 0.4s ease forwards;
+        }
+        
+        /* Quick Links */
+        .quick-link {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 1.5rem;
+            background: var(--eebc-white);
+            border: 1px solid var(--eebc-gray-200);
+            border-radius: 16px;
+            text-decoration: none;
+            color: var(--eebc-black);
+            transition: all 0.3s ease;
+        }
+        
+        .quick-link:hover {
+            background: var(--eebc-gray-50);
+            border-color: var(--eebc-primary);
+            transform: translateY(-4px);
+            color: var(--eebc-primary);
+            box-shadow: 0 10px 30px rgba(10, 54, 255, 0.1);
+        }
+        
+        .quick-link i {
+            font-size: 2rem;
+            margin-bottom: 0.75rem;
+            color: var(--eebc-primary);
+        }
+        
+        .quick-link span {
+            font-weight: 600;
+            font-size: 0.875rem;
+        }
+        
+        /* User Button in Top Bar */
+        .user-btn {
+            background: var(--eebc-gray-100);
+            border: 1px solid var(--eebc-gray-200);
+            color: var(--eebc-gray-700);
+            font-weight: 500;
+        }
+        
+        .user-btn:hover {
+            background: var(--eebc-gray-200);
+            border-color: var(--eebc-gray-300);
+            color: var(--eebc-black);
+        }
+    </style>
+    
+    {% block extra_css %}{% endblock %}
+</head>
+<body>
+    <!-- Sidebar -->
+    <nav class="sidebar" id="sidebar">
+        <div class="sidebar-brand">
+            <h4><i class="bi bi-book-half me-2"></i>EEBC</h4>
+            <small>Système de Gestion</small>
+        </div>
+        
+        <!-- Scrollable Sidebar Content -->
+        <div class="sidebar-content">
+            <div class="nav-section">
+                <div class="nav-section-title">Principal</div>
+                <nav class="nav flex-column">
+                    <a class="nav-link {% if request.resolver_match.url_name == 'home' %}active{% endif %}" href="{% url 'dashboard:home' %}">
+                        <i class="bi bi-grid-1x2-fill"></i>
+                        <span>Tableau de bord</span>
+                    </a>
+                    <a class="nav-link {% if 'events' in request.path %}active{% endif %}" href="{% url 'events:calendar' %}">
+                        <i class="bi bi-calendar3"></i>
+                        <span>Calendrier</span>
+                    </a>
+                </nav>
+            </div>
+            
+            <div class="nav-section">
+                <div class="nav-section-title">Club Biblique</div>
+                <nav class="nav flex-column">
+                    <a class="nav-link {% if request.path == '/bibleclub/' %}active{% endif %}" href="{% url 'bibleclub:home' %}">
+                        <i class="bi bi-mortarboard-fill"></i>
+                        <span>Vue d'ensemble</span>
+                    </a>
+                    <a class="nav-link {% if 'children' in request.path %}active{% endif %}" href="{% url 'bibleclub:children_list' %}">
+                        <i class="bi bi-people-fill"></i>
+                        <span>Enfants</span>
+                    </a>
+                    <a class="nav-link {% if 'classes' in request.path %}active{% endif %}" href="{% url 'bibleclub:class_list' %}">
+                        <i class="bi bi-collection-fill"></i>
+                        <span>Classes</span>
+                    </a>
+                    <a class="nav-link {% if 'sessions' in request.path %}active{% endif %}" href="{% url 'bibleclub:session_list' %}">
+                        <i class="bi bi-clipboard-check-fill"></i>
+                        <span>Sessions & Appels</span>
+                    </a>
+                </nav>
+            </div>
+            
+            <div class="nav-section">
+                <div class="nav-section-title">Gestion</div>
+                <nav class="nav flex-column">
+                    <a class="nav-link {% if 'members' in request.path %}active{% endif %}" href="{% url 'members:list' %}">
+                        <i class="bi bi-person-badge-fill"></i>
+                        <span>Membres</span>
+                    </a>
+                    <a class="nav-link {% if 'groups' in request.path %}active{% endif %}" href="{% url 'groups:list' %}">
+                        <i class="bi bi-diagram-3-fill"></i>
+                        <span>Groupes</span>
+                    </a>
+                    <a class="nav-link {% if 'departments' in request.path %}active{% endif %}" href="{% url 'departments:list' %}">
+                        <i class="bi bi-building"></i>
+                        <span>Départements</span>
+                    </a>
+                    <a class="nav-link {% if 'campaigns' in request.path %}active{% endif %}" href="{% url 'campaigns:list' %}">
+                        <i class="bi bi-graph-up-arrow"></i>
+                        <span>Campagnes</span>
+                    </a>
+                </nav>
+            </div>
+            
+            <div class="nav-section">
+                <div class="nav-section-title">Ressources</div>
+                <nav class="nav flex-column">
+                    <a class="nav-link {% if 'transport' in request.path %}active{% endif %}" href="{% url 'transport:drivers' %}">
+                        <i class="bi bi-truck"></i>
+                        <span>Transport</span>
+                    </a>
+                    <a class="nav-link {% if 'inventory' in request.path %}active{% endif %}" href="{% url 'inventory:list' %}">
+                        <i class="bi bi-box-seam-fill"></i>
+                        <span>Inventaire</span>
+                    </a>
+                </nav>
+            </div>
+        </div>
+    </nav>
+    
+    <!-- Main Content -->
+    <main class="main-content">
+        <!-- Top Bar -->
+        <div class="top-bar d-flex justify-content-between align-items-center">
+            <div class="d-flex align-items-center gap-3">
+                <button class="btn btn-outline-secondary d-lg-none" type="button" onclick="document.getElementById('sidebar').classList.toggle('show')">
+                    <i class="bi bi-list"></i>
+                </button>
+                <div>
+                    <h5 class="mb-0 fw-bold" style="color: var(--eebc-black);">{% block page_title %}Tableau de bord{% endblock %}</h5>
+                    <small class="text-muted">{% block page_subtitle %}{% endblock %}</small>
+                </div>
+            </div>
+            
+            <div class="d-flex align-items-center gap-3">
+                <!-- Notifications -->
+                <div class="position-relative">
+                    <a href="{% url 'communication:notifications' %}" class="btn btn-outline-secondary position-relative">
+                        <i class="bi bi-bell"></i>
+                    </a>
+                </div>
+                
+                <!-- User Menu -->
+                <div class="dropdown">
+                    <button class="btn user-btn dropdown-toggle d-flex align-items-center gap-2" type="button" data-bs-toggle="dropdown">
+                        <div class="avatar" style="width: 34px; height: 34px; font-size: 0.75rem;">
+                            {{ request.user.first_name|slice:":1"|upper }}{{ request.user.last_name|slice:":1"|upper }}
+                        </div>
+                        <span class="d-none d-md-inline">{{ request.user.get_full_name|default:request.user.username }}</span>
+                    </button>
+                    <ul class="dropdown-menu dropdown-menu-end">
+                        <li><a class="dropdown-item" href="{% url 'accounts:profile' %}">
+                            <i class="bi bi-person me-2"></i>Mon profil
+                        </a></li>
+                        <li><a class="dropdown-item" href="{% url 'admin:index' %}">
+                            <i class="bi bi-gear me-2"></i>Administration
+                        </a></li>
+                        <li><hr class="dropdown-divider"></li>
+                        <li><a class="dropdown-item text-danger" href="{% url 'accounts:logout' %}">
+                            <i class="bi bi-box-arrow-right me-2"></i>Déconnexion
+                        </a></li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Content -->
+        <div class="p-4">
+            <!-- Messages -->
+            {% if messages %}
+            <div class="mb-4">
+                {% for message in messages %}
+                <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                    <i class="bi bi-{% if message.tags == 'success' %}check-circle{% elif message.tags == 'warning' %}exclamation-triangle{% elif message.tags == 'error' %}x-circle{% else %}info-circle{% endif %} me-2"></i>
+                    {{ message }}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+                {% endfor %}
+            </div>
+            {% endif %}
+            
+            {% block content %}{% endblock %}
+        </div>
+    </main>
+    
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <!-- HTMX Config -->
+    <script>
+        document.body.addEventListener('htmx:configRequest', (event) => {
+            event.detail.headers['X-CSRFToken'] = '{{ csrf_token }}';
+        });
+    </script>
+    
+    {% block extra_js %}{% endblock %}
+</body>
+</html>

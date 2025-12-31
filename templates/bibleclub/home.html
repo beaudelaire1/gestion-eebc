@@ -1,0 +1,197 @@
+{% extends 'base.html' %}
+{% load humanize %}
+
+{% block title %}Club Biblique - EEBC{% endblock %}
+{% block page_title %}Club Biblique{% endblock %}
+{% block page_subtitle %}Gestion des enfants, classes et présences{% endblock %}
+
+{% block content %}
+<!-- Stats -->
+<div class="row g-4 mb-4">
+    <div class="col-md-4">
+        <div class="stat-card">
+            <div class="d-flex justify-content-between align-items-start mb-3">
+                <div class="stat-icon">
+                    <i class="bi bi-people-fill"></i>
+                </div>
+            </div>
+            <div class="stat-value">{{ stats.total_children }}</div>
+            <div class="stat-label">Enfants inscrits</div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="stat-card">
+            <div class="d-flex justify-content-between align-items-start mb-3">
+                <div class="stat-icon" style="background: linear-gradient(135deg, #10b981 0%, #059669 100%);">
+                    <i class="bi bi-collection-fill"></i>
+                </div>
+            </div>
+            <div class="stat-value">{{ stats.total_classes }}</div>
+            <div class="stat-label">Classes actives</div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="stat-card">
+            <div class="d-flex justify-content-between align-items-start mb-3">
+                <div class="stat-icon" style="background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);">
+                    <i class="bi bi-person-hearts"></i>
+                </div>
+            </div>
+            <div class="stat-value">{{ stats.total_monitors }}</div>
+            <div class="stat-label">Moniteurs</div>
+        </div>
+    </div>
+</div>
+
+<!-- Quick Actions -->
+<div class="row g-4 mb-4">
+    <div class="col-6 col-md-3">
+        <a href="{% url 'bibleclub:create_session' %}" class="quick-link">
+            <i class="bi bi-plus-circle"></i>
+            <span>Nouvelle session</span>
+        </a>
+    </div>
+    <div class="col-6 col-md-3">
+        <a href="{% url 'bibleclub:children_list' %}" class="quick-link">
+            <i class="bi bi-people"></i>
+            <span>Liste des enfants</span>
+        </a>
+    </div>
+    <div class="col-6 col-md-3">
+        <a href="{% url 'bibleclub:class_list' %}" class="quick-link">
+            <i class="bi bi-collection"></i>
+            <span>Classes</span>
+        </a>
+    </div>
+    <div class="col-6 col-md-3">
+        <a href="{% url 'admin:bibleclub_child_add' %}" class="quick-link">
+            <i class="bi bi-person-plus"></i>
+            <span>Inscrire un enfant</span>
+        </a>
+    </div>
+</div>
+
+<div class="row g-4">
+    <!-- Current/Next Session -->
+    <div class="col-lg-6">
+        <div class="card h-100">
+            <div class="card-header">
+                <h6 class="card-title">
+                    <i class="bi bi-calendar-check me-2"></i>
+                    {% if current_session %}Session en cours{% else %}Prochaine session{% endif %}
+                </h6>
+            </div>
+            <div class="card-body">
+                {% if current_session %}
+                <div class="alert alert-success">
+                    <i class="bi bi-broadcast me-2"></i>
+                    <strong>Session active aujourd'hui !</strong>
+                </div>
+                <a href="{% url 'bibleclub:session_detail' current_session.pk %}" class="btn btn-primary btn-lg w-100">
+                    <i class="bi bi-clipboard-check me-2"></i>
+                    Accéder à l'appel
+                </a>
+                {% else %}
+                <div class="text-center py-4">
+                    <div class="mb-3">
+                        <i class="bi bi-calendar-event fs-1 text-muted"></i>
+                    </div>
+                    <h5>Prochain dimanche</h5>
+                    <p class="text-muted">{{ next_sunday|date:"l d F Y" }}</p>
+                    <a href="{% url 'bibleclub:create_session' %}" class="btn btn-primary">
+                        <i class="bi bi-plus-lg me-2"></i>
+                        Créer la session
+                    </a>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    
+    <!-- Recent Sessions -->
+    <div class="col-lg-6">
+        <div class="card h-100">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h6 class="card-title"><i class="bi bi-clock-history me-2"></i>Sessions récentes</h6>
+                <a href="{% url 'bibleclub:session_list' %}" class="btn btn-sm btn-outline-light">Voir tout</a>
+            </div>
+            <div class="card-body">
+                {% if recent_sessions %}
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0">
+                        <thead>
+                            <tr>
+                                <th>Date</th>
+                                <th>Thème</th>
+                                <th>Statut</th>
+                                <th></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for session in recent_sessions %}
+                            <tr>
+                                <td>{{ session.date|date:"d/m/Y" }}</td>
+                                <td>{{ session.theme|default:"-"|truncatewords:5 }}</td>
+                                <td>
+                                    {% if session.is_cancelled %}
+                                    <span class="badge bg-danger">Annulée</span>
+                                    {% else %}
+                                    <span class="badge bg-success">OK</span>
+                                    {% endif %}
+                                </td>
+                                <td class="text-end">
+                                    <a href="{% url 'bibleclub:session_detail' session.pk %}" class="btn btn-sm btn-outline-light">
+                                        <i class="bi bi-eye"></i>
+                                    </a>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div class="text-center py-4 text-muted">
+                    <p>Aucune session enregistrée</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    
+    <!-- Classes Overview -->
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h6 class="card-title"><i class="bi bi-grid me-2"></i>Aperçu des classes</h6>
+                <a href="{% url 'bibleclub:class_list' %}" class="btn btn-sm btn-outline-light">Gérer</a>
+            </div>
+            <div class="card-body">
+                <div class="row g-3">
+                    {% for bible_class in classes %}
+                    <div class="col-md-6 col-lg-4">
+                        <div class="p-3 rounded" style="background: var(--eebc-surface-light); border-left: 4px solid {{ bible_class.age_group.color }};">
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <h6 class="mb-0">{{ bible_class }}</h6>
+                                <span class="badge" style="background: {{ bible_class.age_group.color }};">
+                                    {{ bible_class.children_count_anno }} enfants
+                                </span>
+                            </div>
+                            <small class="text-muted">
+                                {{ bible_class.age_group.min_age }}-{{ bible_class.age_group.max_age }} ans
+                                {% if bible_class.room %} • Salle {{ bible_class.room }}{% endif %}
+                            </small>
+                        </div>
+                    </div>
+                    {% empty %}
+                    <div class="col-12 text-center py-4 text-muted">
+                        <p>Aucune classe configurée</p>
+                        <a href="{% url 'admin:bibleclub_bibleclass_add' %}" class="btn btn-primary">Créer une classe</a>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+

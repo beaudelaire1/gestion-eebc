@@ -1,0 +1,126 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ member.full_name }} - EEBC{% endblock %}
+{% block page_title %}{{ member.full_name }}{% endblock %}
+{% block page_subtitle %}Fiche membre{% endblock %}
+
+{% block content %}
+<div class="row g-4">
+    <div class="col-lg-4">
+        <div class="card mb-4">
+            <div class="card-body text-center">
+                <div class="avatar mx-auto mb-3" style="width: 100px; height: 100px; font-size: 2.5rem;">
+                    {{ member.first_name|slice:":1"|upper }}{{ member.last_name|slice:":1"|upper }}
+                </div>
+                <h4 class="mb-1">{{ member.first_name }} {{ member.last_name }}</h4>
+                {% if member.age %}<p class="text-muted mb-3">{{ member.age }} ans</p>{% endif %}
+                
+                <span class="badge bg-{% if member.status == 'actif' %}success{% elif member.status == 'inactif' %}secondary{% else %}info{% endif %} mb-3">
+                    {{ member.get_status_display }}
+                </span>
+                
+                <div class="d-flex justify-content-center gap-2 mt-3">
+                    <a href="{% url 'admin:members_member_change' member.pk %}" class="btn btn-primary">
+                        <i class="bi bi-pencil me-2"></i>Modifier
+                    </a>
+                </div>
+            </div>
+        </div>
+        
+        <div class="card">
+            <div class="card-header">
+                <h6 class="card-title"><i class="bi bi-telephone me-2"></i>Contact</h6>
+            </div>
+            <div class="card-body">
+                {% if member.phone %}
+                <p class="mb-2"><i class="bi bi-phone me-2 text-muted"></i>{{ member.phone }}</p>
+                {% endif %}
+                {% if member.email %}
+                <p class="mb-2"><i class="bi bi-envelope me-2 text-muted"></i>{{ member.email }}</p>
+                {% endif %}
+                {% if member.address %}
+                <p class="mb-0"><i class="bi bi-geo-alt me-2 text-muted"></i>{{ member.address }}, {{ member.city }} {{ member.postal_code }}</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-lg-8">
+        <div class="card mb-4">
+            <div class="card-header">
+                <h6 class="card-title"><i class="bi bi-person me-2"></i>Informations personnelles</h6>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <div class="text-muted small">Genre</div>
+                        <div>{{ member.get_gender_display|default:"Non renseigné" }}</div>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <div class="text-muted small">Date de naissance</div>
+                        <div>{{ member.date_of_birth|date:"d/m/Y"|default:"Non renseignée" }}</div>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <div class="text-muted small">Situation familiale</div>
+                        <div>{{ member.get_marital_status_display|default:"Non renseignée" }}</div>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <div class="text-muted small">Profession</div>
+                        <div>{{ member.profession|default:"Non renseignée" }}</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="card mb-4">
+            <div class="card-header">
+                <h6 class="card-title"><i class="bi bi-church me-2"></i>Informations église</h6>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <div class="text-muted small">Date d'arrivée</div>
+                        <div>{{ member.date_joined|date:"d/m/Y"|default:"Non renseignée" }}</div>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <div class="text-muted small">Baptisé(e)</div>
+                        <div>
+                            {% if member.is_baptized %}
+                            <span class="text-success"><i class="bi bi-check-circle me-1"></i>Oui</span>
+                            {% if member.baptism_date %} - {{ member.baptism_date|date:"d/m/Y" }}{% endif %}
+                            {% else %}
+                            <span class="text-muted">Non</span>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        {% if member.departments.exists %}
+        <div class="card mb-4">
+            <div class="card-header">
+                <h6 class="card-title"><i class="bi bi-building me-2"></i>Départements</h6>
+            </div>
+            <div class="card-body">
+                {% for dept in member.departments.all %}
+                <span class="badge bg-secondary me-1 mb-1">{{ dept.name }}</span>
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+        
+        {% if member.notes %}
+        <div class="card">
+            <div class="card-header">
+                <h6 class="card-title"><i class="bi bi-sticky me-2"></i>Notes</h6>
+            </div>
+            <div class="card-body">
+                <p class="mb-0">{{ member.notes }}</p>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
+

@@ -1,0 +1,87 @@
+{% extends 'base.html' %}
+
+{% block title %}Groupes - EEBC{% endblock %}
+{% block page_title %}Groupes{% endblock %}
+{% block page_subtitle %}Jeunesse, Chorale, The Ray of Sunshine...{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div class="btn-group">
+        <a href="{% url 'groups:list' %}" class="btn {% if not request.GET.type %}btn-primary{% else %}btn-outline-light{% endif %}">
+            Tous
+        </a>
+        {% for value, label in group_types %}
+        <a href="?type={{ value }}" class="btn {% if request.GET.type == value %}btn-primary{% else %}btn-outline-light{% endif %}">
+            {{ label }}
+        </a>
+        {% endfor %}
+    </div>
+    <a href="{% url 'admin:groups_group_add' %}" class="btn btn-primary">
+        <i class="bi bi-plus-lg me-2"></i>Nouveau groupe
+    </a>
+</div>
+
+<div class="row g-4">
+    {% for group in groups %}
+    <div class="col-md-6 col-lg-4">
+        <div class="card h-100" style="border-top: 4px solid {{ group.color }};">
+            {% if group.image %}
+            <img src="{{ group.image.url }}" class="card-img-top" alt="{{ group.name }}" style="height: 150px; object-fit: cover;">
+            {% endif %}
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-start mb-3">
+                    <div>
+                        <h5 class="mb-1">{{ group.name }}</h5>
+                        <span class="badge bg-secondary">{{ group.get_group_type_display }}</span>
+                    </div>
+                    <span class="badge bg-primary">{{ group.member_count }} membres</span>
+                </div>
+                
+                {% if group.description %}
+                <p class="text-muted mb-3">{{ group.description|truncatewords:20 }}</p>
+                {% endif %}
+                
+                {% if group.meeting_day %}
+                <p class="mb-2">
+                    <i class="bi bi-calendar-week me-2 text-muted"></i>
+                    {{ group.get_meeting_day_display }}
+                    {% if group.meeting_time %} à {{ group.meeting_time|time:"H:i" }}{% endif %}
+                </p>
+                {% endif %}
+                
+                {% if group.meeting_location %}
+                <p class="mb-0">
+                    <i class="bi bi-geo-alt me-2 text-muted"></i>
+                    {{ group.meeting_location }}
+                </p>
+                {% endif %}
+            </div>
+            <div class="card-footer">
+                <div class="d-flex gap-2">
+                    <a href="{% url 'groups:detail' group.pk %}" class="btn btn-outline-light btn-sm flex-grow-1">
+                        <i class="bi bi-eye me-1"></i>Détails
+                    </a>
+                    <a href="{% url 'admin:groups_group_change' group.pk %}" class="btn btn-outline-light btn-sm">
+                        <i class="bi bi-pencil"></i>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% empty %}
+    <div class="col-12">
+        <div class="card">
+            <div class="card-body text-center py-5 text-muted">
+                <i class="bi bi-diagram-3 fs-1 d-block mb-3"></i>
+                Aucun groupe trouvé
+                <br><br>
+                <a href="{% url 'admin:groups_group_add' %}" class="btn btn-primary">
+                    Créer un groupe
+                </a>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+{% endblock %}
+

@@ -1,0 +1,165 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ child.full_name }} - Club Biblique{% endblock %}
+{% block page_title %}{{ child.full_name }}{% endblock %}
+{% block page_subtitle %}Fiche enfant{% endblock %}
+
+{% block content %}
+<div class="row g-4">
+    <!-- Profile Card -->
+    <div class="col-lg-4">
+        <div class="card mb-4">
+            <div class="card-body text-center">
+                <div class="avatar mx-auto mb-3" style="width: 100px; height: 100px; font-size: 2.5rem; background: {% if child.gender == 'M' %}linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%){% else %}linear-gradient(135deg, #ec4899 0%, #be185d 100%){% endif %};">
+                    {{ child.first_name|slice:":1"|upper }}{{ child.last_name|slice:":1"|upper }}
+                </div>
+                <h4 class="mb-1">{{ child.first_name }} {{ child.last_name }}</h4>
+                <p class="text-muted mb-3">{{ child.age }} ans</p>
+                
+                {% if child.bible_class %}
+                <span class="badge mb-3" style="background: {{ child.bible_class.age_group.color }};">
+                    {{ child.bible_class }}
+                </span>
+                {% endif %}
+                
+                <div class="d-flex justify-content-center gap-2 mt-3">
+                    <a href="{% url 'admin:bibleclub_child_change' child.pk %}" class="btn btn-primary">
+                        <i class="bi bi-pencil me-2"></i>Modifier
+                    </a>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Attendance Stats -->
+        <div class="card">
+            <div class="card-header">
+                <h6 class="card-title"><i class="bi bi-bar-chart me-2"></i>Statistiques</h6>
+            </div>
+            <div class="card-body">
+                <div class="text-center mb-4">
+                    <div class="stat-value" style="font-size: 3rem; color: {% if attendance_rate >= 80 %}var(--eebc-success){% elif attendance_rate >= 50 %}var(--eebc-warning){% else %}var(--eebc-danger){% endif %};">
+                        {{ attendance_rate|floatformat:0 }}%
+                    </div>
+                    <div class="text-muted">Taux de présence</div>
+                </div>
+                <div class="progress mb-3" style="height: 10px;">
+                    <div class="progress-bar bg-{% if attendance_rate >= 80 %}success{% elif attendance_rate >= 50 %}warning{% else %}danger{% endif %}" 
+                         style="width: {{ attendance_rate }}%;"></div>
+                </div>
+                <div class="text-center text-muted">
+                    {{ present_count }} présences sur {{ total_sessions }} sessions
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Details -->
+    <div class="col-lg-8">
+        <!-- Parents -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <h6 class="card-title"><i class="bi bi-people me-2"></i>Contacts Parents</h6>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <h6 class="text-muted mb-2">Parent 1</h6>
+                        <p class="mb-1"><strong>{{ child.parent1_name }}</strong></p>
+                        <p class="mb-1"><i class="bi bi-telephone me-2 text-muted"></i>{{ child.parent1_phone }}</p>
+                        {% if child.parent1_email %}
+                        <p class="mb-0"><i class="bi bi-envelope me-2 text-muted"></i>{{ child.parent1_email }}</p>
+                        {% endif %}
+                    </div>
+                    {% if child.parent2_name %}
+                    <div class="col-md-6">
+                        <h6 class="text-muted mb-2">Parent 2</h6>
+                        <p class="mb-1"><strong>{{ child.parent2_name }}</strong></p>
+                        <p class="mb-0"><i class="bi bi-telephone me-2 text-muted"></i>{{ child.parent2_phone }}</p>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        
+        <!-- Medical Info -->
+        {% if child.allergies or child.medical_notes %}
+        <div class="card mb-4">
+            <div class="card-header">
+                <h6 class="card-title"><i class="bi bi-heart-pulse me-2"></i>Informations médicales</h6>
+            </div>
+            <div class="card-body">
+                {% if child.allergies %}
+                <div class="alert alert-warning">
+                    <strong><i class="bi bi-exclamation-triangle me-2"></i>Allergies:</strong>
+                    {{ child.allergies }}
+                </div>
+                {% endif %}
+                {% if child.medical_notes %}
+                <p class="mb-0">{{ child.medical_notes }}</p>
+                {% endif %}
+            </div>
+        </div>
+        {% endif %}
+        
+        <!-- Transport -->
+        {% if child.needs_transport %}
+        <div class="card mb-4">
+            <div class="card-header">
+                <h6 class="card-title"><i class="bi bi-truck me-2"></i>Transport</h6>
+            </div>
+            <div class="card-body">
+                <p><strong>Adresse de ramassage:</strong></p>
+                <p class="mb-3">{{ child.pickup_address }}</p>
+                {% if child.assigned_driver %}
+                <p class="mb-0">
+                    <strong>Chauffeur assigné:</strong> {{ child.assigned_driver }}
+                </p>
+                {% endif %}
+            </div>
+        </div>
+        {% endif %}
+        
+        <!-- Recent Attendances -->
+        <div class="card">
+            <div class="card-header">
+                <h6 class="card-title"><i class="bi bi-calendar-check me-2"></i>Dernières présences</h6>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0">
+                        <thead>
+                            <tr>
+                                <th>Date</th>
+                                <th>Statut</th>
+                                <th>Arrivée</th>
+                                <th>Notes</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for attendance in attendances %}
+                            <tr>
+                                <td>{{ attendance.session.date|date:"d/m/Y" }}</td>
+                                <td>
+                                    <span class="badge bg-{% if attendance.status == 'present' %}success{% elif attendance.status == 'late' %}warning{% elif attendance.status == 'excused' %}info{% else %}danger{% endif %}">
+                                        {{ attendance.get_status_display }}
+                                    </span>
+                                </td>
+                                <td>{{ attendance.check_in_time|time:"H:i"|default:"-" }}</td>
+                                <td>{{ attendance.notes|truncatewords:10|default:"-" }}</td>
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="4" class="text-center py-4 text-muted">
+                                    Aucune présence enregistrée
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+

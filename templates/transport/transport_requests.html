@@ -1,0 +1,65 @@
+{% extends 'base.html' %}
+
+{% block title %}Demandes de transport - EEBC{% endblock %}
+{% block page_title %}Demandes de transport{% endblock %}
+{% block page_subtitle %}Gestion des demandes de transport{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-end mb-4">
+    <a href="{% url 'admin:transport_transportrequest_add' %}" class="btn btn-primary">
+        <i class="bi bi-plus-lg me-2"></i>Nouvelle demande
+    </a>
+</div>
+
+<div class="card">
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover mb-0">
+                <thead>
+                    <tr>
+                        <th>Demandeur</th>
+                        <th>Date</th>
+                        <th>Heure</th>
+                        <th>Passagers</th>
+                        <th>Chauffeur</th>
+                        <th>Statut</th>
+                        <th class="text-end">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for request in requests %}
+                    <tr>
+                        <td>
+                            <div class="fw-semibold">{{ request.requester_name }}</div>
+                            <small class="text-muted">{{ request.requester_phone }}</small>
+                        </td>
+                        <td>{{ request.event_date|date:"d/m/Y" }}</td>
+                        <td>{{ request.event_time|time:"H:i" }}</td>
+                        <td>{{ request.passengers_count }}</td>
+                        <td>{{ request.driver|default:"-" }}</td>
+                        <td>
+                            <span class="badge bg-{% if request.status == 'confirmed' %}success{% elif request.status == 'pending' %}warning{% elif request.status == 'completed' %}info{% else %}danger{% endif %}">
+                                {{ request.get_status_display }}
+                            </span>
+                        </td>
+                        <td class="text-end">
+                            <a href="{% url 'admin:transport_transportrequest_change' request.pk %}" class="btn btn-sm btn-outline-light">
+                                <i class="bi bi-pencil"></i>
+                            </a>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="7" class="text-center py-5 text-muted">
+                            <i class="bi bi-truck fs-1 d-block mb-3"></i>
+                            Aucune demande de transport
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}
+

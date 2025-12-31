@@ -1,0 +1,90 @@
+{% extends 'base.html' %}
+
+{% block title %}Événements - EEBC{% endblock %}
+{% block page_title %}Événements{% endblock %}
+{% block page_subtitle %}Tous les événements à venir{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <!-- Filters -->
+        <div class="btn-group">
+            <a href="{% url 'events:list' %}" class="btn {% if not request.GET.category %}btn-primary{% else %}btn-outline-light{% endif %}">
+                Tous
+            </a>
+            {% for category in categories %}
+            <a href="?category={{ category.pk }}" class="btn {% if request.GET.category == category.pk|stringformat:'s' %}btn-primary{% else %}btn-outline-light{% endif %}">
+                {{ category.name }}
+            </a>
+            {% endfor %}
+        </div>
+    </div>
+    <a href="{% url 'admin:events_event_add' %}" class="btn btn-primary">
+        <i class="bi bi-plus-lg me-2"></i>Nouvel événement
+    </a>
+</div>
+
+<div class="row g-4">
+    {% for event in events %}
+    <div class="col-md-6 col-lg-4">
+        <div class="card h-100">
+            <div class="card-header" style="border-left: 4px solid {{ event.color }};">
+                <div class="d-flex justify-content-between align-items-start">
+                    <div>
+                        <h6 class="mb-1">{{ event.title }}</h6>
+                        {% if event.category %}
+                        <span class="badge" style="background: {{ event.category.color }};">{{ event.category.name }}</span>
+                        {% endif %}
+                    </div>
+                    {% if event.is_today %}
+                    <span class="badge bg-success">Aujourd'hui</span>
+                    {% endif %}
+                </div>
+            </div>
+            <div class="card-body">
+                <p class="mb-3">
+                    <i class="bi bi-calendar me-2 text-muted"></i>
+                    {{ event.start_date|date:"l d F Y" }}
+                    {% if event.start_time %}
+                    <br>
+                    <i class="bi bi-clock me-2 text-muted"></i>
+                    {{ event.start_time|time:"H:i" }}
+                    {% if event.end_time %} - {{ event.end_time|time:"H:i" }}{% endif %}
+                    {% endif %}
+                </p>
+                
+                {% if event.location %}
+                <p class="mb-3">
+                    <i class="bi bi-geo-alt me-2 text-muted"></i>
+                    {{ event.location }}
+                </p>
+                {% endif %}
+                
+                {% if event.description %}
+                <p class="text-muted mb-0">{{ event.description|truncatewords:20 }}</p>
+                {% endif %}
+            </div>
+            <div class="card-footer">
+                <a href="{% url 'events:detail' event.pk %}" class="btn btn-outline-light btn-sm">
+                    <i class="bi bi-eye me-1"></i>Détails
+                </a>
+            </div>
+        </div>
+    </div>
+    {% empty %}
+    <div class="col-12">
+        <div class="card">
+            <div class="card-body text-center py-5 text-muted">
+                <i class="bi bi-calendar-x fs-1 d-block mb-3"></i>
+                Aucun événement à venir
+                <br><br>
+                <a href="{% url 'admin:events_event_add' %}" class="btn btn-primary">
+                    Créer un événement
+                </a>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+{% endblock %}
+

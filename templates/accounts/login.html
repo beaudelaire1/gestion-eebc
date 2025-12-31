@@ -1,0 +1,243 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Connexion - Gestion EEBC</title>
+    
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" rel="stylesheet">
+    
+    <style>
+        :root {
+            --eebc-primary: #0a1628;
+            --eebc-secondary: #1a2d4a;
+            --eebc-accent: #3b82f6;
+            --eebc-surface: #0f2035;
+            --eebc-border: #2d4a6f;
+            --eebc-text: #f8fafc;
+            --eebc-text-muted: #94a3b8;
+        }
+        
+        * { font-family: 'Outfit', sans-serif; }
+        
+        body {
+            background: linear-gradient(135deg, var(--eebc-primary) 0%, var(--eebc-secondary) 50%, #0d1f3c 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--eebc-text);
+            overflow: hidden;
+        }
+        
+        /* Animated Background */
+        .bg-pattern {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 0;
+            opacity: 0.1;
+            background-image: 
+                radial-gradient(circle at 25% 25%, var(--eebc-accent) 2px, transparent 2px),
+                radial-gradient(circle at 75% 75%, var(--eebc-accent) 1px, transparent 1px);
+            background-size: 50px 50px;
+            animation: patternMove 20s linear infinite;
+        }
+        
+        @keyframes patternMove {
+            0% { transform: translate(0, 0); }
+            100% { transform: translate(50px, 50px); }
+        }
+        
+        .login-container {
+            position: relative;
+            z-index: 1;
+            width: 100%;
+            max-width: 440px;
+            padding: 1rem;
+        }
+        
+        .login-card {
+            background: rgba(15, 32, 53, 0.9);
+            backdrop-filter: blur(20px);
+            border: 1px solid var(--eebc-border);
+            border-radius: 24px;
+            padding: 3rem;
+            box-shadow: 0 25px 50px rgba(0, 0, 0, 0.5);
+        }
+        
+        .login-header {
+            text-align: center;
+            margin-bottom: 2.5rem;
+        }
+        
+        .login-logo {
+            width: 80px;
+            height: 80px;
+            background: linear-gradient(135deg, var(--eebc-accent) 0%, #1d4ed8 100%);
+            border-radius: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 1.5rem;
+            font-size: 2.5rem;
+            box-shadow: 0 10px 30px rgba(59, 130, 246, 0.4);
+        }
+        
+        .login-title {
+            font-size: 1.75rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+            letter-spacing: -0.5px;
+        }
+        
+        .login-subtitle {
+            color: var(--eebc-text-muted);
+            font-size: 0.9rem;
+        }
+        
+        .form-floating {
+            margin-bottom: 1rem;
+        }
+        
+        .form-floating > .form-control {
+            background: var(--eebc-surface);
+            border: 2px solid var(--eebc-border);
+            color: var(--eebc-text);
+            border-radius: 12px;
+            height: 60px;
+            padding: 1rem 1.25rem;
+        }
+        
+        .form-floating > label {
+            color: var(--eebc-text-muted);
+            padding: 1rem 1.25rem;
+        }
+        
+        .form-floating > .form-control:focus {
+            background: var(--eebc-surface);
+            border-color: var(--eebc-accent);
+            color: var(--eebc-text);
+            box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.2);
+        }
+        
+        .form-floating > .form-control:focus ~ label,
+        .form-floating > .form-control:not(:placeholder-shown) ~ label {
+            color: var(--eebc-accent);
+        }
+        
+        .btn-login {
+            width: 100%;
+            padding: 1rem;
+            font-size: 1rem;
+            font-weight: 600;
+            background: linear-gradient(135deg, var(--eebc-accent) 0%, #1d4ed8 100%);
+            border: none;
+            border-radius: 12px;
+            color: white;
+            transition: all 0.3s ease;
+        }
+        
+        .btn-login:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 30px rgba(59, 130, 246, 0.4);
+        }
+        
+        .error-message {
+            background: rgba(239, 68, 68, 0.15);
+            border: 1px solid rgba(239, 68, 68, 0.3);
+            border-radius: 12px;
+            padding: 1rem;
+            color: #f87171;
+            margin-bottom: 1.5rem;
+            text-align: center;
+        }
+        
+        .floating-shape {
+            position: fixed;
+            border-radius: 50%;
+            opacity: 0.1;
+            z-index: 0;
+        }
+        
+        .shape-1 {
+            width: 300px;
+            height: 300px;
+            background: var(--eebc-accent);
+            top: -100px;
+            right: -100px;
+            animation: float 6s ease-in-out infinite;
+        }
+        
+        .shape-2 {
+            width: 200px;
+            height: 200px;
+            background: #8b5cf6;
+            bottom: -50px;
+            left: -50px;
+            animation: float 8s ease-in-out infinite reverse;
+        }
+        
+        @keyframes float {
+            0%, 100% { transform: translate(0, 0); }
+            50% { transform: translate(20px, 20px); }
+        }
+    </style>
+</head>
+<body>
+    <div class="bg-pattern"></div>
+    <div class="floating-shape shape-1"></div>
+    <div class="floating-shape shape-2"></div>
+    
+    <div class="login-container">
+        <div class="login-card">
+            <div class="login-header">
+                <div class="login-logo">
+                    <i class="bi bi-book-half"></i>
+                </div>
+                <h1 class="login-title">Gestion EEBC</h1>
+                <p class="login-subtitle">Connectez-vous pour accéder au système</p>
+            </div>
+            
+            {% if form.errors %}
+            <div class="error-message">
+                <i class="bi bi-exclamation-circle me-2"></i>
+                Identifiants incorrects. Veuillez réessayer.
+            </div>
+            {% endif %}
+            
+            <form method="post">
+                {% csrf_token %}
+                
+                <div class="form-floating">
+                    <input type="text" class="form-control" id="username" name="username" placeholder="Nom d'utilisateur" required autofocus>
+                    <label for="username"><i class="bi bi-person me-2"></i>Nom d'utilisateur</label>
+                </div>
+                
+                <div class="form-floating mb-4">
+                    <input type="password" class="form-control" id="password" name="password" placeholder="Mot de passe" required>
+                    <label for="password"><i class="bi bi-lock me-2"></i>Mot de passe</label>
+                </div>
+                
+                <button type="submit" class="btn btn-login">
+                    <i class="bi bi-box-arrow-in-right me-2"></i>
+                    Se connecter
+                </button>
+            </form>
+            
+            <div class="text-center mt-4">
+                <small class="text-muted">
+                    © 2024 EEBC - Tous droits réservés
+                </small>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
+

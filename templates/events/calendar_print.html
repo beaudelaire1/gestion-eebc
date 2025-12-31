@@ -1,0 +1,402 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ title }} - EEBC Guyane</title>
+    
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" rel="stylesheet">
+    
+    <style>
+        :root {
+            --eebc-primary: #0A36FF;
+            --eebc-black: #0B0F19;
+            --eebc-white: #FFFFFF;
+            --eebc-gray-100: #F8FAFC;
+            --eebc-gray-200: #E2E8F0;
+            --eebc-gray-300: #CBD5E1;
+            --eebc-gray-600: #475569;
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Poppins', sans-serif;
+            color: var(--eebc-black);
+            background: var(--eebc-white);
+            padding: 20px;
+        }
+        
+        /* En-tête */
+        .print-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+            padding-bottom: 20px;
+            border-bottom: 3px solid var(--eebc-primary);
+        }
+        
+        .print-header h1 {
+            color: var(--eebc-primary);
+            font-size: 1.8rem;
+            font-weight: 700;
+        }
+        
+        .print-header .subtitle {
+            color: var(--eebc-gray-600);
+            font-size: 0.9rem;
+        }
+        
+        .church-name {
+            text-align: right;
+        }
+        
+        .church-name strong {
+            color: var(--eebc-primary);
+            font-size: 1.2rem;
+        }
+        
+        .church-name span {
+            display: block;
+            color: var(--eebc-gray-600);
+            font-size: 0.8rem;
+        }
+        
+        /* Navigation (masquée à l'impression) */
+        .nav-controls {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+        
+        .nav-controls a, .nav-controls button {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 10px 20px;
+            border-radius: 8px;
+            text-decoration: none;
+            font-weight: 500;
+            font-size: 0.9rem;
+            border: none;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .btn-primary {
+            background: var(--eebc-primary);
+            color: var(--eebc-white);
+        }
+        
+        .btn-primary:hover {
+            background: #0830DD;
+        }
+        
+        .btn-outline {
+            background: var(--eebc-white);
+            color: var(--eebc-black);
+            border: 1px solid var(--eebc-gray-300);
+        }
+        
+        .btn-outline:hover {
+            background: var(--eebc-gray-100);
+            border-color: var(--eebc-primary);
+        }
+        
+        .btn-outline.active {
+            background: var(--eebc-primary);
+            color: var(--eebc-white);
+            border-color: var(--eebc-primary);
+        }
+        
+        .btn-success {
+            background: #10b981;
+            color: var(--eebc-white);
+        }
+        
+        .btn-success:hover {
+            background: #059669;
+        }
+        
+        /* Calendrier */
+        .calendar-month {
+            margin-bottom: 40px;
+            page-break-inside: avoid;
+        }
+        
+        .month-title {
+            background: var(--eebc-primary);
+            color: var(--eebc-white);
+            padding: 15px 20px;
+            font-size: 1.3rem;
+            font-weight: 600;
+            text-align: center;
+            border-radius: 10px 10px 0 0;
+        }
+        
+        .calendar-table {
+            width: 100%;
+            border-collapse: collapse;
+            table-layout: fixed;
+        }
+        
+        .calendar-table th {
+            background: var(--eebc-gray-100);
+            padding: 12px;
+            text-align: center;
+            font-weight: 600;
+            font-size: 0.85rem;
+            color: var(--eebc-gray-600);
+            border: 1px solid var(--eebc-gray-200);
+        }
+        
+        .calendar-table td {
+            border: 1px solid var(--eebc-gray-200);
+            vertical-align: top;
+            height: 100px;
+            padding: 8px;
+            background: var(--eebc-white);
+        }
+        
+        .calendar-table td.empty {
+            background: var(--eebc-gray-100);
+        }
+        
+        .day-number {
+            font-weight: 600;
+            font-size: 1rem;
+            color: var(--eebc-black);
+            margin-bottom: 5px;
+        }
+        
+        .day-events {
+            display: flex;
+            flex-direction: column;
+            gap: 3px;
+        }
+        
+        .event-item {
+            font-size: 0.7rem;
+            padding: 3px 6px;
+            border-radius: 4px;
+            color: var(--eebc-white);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        
+        .event-time {
+            font-weight: 600;
+        }
+        
+        /* Légende */
+        .legend {
+            margin-top: 30px;
+            padding: 20px;
+            background: var(--eebc-gray-100);
+            border-radius: 10px;
+        }
+        
+        .legend h3 {
+            font-size: 1rem;
+            margin-bottom: 15px;
+            color: var(--eebc-black);
+        }
+        
+        .legend-items {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 20px;
+        }
+        
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .legend-color {
+            width: 20px;
+            height: 20px;
+            border-radius: 4px;
+        }
+        
+        .legend-label {
+            font-size: 0.85rem;
+            color: var(--eebc-gray-600);
+        }
+        
+        /* Footer */
+        .print-footer {
+            margin-top: 40px;
+            padding-top: 20px;
+            border-top: 1px solid var(--eebc-gray-200);
+            text-align: center;
+            color: var(--eebc-gray-600);
+            font-size: 0.8rem;
+        }
+        
+        /* Styles d'impression */
+        @media print {
+            body {
+                padding: 0;
+                -webkit-print-color-adjust: exact !important;
+                print-color-adjust: exact !important;
+            }
+            
+            .nav-controls {
+                display: none !important;
+            }
+            
+            .calendar-month {
+                page-break-inside: avoid;
+            }
+            
+            .month-title {
+                background: var(--eebc-primary) !important;
+                color: var(--eebc-white) !important;
+            }
+            
+            .event-item {
+                -webkit-print-color-adjust: exact !important;
+                print-color-adjust: exact !important;
+            }
+            
+            .legend {
+                background: var(--eebc-gray-100) !important;
+            }
+            
+            .legend-color {
+                -webkit-print-color-adjust: exact !important;
+                print-color-adjust: exact !important;
+            }
+        }
+        
+        @page {
+            size: A4 landscape;
+            margin: 15mm;
+        }
+    </style>
+</head>
+<body>
+    <!-- En-tête -->
+    <div class="print-header">
+        <div>
+            <h1><i class="bi bi-calendar3"></i> {{ title }}</h1>
+            <div class="subtitle">Calendrier des événements de l'église</div>
+        </div>
+        <div class="church-name">
+            <strong>EEBC Guyane</strong>
+            <span>Église Évangélique Baptiste</span>
+            <span>Cayenne, Guyane française</span>
+        </div>
+    </div>
+    
+    <!-- Navigation (masquée à l'impression) -->
+    <div class="nav-controls">
+        <div>
+            <a href="{% url 'events:calendar_print' %}?mode={{ mode }}&year={{ prev_year }}&month={{ prev_month }}" class="btn-outline">
+                <i class="bi bi-chevron-left"></i> Précédent
+            </a>
+            <a href="{% url 'events:calendar_print' %}?mode={{ mode }}&year={{ next_year }}&month={{ next_month }}" class="btn-outline">
+                Suivant <i class="bi bi-chevron-right"></i>
+            </a>
+        </div>
+        
+        <div>
+            <a href="{% url 'events:calendar_print' %}?mode=month&year={{ year }}&month={{ month }}" 
+               class="btn-outline {% if mode == 'month' %}active{% endif %}">
+                <i class="bi bi-calendar-month"></i> Mois
+            </a>
+            <a href="{% url 'events:calendar_print' %}?mode=quarter&year={{ year }}&month={{ month }}" 
+               class="btn-outline {% if mode == 'quarter' %}active{% endif %}">
+                <i class="bi bi-calendar3"></i> Trimestre
+            </a>
+        </div>
+        
+        <div>
+            <button onclick="window.print()" class="btn-success">
+                <i class="bi bi-printer"></i> Imprimer
+            </button>
+            <a href="{% url 'events:calendar' %}" class="btn-outline">
+                <i class="bi bi-arrow-left"></i> Retour au calendrier
+            </a>
+        </div>
+    </div>
+    
+    <!-- Calendriers -->
+    {% for cal in calendars %}
+    <div class="calendar-month">
+        <div class="month-title">
+            {{ cal.month_name }} {{ cal.year }}
+        </div>
+        <table class="calendar-table">
+            <thead>
+                <tr>
+                    {% for jour in jours_semaine %}
+                    <th>{{ jour }}</th>
+                    {% endfor %}
+                </tr>
+            </thead>
+            <tbody>
+                {% for week in cal.weeks %}
+                <tr>
+                    {% for day_data in week %}
+                    {% if day_data.day %}
+                    <td>
+                        <div class="day-number">{{ day_data.day }}</div>
+                        <div class="day-events">
+                            {% for event in day_data.events %}
+                            <div class="event-item" style="background-color: {{ event.color }};">
+                                {% if event.start_time %}
+                                <span class="event-time">{{ event.start_time|time:"H:i" }}</span>
+                                {% endif %}
+                                {{ event.title|truncatechars:20 }}
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </td>
+                    {% else %}
+                    <td class="empty"></td>
+                    {% endif %}
+                    {% endfor %}
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% endfor %}
+    
+    <!-- Légende -->
+    <div class="legend">
+        <h3><i class="bi bi-palette"></i> Légende des catégories</h3>
+        <div class="legend-items">
+            {% for category in categories %}
+            <div class="legend-item">
+                <div class="legend-color" style="background-color: {{ category.color }};"></div>
+                <span class="legend-label">{{ category.name }}</span>
+            </div>
+            {% empty %}
+            <span class="legend-label">Aucune catégorie définie</span>
+            {% endfor %}
+        </div>
+    </div>
+    
+    <!-- Footer -->
+    <div class="print-footer">
+        <p>Document généré le {% now "d/m/Y à H:i" %} - Gestion EEBC Guyane</p>
+    </div>
+</body>
+</html>
+
