@@ -1,120 +1,555 @@
 {% extends 'base.html' %}
 
-{% block title %}Membres - EEBC{% endblock %}
-{% block page_title %}Membres{% endblock %}
-{% block page_subtitle %}Gestion des membres de l'église{% endblock %}
+{% block title %}Membres - EEBC Guyane{% endblock %}
+{% block page_title %}Membres de l'église{% endblock %}
+{% block page_subtitle %}Gestion des {{ total_count }} membres{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* Stats Bar */
+    .stats-bar {
+        display: grid;
+        grid-template-columns: repeat(5, 1fr);
+        gap: 1rem;
+        margin-bottom: 2rem;
+    }
+    
+    @media (max-width: 1200px) {
+        .stats-bar { grid-template-columns: repeat(3, 1fr); }
+    }
+    
+    @media (max-width: 768px) {
+        .stats-bar { grid-template-columns: repeat(2, 1fr); }
+    }
+    
+    @media (max-width: 576px) {
+        .stats-bar { grid-template-columns: 1fr; }
+    }
+    
+    .mini-stat {
+        background: var(--eebc-white);
+        border-radius: 16px;
+        padding: 1.25rem;
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        box-shadow: 0 4px 15px rgba(11, 15, 25, 0.04);
+        border: 1px solid var(--eebc-gray-100);
+        transition: all 0.3s ease;
+    }
+    
+    .mini-stat:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 10px 30px rgba(10, 54, 255, 0.1);
+    }
+    
+    .mini-stat-icon {
+        width: 50px;
+        height: 50px;
+        border-radius: 14px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.25rem;
+        color: white;
+    }
+    
+    .mini-stat-value {
+        font-size: 1.75rem;
+        font-weight: 800;
+        font-family: 'JetBrains Mono', monospace;
+        color: var(--eebc-black);
+        line-height: 1;
+    }
+    
+    .mini-stat-label {
+        font-size: 0.85rem;
+        color: var(--eebc-gray-500);
+        font-weight: 500;
+    }
+    
+    /* Filter Card */
+    .filter-card {
+        background: var(--eebc-white);
+        border-radius: 20px;
+        padding: 1.5rem;
+        margin-bottom: 2rem;
+        box-shadow: 0 10px 40px rgba(11, 15, 25, 0.06);
+        border: none;
+    }
+    
+    /* View Toggle */
+    .view-toggle {
+        display: flex;
+        gap: 0.5rem;
+    }
+    
+    .view-toggle .btn {
+        width: 42px;
+        height: 42px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 12px;
+        border: 1px solid var(--eebc-gray-200);
+        background: var(--eebc-white);
+        color: var(--eebc-gray-500);
+        transition: all 0.2s ease;
+    }
+    
+    .view-toggle .btn.active,
+    .view-toggle .btn:hover {
+        background: var(--eebc-primary);
+        border-color: var(--eebc-primary);
+        color: white;
+    }
+    
+    /* Members Grid */
+    .members-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+        gap: 1.5rem;
+    }
+    
+    /* Member Card */
+    .member-card {
+        background: var(--eebc-white);
+        border-radius: 24px;
+        overflow: hidden;
+        box-shadow: 0 10px 40px rgba(11, 15, 25, 0.06);
+        transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        border: 2px solid transparent;
+    }
+    
+    .member-card:hover {
+        transform: translateY(-8px);
+        box-shadow: 0 25px 60px rgba(10, 54, 255, 0.15);
+        border-color: var(--eebc-primary);
+    }
+    
+    /* Zone photo */
+    .member-photo-zone {
+        position: relative;
+        height: 180px;
+        overflow: hidden;
+    }
+    
+    .member-photo-zone.homme {
+        background: linear-gradient(135deg, #0A36FF 0%, #1d4ed8 100%);
+    }
+    
+    .member-photo-zone.femme {
+        background: linear-gradient(135deg, #8b5cf6 0%, #6d28d9 100%);
+    }
+    
+    .member-photo-zone img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
+    
+    .member-photo-zone .initials {
+        width: 100%;
+        height: 100%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 4rem;
+        font-weight: 800;
+        color: rgba(255, 255, 255, 0.9);
+        text-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+    }
+    
+    /* Badge statut */
+    .status-badge-card {
+        position: absolute;
+        top: 12px;
+        right: 12px;
+        padding: 0.4rem 0.8rem;
+        border-radius: 20px;
+        font-size: 0.75rem;
+        font-weight: 600;
+        backdrop-filter: blur(8px);
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+    }
+    
+    .status-badge-card.actif {
+        background: rgba(34, 197, 94, 0.9);
+        color: white;
+    }
+    
+    .status-badge-card.inactif {
+        background: rgba(107, 114, 128, 0.9);
+        color: white;
+    }
+    
+    .status-badge-card.visiteur {
+        background: rgba(59, 130, 246, 0.9);
+        color: white;
+    }
+    
+    .status-badge-card.en_attente {
+        background: rgba(245, 158, 11, 0.9);
+        color: white;
+    }
+    
+    /* Badge baptême */
+    .baptism-badge {
+        position: absolute;
+        top: 12px;
+        left: 12px;
+        width: 36px;
+        height: 36px;
+        border-radius: 50%;
+        background: rgba(255, 255, 255, 0.95);
+        backdrop-filter: blur(8px);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1rem;
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+    }
+    
+    .baptism-badge.baptized { color: #22c55e; }
+    .baptism-badge.not-baptized { color: #9ca3af; }
+    
+    /* Corps de la carte */
+    .member-card-body {
+        padding: 1.25rem;
+    }
+    
+    .member-name {
+        font-size: 1.1rem;
+        font-weight: 700;
+        color: var(--eebc-black);
+        margin-bottom: 0.25rem;
+    }
+    
+    .member-age {
+        font-size: 0.85rem;
+        color: var(--eebc-gray-500);
+        margin-bottom: 0.75rem;
+    }
+    
+    .member-info {
+        padding: 0.85rem;
+        background: var(--eebc-gray-50);
+        border-radius: 12px;
+        margin-bottom: 1rem;
+    }
+    
+    .member-info-item {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        font-size: 0.8rem;
+        color: var(--eebc-gray-600);
+    }
+    
+    .member-info-item i {
+        color: var(--eebc-primary);
+        width: 14px;
+    }
+    
+    .member-card-actions {
+        display: flex;
+        gap: 0.5rem;
+    }
+    
+    .member-card-actions .btn {
+        flex: 1;
+        padding: 0.6rem;
+        border-radius: 10px;
+        font-weight: 600;
+        font-size: 0.8rem;
+    }
+    
+    /* Table View */
+    .table-view .table th {
+        background: var(--eebc-gray-50);
+        border-bottom: 2px solid var(--eebc-gray-200);
+        font-weight: 700;
+        text-transform: uppercase;
+        font-size: 0.75rem;
+        letter-spacing: 0.5px;
+        color: var(--eebc-gray-500);
+        padding: 1rem 1.25rem;
+    }
+    
+    .table-view .table td {
+        padding: 1rem 1.25rem;
+        vertical-align: middle;
+    }
+    
+    .table-view .table tbody tr:hover {
+        background: var(--eebc-gray-50);
+    }
+    
+    /* Empty State */
+    .empty-state {
+        text-align: center;
+        padding: 4rem 2rem;
+    }
+    
+    .empty-state-icon {
+        width: 100px;
+        height: 100px;
+        border-radius: 50%;
+        background: var(--eebc-gray-100);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin: 0 auto 1.5rem;
+        font-size: 2.5rem;
+        color: var(--eebc-gray-400);
+    }
+</style>
+{% endblock %}
 
 {% block content %}
-<div class="card mb-4">
-    <div class="card-body">
-        <form method="get" class="row g-3 align-items-end">
-            <div class="col-md-6">
-                <label class="form-label">Rechercher</label>
-                <div class="input-group">
-                    <span class="input-group-text" style="background: var(--eebc-surface); border-color: var(--eebc-border);">
-                        <i class="bi bi-search"></i>
-                    </span>
-                    <input type="text" class="form-control" name="search" value="{{ search }}" 
-                           placeholder="Nom, email ou téléphone...">
-                </div>
-            </div>
-            <div class="col-md-4">
-                <label class="form-label">Statut</label>
-                <select class="form-select" name="status">
-                    <option value="">Tous les statuts</option>
-                    {% for value, label in status_choices %}
-                    <option value="{{ value }}" {% if status == value %}selected{% endif %}>{{ label }}</option>
-                    {% endfor %}
-                </select>
-            </div>
-            <div class="col-md-2">
-                <button type="submit" class="btn btn-primary w-100">Filtrer</button>
-            </div>
-        </form>
+<!-- Stats Bar -->
+<div class="stats-bar">
+    <div class="mini-stat">
+        <div class="mini-stat-icon" style="background: linear-gradient(135deg, #0A36FF 0%, #3b82f6 100%);">
+            <i class="bi bi-people-fill"></i>
+        </div>
+        <div>
+            <div class="mini-stat-value">{{ total_count }}</div>
+            <div class="mini-stat-label">Total membres</div>
+        </div>
+    </div>
+    <div class="mini-stat">
+        <div class="mini-stat-icon" style="background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%);">
+            <i class="bi bi-person-check-fill"></i>
+        </div>
+        <div>
+            <div class="mini-stat-value">{{ actifs_count }}</div>
+            <div class="mini-stat-label">Actifs</div>
+        </div>
+    </div>
+    <div class="mini-stat">
+        <div class="mini-stat-icon" style="background: linear-gradient(135deg, #8b5cf6 0%, #6d28d9 100%);">
+            <i class="bi bi-droplet-fill"></i>
+        </div>
+        <div>
+            <div class="mini-stat-value">{{ baptises_count }}</div>
+            <div class="mini-stat-label">Baptisés</div>
+        </div>
+    </div>
+    <div class="mini-stat">
+        <div class="mini-stat-icon" style="background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);">
+            <i class="bi bi-gender-male"></i>
+        </div>
+        <div>
+            <div class="mini-stat-value">{{ hommes_count }}</div>
+            <div class="mini-stat-label">Hommes</div>
+        </div>
+    </div>
+    <div class="mini-stat">
+        <div class="mini-stat-icon" style="background: linear-gradient(135deg, #ec4899 0%, #be185d 100%);">
+            <i class="bi bi-gender-female"></i>
+        </div>
+        <div>
+            <div class="mini-stat-value">{{ femmes_count }}</div>
+            <div class="mini-stat-label">Femmes</div>
+        </div>
     </div>
 </div>
 
-<div class="card">
-    <div class="card-header d-flex justify-content-between align-items-center">
-        <h6 class="card-title mb-0">{{ members.paginator.count }} membre(s)</h6>
-        <a href="{% url 'admin:members_member_add' %}" class="btn btn-primary btn-sm">
-            <i class="bi bi-plus-lg me-1"></i>Ajouter
-        </a>
+<!-- Filters -->
+<div class="filter-card">
+    <form method="get" class="row g-3 align-items-end">
+        <div class="col-md-5">
+            <label class="form-label fw-bold">Rechercher</label>
+            <div class="input-group">
+                <span class="input-group-text" style="border-radius: 12px 0 0 12px;">
+                    <i class="bi bi-search"></i>
+                </span>
+                <input type="text" class="form-control" name="search" value="{{ search }}" 
+                       placeholder="Nom, email ou téléphone..."
+                       style="border-radius: 0 12px 12px 0;"
+                       hx-get="{% url 'members:list' %}"
+                       hx-trigger="keyup changed delay:500ms"
+                       hx-target="#members-content"
+                       hx-include="[name='status']">
+            </div>
+        </div>
+        <div class="col-md-3">
+            <label class="form-label fw-bold">Statut</label>
+            <select class="form-select" name="status"
+                    hx-get="{% url 'members:list' %}"
+                    hx-trigger="change"
+                    hx-target="#members-content"
+                    hx-include="[name='search']">
+                <option value="">Tous les statuts</option>
+                {% for value, label in status_choices %}
+                <option value="{{ value }}" {% if status == value %}selected{% endif %}>{{ label }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="col-md-2">
+            <div class="view-toggle">
+                <button type="button" class="btn active" onclick="showGrid()" id="btn-grid">
+                    <i class="bi bi-grid-3x3-gap"></i>
+                </button>
+                <button type="button" class="btn" onclick="showTable()" id="btn-table">
+                    <i class="bi bi-list-ul"></i>
+                </button>
+            </div>
+        </div>
+        <div class="col-md-2">
+            <a href="{% url 'admin:members_member_add' %}" class="btn btn-primary w-100">
+                <i class="bi bi-plus-lg me-2"></i>Ajouter
+            </a>
+        </div>
+    </form>
+</div>
+
+<!-- Members Content -->
+<div id="members-content">
+    {% if members %}
+    <!-- Grid View -->
+    <div class="members-grid" id="grid-view">
+        {% for member in members %}
+        <div class="member-card">
+            <!-- Zone photo -->
+            <div class="member-photo-zone {% if member.gender == 'M' %}homme{% else %}femme{% endif %}">
+                {% if member.photo %}
+                <img src="{{ member.photo.url }}" alt="{{ member.full_name }}">
+                {% else %}
+                <div class="initials">
+                    {{ member.first_name|slice:":1"|upper }}{{ member.last_name|slice:":1"|upper }}
+                </div>
+                {% endif %}
+                
+                <!-- Badge baptême -->
+                <div class="baptism-badge {% if member.is_baptized %}baptized{% else %}not-baptized{% endif %}">
+                    <i class="bi bi-{% if member.is_baptized %}droplet-fill{% else %}droplet{% endif %}"></i>
+                </div>
+                
+                <!-- Badge statut -->
+                <div class="status-badge-card {{ member.status }}">
+                    {{ member.get_status_display }}
+                </div>
+            </div>
+            
+            <!-- Infos -->
+            <div class="member-card-body">
+                <h5 class="member-name">{{ member.first_name }} {{ member.last_name }}</h5>
+                <p class="member-age">
+                    {% if member.age %}{{ member.age }} ans • {% endif %}
+                    {% if member.gender == 'M' %}Homme{% else %}Femme{% endif %}
+                    {% if member.city %} • {{ member.city }}{% endif %}
+                </p>
+                
+                <div class="member-info">
+                    {% if member.phone %}
+                    <div class="member-info-item">
+                        <i class="bi bi-telephone"></i>
+                        <span>{{ member.phone }}</span>
+                    </div>
+                    {% endif %}
+                    {% if member.email %}
+                    <div class="member-info-item mt-1">
+                        <i class="bi bi-envelope"></i>
+                        <span>{{ member.email|truncatechars:25 }}</span>
+                    </div>
+                    {% endif %}
+                    {% if member.profession %}
+                    <div class="member-info-item mt-1">
+                        <i class="bi bi-briefcase"></i>
+                        <span>{{ member.profession|truncatechars:25 }}</span>
+                    </div>
+                    {% endif %}
+                </div>
+                
+                <div class="member-card-actions">
+                    <a href="{% url 'members:detail' member.pk %}" class="btn btn-outline-secondary">
+                        <i class="bi bi-eye me-1"></i> Voir
+                    </a>
+                    <a href="{% url 'admin:members_member_change' member.pk %}" class="btn btn-primary">
+                        <i class="bi bi-pencil me-1"></i> Modifier
+                    </a>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
     </div>
-    <div class="card-body p-0">
-        <div class="table-responsive">
-            <table class="table table-hover mb-0">
-                <thead>
-                    <tr>
-                        <th>Nom</th>
-                        <th>Contact</th>
-                        <th>Ville</th>
-                        <th>Statut</th>
-                        <th>Baptisé</th>
-                        <th class="text-end">Actions</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for member in members %}
-                    <tr>
-                        <td>
-                            <div class="d-flex align-items-center">
-                                {% if member.photo %}
-                                <img src="{{ member.photo.url }}" alt="{{ member.full_name }}" 
-                                     class="me-3" style="width: 45px; height: 45px; border-radius: 50%; object-fit: cover; border: 2px solid var(--eebc-primary);">
+    
+    <!-- Table View (hidden by default) -->
+    <div class="card table-view" id="table-view" style="display: none;">
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover mb-0">
+                    <thead>
+                        <tr>
+                            <th>Membre</th>
+                            <th>Contact</th>
+                            <th>Ville</th>
+                            <th>Statut</th>
+                            <th>Baptisé</th>
+                            <th class="text-end">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for member in members %}
+                        <tr>
+                            <td>
+                                <div class="d-flex align-items-center">
+                                    {% if member.photo %}
+                                    <img src="{{ member.photo.url }}" alt="{{ member.full_name }}" 
+                                         class="me-3" style="width: 45px; height: 45px; border-radius: 12px; object-fit: cover;">
+                                    {% else %}
+                                    <div class="me-3" style="width: 45px; height: 45px; border-radius: 12px; 
+                                         background: {% if member.gender == 'M' %}linear-gradient(135deg, #0A36FF, #1d4ed8){% else %}linear-gradient(135deg, #8b5cf6, #6d28d9){% endif %};
+                                         display: flex; align-items: center; justify-content: center; color: white; font-weight: 700; font-size: 0.85rem;">
+                                        {{ member.first_name|slice:":1"|upper }}{{ member.last_name|slice:":1"|upper }}
+                                    </div>
+                                    {% endif %}
+                                    <div>
+                                        <div class="fw-semibold">{{ member.last_name }} {{ member.first_name }}</div>
+                                        {% if member.age %}<small class="text-muted">{{ member.age }} ans</small>{% endif %}
+                                    </div>
+                                </div>
+                            </td>
+                            <td>
+                                <div>{{ member.phone|default:"-" }}</div>
+                                <small class="text-muted">{{ member.email|default:"" }}</small>
+                            </td>
+                            <td>{{ member.city|default:"-" }}</td>
+                            <td>
+                                <span class="badge bg-{% if member.status == 'actif' %}success{% elif member.status == 'inactif' %}secondary{% elif member.status == 'visiteur' %}info{% else %}warning{% endif %}">
+                                    {{ member.get_status_display }}
+                                </span>
+                            </td>
+                            <td>
+                                {% if member.is_baptized %}
+                                <i class="bi bi-check-circle-fill text-success"></i>
                                 {% else %}
-                                <div class="avatar me-3" style="width: 45px; height: 45px; font-size: 0.85rem;">
-                                    {{ member.first_name|slice:":1"|upper }}{{ member.last_name|slice:":1"|upper }}
-                                </div>
+                                <i class="bi bi-x-circle text-muted"></i>
                                 {% endif %}
-                                <div>
-                                    <div class="fw-semibold">{{ member.last_name }} {{ member.first_name }}</div>
-                                    {% if member.age %}<small class="text-muted">{{ member.age }} ans</small>{% endif %}
-                                </div>
-                            </div>
-                        </td>
-                        <td>
-                            <div>{{ member.phone|default:"-" }}</div>
-                            <small class="text-muted">{{ member.email|default:"" }}</small>
-                        </td>
-                        <td>{{ member.city|default:"-" }}</td>
-                        <td>
-                            <span class="badge bg-{% if member.status == 'actif' %}success{% elif member.status == 'inactif' %}secondary{% elif member.status == 'visiteur' %}info{% else %}warning{% endif %}">
-                                {{ member.get_status_display }}
-                            </span>
-                        </td>
-                        <td>
-                            {% if member.is_baptized %}
-                            <i class="bi bi-check-circle text-success"></i>
-                            {% else %}
-                            <i class="bi bi-x-circle text-muted"></i>
-                            {% endif %}
-                        </td>
-                        <td class="text-end">
-                            <a href="{% url 'members:detail' member.pk %}" class="btn btn-sm btn-outline-light">
-                                <i class="bi bi-eye"></i>
-                            </a>
-                            <a href="{% url 'admin:members_member_change' member.pk %}" class="btn btn-sm btn-outline-light">
-                                <i class="bi bi-pencil"></i>
-                            </a>
-                        </td>
-                    </tr>
-                    {% empty %}
-                    <tr>
-                        <td colspan="6" class="text-center py-5 text-muted">
-                            <i class="bi bi-people fs-1 d-block mb-3"></i>
-                            Aucun membre trouvé
-                        </td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
+                            </td>
+                            <td class="text-end">
+                                <a href="{% url 'members:detail' member.pk %}" class="btn btn-sm btn-outline-secondary">
+                                    <i class="bi bi-eye"></i>
+                                </a>
+                                <a href="{% url 'admin:members_member_change' member.pk %}" class="btn btn-sm btn-outline-secondary">
+                                    <i class="bi bi-pencil"></i>
+                                </a>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
         </div>
     </div>
+    
+    <!-- Pagination -->
     {% if members.has_other_pages %}
-    <div class="card-footer">
+    <div class="d-flex justify-content-center mt-4">
         <nav>
-            <ul class="pagination justify-content-center mb-0">
+            <ul class="pagination mb-0">
                 {% if members.has_previous %}
                 <li class="page-item">
                     <a class="page-link" href="?page={{ members.previous_page_number }}&search={{ search }}&status={{ status }}">
@@ -138,6 +573,47 @@
         </nav>
     </div>
     {% endif %}
+    {% else %}
+    <div class="card">
+        <div class="empty-state">
+            <div class="empty-state-icon">
+                <i class="bi bi-people"></i>
+            </div>
+            <h5 class="mb-2">Aucun membre trouvé</h5>
+            <p class="text-muted mb-4">Commencez par ajouter des membres à l'église</p>
+            <a href="{% url 'admin:members_member_add' %}" class="btn btn-primary">
+                <i class="bi bi-plus-lg me-2"></i>Ajouter un membre
+            </a>
+        </div>
+    </div>
+    {% endif %}
 </div>
 {% endblock %}
 
+{% block extra_js %}
+<script>
+function showGrid() {
+    document.getElementById('grid-view').style.display = 'grid';
+    document.getElementById('table-view').style.display = 'none';
+    document.getElementById('btn-grid').classList.add('active');
+    document.getElementById('btn-table').classList.remove('active');
+    localStorage.setItem('membersView', 'grid');
+}
+
+function showTable() {
+    document.getElementById('grid-view').style.display = 'none';
+    document.getElementById('table-view').style.display = 'block';
+    document.getElementById('btn-grid').classList.remove('active');
+    document.getElementById('btn-table').classList.add('active');
+    localStorage.setItem('membersView', 'table');
+}
+
+// Restore view preference
+document.addEventListener('DOMContentLoaded', function() {
+    const savedView = localStorage.getItem('membersView');
+    if (savedView === 'table') {
+        showTable();
+    }
+});
+</script>
+{% endblock %}
