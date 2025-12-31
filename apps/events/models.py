@@ -34,6 +34,14 @@ class Event(models.Model):
         MONTHLY = 'monthly', 'Mensuel'
         YEARLY = 'yearly', 'Annuel'
     
+    class NotificationScope(models.TextChoices):
+        NONE = 'none', 'Aucune notification'
+        ORGANIZER = 'organizer', 'Organisateur uniquement'
+        GROUP = 'group', 'Groupe concerné'
+        DEPARTMENT = 'department', 'Département concerné'
+        MEMBERS = 'members', 'Tous les membres'
+        ALL = 'all', 'Tout le monde'
+    
     title = models.CharField(max_length=200, verbose_name="Titre")
     description = models.TextField(blank=True, verbose_name="Description")
     
@@ -74,6 +82,15 @@ class Event(models.Model):
         verbose_name="Visibilité"
     )
     
+    # Portée des notifications
+    notification_scope = models.CharField(
+        max_length=15,
+        choices=NotificationScope.choices,
+        default=NotificationScope.NONE,
+        verbose_name="Portée des notifications",
+        help_text="Qui doit recevoir les notifications pour cet événement"
+    )
+    
     # Responsable
     organizer = models.ForeignKey(
         settings.AUTH_USER_MODEL,
@@ -108,6 +125,7 @@ class Event(models.Model):
         verbose_name="Notification (jours avant)",
         help_text="Nombre de jours avant l'événement pour envoyer une notification"
     )
+    notification_sent = models.BooleanField(default=False, verbose_name="Notification envoyée")
     
     is_cancelled = models.BooleanField(default=False, verbose_name="Annulé")
     
@@ -132,6 +150,13 @@ class Event(models.Model):
         return "#0d6efd"
     
     @property
+    def icon(self):
+        """Icône de l'événement (basée sur la catégorie)."""
+        if self.category and self.category.icon:
+            return self.category.icon
+        return "bi-calendar-event"
+    
+    @property
     def is_upcoming(self):
         from datetime import date
         return self.start_date >= date.today() and not self.is_cancelled
@@ -140,6 +165,49 @@ class Event(models.Model):
     def is_today(self):
         from datetime import date
         return self.start_date == date.today()
+    
+    def get_notification_recipients(self):
+        """Retourne la liste des emails à notifier selon la portée."""
+        from apps.members.models import Member
+        from apps.accounts.models import User
+        
+        emails = set()
+        
+        if self.notification_scope == self.NotificationScope.NONE:
+            return []
+        
+        if self.notification_scope == self.NotificationScope.ORGANIZER:
+            if self.organizer and self.organizer.email:
+                emails.add(self.organizer.email)
+        
+        elif self.notification_scope == self.NotificationScope.GROUP:
+            if self.group:
+                for member in self.group.members.all():
+                    if member.email:
+                        emails.add(member.email)
+        
+        elif self.notification_scope == self.NotificationScope.DEPARTMENT:
+            if self.department:
+                for member in self.department.members.all():
+                    if member.email:
+                        emails.add(member.email)
+                if self.department.leader and self.department.leader.email:
+                    emails.add(self.department.leader.email)
+        
+        elif self.notification_scope == self.NotificationScope.MEMBERS:
+            for member in Member.objects.filter(status='actif'):
+                if member.email:
+                    emails.add(member.email)
+        
+        elif self.notification_scope == self.NotificationScope.ALL:
+            for user in User.objects.filter(is_active=True):
+                if user.email:
+                    emails.add(user.email)
+            for member in Member.objects.all():
+                if member.email:
+                    emails.add(member.email)
+        
+        return list(emails)
 
 
 class EventRegistration(models.Model):
@@ -167,4 +235,3 @@ class EventRegistration(models.Model):
     
     def __str__(self):
         return f"{self.user} - {self.event}"
-

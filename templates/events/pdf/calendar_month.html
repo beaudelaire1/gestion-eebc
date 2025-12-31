@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <title>{{ title }} - EEBC Guyane</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            font-size: 10pt;
+            color: #0B0F19;
+            background: #fff;
+        }
+        
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 0;
+            border-bottom: 3px solid #0A36FF;
+            margin-bottom: 15px;
+        }
+        
+        .header h1 {
+            font-size: 18pt;
+            color: #0A36FF;
+            font-weight: 700;
+        }
+        
+        .header .church-name {
+            font-size: 9pt;
+            color: #64748b;
+            text-align: right;
+        }
+        
+        {% if mode == 'quarter' %}
+        .calendars-container {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+        {% endif %}
+        
+        .month-section {
+            margin-bottom: 15px;
+        }
+        
+        .month-title {
+            font-size: 14pt;
+            font-weight: 700;
+            color: #0B0F19;
+            margin-bottom: 8px;
+            padding: 8px 12px;
+            background: linear-gradient(90deg, rgba(10, 54, 255, 0.1) 0%, transparent 100%);
+            border-left: 4px solid #0A36FF;
+        }
+        
+        .calendar-table {
+            width: 100%;
+            border-collapse: collapse;
+            table-layout: fixed;
+        }
+        
+        .calendar-table th {
+            background: linear-gradient(135deg, #0A36FF 0%, #3b82f6 100%);
+            color: white;
+            padding: 10px 5px;
+            text-align: center;
+            font-size: 9pt;
+            text-transform: uppercase;
+            font-weight: 600;
+            letter-spacing: 0.5px;
+        }
+        
+        .calendar-table td {
+            border: 1px solid #e2e8f0;
+            vertical-align: top;
+            padding: 5px;
+            height: {% if mode == 'quarter' %}70px{% else %}100px{% endif %};
+            background: #fff;
+        }
+        
+        .calendar-table td.empty {
+            background: #f8fafc;
+        }
+        
+        .calendar-table td.weekend {
+            background: #fafafa;
+        }
+        
+        .day-number {
+            font-weight: 700;
+            font-size: 11pt;
+            color: #0B0F19;
+            margin-bottom: 4px;
+        }
+        
+        .day-events {
+            font-size: 7pt;
+            line-height: 1.4;
+        }
+        
+        .event-item {
+            padding: 3px 5px;
+            margin-bottom: 2px;
+            border-radius: 3px;
+            color: white;
+            font-weight: 600;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        
+        .event-time {
+            font-weight: 400;
+            opacity: 0.9;
+        }
+        
+        {% if mode != 'quarter' %}
+        .event-details {
+            font-size: 6pt;
+            margin-top: 2px;
+            color: #64748b;
+            font-weight: 400;
+        }
+        {% endif %}
+        
+        .footer {
+            margin-top: 15px;
+            padding-top: 10px;
+            border-top: 1px solid #e2e8f0;
+            display: flex;
+            justify-content: space-between;
+            font-size: 8pt;
+            color: #94a3b8;
+        }
+        
+        .legend {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+        
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+        
+        .legend-color {
+            width: 10px;
+            height: 10px;
+            border-radius: 2px;
+        }
+        
+        .more-events {
+            font-size: 6pt;
+            color: #64748b;
+            font-style: italic;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div>
+            <h1>{{ title }}</h1>
+        </div>
+        <div class="church-name">
+            <strong>EEBC Guyane</strong><br>
+            Église Évangélique Baptiste de Cayenne
+        </div>
+    </div>
+    
+    <div class="calendars-container">
+        {% for cal in calendars %}
+        <div class="month-section">
+            {% if mode == 'quarter' %}
+            <div class="month-title">{{ cal.month_name }} {{ cal.year }}</div>
+            {% endif %}
+            
+            <table class="calendar-table">
+                <thead>
+                    <tr>
+                        {% for jour in jours_semaine %}
+                        <th>{{ jour }}</th>
+                        {% endfor %}
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for week in cal.weeks %}
+                    <tr>
+                        {% for day_data in week %}
+                        <td class="{% if not day_data.day %}empty{% endif %}{% if forloop.counter > 5 %} weekend{% endif %}">
+                            {% if day_data.day %}
+                            <div class="day-number">{{ day_data.day }}</div>
+                            <div class="day-events">
+                                {% for event in day_data.events|slice:":3" %}
+                                <div class="event-item" style="background: {{ event.color }};">
+                                    {% if event.start_time %}
+                                    <span class="event-time">{{ event.start_time|time:"H:i" }}</span>
+                                    {% endif %}
+                                    {{ event.title|truncatechars:20 }}
+                                </div>
+                                {% if mode != 'quarter' and event.location %}
+                                <div class="event-details">📍 {{ event.location|truncatechars:25 }}</div>
+                                {% endif %}
+                                {% endfor %}
+                                {% if day_data.events|length > 3 %}
+                                <div class="more-events">+{{ day_data.events|length|add:"-3" }} autre(s)</div>
+                                {% endif %}
+                            </div>
+                            {% endif %}
+                        </td>
+                        {% endfor %}
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% endfor %}
+    </div>
+    
+    <div class="footer">
+        <div class="legend">
+            {% for category in categories %}
+            <div class="legend-item">
+                <div class="legend-color" style="background: {{ category.color }};"></div>
+                <span>{{ category.name }}</span>
+            </div>
+            {% endfor %}
+        </div>
+        <div>
+            Imprimé le {% now "d/m/Y à H:i" %}
+        </div>
+    </div>
+</body>
+</html>
+

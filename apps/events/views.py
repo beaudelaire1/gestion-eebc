@@ -1,11 +1,11 @@
 from django.shortcuts import render, get_object_or_404
 from django.contrib.auth.decorators import login_required
-from django.http import JsonResponse
+from django.http import JsonResponse, HttpResponse
+from django.template.loader import render_to_string
 from django.db.models import Q
 from datetime import date, timedelta
-from calendar import monthrange, month_name
+from calendar import monthrange
 import calendar as cal_module
-import json
 
 from .models import Event, EventCategory
 
@@ -13,8 +13,36 @@ from .models import Event, EventCategory
 @login_required
 def calendar_view(request):
     """Vue calendrier avec FullCalendar."""
+    today = date.today()
+    
+    # Catégories
     categories = EventCategory.objects.all()
-    return render(request, 'events/calendar.html', {'categories': categories})
+    
+    # Stats
+    upcoming_count = Event.objects.filter(
+        start_date__gte=today,
+        is_cancelled=False
+    ).count()
+    
+    this_month_count = Event.objects.filter(
+        start_date__year=today.year,
+        start_date__month=today.month,
+        is_cancelled=False
+    ).count()
+    
+    # Prochains événements
+    upcoming_events = Event.objects.filter(
+        start_date__gte=today,
+        is_cancelled=False
+    ).select_related('category').order_by('start_date', 'start_time')[:5]
+    
+    context = {
+        'categories': categories,
+        'upcoming_count': upcoming_count,
+        'this_month_count': this_month_count,
+        'upcoming_events': upcoming_events,
+    }
+    return render(request, 'events/calendar.html', context)
 
 
 @login_required
@@ -33,11 +61,11 @@ def events_json(request):
     # Filtrer par visibilité
     if not request.user.is_authenticated:
         events = events.filter(visibility='public')
-    elif not request.user.is_admin:
+    elif not request.user.is_staff:
         events = events.filter(Q(visibility='public') | Q(visibility='members'))
     
     events_data = []
-    for event in events:
+    for event in events.select_related('category'):
         event_dict = {
             'id': event.id,
             'title': event.title,
@@ -115,12 +143,29 @@ def upcoming_events_partial(request):
 @login_required
 def calendar_print(request):
     """
-    Vue d'impression du calendrier par mois ou trimestre.
-    Paramètres GET:
-    - mode: 'month' ou 'quarter' (défaut: month)
-    - year: année (défaut: année courante)
-    - month: mois de départ (défaut: mois courant)
+    Vue d'impression HTML du calendrier par mois ou trimestre.
     """
+    today = date.today()
+    mode = request.GET.get('mode', 'month')
+    year = int(request.GET.get('year', today.year))
+    month = int(request.GET.get('month', today.month))
+    
+    context = _build_calendar_context(mode, year, month)
+    return render(request, 'events/calendar_print.html', context)
+
+
+@login_required
+def calendar_pdf(request):
+    """
+    Génère un PDF du calendrier avec WeasyPrint.
+    Modes: week, month, quarter
+    """
+    try:
+        from weasyprint import HTML, CSS
+    except ImportError:
+        # Si WeasyPrint n'est pas installé, rediriger vers la vue HTML
+        return calendar_print(request)
+    
     today = date.today()
     mode = request.GET.get('mode', 'month')
     year = int(request.GET.get('year', today.year))
@@ -133,33 +178,106 @@ def calendar_print(request):
         9: 'Septembre', 10: 'Octobre', 11: 'Novembre', 12: 'Décembre'
     }
     
-    # Jours de la semaine en français
     jours_semaine = ['Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam', 'Dim']
     
-    # Construire les données du calendrier
+    if mode == 'week':
+        # Semaine courante
+        week_start = today - timedelta(days=today.weekday())
+        week_end = week_start + timedelta(days=6)
+        
+        events = Event.objects.filter(
+            start_date__gte=week_start,
+            start_date__lte=week_end,
+            is_cancelled=False
+        ).select_related('category').order_by('start_date', 'start_time')
+        
+        # Construire les jours de la semaine
+        week_days = []
+        for i in range(7):
+            day_date = week_start + timedelta(days=i)
+            day_events = [e for e in events if e.start_date == day_date]
+            week_days.append({
+                'date': day_date,
+                'name': jours_semaine[i],
+                'events': day_events,
+            })
+        
+        context = {
+            'mode': 'week',
+            'week_days': week_days,
+            'week_start': week_start,
+            'week_end': week_end,
+            'title': f"Semaine du {week_start.day} au {week_end.day} {mois_fr[week_start.month]} {year}",
+        }
+        template = 'events/pdf/calendar_week.html'
+    else:
+        # Mois ou trimestre
+        context = _build_calendar_context(mode, year, month)
+        template = 'events/pdf/calendar_month.html'
+    
+    # Catégories pour la légende
+    context['categories'] = EventCategory.objects.all()
+    
+    # Générer le HTML
+    html_string = render_to_string(template, context)
+    
+    # CSS pour l'impression paysage
+    css = CSS(string='''
+        @page {
+            size: A4 landscape;
+            margin: 1cm;
+        }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+    ''')
+    
+    # Générer le PDF
+    html = HTML(string=html_string)
+    pdf = html.write_pdf(stylesheets=[css])
+    
+    # Nom du fichier
+    if mode == 'week':
+        filename = f"calendrier_semaine_{week_start.strftime('%Y%m%d')}.pdf"
+    elif mode == 'quarter':
+        filename = f"calendrier_trimestre_{year}_Q{(month-1)//3+1}.pdf"
+    else:
+        filename = f"calendrier_{mois_fr[month].lower()}_{year}.pdf"
+    
+    response = HttpResponse(pdf, content_type='application/pdf')
+    response['Content-Disposition'] = f'attachment; filename="{filename}"'
+    return response
+
+
+def _build_calendar_context(mode, year, month):
+    """Construit le contexte pour l'affichage du calendrier."""
+    
+    mois_fr = {
+        1: 'Janvier', 2: 'Février', 3: 'Mars', 4: 'Avril',
+        5: 'Mai', 6: 'Juin', 7: 'Juillet', 8: 'Août',
+        9: 'Septembre', 10: 'Octobre', 11: 'Novembre', 12: 'Décembre'
+    }
+    
+    jours_semaine = ['Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam', 'Dim']
+    
     calendars_data = []
     
     if mode == 'quarter':
-        # Trimestre : 3 mois à partir du mois sélectionné
         months_to_show = 3
     else:
-        # Mois unique
         months_to_show = 1
     
     for i in range(months_to_show):
         current_month = month + i
         current_year = year
         
-        # Gérer le passage d'année
         while current_month > 12:
             current_month -= 12
             current_year += 1
         
-        # Obtenir le calendrier du mois
-        cal = cal_module.Calendar(firstweekday=0)  # Lundi = 0
+        cal = cal_module.Calendar(firstweekday=0)
         month_days = cal.monthdayscalendar(current_year, current_month)
         
-        # Récupérer les événements du mois
         first_day = date(current_year, current_month, 1)
         last_day = date(current_year, current_month, monthrange(current_year, current_month)[1])
         
@@ -169,7 +287,6 @@ def calendar_print(request):
             is_cancelled=False
         ).select_related('category').order_by('start_date', 'start_time')
         
-        # Organiser les événements par jour
         events_by_day = {}
         for event in events:
             day = event.start_date.day
@@ -177,7 +294,6 @@ def calendar_print(request):
                 events_by_day[day] = []
             events_by_day[day].append(event)
         
-        # Construire les semaines avec les événements
         weeks = []
         for week in month_days:
             week_data = []
@@ -196,10 +312,9 @@ def calendar_print(request):
             'weeks': weeks,
         })
     
-    # Catégories pour la légende
     categories = EventCategory.objects.all()
     
-    # Calculer les mois précédent/suivant pour la navigation
+    # Navigation
     if mode == 'quarter':
         prev_month = month - 3
         next_month = month + 3
@@ -217,9 +332,7 @@ def calendar_print(request):
         next_month -= 12
         next_year += 1
     
-    # Titre du document
     if mode == 'quarter':
-        # Déterminer le trimestre
         if month <= 3:
             quarter_name = "1er trimestre"
         elif month <= 6:
@@ -232,7 +345,7 @@ def calendar_print(request):
     else:
         title = f"Calendrier {mois_fr[month]} {year}"
     
-    context = {
+    return {
         'calendars': calendars_data,
         'categories': categories,
         'jours_semaine': jours_semaine,
@@ -245,6 +358,3 @@ def calendar_print(request):
         'next_month': next_month,
         'next_year': next_year,
     }
-    
-    return render(request, 'events/calendar_print.html', context)
-
