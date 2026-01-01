@@ -125,10 +125,27 @@ class Donation(models.Model):
         return f"{donor} - {self.amount}€"
     
     def save(self, *args, **kwargs):
+        is_new = self.pk is None
+        old_amount = None
+        if not is_new:
+            old_donation = Donation.objects.filter(pk=self.pk).first()
+            if old_donation:
+                old_amount = old_donation.amount
+        
         super().save(*args, **kwargs)
-        # Mettre à jour le montant collecté de la campagne
-        self.campaign.collected_amount = self.campaign.donations.aggregate(
-            total=models.Sum('amount')
-        )['total'] or 0
-        self.campaign.save()
+        
+        # Mise à jour incrémentale du montant collecté
+        if is_new:
+            self.campaign.collected_amount += self.amount
+        elif old_amount is not None:
+            self.campaign.collected_amount += (self.amount - old_amount)
+        self.campaign.save(update_fields=['collected_amount'])
+    
+    def delete(self, *args, **kwargs):
+        campaign = self.campaign
+        amount = self.amount
+        super().delete(*args, **kwargs)
+        # Décrémenter le montant collecté
+        campaign.collected_amount = max(campaign.collected_amount - amount, 0)
+        campaign.save(update_fields=['collected_amount'])
 

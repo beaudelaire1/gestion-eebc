@@ -18,9 +18,20 @@ class AgeGroup(models.Model):
         verbose_name = "Tranche d'âge"
         verbose_name_plural = "Tranches d'âge"
         ordering = ['min_age']
+        constraints = [
+            models.CheckConstraint(
+                check=models.Q(min_age__lt=models.F('max_age')),
+                name='min_age_less_than_max_age'
+            )
+        ]
     
     def __str__(self):
         return f"{self.name} ({self.min_age}-{self.max_age} ans)"
+    
+    def clean(self):
+        from django.core.exceptions import ValidationError
+        if self.min_age and self.max_age and self.min_age >= self.max_age:
+            raise ValidationError("L'âge minimum doit être inférieur à l'âge maximum.")
 
 
 class BibleClass(models.Model):

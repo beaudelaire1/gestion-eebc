@@ -1,5 +1,5 @@
 # Gestion EEBC - Dependencies
-Django>=4.2,<5.0
+Django>=4.2
 django-htmx>=1.17.0
 python-dotenv>=1.0.0
 Pillow>=10.0.0

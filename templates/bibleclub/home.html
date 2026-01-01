@@ -3,9 +3,24 @@
 
 {% block title %}Club Biblique - EEBC{% endblock %}
 {% block page_title %}Club Biblique{% endblock %}
-{% block page_subtitle %}Gestion des enfants, classes et présences{% endblock %}
+{% block page_subtitle %}
+{% if monitor and not is_admin %}
+    Ma classe : {{ monitor.bible_class|default:"Non assigné" }}
+{% else %}
+    Gestion des enfants, classes et présences
+{% endif %}
+{% endblock %}
 
 {% block content %}
+{% if monitor and not monitor.bible_class and not is_admin %}
+<!-- Alerte moniteur sans classe -->
+<div class="alert alert-warning mb-4">
+    <i class="bi bi-exclamation-triangle me-2"></i>
+    <strong>Aucune classe assignée</strong>
+    <p class="mb-0 mt-2">Vous n'êtes pas encore assigné à une classe. Contactez un responsable du Club Biblique pour être affecté.</p>
+</div>
+{% endif %}
+
 <!-- Stats -->
 <div class="row g-4 mb-4">
     <div class="col-md-4">
@@ -16,7 +31,7 @@
                 </div>
             </div>
             <div class="stat-value">{{ stats.total_children }}</div>
-            <div class="stat-label">Enfants inscrits</div>
+            <div class="stat-label">{% if is_admin %}Enfants inscrits{% else %}Enfants dans ma classe{% endif %}</div>
         </div>
     </div>
     <div class="col-md-4">
@@ -27,7 +42,7 @@
                 </div>
             </div>
             <div class="stat-value">{{ stats.total_classes }}</div>
-            <div class="stat-label">Classes actives</div>
+            <div class="stat-label">{% if is_admin %}Classes actives{% else %}Ma classe{% endif %}</div>
         </div>
     </div>
     <div class="col-md-4">
@@ -38,25 +53,28 @@
                 </div>
             </div>
             <div class="stat-value">{{ stats.total_monitors }}</div>
-            <div class="stat-label">Moniteurs</div>
+            <div class="stat-label">{% if is_admin %}Moniteurs{% else %}Moniteurs de ma classe{% endif %}</div>
         </div>
     </div>
 </div>
 
 <!-- Quick Actions -->
 <div class="row g-4 mb-4">
+    {% if is_admin %}
     <div class="col-6 col-md-3">
         <a href="{% url 'bibleclub:create_session' %}" class="quick-link">
             <i class="bi bi-plus-circle"></i>
             <span>Nouvelle session</span>
         </a>
     </div>
+    {% endif %}
     <div class="col-6 col-md-3">
         <a href="{% url 'bibleclub:children_list' %}" class="quick-link">
             <i class="bi bi-people"></i>
-            <span>Liste des enfants</span>
+            <span>{% if is_admin %}Liste des enfants{% else %}Mes enfants{% endif %}</span>
         </a>
     </div>
+    {% if is_admin %}
     <div class="col-6 col-md-3">
         <a href="{% url 'bibleclub:class_list' %}" class="quick-link">
             <i class="bi bi-collection"></i>
@@ -69,6 +87,20 @@
             <span>Inscrire un enfant</span>
         </a>
     </div>
+    {% elif monitor and monitor.bible_class %}
+    <div class="col-6 col-md-3">
+        <a href="{% url 'bibleclub:class_detail' monitor.bible_class.pk %}" class="quick-link">
+            <i class="bi bi-collection"></i>
+            <span>Ma classe</span>
+        </a>
+    </div>
+    <div class="col-6 col-md-3">
+        <a href="{% url 'bibleclub:session_list' %}" class="quick-link">
+            <i class="bi bi-clipboard-check"></i>
+            <span>Faire l'appel</span>
+        </a>
+    </div>
+    {% endif %}
 </div>
 
 <div class="row g-4">
@@ -89,7 +121,7 @@
                 </div>
                 <a href="{% url 'bibleclub:session_detail' current_session.pk %}" class="btn btn-primary btn-lg w-100">
                     <i class="bi bi-clipboard-check me-2"></i>
-                    Accéder à l'appel
+                    {% if is_admin %}Accéder à l'appel{% else %}Faire l'appel de ma classe{% endif %}
                 </a>
                 {% else %}
                 <div class="text-center py-4">
@@ -98,10 +130,14 @@
                     </div>
                     <h5>Prochain dimanche</h5>
                     <p class="text-muted">{{ next_sunday|date:"l d F Y" }}</p>
+                    {% if is_admin %}
                     <a href="{% url 'bibleclub:create_session' %}" class="btn btn-primary">
                         <i class="bi bi-plus-lg me-2"></i>
                         Créer la session
                     </a>
+                    {% else %}
+                    <p class="text-muted small">La session sera créée par un responsable</p>
+                    {% endif %}
                 </div>
                 {% endif %}
             </div>
@@ -162,30 +198,41 @@
     <div class="col-12">
         <div class="card">
             <div class="card-header d-flex justify-content-between align-items-center">
-                <h6 class="card-title"><i class="bi bi-grid me-2"></i>Aperçu des classes</h6>
+                <h6 class="card-title">
+                    <i class="bi bi-grid me-2"></i>
+                    {% if is_admin %}Aperçu des classes{% else %}Ma classe{% endif %}
+                </h6>
+                {% if is_admin %}
                 <a href="{% url 'bibleclub:class_list' %}" class="btn btn-sm btn-outline-light">Gérer</a>
+                {% endif %}
             </div>
             <div class="card-body">
                 <div class="row g-3">
                     {% for bible_class in classes %}
                     <div class="col-md-6 col-lg-4">
-                        <div class="p-3 rounded" style="background: var(--eebc-surface-light); border-left: 4px solid {{ bible_class.age_group.color }};">
-                            <div class="d-flex justify-content-between align-items-center mb-2">
-                                <h6 class="mb-0">{{ bible_class }}</h6>
-                                <span class="badge" style="background: {{ bible_class.age_group.color }};">
-                                    {{ bible_class.children_count_anno }} enfants
-                                </span>
+                        <a href="{% url 'bibleclub:class_detail' bible_class.pk %}" class="text-decoration-none">
+                            <div class="p-3 rounded" style="background: var(--eebc-gray-50); border-left: 4px solid {{ bible_class.age_group.color }}; transition: all 0.2s;">
+                                <div class="d-flex justify-content-between align-items-center mb-2">
+                                    <h6 class="mb-0 text-dark">{{ bible_class }}</h6>
+                                    <span class="badge" style="background: {{ bible_class.age_group.color }};">
+                                        {{ bible_class.children_count_anno }} enfants
+                                    </span>
+                                </div>
+                                <small class="text-muted">
+                                    {{ bible_class.age_group.min_age }}-{{ bible_class.age_group.max_age }} ans
+                                    {% if bible_class.room %} • Salle {{ bible_class.room }}{% endif %}
+                                </small>
                             </div>
-                            <small class="text-muted">
-                                {{ bible_class.age_group.min_age }}-{{ bible_class.age_group.max_age }} ans
-                                {% if bible_class.room %} • Salle {{ bible_class.room }}{% endif %}
-                            </small>
-                        </div>
+                        </a>
                     </div>
                     {% empty %}
                     <div class="col-12 text-center py-4 text-muted">
+                        {% if is_admin %}
                         <p>Aucune classe configurée</p>
                         <a href="{% url 'admin:bibleclub_bibleclass_add' %}" class="btn btn-primary">Créer une classe</a>
+                        {% else %}
+                        <p>Vous n'êtes assigné à aucune classe</p>
+                        {% endif %}
                     </div>
                     {% endfor %}
                 </div>

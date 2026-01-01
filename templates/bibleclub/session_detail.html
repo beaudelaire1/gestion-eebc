@@ -12,6 +12,13 @@
 </div>
 {% endif %}
 
+{% if not is_admin and user_class %}
+<div class="alert alert-info mb-4">
+    <i class="bi bi-info-circle me-2"></i>
+    Vous voyez uniquement votre classe : <strong>{{ user_class }}</strong>
+</div>
+{% endif %}
+
 <div class="row g-4">
     {% for bible_class, attendances in attendance_by_class.items %}
     <div class="col-lg-6">
@@ -69,7 +76,11 @@
         <div class="card">
             <div class="card-body text-center py-5 text-muted">
                 <i class="bi bi-collection fs-1 d-block mb-3"></i>
+                {% if not is_admin %}
+                Vous n'êtes assigné à aucune classe
+                {% else %}
                 Aucune classe active
+                {% endif %}
             </div>
         </div>
     </div>

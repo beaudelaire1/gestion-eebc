@@ -221,14 +221,44 @@ def calendar_pdf(request):
     # Générer le HTML
     html_string = render_to_string(template, context)
     
-    # CSS pour l'impression paysage
+    # CSS pour l'impression paysage avec gestion des sauts de page
     css = CSS(string='''
         @page {
             size: A4 landscape;
-            margin: 1cm;
+            margin: 8mm;
         }
+        
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        /* Chaque mois sur sa propre page */
+        .month-section {
+            page-break-after: always;
+            page-break-inside: avoid;
+        }
+        
+        .month-section:last-child {
+            page-break-after: auto;
+        }
+        
+        /* Éviter les coupures dans les tableaux */
+        .calendar-table {
+            page-break-inside: avoid;
+        }
+        
+        .calendar-table tr {
+            page-break-inside: avoid;
+        }
+        
+        /* Titre toujours avec son contenu */
+        .month-title {
+            page-break-after: avoid;
+        }
+        
+        /* Légende en bas */
+        .footer {
+            page-break-inside: avoid;
         }
     ''')
     

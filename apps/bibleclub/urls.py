@@ -25,5 +25,8 @@ urlpatterns = [
     
     # Transport
     path('sessions/<int:session_pk>/transport/', views.transport_checkin, name='transport_checkin'),
+    
+    # API HTMX
+    path('api/my-class-children/', views.my_class_children, name='my_class_children'),
 ]
 
