@@ -1,7 +1,6 @@
 from django.db import models
 from django.conf import settings
 
-
 class Member(models.Model):
     """
     Modèle représentant un membre de l'église.
@@ -29,7 +28,7 @@ class Member(models.Model):
         related_name='member_profile',
         verbose_name="Compte utilisateur"
     )
-    
+# crete member id format : EEBC-M-first occurence name and first name and random number
     # Identité
     first_name = models.CharField(max_length=100, verbose_name="Prénom")
     last_name = models.CharField(max_length=100, verbose_name="Nom")
@@ -73,7 +72,7 @@ class Member(models.Model):
     notes = models.TextField(blank=True, verbose_name="Notes")
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
-    
+
     class Meta:
         verbose_name = "Membre"
         verbose_name_plural = "Membres"
