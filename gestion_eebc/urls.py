@@ -19,6 +19,8 @@ urlpatterns = [
     path('events/', include('apps.events.urls')),
     path('groups/', include('apps.groups.urls')),
     path('communication/', include('apps.communication.urls')),
+    path('finance/', include('apps.finance.urls')),
+    path('worship/', include('apps.worship.urls')),
 ]
 
 if settings.DEBUG:

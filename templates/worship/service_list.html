@@ -1,0 +1,112 @@
+{% extends 'base.html' %}
+{% load humanize %}
+
+{% block title %}Planning des cultes - EEBC{% endblock %}
+{% block page_title %}Planning des cultes{% endblock %}
+{% block page_subtitle %}Organisation liturgique{% endblock %}
+
+{% block content %}
+<!-- Actions -->
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div class="btn-group">
+        <a href="?upcoming=true" class="btn btn-{% if upcoming_only %}primary{% else %}outline-primary{% endif %}">
+            <i class="bi bi-calendar-check me-1"></i> À venir
+        </a>
+        <a href="?upcoming=false" class="btn btn-{% if not upcoming_only %}primary{% else %}outline-primary{% endif %}">
+            <i class="bi bi-clock-history me-1"></i> Tous
+        </a>
+    </div>
+    <a href="{% url 'worship:service_create' %}" class="btn btn-primary">
+        <i class="bi bi-plus-lg me-1"></i> Nouveau service
+    </a>
+</div>
+
+<!-- Liste des services -->
+<div class="row g-4">
+    {% for service in services %}
+    <div class="col-md-6 col-lg-4">
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-header bg-transparent border-0 pb-0">
+                <div class="d-flex justify-content-between align-items-start">
+                    <div>
+                        <span class="badge bg-primary-subtle text-primary mb-2">
+                            {{ service.get_service_type_display }}
+                        </span>
+                        <h6 class="mb-0 fw-bold">{{ service.event.start_date|date:"l d F Y" }}</h6>
+                    </div>
+                    {% if service.is_confirmed %}
+                    <span class="badge bg-success"><i class="bi bi-check-lg"></i></span>
+                    {% else %}
+                    <span class="badge bg-warning"><i class="bi bi-clock"></i></span>
+                    {% endif %}
+                </div>
+            </div>
+            <div class="card-body">
+                {% if service.theme %}
+                <p class="text-muted small mb-2">
+                    <i class="bi bi-bookmark me-1"></i> {{ service.theme }}
+                </p>
+                {% endif %}
+                {% if service.bible_text %}
+                <p class="text-muted small mb-3">
+                    <i class="bi bi-book me-1"></i> {{ service.bible_text }}
+                </p>
+                {% endif %}
+                
+                <!-- Rôles -->
+                <div class="small">
+                    {% with roles=service.roles.all %}
+                    {% if roles %}
+                    <div class="mb-2 text-muted">
+                        <strong>{{ roles|length }}</strong> rôle(s) assigné(s)
+                        {% with confirmed=service.roles.filter.status|default:0 %}
+                        {% endwith %}
+                    </div>
+                    {% for role in roles|slice:":3" %}
+                    <div class="d-flex justify-content-between py-1 border-bottom">
+                        <span class="text-muted">{{ role.get_role_display }}</span>
+                        <span class="{% if role.status == 'confirme' %}text-success{% elif role.status == 'decline' %}text-danger{% else %}text-warning{% endif %}">
+                            {{ role.assignee_name }}
+                        </span>
+                    </div>
+                    {% endfor %}
+                    {% if roles|length > 3 %}
+                    <div class="text-muted small mt-1">+{{ roles|length|add:"-3" }} autres...</div>
+                    {% endif %}
+                    {% else %}
+                    <div class="text-muted">Aucun rôle assigné</div>
+                    {% endif %}
+                    {% endwith %}
+                </div>
+            </div>
+            <div class="card-footer bg-transparent border-0 pt-0">
+                <div class="d-flex gap-2">
+                    <a href="{% url 'worship:service_detail' service.pk %}" class="btn btn-sm btn-outline-primary flex-grow-1">
+                        <i class="bi bi-eye me-1"></i> Détails
+                    </a>
+                    <a href="{% url 'worship:plan_edit' service.pk %}" class="btn btn-sm btn-outline-secondary">
+                        <i class="bi bi-list-ol"></i>
+                    </a>
+                    <a href="{% url 'worship:run_sheet_pdf' service.pk %}" class="btn btn-sm btn-outline-secondary" target="_blank">
+                        <i class="bi bi-file-pdf"></i>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% empty %}
+    <div class="col-12">
+        <div class="card border-0 shadow-sm">
+            <div class="card-body text-center py-5">
+                <i class="bi bi-calendar-x fs-1 text-muted mb-3 d-block"></i>
+                <h5 class="text-muted">Aucun service planifié</h5>
+                <p class="text-muted mb-3">Commencez par créer un service de culte</p>
+                <a href="{% url 'worship:service_create' %}" class="btn btn-primary">
+                    <i class="bi bi-plus-lg me-1"></i> Créer un service
+                </a>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+{% endblock %}

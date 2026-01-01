@@ -1,205 +1,226 @@
 """
-Signaux Django pour déclencher les notifications email automatiquement.
+Centre de Notifications - Signaux automatiques.
+
+Ce module centralise toutes les règles d'automatisation pour les notifications :
+- Règle 1 : Notification des assignations de rôles (WorshipService)
+- Règle 2 : Annonce des naissances le dimanche (LifeEvent)
+- Règle 3 : Rappel des membres non visités (Celery task)
 """
-from django.db.models.signals import post_save, pre_save
+
+from django.db.models.signals import post_save
 from django.dispatch import receiver
-from django.conf import settings
-import logging
-
-logger = logging.getLogger(__name__)
-
-# Email admin qui reçoit une copie de tout
-ADMIN_EMAIL = getattr(settings, 'ADMIN_EMAIL', None) or settings.__dict__.get('ADMIN_EMAIL')
 
 
-def get_admin_email():
-    """Récupère l'email admin depuis les settings ou .env"""
-    import os
-    return os.environ.get('ADMIN_EMAIL', '')
-
-
-# =============================================================================
-# SIGNAUX ÉVÉNEMENTS
-# =============================================================================
-
-@receiver(post_save, sender='events.Event')
-def notify_event_created_or_updated(sender, instance, created, **kwargs):
+@receiver(post_save, sender='members.LifeEvent')
+def handle_life_event_notification(sender, instance, created, **kwargs):
     """
-    Notifie lors de la création ou modification d'un événement.
-    """
-    from apps.communication.email_service import (
-        send_event_scheduled, send_event_cancelled, EmailService
-    )
+    Gère les notifications liées aux événements de vie.
     
-    admin_email = get_admin_email()
-    
-    # Pour l'instant, envoyer uniquement à l'admin
-    # Les emails membres ne sont pas encore configurés
-    recipients = []
-    if admin_email:
-        recipients.append(admin_email)
-    
-    if not recipients:
-        logger.info(f"Pas de destinataires pour l'événement: {instance.title}")
-        return
-    
-    try:
-        if instance.is_cancelled:
-            # Événement annulé
-            for email in recipients:
-                send_event_cancelled(
-                    event=instance,
-                    recipient_email=email,
-                    cancellation_reason=getattr(instance, '_cancellation_reason', '')
-                )
-            logger.info(f"Notifications d'annulation envoyées pour: {instance.title}")
-        
-        elif created:
-            # Nouvel événement
-            for email in recipients:
-                send_event_scheduled(
-                    event=instance,
-                    recipient_email=email
-                )
-            logger.info(f"Notifications de création envoyées pour: {instance.title} à {len(recipients)} destinataires")
-    
-    except Exception as e:
-        logger.error(f"Erreur envoi notification événement: {e}")
-
-
-# =============================================================================
-# SIGNAUX CLUB BIBLIQUE - SESSIONS
-# =============================================================================
-
-@receiver(post_save, sender='bibleclub.Session')
-def notify_session_created(sender, instance, created, **kwargs):
-    """
-    Notifie lors de la création d'une nouvelle session.
+    Règle 2 : Si LifeEvent type "Naissance" -> Créer une Notification 
+    "Annoncer ce dimanche" pour le pasteur.
     """
     if not created:
         return
     
-    from apps.communication.email_service import EmailService
+    from apps.communication.models import Notification
+    from apps.accounts.models import User
+    from apps.members.models import VisitationLog
     
-    admin_email = get_admin_email()
+    # Notifier les pasteurs/admins
+    pastors = User.objects.filter(is_staff=True, is_active=True)
     
-    # Pour l'instant, envoyer uniquement à l'admin
-    if not admin_email:
-        return
+    # Notifications selon le type d'événement
+    if instance.event_type == 'naissance':
+        for pastor in pastors:
+            Notification.objects.create(
+                recipient=pastor,
+                title=f"🎉 Naissance à annoncer : {instance.title}",
+                message=f"Une naissance a été enregistrée pour {instance.primary_member.full_name}. "
+                        f"Pensez à l'annoncer lors du prochain culte.",
+                notification_type='info',
+                link=f"/admin/members/lifeevent/{instance.pk}/change/"
+            )
     
-    try:
-        EmailService.send(
-            recipient_email=admin_email,
-            subject=f"📚 Nouvelle session Club Biblique - {instance.date}",
-            template_name='communication/email/session_created.html',
-            context={
-                'session': instance,
-                'monitor': None,
-            },
-            recipient_name='Admin'
-        )
+    elif instance.event_type == 'deces':
+        for pastor in pastors:
+            Notification.objects.create(
+                recipient=pastor,
+                title=f"⚫ Décès : {instance.title}",
+                message=f"Un décès a été enregistré concernant {instance.primary_member.full_name}. "
+                        f"Une visite pastorale est recommandée.",
+                notification_type='warning',
+                link=f"/admin/members/lifeevent/{instance.pk}/change/"
+            )
         
-        logger.info(f"Notification session envoyée pour: {instance.date}")
+        # Créer automatiquement une visite "À FAIRE"
+        if instance.requires_visit:
+            # Trouver le pasteur principal (premier superuser)
+            main_pastor = User.objects.filter(is_superuser=True, is_active=True).first()
+            
+            VisitationLog.objects.create(
+                visitor=main_pastor,
+                member=instance.primary_member,
+                visit_type='domicile',
+                status='a_faire',
+                life_event=instance,
+                summary=f"Visite suite au décès : {instance.title}"
+            )
     
-    except Exception as e:
-        logger.error(f"Erreur envoi notification session: {e}")
-
-
-# =============================================================================
-# SIGNAUX CLUB BIBLIQUE - PRÉSENCES
-# =============================================================================
-
-@receiver(post_save, sender='bibleclub.Attendance')
-def notify_attendance_recorded(sender, instance, created, **kwargs):
-    """
-    Notifie l'admin en cas d'absence.
-    """
-    from apps.communication.email_service import EmailService
-    
-    # Seulement pour les absences
-    if instance.status not in ['absent', 'absent_notified']:
-        return
-    
-    # Éviter de notifier plusieurs fois
-    if instance.status == 'absent_notified':
-        return
-    
-    admin_email = get_admin_email()
-    if not admin_email:
-        return
-    
-    child = instance.child
-    session = instance.session
-    
-    try:
-        # Notifier l'admin de l'absence
-        EmailService.send(
-            recipient_email=admin_email,
-            subject=f"Absence de {child.first_name} - Club Biblique EEBC",
-            template_name='communication/email/absence_notification.html',
-            context={
-                'child': child,
-                'session': session,
-                'parent_name': 'Admin',
-            },
-            recipient_name='Admin'
-        )
+    elif instance.event_type == 'hospitalisation':
+        for pastor in pastors:
+            Notification.objects.create(
+                recipient=pastor,
+                title=f"🏥 Hospitalisation : {instance.primary_member.full_name}",
+                message=f"{instance.primary_member.full_name} est hospitalisé(e). "
+                        f"Une visite est recommandée.",
+                notification_type='warning',
+                link=f"/admin/members/lifeevent/{instance.pk}/change/"
+            )
         
-        # Marquer comme notifié
-        instance.status = 'absent_notified'
-        instance.save(update_fields=['status'])
-        logger.info(f"Notification absence envoyée pour: {child}")
+        # Créer une visite à l'hôpital
+        if instance.requires_visit:
+            main_pastor = User.objects.filter(is_superuser=True, is_active=True).first()
+            
+            VisitationLog.objects.create(
+                visitor=main_pastor,
+                member=instance.primary_member,
+                visit_type='hopital',
+                status='a_faire',
+                life_event=instance,
+                summary=f"Visite hospitalière : {instance.description or instance.title}"
+            )
     
-    except Exception as e:
-        logger.error(f"Erreur envoi notification absence: {e}")
+    elif instance.event_type == 'mariage':
+        for pastor in pastors:
+            Notification.objects.create(
+                recipient=pastor,
+                title=f"💒 Mariage à annoncer : {instance.title}",
+                message=f"Un mariage a été enregistré. Pensez à féliciter le couple "
+                        f"et à l'annoncer lors du prochain culte.",
+                notification_type='success',
+                link=f"/admin/members/lifeevent/{instance.pk}/change/"
+            )
+    
+    elif instance.event_type == 'bapteme':
+        for pastor in pastors:
+            Notification.objects.create(
+                recipient=pastor,
+                title=f"💧 Baptême : {instance.primary_member.full_name}",
+                message=f"Un baptême a été enregistré pour {instance.primary_member.full_name}.",
+                notification_type='success',
+                link=f"/admin/members/lifeevent/{instance.pk}/change/"
+            )
+
+
+@receiver(post_save, sender='members.VisitationLog')
+def handle_visit_completion(sender, instance, created, **kwargs):
+    """
+    Notifie quand une visite est marquée comme effectuée.
+    """
+    if created:
+        return
+    
+    # Vérifier si le statut vient de passer à "effectue"
+    if instance.status == 'effectue' and instance.life_event:
+        # Marquer l'événement de vie comme visité
+        instance.life_event.visit_completed = True
+        instance.life_event.save(update_fields=['visit_completed'])
 
 
 # =============================================================================
-# SIGNAUX DONATIONS
+# TÂCHES CELERY POUR LES RAPPELS PÉRIODIQUES
 # =============================================================================
 
-@receiver(post_save, sender='campaigns.Donation')
-def notify_donation_received(sender, instance, created, **kwargs):
+def get_members_needing_visit():
     """
-    Notifie l'admin lors d'un nouveau don.
+    Règle 3 : Retourne les membres non visités depuis 6 mois.
+    
+    À appeler depuis une tâche Celery hebdomadaire.
     """
-    if not created:
+    from apps.members.models import Member
+    from datetime import date, timedelta
+    
+    six_months_ago = date.today() - timedelta(days=180)
+    
+    members_needing_visit = []
+    
+    for member in Member.objects.filter(status='actif'):
+        last_visit = member.last_visit_date
+        
+        if last_visit is None or last_visit < six_months_ago:
+            members_needing_visit.append({
+                'member': member,
+                'last_visit': last_visit,
+                'days_since': member.days_since_last_visit
+            })
+    
+    return members_needing_visit
+
+
+def send_weekly_visit_reminder():
+    """
+    Envoie un rappel hebdomadaire avec la liste des membres à visiter.
+    
+    À appeler depuis Celery Beat (ex: tous les lundis à 8h).
+    """
+    from apps.communication.models import Notification
+    from apps.accounts.models import User
+    
+    members = get_members_needing_visit()
+    
+    if not members:
         return
     
-    from apps.communication.email_service import send_campaign_notification
+    # Construire le message
+    message_lines = [f"📋 {len(members)} membre(s) n'ont pas été visités depuis plus de 6 mois :\n"]
     
-    admin_email = get_admin_email()
-    if not admin_email:
-        return
+    for item in members[:10]:  # Limiter à 10 dans la notification
+        member = item['member']
+        days = item['days_since']
+        if days:
+            message_lines.append(f"• {member.full_name} ({days} jours)")
+        else:
+            message_lines.append(f"• {member.full_name} (jamais visité)")
     
-    try:
-        send_campaign_notification(
-            campaign=instance.campaign,
-            donation=instance,
-            donor_email=admin_email,
-            donor_name=instance.donor_name or 'Anonyme'
+    if len(members) > 10:
+        message_lines.append(f"\n... et {len(members) - 10} autres.")
+    
+    message = "\n".join(message_lines)
+    
+    # Notifier les pasteurs
+    pastors = User.objects.filter(is_staff=True, is_active=True)
+    
+    for pastor in pastors:
+        Notification.objects.create(
+            recipient=pastor,
+            title="📅 Rappel hebdomadaire : Visites pastorales",
+            message=message,
+            notification_type='info',
+            link="/admin/members/visitationlog/?status=a_faire"
         )
-        logger.info(f"Notification don envoyée: {instance.amount}€")
-    except Exception as e:
-        logger.error(f"Erreur envoi notification don: {e}")
 
 
 # =============================================================================
-# SIGNAUX UTILISATEURS
+# TÂCHE CELERY (à ajouter dans gestion_eebc/celery.py)
 # =============================================================================
+"""
+Pour activer le rappel hebdomadaire, ajouter dans gestion_eebc/celery.py :
 
-@receiver(post_save, sender=settings.AUTH_USER_MODEL)
-def notify_user_created(sender, instance, created, **kwargs):
-    """
-    Envoie un email de bienvenue aux nouveaux utilisateurs.
-    """
-    if not created or not instance.email:
-        return
-    
-    from apps.communication.email_service import send_welcome_email
-    
-    try:
-        send_welcome_email(instance)
-        logger.info(f"Email de bienvenue envoyé à: {instance.email}")
-    except Exception as e:
-        logger.error(f"Erreur envoi email bienvenue: {e}")
+from celery.schedules import crontab
+
+app.conf.beat_schedule = {
+    'weekly-visit-reminder': {
+        'task': 'apps.communication.tasks.weekly_visit_reminder_task',
+        'schedule': crontab(hour=8, minute=0, day_of_week=1),  # Lundi 8h
+    },
+}
+
+Et créer apps/communication/tasks.py :
+
+from celery import shared_task
+from apps.communication.signals import send_weekly_visit_reminder
+
+@shared_task
+def weekly_visit_reminder_task():
+    send_weekly_visit_reminder()
+"""

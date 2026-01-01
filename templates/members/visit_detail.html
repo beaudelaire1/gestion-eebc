@@ -1,0 +1,134 @@
+{% extends 'base.html' %}
+
+{% block title %}Visite - {{ visit.member.full_name }} - EEBC{% endblock %}
+{% block page_title %}Visite pastorale{% endblock %}
+{% block page_subtitle %}{{ visit.member.full_name }}{% endblock %}
+
+{% block content %}
+<div class="row g-4">
+    <div class="col-lg-8">
+        <div class="card border-0 shadow-sm mb-4">
+            <div class="card-header bg-transparent border-0">
+                <h6 class="mb-0 fw-bold"><i class="bi bi-info-circle me-2"></i>Informations</h6>
+            </div>
+            <div class="card-body">
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <label class="text-muted small">Membre visité</label>
+                        <div>
+                            <a href="{% url 'members:detail' visit.member.pk %}" class="fw-medium text-decoration-none">
+                                {{ visit.member.full_name }}
+                            </a>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="text-muted small">Visiteur</label>
+                        <div class="fw-medium">{{ visit.visitor.get_full_name|default:"Non assigné" }}</div>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="text-muted small">Type</label>
+                        <div>{{ visit.get_visit_type_display }}</div>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="text-muted small">Date prévue</label>
+                        <div>{{ visit.scheduled_date|date:"d/m/Y"|default:"—" }}</div>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="text-muted small">Date effective</label>
+                        <div>{{ visit.visit_date|date:"d/m/Y"|default:"—" }}</div>
+                    </div>
+                    {% if visit.duration_minutes %}
+                    <div class="col-md-4">
+                        <label class="text-muted small">Durée</label>
+                        <div>{{ visit.duration_minutes }} minutes</div>
+                    </div>
+                    {% endif %}
+                    {% if visit.life_event %}
+                    <div class="col-12">
+                        <label class="text-muted small">Événement lié</label>
+                        <div>
+                            <a href="{% url 'members:life_event_detail' visit.life_event.pk %}" class="text-decoration-none">
+                                {{ visit.life_event.title }}
+                            </a>
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        
+        {% if visit.summary or visit.prayer_requests %}
+        <div class="card border-0 shadow-sm">
+            <div class="card-header bg-transparent border-0">
+                <h6 class="mb-0 fw-bold"><i class="bi bi-journal-text me-2"></i>Compte-rendu</h6>
+            </div>
+            <div class="card-body">
+                {% if visit.summary %}
+                <div class="mb-3">
+                    <label class="text-muted small">Résumé</label>
+                    <div class="p-3 bg-light rounded">{{ visit.summary }}</div>
+                </div>
+                {% endif %}
+                {% if visit.prayer_requests %}
+                <div class="mb-3">
+                    <label class="text-muted small">Sujets de prière</label>
+                    <div class="p-3 bg-light rounded">{{ visit.prayer_requests }}</div>
+                </div>
+                {% endif %}
+                {% if visit.follow_up_notes %}
+                <div>
+                    <label class="text-muted small">Notes de suivi</label>
+                    <div class="p-3 bg-warning bg-opacity-10 rounded">{{ visit.follow_up_notes }}</div>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+        {% endif %}
+    </div>
+    
+    <div class="col-lg-4">
+        <div class="card border-0 shadow-sm mb-4">
+            <div class="card-header bg-transparent border-0">
+                <h6 class="mb-0 fw-bold"><i class="bi bi-clipboard-check me-2"></i>Statut</h6>
+            </div>
+            <div class="card-body">
+                <div class="text-center mb-3">
+                    <span class="badge fs-6 bg-{% if visit.status == 'effectue' %}success{% elif visit.status == 'a_faire' %}warning{% elif visit.status == 'planifie' %}info{% else %}secondary{% endif %}">
+                        {{ visit.get_status_display }}
+                    </span>
+                </div>
+                
+                {% if visit.follow_up_needed %}
+                <div class="alert alert-warning py-2 small">
+                    <i class="bi bi-exclamation-triangle me-1"></i> Suivi nécessaire
+                </div>
+                {% endif %}
+                
+                {% if visit.is_confidential %}
+                <div class="alert alert-secondary py-2 small">
+                    <i class="bi bi-lock me-1"></i> Visite confidentielle
+                </div>
+                {% endif %}
+            </div>
+        </div>
+        
+        <div class="card border-0 shadow-sm">
+            <div class="card-body">
+                <div class="d-grid gap-2">
+                    {% if visit.status != 'effectue' %}
+                    <form method="post" action="{% url 'members:visit_complete' visit.pk %}">
+                        {% csrf_token %}
+                        <button type="submit" class="btn btn-success w-100">
+                            <i class="bi bi-check-lg me-1"></i> Marquer effectuée
+                        </button>
+                    </form>
+                    {% endif %}
+                    <a href="{% url 'members:visits' %}" class="btn btn-outline-secondary">
+                        <i class="bi bi-arrow-left me-1"></i> Retour à la liste
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -4,278 +4,416 @@
     <meta charset="UTF-8">
     <title>{{ title }} - EEBC</title>
     <style>
+        /* =============================================================================
+           PRINT ENGINE v2.0 - CSS Paged Media + CSS Grid
+           Style "Magazine Suisse" : Minimaliste, haute lisibilité, noir & blanc + accent
+           ============================================================================= */
+        
         @page {
-            size: 297mm 210mm;
+            size: A4 landscape;
+            margin: 8mm;
+        }
+        
+        @page :first {
             margin: 0;
         }
         
-        * { margin: 0; padding: 0; box-sizing: border-box; }
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        :root {
+            --accent: #0A36FF;
+            --accent-light: #3b5bff;
+            --black: #0f0f0f;
+            --gray-900: #1a1a1a;
+            --gray-700: #404040;
+            --gray-500: #737373;
+            --gray-300: #d4d4d4;
+            --gray-100: #f5f5f5;
+            --white: #ffffff;
+            --font-main: 'Helvetica Neue', 'Arial', sans-serif;
+        }
         
         body {
-            font-family: 'Segoe UI', Arial, sans-serif;
-            font-size: 10pt;
-            color: #1a1a2e;
+            font-family: var(--font-main);
+            font-size: 9pt;
+            color: var(--black);
+            line-height: 1.4;
+            -webkit-font-smoothing: antialiased;
         }
         
-        /* ========== PAGE 1: COUVERTURE ========== */
+        /* =============================================================================
+           PAGE 1: COUVERTURE MINIMALISTE
+           ============================================================================= */
         .cover-page {
-            width: 297mm;
-            height: 210mm;
-            background: linear-gradient(145deg, #0A36FF 0%, #1e3a8a 50%, #0f172a 100%);
-            position: relative;
-            overflow: hidden;
+            width: 100%;
+            height: 100vh;
+            background: var(--white);
+            display: grid;
+            grid-template-rows: 1fr auto 1fr;
+            align-items: center;
+            justify-items: center;
             page-break-after: always;
-        }
-        
-        .cover-pattern {
-            position: absolute;
-            top: 0; left: 0; right: 0; bottom: 0;
-            opacity: 0.1;
-            background-image: 
-                radial-gradient(circle at 15% 85%, rgba(255,255,255,0.4) 0%, transparent 40%),
-                radial-gradient(circle at 85% 15%, rgba(255,255,255,0.3) 0%, transparent 35%);
-        }
-        
-        .cover-content {
             position: relative;
-            z-index: 10;
+        }
+        
+        .cover-page::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 12mm;
             height: 100%;
+            background: var(--accent);
+        }
+        
+        .cover-top {
+            align-self: end;
+            text-align: center;
+        }
+        
+        .cover-church {
+            font-size: 10pt;
+            font-weight: 400;
+            letter-spacing: 4px;
+            text-transform: uppercase;
+            color: var(--gray-500);
+            margin-bottom: 8mm;
+        }
+        
+        .cover-main {
+            text-align: center;
+        }
+        
+        .cover-title {
+            font-size: 72pt;
+            font-weight: 700;
+            letter-spacing: -2px;
+            color: var(--black);
+            line-height: 0.9;
+        }
+        
+        .cover-period {
+            font-size: 18pt;
+            font-weight: 300;
+            color: var(--accent);
+            margin-top: 6mm;
+            letter-spacing: 2px;
+        }
+        
+        .cover-bottom {
+            align-self: start;
+            text-align: center;
+        }
+        
+        .cover-year {
+            font-size: 14pt;
+            font-weight: 700;
+            color: var(--gray-300);
+            letter-spacing: 8px;
+        }
+        
+        /* =============================================================================
+           PAGES CALENDRIER - CSS GRID
+           ============================================================================= */
+        .calendar-page {
+            width: 100%;
+            height: 100vh;
+            padding: 6mm;
+            page-break-after: always;
             display: flex;
             flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            text-align: center;
-            color: white;
-        }
-        
-        .cover-icon { font-size: 70pt; margin-bottom: 12px; }
-        .cover-church { font-size: 13pt; letter-spacing: 8px; text-transform: uppercase; opacity: 0.85; margin-bottom: 8px; }
-        .cover-title { font-size: 52pt; font-weight: 800; letter-spacing: 4px; margin-bottom: 6px; }
-        .cover-subtitle { font-size: 16pt; font-weight: 300; opacity: 0.9; margin-bottom: 30px; }
-        .cover-period { background: rgba(255,255,255,0.2); padding: 14px 55px; border-radius: 50px; font-size: 20pt; font-weight: 600; }
-        .cover-footer { position: absolute; bottom: 12mm; font-size: 10pt; opacity: 0.6; }
-        
-        /* ========== PAGES 2-4: CALENDRIER ========== */
-        .calendar-page {
-            width: 297mm;
-            height: 210mm;
-            padding: 4mm 6mm;
-            page-break-after: always;
-            background: white;
         }
         
         .month-header {
-            background: linear-gradient(135deg, #0A36FF, #1e3a8a);
-            color: white;
-            padding: 6px 20px;
-            border-radius: 6px;
-            margin-bottom: 4px;
             display: flex;
             justify-content: space-between;
-            align-items: center;
+            align-items: baseline;
+            padding-bottom: 4mm;
+            border-bottom: 2px solid var(--black);
+            margin-bottom: 4mm;
+            flex-shrink: 0;
         }
         
-        .month-name { font-size: 22pt; font-weight: 800; }
-        .month-year { font-size: 13pt; opacity: 0.9; }
-        
-        .calendar-grid {
-            width: 100%;
-            border-collapse: collapse;
-            table-layout: fixed;
-        }
-        
-        .calendar-grid th {
-            background: linear-gradient(180deg, #1e293b, #334155);
-            color: white;
+        .month-name {
+            font-size: 28pt;
             font-weight: 700;
-            font-size: 9pt;
-            padding: 6px 2px;
-            text-align: center;
-            border: 1px solid #1e293b;
+            letter-spacing: -1px;
+            color: var(--black);
+        }
+        
+        .month-year {
+            font-size: 14pt;
+            font-weight: 300;
+            color: var(--gray-500);
+        }
+        
+        /* Grille calendaire CSS Grid - 7 colonnes */
+        .calendar-grid {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            grid-template-rows: auto repeat(6, 1fr);
+            gap: 1px;
+            background: var(--gray-300);
+            border: 1px solid var(--gray-300);
+            flex: 1;
+        }
+        
+        .day-header {
+            background: var(--black);
+            color: var(--white);
+            font-size: 8pt;
+            font-weight: 600;
             text-transform: uppercase;
             letter-spacing: 1px;
+            padding: 3mm 2mm;
+            text-align: center;
         }
         
-        .calendar-grid th.weekend { background: linear-gradient(180deg, #b45309, #d97706); }
-        
-        .calendar-grid td {
-            border: 1px solid #94a3b8;
-            vertical-align: top;
-            padding: 0;
-            background: white;
-            height: 27mm;
+        .day-header.weekend {
+            background: var(--accent);
         }
-        
-        .calendar-grid td.empty { background: #e2e8f0; }
-        .calendar-grid td.weekend { background: #fef9c3; }
         
         .day-cell {
-            height: 100%;
-            width: 100%;
+            background: var(--white);
+            padding: 2mm;
             display: flex;
             flex-direction: column;
+            min-height: 0;
+            overflow: hidden;
         }
         
-        .day-num {
+        .day-cell.empty {
+            background: var(--gray-100);
+        }
+        
+        .day-cell.weekend {
+            background: #fafafa;
+        }
+        
+        .day-cell.today {
+            background: #fffbeb;
+        }
+        
+        /* Support événements multi-jours avec grid-column: span X */
+        .day-cell.span-2 { grid-column: span 2; }
+        .day-cell.span-3 { grid-column: span 3; }
+        .day-cell.span-4 { grid-column: span 4; }
+        .day-cell.span-5 { grid-column: span 5; }
+        .day-cell.span-6 { grid-column: span 6; }
+        .day-cell.span-7 { grid-column: span 7; }
+        
+        .day-number {
             font-size: 11pt;
-            font-weight: 800;
-            color: #0f172a;
-            padding: 2px 4px;
-            background: #f1f5f9;
-            border-bottom: 1px solid #cbd5e1;
-            flex-shrink: 0;
-        }
-        
-        .day-num.sunday { color: #dc2626; background: #fee2e2; }
-        
-        .events-container {
-            flex: 1;
-            padding: 2px;
-            display: flex;
-            flex-direction: column;
-            gap: 1px;
-            overflow: hidden;
-        }
-        
-        /* Événement remplit toute la hauteur disponible */
-        .evt {
-            flex: 1;
-            padding: 3px 4px;
-            border-radius: 3px;
-            color: white;
-            overflow: hidden;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            box-shadow: 0 1px 2px rgba(0,0,0,0.15);
-        }
-        
-        .evt-title { font-weight: 700; line-height: 1.15; }
-        .evt-time { opacity: 0.9; font-weight: 500; }
-        .evt-desc { opacity: 0.85; line-height: 1.1; }
-        
-        /* 1 seul événement = GRAND */
-        .evt.size-1 { padding: 5px 6px; }
-        .evt.size-1 .evt-title { font-size: 10pt; margin-bottom: 2px; }
-        .evt.size-1 .evt-time { font-size: 8pt; margin-bottom: 1px; }
-        .evt.size-1 .evt-desc { font-size: 7pt; }
-        
-        /* 2 événements */
-        .evt.size-2 .evt-title { font-size: 8pt; margin-bottom: 1px; }
-        .evt.size-2 .evt-time { font-size: 7pt; }
-        .evt.size-2 .evt-desc { display: none; }
-        
-        /* 3 événements */
-        .evt.size-3 .evt-title { font-size: 7pt; }
-        .evt.size-3 .evt-time { font-size: 6pt; }
-        .evt.size-3 .evt-desc { display: none; }
-        
-        /* 4+ événements */
-        .evt.size-4 { padding: 1px 3px; flex-direction: row; align-items: center; gap: 2px; }
-        .evt.size-4 .evt-title { font-size: 6pt; }
-        .evt.size-4 .evt-time { font-size: 5pt; }
-        .evt.size-4 .evt-desc { display: none; }
-        
-        .more-events {
-            font-size: 6pt;
-            color: #475569;
-            text-align: center;
-            padding: 1px;
             font-weight: 700;
-            background: #e2e8f0;
-            border-radius: 2px;
+            color: var(--black);
+            margin-bottom: 1mm;
             flex-shrink: 0;
         }
         
-        .cal-footer {
-            margin-top: 2px;
-            text-align: center;
-            font-size: 7pt;
-            color: #64748b;
+        .day-cell.weekend .day-number {
+            color: var(--accent);
         }
         
-        /* ========== PAGE 5: SYNTHÈSE ========== */
+        .events-list {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 1mm;
+            overflow: hidden;
+        }
+        
+        /* Événement - Style épuré */
+        .event {
+            padding: 1.5mm 2mm;
+            border-radius: 2px;
+            font-size: 7pt;
+            line-height: 1.2;
+            overflow: hidden;
+            flex-shrink: 0;
+        }
+        
+        .event.accent {
+            background: var(--accent);
+            color: var(--white);
+        }
+        
+        .event.light {
+            background: var(--gray-100);
+            color: var(--black);
+            border-left: 2px solid var(--accent);
+        }
+        
+        .event-title {
+            font-weight: 600;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        
+        .event-time {
+            font-weight: 400;
+            opacity: 0.8;
+            font-size: 6pt;
+        }
+        
+        /* Événement multi-jours (traverse plusieurs colonnes) */
+        .event.multi-day {
+            background: var(--accent);
+            color: var(--white);
+            position: relative;
+        }
+        
+        .event.multi-day::after {
+            content: '→';
+            position: absolute;
+            right: 2mm;
+            top: 50%;
+            transform: translateY(-50%);
+            font-size: 8pt;
+        }
+        
+        .more-indicator {
+            font-size: 6pt;
+            color: var(--gray-500);
+            text-align: center;
+            padding: 1mm;
+        }
+        
+        .calendar-footer {
+            margin-top: 3mm;
+            text-align: right;
+            font-size: 7pt;
+            color: var(--gray-500);
+            flex-shrink: 0;
+        }
+        
+        /* =============================================================================
+           PAGE SYNTHÈSE - Style tableau épuré
+           ============================================================================= */
         .summary-page {
-            width: 297mm;
-            height: 210mm;
-            padding: 6mm 8mm;
-            background: white;
+            width: 100%;
+            height: 100vh;
+            padding: 8mm;
+            display: flex;
+            flex-direction: column;
         }
         
         .summary-header {
-            background: linear-gradient(135deg, #0A36FF, #1e3a8a);
-            color: white;
-            padding: 10px 20px;
-            border-radius: 8px;
-            margin-bottom: 8px;
-            text-align: center;
+            border-bottom: 2px solid var(--black);
+            padding-bottom: 4mm;
+            margin-bottom: 6mm;
         }
         
-        .summary-header h2 { font-size: 18pt; font-weight: 700; }
-        .summary-header p { font-size: 10pt; opacity: 0.9; margin-top: 2px; }
+        .summary-title {
+            font-size: 24pt;
+            font-weight: 700;
+            color: var(--black);
+        }
+        
+        .summary-subtitle {
+            font-size: 10pt;
+            color: var(--gray-500);
+            margin-top: 2mm;
+        }
         
         .summary-table {
             width: 100%;
             border-collapse: collapse;
-            font-size: 9pt;
+            font-size: 8pt;
+        }
+        
+        .summary-table thead {
+            background: var(--black);
+            color: var(--white);
         }
         
         .summary-table th {
-            background: linear-gradient(180deg, #1e293b, #334155);
-            color: white;
-            padding: 8px 10px;
+            padding: 3mm 4mm;
             text-align: left;
             font-weight: 600;
-            border: 1px solid #1e293b;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            font-size: 7pt;
         }
         
         .summary-table td {
-            padding: 6px 10px;
-            border: 1px solid #cbd5e1;
-            vertical-align: middle;
+            padding: 2.5mm 4mm;
+            border-bottom: 1px solid var(--gray-300);
+            vertical-align: top;
         }
         
-        .summary-table tr:nth-child(even) td:not(.cat-cell) { background: #f8fafc; }
-        
-        .cat-cell {
-            font-weight: 700;
-            text-align: center;
-            vertical-align: middle;
-            border-radius: 0;
+        .summary-table tr:nth-child(even) td {
+            background: var(--gray-100);
         }
         
-        .cat-cell small { font-weight: 400; opacity: 0.9; font-size: 8pt; }
+        .cat-badge {
+            display: inline-block;
+            padding: 1mm 3mm;
+            border-radius: 2px;
+            font-size: 7pt;
+            font-weight: 600;
+            color: var(--white);
+        }
         
-        .date-cell { font-weight: 600; color: #0A36FF; }
-        .time-cell { color: #475569; }
-        .title-cell { font-weight: 500; color: #1e293b; }
-        .location-cell { color: #64748b; font-size: 8pt; }
+        .date-col {
+            font-weight: 600;
+            color: var(--accent);
+            white-space: nowrap;
+        }
+        
+        .time-col {
+            color: var(--gray-500);
+            white-space: nowrap;
+        }
+        
+        .title-col {
+            font-weight: 500;
+        }
+        
+        .location-col {
+            color: var(--gray-500);
+            font-size: 7pt;
+        }
         
         .summary-footer {
-            margin-top: 8px;
+            margin-top: auto;
+            padding-top: 4mm;
+            border-top: 1px solid var(--gray-300);
             text-align: center;
-            font-size: 8pt;
-            color: #94a3b8;
-            padding-top: 6px;
-            border-top: 1px solid #e2e8f0;
+            font-size: 7pt;
+            color: var(--gray-500);
+        }
+        
+        /* =============================================================================
+           UTILITAIRES IMPRESSION
+           ============================================================================= */
+        @media print {
+            .calendar-page, .summary-page {
+                page-break-inside: avoid;
+            }
         }
     </style>
 </head>
 <body>
-    <!-- PAGE 1: COUVERTURE -->
+    <!-- ========== PAGE 1: COUVERTURE ========== -->
     <div class="cover-page">
-        <div class="cover-pattern"></div>
-        <div class="cover-content">
-            <div class="cover-icon">📅</div>
+        <div class="cover-top">
             <div class="cover-church">Église Évangélique Baptiste de Cabassou</div>
+        </div>
+        <div class="cover-main">
             <div class="cover-title">CALENDRIER</div>
-            <div class="cover-subtitle">Programme des activités</div>
             <div class="cover-period">{{ title }}</div>
         </div>
-        <div class="cover-footer">EEBC • {{ year }}</div>
+        <div class="cover-bottom">
+            <div class="cover-year">{{ year }}</div>
+        </div>
     </div>
     
-    <!-- PAGES 2-4: CALENDRIER MENSUEL -->
+    <!-- ========== PAGES 2-4: CALENDRIER MENSUEL (CSS GRID) ========== -->
     {% for cal in calendars %}
     <div class="calendar-page">
         <div class="month-header">
@@ -283,84 +421,83 @@
             <span class="month-year">{{ cal.year }}</span>
         </div>
         
-        <table class="calendar-grid">
-            <thead>
-                <tr>
-                    {% for jour in jours_semaine %}
-                    <th {% if forloop.counter > 5 %}class="weekend"{% endif %}>{{ jour }}</th>
-                    {% endfor %}
-                </tr>
-            </thead>
-            <tbody>
-                {% for week in cal.weeks %}
-                <tr>
-                    {% for day_data in week %}
-                    <td class="{% if not day_data.day %}empty{% endif %}{% if forloop.counter > 5 %} weekend{% endif %}">
-                        {% if day_data.day %}
-                        <div class="day-cell">
-                            <div class="day-num {% if forloop.counter == 7 %}sunday{% endif %}">{{ day_data.day }}</div>
-                            <div class="events-container">
-                                {% with n=day_data.events|length %}
-                                {% for event in day_data.events|slice:":4" %}
-                                <div class="evt size-{% if n == 1 %}1{% elif n == 2 %}2{% elif n == 3 %}3{% else %}4{% endif %}" style="background:{{ event.category.color|default:'#0A36FF' }}">
-                                    <div class="evt-title">{{ event.title|truncatechars:28 }}</div>
-                                    {% if event.start_time %}<div class="evt-time">{{ event.start_time|time:"H:i" }}</div>{% endif %}
-                                    {% if event.description and n == 1 %}<div class="evt-desc">{{ event.description|truncatechars:45 }}</div>{% endif %}
-                                </div>
-                                {% endfor %}
-                                {% if n > 4 %}<div class="more-events">+{{ n|add:"-4" }}</div>{% endif %}
-                                {% endwith %}
-                            </div>
+        <div class="calendar-grid">
+            <!-- En-têtes des jours -->
+            {% for jour in jours_semaine %}
+            <div class="day-header {% if forloop.counter > 5 %}weekend{% endif %}">{{ jour }}</div>
+            {% endfor %}
+            
+            <!-- Cellules du calendrier -->
+            {% for week in cal.weeks %}
+                {% for day_data in week %}
+                <div class="day-cell {% if not day_data.day %}empty{% endif %}{% if forloop.counter > 5 %} weekend{% endif %}{% if day_data.is_today %} today{% endif %}{% if day_data.span %} span-{{ day_data.span }}{% endif %}">
+                    {% if day_data.day %}
+                    <div class="day-number">{{ day_data.day }}</div>
+                    <div class="events-list">
+                        {% for event in day_data.events|slice:":3" %}
+                        <div class="event {% if forloop.first %}accent{% else %}light{% endif %}{% if event.is_multi_day %} multi-day{% endif %}"
+                             {% if event.category and event.category.color and forloop.first %}style="background: {{ event.category.color }}"{% endif %}>
+                            <div class="event-title">{{ event.title|truncatechars:20 }}</div>
+                            {% if event.start_time %}<div class="event-time">{{ event.start_time|time:"H:i" }}</div>{% endif %}
                         </div>
+                        {% endfor %}
+                        {% with remaining=day_data.events|length %}
+                        {% if remaining > 3 %}
+                        <div class="more-indicator">+{{ remaining|add:"-3" }} autres</div>
                         {% endif %}
-                    </td>
-                    {% endfor %}
-                </tr>
+                        {% endwith %}
+                    </div>
+                    {% endif %}
+                </div>
                 {% endfor %}
-            </tbody>
-        </table>
-        <div class="cal-footer">EEBC • {{ cal.month_name }} {{ cal.year }}</div>
+            {% endfor %}
+        </div>
+        
+        <div class="calendar-footer">EEBC · {{ cal.month_name }} {{ cal.year }}</div>
     </div>
     {% endfor %}
     
-    <!-- PAGE 5: SYNTHÈSE PAR CATÉGORIE -->
+    <!-- ========== PAGE SYNTHÈSE ========== -->
     <div class="summary-page">
         <div class="summary-header">
-            <h2>📋 Récapitulatif des événements</h2>
-            <p>{{ title }} • {{ total_events }} événement{{ total_events|pluralize }}</p>
+            <div class="summary-title">Récapitulatif</div>
+            <div class="summary-subtitle">{{ title }} · {{ total_events }} événement{{ total_events|pluralize }}</div>
         </div>
         
         <table class="summary-table">
             <thead>
                 <tr>
-                    <th style="width:22%">Catégorie</th>
-                    <th style="width:12%">Date</th>
-                    <th style="width:10%">Heure</th>
-                    <th style="width:36%">Événement</th>
-                    <th style="width:20%">Lieu</th>
+                    <th style="width: 15%">Catégorie</th>
+                    <th style="width: 12%">Date</th>
+                    <th style="width: 8%">Heure</th>
+                    <th style="width: 40%">Événement</th>
+                    <th style="width: 25%">Lieu</th>
                 </tr>
             </thead>
             <tbody>
                 {% for cat_data in events_by_category %}
                 {% for event in cat_data.events %}
                 <tr>
-                    {% if forloop.first %}
-                    <td class="cat-cell" rowspan="{{ cat_data.events|length }}" style="background:{{ cat_data.color }}; color:white;">
-                        <strong>{{ cat_data.name }}</strong><br>
-                        <small>{{ cat_data.events|length }} évt.</small>
+                    <td>
+                        {% if forloop.first %}
+                        <span class="cat-badge" style="background: {{ cat_data.color|default:'#0A36FF' }}">
+                            {{ cat_data.name }}
+                        </span>
+                        {% endif %}
                     </td>
-                    {% endif %}
-                    <td class="date-cell">{{ event.start_date|date:"d/m/Y" }}</td>
-                    <td class="time-cell">{% if event.start_time %}{{ event.start_time|time:"H:i" }}{% else %}-{% endif %}</td>
-                    <td class="title-cell">{{ event.title }}</td>
-                    <td class="location-cell">{{ event.location|default:"-" }}</td>
+                    <td class="date-col">{{ event.start_date|date:"d/m" }}</td>
+                    <td class="time-col">{% if event.start_time %}{{ event.start_time|time:"H:i" }}{% else %}—{% endif %}</td>
+                    <td class="title-col">{{ event.title }}</td>
+                    <td class="location-col">{{ event.location|default:"—" }}</td>
                 </tr>
                 {% endfor %}
                 {% endfor %}
             </tbody>
         </table>
         
-        <div class="summary-footer">EEBC - Église Évangélique Baptiste de Cabassou • {{ title }}</div>
+        <div class="summary-footer">
+            EEBC · Église Évangélique Baptiste de Cabassou · {{ title }}
+        </div>
     </div>
 </body>
 </html>

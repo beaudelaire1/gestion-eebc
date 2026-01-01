@@ -1,0 +1,194 @@
+{% extends 'base.html' %}
+{% load humanize %}
+
+{% block title %}{{ event.title }} - EEBC{% endblock %}
+{% block page_title %}{{ event.get_event_type_display }}{% endblock %}
+{% block page_subtitle %}{{ event.event_date|date:"d F Y" }}{% endblock %}
+
+{% block content %}
+<div class="row g-4">
+    <div class="col-lg-8">
+        <!-- Infos principales -->
+        <div class="card border-0 shadow-sm mb-4">
+            <div class="card-header bg-transparent border-0">
+                <h6 class="mb-0 fw-bold">
+                    <span class="me-2">
+                        {% if event.event_type == 'naissance' %}🎉
+                        {% elif event.event_type == 'deces' %}⚫
+                        {% elif event.event_type == 'mariage' %}💒
+                        {% elif event.event_type == 'hospitalisation' %}🏥
+                        {% elif event.event_type == 'bapteme' %}💧
+                        {% else %}📌{% endif %}
+                    </span>
+                    {{ event.title }}
+                </h6>
+            </div>
+            <div class="card-body">
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <label class="text-muted small">Membre principal</label>
+                        <div>
+                            <a href="{% url 'members:detail' event.primary_member.pk %}" class="fw-medium text-decoration-none">
+                                {{ event.primary_member.full_name }}
+                            </a>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="text-muted small">Date</label>
+                        <div class="fw-medium">{{ event.event_date|date:"l d F Y" }}</div>
+                    </div>
+                    {% if event.description %}
+                    <div class="col-12">
+                        <label class="text-muted small">Description</label>
+                        <div>{{ event.description }}</div>
+                    </div>
+                    {% endif %}
+                    {% if event.related_members.exists %}
+                    <div class="col-12">
+                        <label class="text-muted small">Membres liés</label>
+                        <div>
+                            {% for member in event.related_members.all %}
+                            <a href="{% url 'members:detail' member.pk %}" class="badge bg-secondary-subtle text-secondary text-decoration-none me-1">
+                                {{ member.full_name }}
+                            </a>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    {% endif %}
+                    {% if event.notes %}
+                    <div class="col-12">
+                        <label class="text-muted small">Notes pastorales</label>
+                        <div class="p-3 bg-light rounded">{{ event.notes }}</div>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        
+        <!-- Visites liées -->
+        <div class="card border-0 shadow-sm">
+            <div class="card-header bg-transparent border-0 d-flex justify-content-between align-items-center">
+                <h6 class="mb-0 fw-bold"><i class="bi bi-house-heart me-2"></i>Visites liées</h6>
+                <a href="{% url 'members:visit_create' %}?event={{ event.pk }}&member={{ event.primary_member.pk }}" class="btn btn-sm btn-primary">
+                    <i class="bi bi-plus-lg me-1"></i> Planifier
+                </a>
+            </div>
+            <div class="card-body">
+                {% if visits %}
+                <div class="table-responsive">
+                    <table class="table table-sm">
+                        <thead>
+                            <tr>
+                                <th>Date</th>
+                                <th>Type</th>
+                                <th>Visiteur</th>
+                                <th>Statut</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for visit in visits %}
+                            <tr>
+                                <td>{{ visit.visit_date|date:"d/m/Y"|default:visit.scheduled_date|date:"d/m/Y"|default:"—" }}</td>
+                                <td>{{ visit.get_visit_type_display }}</td>
+                                <td>{{ visit.visitor.get_full_name|default:"—" }}</td>
+                                <td>
+                                    <span class="badge bg-{% if visit.status == 'effectue' %}success{% elif visit.status == 'a_faire' %}warning{% else %}secondary{% endif %}">
+                                        {{ visit.get_status_display }}
+                                    </span>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <p class="text-muted text-center py-3 mb-0">Aucune visite enregistrée</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-lg-4">
+        <!-- Statut -->
+        <div class="card border-0 shadow-sm mb-4">
+            <div class="card-header bg-transparent border-0">
+                <h6 class="mb-0 fw-bold"><i class="bi bi-clipboard-check me-2"></i>Suivi</h6>
+            </div>
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center py-2 border-bottom">
+                    <span>Priorité</span>
+                    <span class="badge bg-{% if event.priority == 'haute' %}danger{% elif event.priority == 'normale' %}warning{% else %}secondary{% endif %}">
+                        {{ event.get_priority_display }}
+                    </span>
+                </div>
+                
+                <div class="d-flex justify-content-between align-items-center py-2 border-bottom">
+                    <span>Visite requise</span>
+                    {% if event.requires_visit %}
+                        {% if event.visit_completed %}
+                        <span class="badge bg-success">Effectuée ✓</span>
+                        {% else %}
+                        <span class="badge bg-warning" id="visit-status">À faire</span>
+                        {% endif %}
+                    {% else %}
+                    <span class="text-muted">Non</span>
+                    {% endif %}
+                </div>
+                
+                <div class="d-flex justify-content-between align-items-center py-2">
+                    <span>Annonce culte</span>
+                    {% if event.announce_sunday %}
+                        {% if event.announced %}
+                        <span class="badge bg-success">Annoncé ✓</span>
+                        {% else %}
+                        <span class="badge bg-info" id="announce-status">À annoncer</span>
+                        {% endif %}
+                    {% else %}
+                    <span class="text-muted">Non</span>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        
+        <!-- Actions -->
+        <div class="card border-0 shadow-sm">
+            <div class="card-body">
+                <div class="d-grid gap-2">
+                    {% if event.requires_visit and not event.visit_completed %}
+                    <a href="{% url 'members:visit_create' %}?event={{ event.pk }}&member={{ event.primary_member.pk }}" class="btn btn-primary">
+                        <i class="bi bi-house me-1"></i> Planifier une visite
+                    </a>
+                    <button hx-post="{% url 'members:life_event_mark_visited' event.pk %}" 
+                            hx-target="#visit-status" 
+                            hx-swap="outerHTML"
+                            class="btn btn-outline-success">
+                        <i class="bi bi-check-lg me-1"></i> Marquer visité
+                    </button>
+                    {% endif %}
+                    
+                    {% if event.announce_sunday and not event.announced %}
+                    <button hx-post="{% url 'members:life_event_mark_announced' event.pk %}" 
+                            hx-target="#announce-status" 
+                            hx-swap="outerHTML"
+                            class="btn btn-outline-info">
+                        <i class="bi bi-megaphone me-1"></i> Marquer annoncé
+                    </button>
+                    {% endif %}
+                    
+                    <a href="{% url 'members:life_events' %}" class="btn btn-outline-secondary">
+                        <i class="bi bi-arrow-left me-1"></i> Retour à la liste
+                    </a>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Métadonnées -->
+        <div class="card border-0 shadow-sm mt-4">
+            <div class="card-body small text-muted">
+                <div>Enregistré par : {{ event.recorded_by.get_full_name|default:"—" }}</div>
+                <div>Le : {{ event.created_at|date:"d/m/Y H:i" }}</div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

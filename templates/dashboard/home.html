@@ -503,13 +503,23 @@
         </div>
     </a>
     
-    <a href="{% url 'bibleclub:children_list' %}" class="quick-action">
+    <a href="{% url 'finance:dashboard' %}" class="quick-action">
         <div class="action-icon" style="background: linear-gradient(135deg, #10B981 0%, #059669 100%);">
-            <i class="bi bi-people-fill"></i>
+            <i class="bi bi-cash-coin"></i>
         </div>
         <div>
-            <div class="action-text">Liste enfants</div>
-            <div class="action-desc">Voir tous les enfants</div>
+            <div class="action-text">Trésorerie</div>
+            <div class="action-desc">Finance & Dons</div>
+        </div>
+    </a>
+    
+    <a href="{% url 'worship:service_list' %}" class="quick-action">
+        <div class="action-icon" style="background: linear-gradient(135deg, #8B5CF6 0%, #7C3AED 100%);">
+            <i class="bi bi-calendar-check"></i>
+        </div>
+        <div>
+            <div class="action-text">Cultes</div>
+            <div class="action-desc">Planning liturgique</div>
         </div>
     </a>
     
@@ -520,16 +530,6 @@
         <div>
             <div class="action-text">Calendrier</div>
             <div class="action-desc">Voir les événements</div>
-        </div>
-    </a>
-    
-    <a href="{% url 'admin:index' %}" class="quick-action">
-        <div class="action-icon" style="background: linear-gradient(135deg, #6366F1 0%, #4F46E5 100%);">
-            <i class="bi bi-gear-fill"></i>
-        </div>
-        <div>
-            <div class="action-text">Administration</div>
-            <div class="action-desc">Panel Jazzmin</div>
         </div>
     </a>
 </div>
@@ -695,6 +695,191 @@
                     <p>Aucune annonce récente</p>
                 </div>
                 {% endif %}
+            </div>
+        </div>
+    </div>
+    
+    <!-- ========== NOUVEAUX MODULES ========== -->
+    
+    <!-- Finance Card -->
+    <div class="col-lg-4">
+        <div class="modern-card">
+            <div class="card-header">
+                <h6><i class="bi bi-cash-coin text-success"></i> Trésorerie du mois</h6>
+                <a href="{% url 'finance:dashboard' %}" class="btn btn-sm btn-outline-secondary">Détails</a>
+            </div>
+            <div class="card-body">
+                <div class="row g-3 mb-3">
+                    <div class="col-6">
+                        <div class="p-3 rounded-3" style="background: rgba(16, 185, 129, 0.1);">
+                            <div class="small text-muted mb-1">Entrées</div>
+                            <div class="fs-5 fw-bold text-success">+{{ finance_stats.month_income|floatformat:0 }}€</div>
+                        </div>
+                    </div>
+                    <div class="col-6">
+                        <div class="p-3 rounded-3" style="background: rgba(239, 68, 68, 0.1);">
+                            <div class="small text-muted mb-1">Sorties</div>
+                            <div class="fs-5 fw-bold text-danger">-{{ finance_stats.month_expenses|floatformat:0 }}€</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="p-3 rounded-3 text-center" style="background: var(--eebc-gray-50);">
+                    <div class="small text-muted mb-1">Solde du mois</div>
+                    <div class="fs-4 fw-bold {% if finance_stats.month_balance >= 0 %}text-success{% else %}text-danger{% endif %}">
+                        {% if finance_stats.month_balance >= 0 %}+{% endif %}{{ finance_stats.month_balance|floatformat:0 }}€
+                    </div>
+                </div>
+                {% if finance_stats.pending_transactions > 0 %}
+                <div class="mt-3 text-center">
+                    <a href="{% url 'finance:transaction_list' %}?status=en_attente" class="btn btn-sm btn-outline-warning">
+                        <i class="bi bi-clock-history me-1"></i>
+                        {{ finance_stats.pending_transactions }} transaction(s) en attente
+                    </a>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    
+    <!-- Worship Card -->
+    <div class="col-lg-4">
+        <div class="modern-card">
+            <div class="card-header">
+                <h6><i class="bi bi-calendar-check text-primary"></i> Prochain culte</h6>
+                <a href="{% url 'worship:service_list' %}" class="btn btn-sm btn-outline-secondary">Planning</a>
+            </div>
+            <div class="card-body">
+                {% if worship_stats.next_service %}
+                <div class="text-center mb-3">
+                    <div class="d-inline-block p-3 rounded-4" style="background: linear-gradient(135deg, var(--eebc-primary) 0%, #3b82f6 100%);">
+                        <div class="text-white">
+                            <div class="fs-2 fw-bold">{{ worship_stats.next_service.event.start_date|date:"d" }}</div>
+                            <div class="small text-uppercase">{{ worship_stats.next_service.event.start_date|date:"M" }}</div>
+                        </div>
+                    </div>
+                </div>
+                <h6 class="text-center fw-bold mb-2">{{ worship_stats.next_service.get_service_type_display }}</h6>
+                {% if worship_stats.next_service.theme %}
+                <p class="text-center text-muted small mb-3">{{ worship_stats.next_service.theme }}</p>
+                {% endif %}
+                
+                {% if unconfirmed_roles %}
+                <div class="alert alert-warning py-2 px-3 small mb-2">
+                    <i class="bi bi-exclamation-triangle me-1"></i>
+                    {{ worship_stats.unconfirmed_roles_count }} rôle(s) non confirmé(s)
+                </div>
+                <div class="small">
+                    {% for role in unconfirmed_roles %}
+                    <div class="d-flex justify-content-between py-1 border-bottom">
+                        <span>{{ role.get_role_display }}</span>
+                        <span class="text-muted">{{ role.assignee_name }}</span>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <div class="alert alert-success py-2 px-3 small">
+                    <i class="bi bi-check-circle me-1"></i>
+                    Tous les rôles sont confirmés
+                </div>
+                {% endif %}
+                
+                <div class="text-center mt-3">
+                    <a href="{% url 'worship:service_detail' worship_stats.next_service.pk %}" class="btn btn-primary btn-sm">
+                        <i class="bi bi-eye me-1"></i> Voir détails
+                    </a>
+                </div>
+                {% else %}
+                <div class="text-center py-4 text-muted">
+                    <i class="bi bi-calendar-x fs-1 mb-3 d-block opacity-50"></i>
+                    <p>Aucun culte planifié</p>
+                    <a href="{% url 'worship:service_create' %}" class="btn btn-primary btn-sm">
+                        <i class="bi bi-plus-lg me-1"></i> Planifier un culte
+                    </a>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    
+    <!-- Pastoral CRM Card -->
+    <div class="col-lg-4">
+        <div class="modern-card">
+            <div class="card-header">
+                <h6><i class="bi bi-heart-fill text-danger"></i> Suivi pastoral</h6>
+                <a href="{% url 'members:visits' %}" class="btn btn-sm btn-outline-secondary">Visites</a>
+            </div>
+            <div class="card-body">
+                <!-- Stats rapides -->
+                <div class="row g-2 mb-3">
+                    <div class="col-4 text-center">
+                        <a href="{% url 'members:members_needing_visit' %}" class="text-decoration-none">
+                            <div class="fs-4 fw-bold text-warning">{{ pastoral_stats.members_needing_visit }}</div>
+                            <div class="small text-muted">À visiter</div>
+                        </a>
+                    </div>
+                    <div class="col-4 text-center">
+                        <a href="{% url 'members:visits' %}?status=a_faire" class="text-decoration-none">
+                            <div class="fs-4 fw-bold text-info">{{ pastoral_stats.pending_visits_count }}</div>
+                            <div class="small text-muted">Planifiées</div>
+                        </a>
+                    </div>
+                    <div class="col-4 text-center">
+                        <a href="{% url 'members:life_events' %}" class="text-decoration-none">
+                            <div class="fs-4 fw-bold text-primary">{{ pastoral_stats.recent_life_events_count }}</div>
+                            <div class="small text-muted">Événements</div>
+                        </a>
+                    </div>
+                </div>
+                
+                <!-- Événements de vie récents -->
+                {% if recent_life_events %}
+                <h6 class="small text-uppercase text-muted mb-2">Événements récents</h6>
+                <div class="small">
+                    {% for event in recent_life_events %}
+                    <a href="{% url 'members:life_event_detail' event.pk %}" class="d-flex align-items-center py-2 border-bottom text-decoration-none text-dark">
+                        <span class="me-2">
+                            {% if event.event_type == 'naissance' %}🎉
+                            {% elif event.event_type == 'deces' %}⚫
+                            {% elif event.event_type == 'mariage' %}💒
+                            {% elif event.event_type == 'hospitalisation' %}🏥
+                            {% elif event.event_type == 'bapteme' %}💧
+                            {% else %}📌{% endif %}
+                        </span>
+                        <div class="flex-grow-1">
+                            <div class="fw-medium">{{ event.primary_member.full_name }}</div>
+                            <div class="text-muted small">{{ event.get_event_type_display }} · {{ event.event_date|date:"d/m" }}</div>
+                        </div>
+                        {% if event.requires_visit and not event.visit_completed %}
+                        <span class="badge bg-warning">À visiter</span>
+                        {% endif %}
+                    </a>
+                    {% endfor %}
+                </div>
+                {% endif %}
+                
+                <!-- Visites planifiées -->
+                {% if pending_visits %}
+                <h6 class="small text-uppercase text-muted mb-2 mt-3">Visites à faire</h6>
+                <div class="small">
+                    {% for visit in pending_visits %}
+                    <a href="{% url 'members:visit_detail' visit.pk %}" class="d-flex justify-content-between py-1 text-decoration-none text-dark">
+                        <span>{{ visit.member.full_name }}</span>
+                        <span class="badge bg-{% if visit.status == 'a_faire' %}warning{% else %}info{% endif %}">
+                            {% if visit.scheduled_date %}{{ visit.scheduled_date|date:"d/m" }}{% else %}À planifier{% endif %}
+                        </span>
+                    </a>
+                    {% endfor %}
+                </div>
+                {% endif %}
+                
+                <div class="text-center mt-3">
+                    <a href="{% url 'members:life_event_create' %}" class="btn btn-outline-primary btn-sm me-1">
+                        <i class="bi bi-plus-lg me-1"></i> Événement
+                    </a>
+                    <a href="{% url 'members:visit_create' %}" class="btn btn-outline-secondary btn-sm">
+                        <i class="bi bi-house me-1"></i> Visite
+                    </a>
+                </div>
             </div>
         </div>
     </div>

@@ -1,0 +1,140 @@
+{% extends 'base.html' %}
+{% load humanize %}
+
+{% block title %}{{ service.get_service_type_display }} - {{ service.event.start_date|date:"d/m/Y" }}{% endblock %}
+{% block page_title %}{{ service.get_service_type_display }}{% endblock %}
+{% block page_subtitle %}{{ service.event.start_date|date:"l d F Y" }}{% endblock %}
+
+{% block content %}
+<div class="row g-4">
+    <!-- Infos principales -->
+    <div class="col-lg-8">
+        <div class="card border-0 shadow-sm mb-4">
+            <div class="card-header bg-transparent border-0 d-flex justify-content-between align-items-center">
+                <h6 class="mb-0 fw-bold"><i class="bi bi-info-circle me-2"></i>Informations</h6>
+                <a href="{% url 'worship:service_edit' service.pk %}" class="btn btn-sm btn-outline-primary">
+                    <i class="bi bi-pencil me-1"></i> Modifier
+                </a>
+            </div>
+            <div class="card-body">
+                <div class="row g-3">
+                    {% if service.theme %}
+                    <div class="col-md-6">
+                        <label class="text-muted small">Thème</label>
+                        <div class="fw-medium">{{ service.theme }}</div>
+                    </div>
+                    {% endif %}
+                    {% if service.bible_text %}
+                    <div class="col-md-6">
+                        <label class="text-muted small">Texte biblique</label>
+                        <div class="fw-medium">{{ service.bible_text }}</div>
+                    </div>
+                    {% endif %}
+                    {% if service.sermon_title %}
+                    <div class="col-12">
+                        <label class="text-muted small">Prédication</label>
+                        <div class="fw-medium">{{ service.sermon_title }}</div>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        
+        <!-- Programme -->
+        <div class="card border-0 shadow-sm">
+            <div class="card-header bg-transparent border-0 d-flex justify-content-between align-items-center">
+                <h6 class="mb-0 fw-bold"><i class="bi bi-list-ol me-2"></i>Programme</h6>
+                <div>
+                    <a href="{% url 'worship:plan_edit' service.pk %}" class="btn btn-sm btn-outline-primary me-1">
+                        <i class="bi bi-pencil me-1"></i> Éditer
+                    </a>
+                    <a href="{% url 'worship:run_sheet_pdf' service.pk %}" class="btn btn-sm btn-primary" target="_blank">
+                        <i class="bi bi-file-pdf me-1"></i> PDF
+                    </a>
+                </div>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th style="width: 80px;">Heure</th>
+                                <th style="width: 60px;">Durée</th>
+                                <th>Segment</th>
+                                <th>Responsable</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for item in plan_items %}
+                            <tr>
+                                <td class="fw-bold text-primary">
+                                    {% if item.start_time %}{{ item.start_time|time:"H:i" }}{% else %}—{% endif %}
+                                </td>
+                                <td class="text-muted">{{ item.duration_minutes }}'</td>
+                                <td>
+                                    <span class="badge bg-secondary-subtle text-secondary me-1">{{ item.get_item_type_display }}</span>
+                                    {% if item.title %}{{ item.title }}{% endif %}
+                                </td>
+                                <td>{% if item.responsible %}{{ item.responsible.full_name }}{% else %}<span class="text-muted">—</span>{% endif %}</td>
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="4" class="text-center py-4 text-muted">
+                                    Aucun élément de programme
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Rôles -->
+    <div class="col-lg-4">
+        <div class="card border-0 shadow-sm">
+            <div class="card-header bg-transparent border-0">
+                <h6 class="mb-0 fw-bold"><i class="bi bi-people me-2"></i>Équipe du jour</h6>
+            </div>
+            <div class="card-body">
+                {% for role in roles %}
+                <div class="d-flex justify-content-between align-items-center py-2 border-bottom">
+                    <div>
+                        <div class="small text-muted">{{ role.get_role_display }}</div>
+                        <div class="fw-medium">{{ role.assignee_name }}</div>
+                    </div>
+                    <div>
+                        {% if role.status == 'confirme' %}
+                        <span class="badge bg-success"><i class="bi bi-check-lg"></i></span>
+                        {% elif role.status == 'decline' %}
+                        <span class="badge bg-danger"><i class="bi bi-x-lg"></i></span>
+                        {% else %}
+                        <span class="badge bg-warning"><i class="bi bi-clock"></i></span>
+                        {% endif %}
+                    </div>
+                </div>
+                {% empty %}
+                <div class="text-center py-3 text-muted">
+                    Aucun rôle assigné
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        
+        <!-- Actions -->
+        <div class="card border-0 shadow-sm mt-4">
+            <div class="card-body">
+                <div class="d-grid gap-2">
+                    <a href="{% url 'worship:run_sheet_pdf' service.pk %}" class="btn btn-primary" target="_blank">
+                        <i class="bi bi-file-pdf me-1"></i> Télécharger la fiche
+                    </a>
+                    <a href="{% url 'worship:service_list' %}" class="btn btn-outline-secondary">
+                        <i class="bi bi-arrow-left me-1"></i> Retour au planning
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

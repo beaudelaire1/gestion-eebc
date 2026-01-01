@@ -1,0 +1,93 @@
+{% extends 'base.html' %}
+{% load crispy_forms_tags %}
+
+{% block title %}Nouvel événement de vie - EEBC{% endblock %}
+{% block page_title %}Nouvel événement de vie{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-8">
+        <div class="card border-0 shadow-sm">
+            <div class="card-body p-4">
+                <form method="post">
+                    {% csrf_token %}
+                    
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Type d'événement *</label>
+                            {{ form.event_type }}
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Date *</label>
+                            {{ form.event_date }}
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Membre principal *</label>
+                            {{ form.primary_member }}
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Priorité</label>
+                            {{ form.priority }}
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Titre</label>
+                        {{ form.title }}
+                        <small class="text-muted">Laissez vide pour générer automatiquement</small>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Description</label>
+                        {{ form.description }}
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Membres liés (optionnel)</label>
+                        {{ form.related_members }}
+                        <small class="text-muted">Conjoint, famille, etc. Ctrl+clic pour sélection multiple</small>
+                    </div>
+                    
+                    <hr class="my-4">
+                    
+                    <h6 class="mb-3"><i class="bi bi-clipboard-check me-2"></i>Suivi pastoral</h6>
+                    
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <div class="form-check">
+                                {{ form.requires_visit }}
+                                <label class="form-check-label" for="{{ form.requires_visit.id_for_label }}">
+                                    Visite pastorale requise
+                                </label>
+                            </div>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <div class="form-check">
+                                {{ form.announce_sunday }}
+                                <label class="form-check-label" for="{{ form.announce_sunday.id_for_label }}">
+                                    Annoncer lors du culte
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Notes pastorales</label>
+                        {{ form.notes }}
+                    </div>
+                    
+                    <div class="d-flex gap-2 mt-4">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="bi bi-check-lg me-1"></i> Enregistrer
+                        </button>
+                        <a href="{% url 'members:life_events' %}" class="btn btn-outline-secondary">Annuler</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

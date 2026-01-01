@@ -54,6 +54,8 @@ INSTALLED_APPS = [
     'apps.groups',
     'apps.communication',
     'apps.dashboard',
+    'apps.finance',      # Module Finance & Trésorerie
+    'apps.worship',      # Module Liturgie & Cultes
 ]
 
 MIDDLEWARE = [
@@ -214,8 +216,10 @@ JAZZMIN_SETTINGS = {
         "bibleclub",
         "members", 
         "events",
+        "worship",
         "groups",
         "campaigns",
+        "finance",
         "departments",
         "transport",
         "inventory",
@@ -242,11 +246,19 @@ JAZZMIN_SETTINGS = {
         
         "members": "fas fa-users",
         "members.Member": "fas fa-user-friends",
+        "members.LifeEvent": "fas fa-heart",
+        "members.VisitationLog": "fas fa-home",
         
         "events": "fas fa-calendar-alt",
         "events.Event": "fas fa-calendar-day",
         "events.EventCategory": "fas fa-tags",
         "events.EventRegistration": "fas fa-user-plus",
+        
+        "worship": "fas fa-church",
+        "worship.WorshipService": "fas fa-cross",
+        "worship.ServiceRole": "fas fa-user-tag",
+        "worship.ServicePlanItem": "fas fa-list-ol",
+        "worship.ServiceTemplate": "fas fa-file-alt",
         
         "groups": "fas fa-people-group",
         "groups.Group": "fas fa-users",
@@ -255,6 +267,12 @@ JAZZMIN_SETTINGS = {
         "campaigns": "fas fa-hand-holding-heart",
         "campaigns.Campaign": "fas fa-bullhorn",
         "campaigns.Donation": "fas fa-donate",
+        
+        "finance": "fas fa-coins",
+        "finance.FinancialTransaction": "fas fa-exchange-alt",
+        "finance.FinanceCategory": "fas fa-folder-open",
+        "finance.ReceiptProof": "fas fa-receipt",
+        "finance.BudgetLine": "fas fa-chart-pie",
         
         "departments": "fas fa-building",
         "departments.Department": "fas fa-sitemap",

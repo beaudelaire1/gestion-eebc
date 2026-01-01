@@ -1,0 +1,122 @@
+{% extends 'base.html' %}
+
+{% block title %}Programme - {{ service.event.start_date|date:"d/m/Y" }}{% endblock %}
+{% block page_title %}Programme du culte{% endblock %}
+{% block page_subtitle %}{{ service.event.start_date|date:"l d F Y" }}{% endblock %}
+
+{% block content %}
+<div class="row g-4">
+    <div class="col-lg-8">
+        <div class="card border-0 shadow-sm">
+            <div class="card-header bg-transparent border-0 d-flex justify-content-between align-items-center">
+                <h6 class="mb-0 fw-bold"><i class="bi bi-list-ol me-2"></i>Déroulement</h6>
+                <a href="{% url 'worship:run_sheet_pdf' service.pk %}" class="btn btn-sm btn-primary" target="_blank">
+                    <i class="bi bi-file-pdf me-1"></i> Générer PDF
+                </a>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0" id="plan-table">
+                        <thead class="table-light">
+                            <tr>
+                                <th style="width: 50px;">#</th>
+                                <th style="width: 80px;">Heure</th>
+                                <th style="width: 60px;">Durée</th>
+                                <th>Segment</th>
+                                <th>Responsable</th>
+                                <th style="width: 80px;">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for item in plan_items %}
+                            <tr data-id="{{ item.pk }}">
+                                <td class="text-muted">{{ item.order }}</td>
+                                <td class="fw-bold text-primary">
+                                    {% if item.start_time %}{{ item.start_time|time:"H:i" }}{% else %}—{% endif %}
+                                </td>
+                                <td>{{ item.duration_minutes }}'</td>
+                                <td>
+                                    <span class="badge bg-secondary-subtle text-secondary">{{ item.get_item_type_display }}</span>
+                                    {% if item.title %}<span class="ms-1">{{ item.title }}</span>{% endif %}
+                                </td>
+                                <td>{% if item.responsible %}{{ item.responsible.full_name }}{% else %}<span class="text-muted">—</span>{% endif %}</td>
+                                <td>
+                                    <button class="btn btn-sm btn-outline-danger" onclick="deleteItem({{ item.pk }})">
+                                        <i class="bi bi-trash"></i>
+                                    </button>
+                                </td>
+                            </tr>
+                            {% empty %}
+                            <tr id="empty-row">
+                                <td colspan="6" class="text-center py-4 text-muted">
+                                    Aucun élément de programme. Ajoutez-en ci-dessous.
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-lg-4">
+        <!-- Ajouter un élément -->
+        <div class="card border-0 shadow-sm mb-4">
+            <div class="card-header bg-transparent border-0">
+                <h6 class="mb-0 fw-bold"><i class="bi bi-plus-circle me-2"></i>Ajouter un élément</h6>
+            </div>
+            <div class="card-body">
+                <form method="post" action="{% url 'worship:plan_item_add' service.pk %}">
+                    {% csrf_token %}
+                    <div class="mb-3">
+                        <label class="form-label">Type</label>
+                        <select name="item_type" class="form-select" required>
+                            {% for value, label in item_types %}
+                            <option value="{{ value }}">{{ label }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Titre (optionnel)</label>
+                        <input type="text" name="title" class="form-control" placeholder="Ex: Prière d'ouverture">
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col-6">
+                            <label class="form-label">Heure</label>
+                            <input type="time" name="start_time" class="form-control">
+                        </div>
+                        <div class="col-6">
+                            <label class="form-label">Durée (min)</label>
+                            <input type="number" name="duration_minutes" class="form-control" value="5" min="1" max="120">
+                        </div>
+                    </div>
+                    <button type="submit" class="btn btn-primary w-100">
+                        <i class="bi bi-plus-lg me-1"></i> Ajouter
+                    </button>
+                </form>
+            </div>
+        </div>
+        
+        <!-- Modèles -->
+        <div class="card border-0 shadow-sm">
+            <div class="card-header bg-transparent border-0">
+                <h6 class="mb-0 fw-bold"><i class="bi bi-file-earmark-text me-2"></i>Appliquer un modèle</h6>
+            </div>
+            <div class="card-body">
+                <p class="text-muted small">Remplace le programme actuel par un modèle prédéfini.</p>
+                <a href="{% url 'admin:worship_servicetemplate_changelist' %}" class="btn btn-outline-secondary btn-sm">
+                    <i class="bi bi-gear me-1"></i> Gérer les modèles
+                </a>
+            </div>
+        </div>
+        
+        <!-- Retour -->
+        <div class="mt-4">
+            <a href="{% url 'worship:service_detail' service.pk %}" class="btn btn-outline-secondary w-100">
+                <i class="bi bi-arrow-left me-1"></i> Retour au service
+            </a>
+        </div>
+    </div>
+</div>
+{% endblock %}

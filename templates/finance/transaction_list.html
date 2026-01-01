@@ -1,0 +1,109 @@
+{% extends 'base.html' %}
+
+{% block title %}Transactions - EEBC{% endblock %}
+{% block page_title %}Transactions{% endblock %}
+
+{% block content %}
+<!-- Filtres -->
+<div class="card border-0 shadow-sm mb-4">
+    <div class="card-body">
+        <form method="get" class="row g-3 align-items-end">
+            <div class="col-md-3">
+                <label class="form-label">Type</label>
+                <select name="type" class="form-select">
+                    <option value="">Tous</option>
+                    {% for value, label in transaction_types %}
+                    <option value="{{ value }}" {% if request.GET.type == value %}selected{% endif %}>{{ label }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-2">
+                <label class="form-label">Statut</label>
+                <select name="status" class="form-select">
+                    <option value="">Tous</option>
+                    {% for value, label in statuses %}
+                    <option value="{{ value }}" {% if request.GET.status == value %}selected{% endif %}>{{ label }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-2">
+                <label class="form-label">Du</label>
+                <input type="date" name="date_from" class="form-control" value="{{ request.GET.date_from }}">
+            </div>
+            <div class="col-md-2">
+                <label class="form-label">Au</label>
+                <input type="date" name="date_to" class="form-control" value="{{ request.GET.date_to }}">
+            </div>
+            <div class="col-md-3">
+                <button type="submit" class="btn btn-primary me-2">
+                    <i class="bi bi-funnel me-1"></i> Filtrer
+                </button>
+                <a href="{% url 'finance:transaction_list' %}" class="btn btn-outline-secondary">Reset</a>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Actions -->
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <span class="text-muted">{{ transactions|length }} transaction(s)</span>
+    <a href="{% url 'finance:transaction_create' %}" class="btn btn-primary">
+        <i class="bi bi-plus-lg me-1"></i> Nouvelle transaction
+    </a>
+</div>
+
+<!-- Liste -->
+<div class="card border-0 shadow-sm">
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th>Référence</th>
+                        <th>Date</th>
+                        <th>Type</th>
+                        <th>Catégorie</th>
+                        <th>Description</th>
+                        <th class="text-end">Montant</th>
+                        <th>Statut</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for t in transactions %}
+                    <tr>
+                        <td>
+                            <a href="{% url 'finance:transaction_detail' t.pk %}" class="fw-medium text-decoration-none">
+                                {{ t.reference }}
+                            </a>
+                        </td>
+                        <td>{{ t.transaction_date|date:"d/m/Y" }}</td>
+                        <td>
+                            <span class="badge bg-{% if t.is_income %}success{% else %}danger{% endif %}-subtle text-{% if t.is_income %}success{% else %}danger{% endif %}">
+                                {{ t.get_transaction_type_display }}
+                            </span>
+                        </td>
+                        <td>{{ t.category.name|default:"-" }}</td>
+                        <td class="text-muted">{{ t.description|truncatewords:6|default:"-" }}</td>
+                        <td class="text-end fw-bold {% if t.is_income %}text-success{% else %}text-danger{% endif %}">
+                            {% if t.is_income %}+{% else %}-{% endif %}{{ t.amount }}€
+                        </td>
+                        <td>
+                            <span class="badge bg-{% if t.status == 'valide' %}success{% elif t.status == 'en_attente' %}warning{% else %}secondary{% endif %}">
+                                {{ t.get_status_display }}
+                            </span>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="7" class="text-center py-5 text-muted">
+                            <i class="bi bi-inbox fs-1 d-block mb-2 opacity-50"></i>
+                            Aucune transaction trouvée
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

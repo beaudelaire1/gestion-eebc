@@ -1,8 +1,11 @@
-from django.shortcuts import render, get_object_or_404
+from django.shortcuts import render, get_object_or_404, redirect
 from django.contrib.auth.decorators import login_required
+from django.contrib import messages
 from django.core.paginator import Paginator
 from django.db.models import Q
-from .models import Member
+from django.http import HttpResponse
+from datetime import date, timedelta
+from .models import Member, LifeEvent, VisitationLog
 
 
 @login_required
@@ -61,4 +64,246 @@ def member_list(request):
 def member_detail(request, pk):
     """Détail d'un membre."""
     member = get_object_or_404(Member, pk=pk)
-    return render(request, 'members/member_detail.html', {'member': member})
+    
+    # Récupérer les événements de vie et visites
+    life_events = member.life_events.all().order_by('-event_date')[:5]
+    visits = member.visits_received.all().order_by('-visit_date')[:5]
+    
+    context = {
+        'member': member,
+        'life_events': life_events,
+        'visits': visits,
+    }
+    return render(request, 'members/member_detail.html', context)
+
+
+# =============================================================================
+# VUES PASTORAL CRM - Événements de vie
+# =============================================================================
+
+@login_required
+def life_event_list(request):
+    """Liste des événements de vie."""
+    events = LifeEvent.objects.select_related('primary_member').order_by('-event_date')
+    
+    # Filtres
+    event_type = request.GET.get('type')
+    if event_type:
+        events = events.filter(event_type=event_type)
+    
+    needs_visit = request.GET.get('needs_visit')
+    if needs_visit == '1':
+        events = events.filter(requires_visit=True, visit_completed=False)
+    
+    # Stats
+    stats = {
+        'total': events.count(),
+        'pending_visits': events.filter(requires_visit=True, visit_completed=False).count(),
+        'to_announce': events.filter(announce_sunday=True, announced=False).count(),
+    }
+    
+    # Pagination
+    paginator = Paginator(events, 20)
+    page = request.GET.get('page')
+    events = paginator.get_page(page)
+    
+    context = {
+        'events': events,
+        'event_types': LifeEvent.EventType.choices,
+        'current_type': event_type,
+        'stats': stats,
+    }
+    return render(request, 'members/life_event_list.html', context)
+
+
+@login_required
+def life_event_create(request):
+    """Créer un événement de vie."""
+    from .forms import LifeEventForm
+    
+    if request.method == 'POST':
+        form = LifeEventForm(request.POST)
+        if form.is_valid():
+            event = form.save(commit=False)
+            event.recorded_by = request.user
+            event.save()
+            form.save_m2m()
+            messages.success(request, f"Événement '{event.title}' créé avec succès.")
+            return redirect('members:life_events')
+    else:
+        form = LifeEventForm()
+        # Pré-remplir le membre si passé en paramètre
+        member_id = request.GET.get('member')
+        if member_id:
+            form.fields['primary_member'].initial = member_id
+    
+    return render(request, 'members/life_event_form.html', {'form': form})
+
+
+@login_required
+def life_event_detail(request, pk):
+    """Détail d'un événement de vie."""
+    event = get_object_or_404(
+        LifeEvent.objects.select_related('primary_member', 'recorded_by'),
+        pk=pk
+    )
+    visits = event.visits.all().order_by('-visit_date')
+    
+    context = {
+        'event': event,
+        'visits': visits,
+    }
+    return render(request, 'members/life_event_detail.html', context)
+
+
+@login_required
+def life_event_mark_visited(request, pk):
+    """Marquer un événement comme visité."""
+    event = get_object_or_404(LifeEvent, pk=pk)
+    event.visit_completed = True
+    event.save()
+    messages.success(request, "Événement marqué comme visité.")
+    
+    if request.htmx:
+        return HttpResponse('<span class="badge bg-success">Visité ✓</span>')
+    return redirect('members:life_event_detail', pk=pk)
+
+
+@login_required
+def life_event_mark_announced(request, pk):
+    """Marquer un événement comme annoncé."""
+    event = get_object_or_404(LifeEvent, pk=pk)
+    event.announced = True
+    event.save()
+    messages.success(request, "Événement marqué comme annoncé.")
+    
+    if request.htmx:
+        return HttpResponse('<span class="badge bg-success">Annoncé ✓</span>')
+    return redirect('members:life_event_detail', pk=pk)
+
+
+# =============================================================================
+# VUES PASTORAL CRM - Visites pastorales
+# =============================================================================
+
+@login_required
+def visit_list(request):
+    """Liste des visites pastorales."""
+    visits = VisitationLog.objects.select_related('member', 'visitor').order_by('-visit_date', '-scheduled_date')
+    
+    # Filtres
+    status = request.GET.get('status')
+    if status:
+        visits = visits.filter(status=status)
+    
+    visit_type = request.GET.get('type')
+    if visit_type:
+        visits = visits.filter(visit_type=visit_type)
+    
+    # Stats
+    stats = {
+        'total': visits.count(),
+        'pending': visits.filter(status__in=['planifie', 'a_faire']).count(),
+        'completed_month': visits.filter(
+            status='effectue',
+            visit_date__gte=date.today().replace(day=1)
+        ).count(),
+    }
+    
+    # Pagination
+    paginator = Paginator(visits, 20)
+    page = request.GET.get('page')
+    visits = paginator.get_page(page)
+    
+    context = {
+        'visits': visits,
+        'statuses': VisitationLog.Status.choices,
+        'visit_types': VisitationLog.VisitType.choices,
+        'current_status': status,
+        'current_type': visit_type,
+        'stats': stats,
+    }
+    return render(request, 'members/visit_list.html', context)
+
+
+@login_required
+def visit_create(request):
+    """Créer une visite pastorale."""
+    from .forms import VisitationLogForm
+    
+    if request.method == 'POST':
+        form = VisitationLogForm(request.POST)
+        if form.is_valid():
+            visit = form.save(commit=False)
+            if not visit.visitor:
+                visit.visitor = request.user
+            visit.save()
+            messages.success(request, f"Visite pour {visit.member} créée.")
+            return redirect('members:visits')
+    else:
+        form = VisitationLogForm()
+        # Pré-remplir le membre si passé en paramètre
+        member_id = request.GET.get('member')
+        if member_id:
+            form.fields['member'].initial = member_id
+        # Pré-remplir l'événement de vie si passé
+        event_id = request.GET.get('event')
+        if event_id:
+            form.fields['life_event'].initial = event_id
+    
+    return render(request, 'members/visit_form.html', {'form': form})
+
+
+@login_required
+def visit_detail(request, pk):
+    """Détail d'une visite."""
+    visit = get_object_or_404(
+        VisitationLog.objects.select_related('member', 'visitor', 'life_event'),
+        pk=pk
+    )
+    return render(request, 'members/visit_detail.html', {'visit': visit})
+
+
+@login_required
+def visit_complete(request, pk):
+    """Marquer une visite comme effectuée."""
+    visit = get_object_or_404(VisitationLog, pk=pk)
+    visit.status = VisitationLog.Status.EFFECTUE
+    visit.visit_date = date.today()
+    visit.save()
+    
+    # Marquer l'événement de vie comme visité si lié
+    if visit.life_event:
+        visit.life_event.visit_completed = True
+        visit.life_event.save()
+    
+    messages.success(request, "Visite marquée comme effectuée.")
+    
+    if request.htmx:
+        return HttpResponse('<span class="badge bg-success">Effectuée ✓</span>')
+    return redirect('members:visit_detail', pk=pk)
+
+
+@login_required
+def members_needing_visit(request):
+    """Liste des membres nécessitant une visite (pas visités depuis 6 mois)."""
+    members = []
+    six_months_ago = date.today() - timedelta(days=180)
+    
+    for member in Member.objects.filter(status='actif'):
+        last_visit = member.last_visit_date
+        if last_visit is None or last_visit < six_months_ago:
+            members.append({
+                'member': member,
+                'last_visit': last_visit,
+                'days_since': member.days_since_last_visit,
+            })
+    
+    # Trier par ancienneté de visite
+    members.sort(key=lambda x: x['days_since'] if x['days_since'] else 9999, reverse=True)
+    
+    context = {
+        'members': members,
+        'total': len(members),
+    }
+    return render(request, 'members/members_needing_visit.html', context)
