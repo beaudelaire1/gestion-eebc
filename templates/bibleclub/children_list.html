@@ -1,6 +1,6 @@
 {% extends 'base.html' %}
 
-{% block title %}Enfants - Club Biblique - EEBC Guyane{% endblock %}
+{% block title %}Enfants - Club Biblique - EEBC{% endblock %}
 {% block page_title %}Enfants du Club Biblique{% endblock %}
 {% block page_subtitle %}Gestion des {{ children|length }} enfants inscrits{% endblock %}
 
@@ -436,11 +436,11 @@
                 <div class="child-info">
                     <div class="child-info-item">
                         <i class="bi bi-person-heart"></i>
-                        <span>{{ child.parent1_name }}</span>
+                        <span>{{ child.father_name }}</span>
                     </div>
                     <div class="child-info-item mt-1">
                         <i class="bi bi-telephone"></i>
-                        <span>{{ child.parent1_phone }}</span>
+                        <span>{{ child.father_phone }}</span>
                     </div>
                 </div>
                 

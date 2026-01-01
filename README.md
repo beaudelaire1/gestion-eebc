@@ -196,5 +196,5 @@ Les contributions sont les bienvenues ! N'hésitez pas à ouvrir une issue ou un
 
 ---
 
-Développé avec ❤️ pour EEBC Guyane 🇬🇫
+Développé par Invictus Imperium Core avec ❤️ pour EEBC 🇬🇫
 

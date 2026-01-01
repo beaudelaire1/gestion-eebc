@@ -1,0 +1,58 @@
+{% extends "communication/email/base.html" %}
+
+{% block title %}Absence au Club Biblique - EEBC{% endblock %}
+
+{% block header_color %}#ef4444{% endblock %}
+{% block header_color_end %}#dc2626{% endblock %}
+{% block header_icon %}📋{% endblock %}
+{% block header_title %}Notification d'absence{% endblock %}
+{% block header_subtitle %}
+<p style="color: rgba(255,255,255,0.9); margin: 10px 0 0; font-size: 16px;">
+    Club Biblique - {{ session.date|date:"l j F Y" }}
+</p>
+{% endblock %}
+
+{% block content %}
+<p style="color: #0B0F19; margin: 0 0 20px; font-size: 16px; line-height: 1.6;">
+    {% if parent_name %}Bonjour {{ parent_name }},{% else %}Bonjour,{% endif %}
+</p>
+
+<p style="color: #64748b; margin: 0 0 25px; font-size: 16px; line-height: 1.6;">
+    Nous vous informons que <strong style="color: #0B0F19;">{{ child.first_name }} {{ child.last_name }}</strong> 
+    a été marqué(e) <strong style="color: #ef4444;">absent(e)</strong> lors de la session du Club Biblique.
+</p>
+
+<!-- Détails de la session -->
+<table width="100%" cellpadding="0" cellspacing="0" style="background: #fef2f2; border-radius: 12px; border-left: 4px solid #ef4444;">
+    <tr>
+        <td style="padding: 25px;">
+            <h3 style="color: #0B0F19; margin: 0 0 15px; font-size: 18px; font-weight: 600;">
+                Détails de la session
+            </h3>
+            
+            <p style="color: #64748b; margin: 0 0 8px; font-size: 15px;">
+                📆 <strong>Date :</strong> {{ session.date|date:"l j F Y" }}
+            </p>
+            
+            <p style="color: #64748b; margin: 0 0 8px; font-size: 15px;">
+                📚 <strong>Classe :</strong> {{ session.bible_class.name }}
+            </p>
+            
+            {% if session.theme %}
+            <p style="color: #64748b; margin: 0; font-size: 15px;">
+                📖 <strong>Thème :</strong> {{ session.theme }}
+            </p>
+            {% endif %}
+        </td>
+    </tr>
+</table>
+
+<p style="color: #64748b; margin: 25px 0 0; font-size: 15px; line-height: 1.6;">
+    Si cette absence est une erreur ou si vous souhaitez nous informer de la raison, 
+    n'hésitez pas à contacter le responsable du Club Biblique.
+</p>
+
+<p style="color: #64748b; margin: 20px 0 0; font-size: 15px; line-height: 1.6;">
+    Nous espérons revoir {{ child.first_name }} très bientôt ! 🙏
+</p>
+{% endblock %}

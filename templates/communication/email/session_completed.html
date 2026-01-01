@@ -1,0 +1,94 @@
+{% extends "communication/email/base.html" %}
+
+{% block title %}Appel terminé - Club Biblique EEBC{% endblock %}
+
+{% block header_color %}#10b981{% endblock %}
+{% block header_color_end %}#059669{% endblock %}
+{% block header_icon %}✅{% endblock %}
+{% block header_title %}Appel terminé{% endblock %}
+{% block header_subtitle %}
+<p style="color: rgba(255,255,255,0.9); margin: 10px 0 0; font-size: 16px;">
+    Club Biblique - {{ session.date|date:"l j F Y" }}
+</p>
+{% endblock %}
+
+{% block content %}
+<p style="color: #0B0F19; margin: 0 0 20px; font-size: 16px; line-height: 1.6;">
+    {% if recipient_name %}Bonjour {{ recipient_name }},{% else %}Bonjour,{% endif %}
+</p>
+
+<p style="color: #64748b; margin: 0 0 25px; font-size: 16px; line-height: 1.6;">
+    L'appel de la session du Club Biblique a été complété. Voici le récapitulatif.
+</p>
+
+<!-- Résumé de la session -->
+<table width="100%" cellpadding="0" cellspacing="0" style="background: #ecfdf5; border-radius: 12px; border-left: 4px solid #10b981;">
+    <tr>
+        <td style="padding: 25px;">
+            <h3 style="color: #0B0F19; margin: 0 0 15px; font-size: 18px; font-weight: 600;">
+                📚 {{ session.bible_class.name }}
+            </h3>
+            
+            <p style="color: #64748b; margin: 0 0 8px; font-size: 15px;">
+                📆 <strong>Date :</strong> {{ session.date|date:"l j F Y" }}
+            </p>
+            
+            {% if session.theme %}
+            <p style="color: #64748b; margin: 0 0 8px; font-size: 15px;">
+                📖 <strong>Thème :</strong> {{ session.theme }}
+            </p>
+            {% endif %}
+            
+            {% if session.bible_verse %}
+            <p style="color: #64748b; margin: 0; font-size: 15px;">
+                ✝️ <strong>Verset :</strong> {{ session.bible_verse }}
+            </p>
+            {% endif %}
+        </td>
+    </tr>
+</table>
+
+<!-- Statistiques -->
+<div style="margin-top: 25px;">
+    <h3 style="color: #0B0F19; margin: 0 0 15px; font-size: 18px; font-weight: 600;">
+        📊 Statistiques de présence
+    </h3>
+    
+    <table width="100%" cellpadding="0" cellspacing="0">
+        <tr>
+            <td width="33%" style="padding: 15px; text-align: center; background: #ecfdf5; border-radius: 12px 0 0 12px;">
+                <p style="color: #10b981; margin: 0; font-size: 28px; font-weight: 700;">{{ stats.present }}</p>
+                <p style="color: #64748b; margin: 5px 0 0; font-size: 14px;">Présents</p>
+            </td>
+            <td width="34%" style="padding: 15px; text-align: center; background: #fef2f2;">
+                <p style="color: #ef4444; margin: 0; font-size: 28px; font-weight: 700;">{{ stats.absent }}</p>
+                <p style="color: #64748b; margin: 5px 0 0; font-size: 14px;">Absents</p>
+            </td>
+            <td width="33%" style="padding: 15px; text-align: center; background: #f8fafc; border-radius: 0 12px 12px 0;">
+                <p style="color: #0B0F19; margin: 0; font-size: 28px; font-weight: 700;">{{ stats.total }}</p>
+                <p style="color: #64748b; margin: 5px 0 0; font-size: 14px;">Total</p>
+            </td>
+        </tr>
+    </table>
+</div>
+
+<!-- Taux de présence -->
+<div style="margin-top: 20px; padding: 15px; background: #f8fafc; border-radius: 12px;">
+    <p style="color: #64748b; margin: 0 0 10px; font-size: 14px;">Taux de présence</p>
+    <div style="background: #e2e8f0; border-radius: 10px; height: 20px; overflow: hidden;">
+        <div style="background: linear-gradient(90deg, #10b981, #059669); height: 100%; width: {{ stats.attendance_rate }}%;"></div>
+    </div>
+    <p style="color: #10b981; margin: 10px 0 0; font-size: 16px; font-weight: 600; text-align: center;">
+        {{ stats.attendance_rate }}%
+    </p>
+</div>
+
+{% if session.notes %}
+<div style="margin-top: 25px; padding: 20px; background: #eff6ff; border-radius: 12px;">
+    <h3 style="color: #0B0F19; margin: 0 0 10px; font-size: 16px; font-weight: 600;">📝 Notes</h3>
+    <p style="color: #64748b; margin: 0; font-size: 15px; line-height: 1.6;">
+        {{ session.notes }}
+    </p>
+</div>
+{% endif %}
+{% endblock %}

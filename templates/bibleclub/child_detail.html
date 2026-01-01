@@ -63,18 +63,18 @@
             <div class="card-body">
                 <div class="row">
                     <div class="col-md-6">
-                        <h6 class="text-muted mb-2">Parent 1</h6>
-                        <p class="mb-1"><strong>{{ child.parent1_name }}</strong></p>
-                        <p class="mb-1"><i class="bi bi-telephone me-2 text-muted"></i>{{ child.parent1_phone }}</p>
-                        {% if child.parent1_email %}
-                        <p class="mb-0"><i class="bi bi-envelope me-2 text-muted"></i>{{ child.parent1_email }}</p>
+                        <h6 class="text-muted mb-2">Père</h6>
+                        <p class="mb-1"><strong>{{ child.father_name }}</strong></p>
+                        <p class="mb-1"><i class="bi bi-telephone me-2 text-muted"></i>{{ child.father_phone }}</p>
+                        {% if child.father_email %}
+                        <p class="mb-0"><i class="bi bi-envelope me-2 text-muted"></i>{{ child.father_email }}</p>
                         {% endif %}
                     </div>
-                    {% if child.parent2_name %}
+                    {% if child.mother_name %}
                     <div class="col-md-6">
-                        <h6 class="text-muted mb-2">Parent 2</h6>
-                        <p class="mb-1"><strong>{{ child.parent2_name }}</strong></p>
-                        <p class="mb-0"><i class="bi bi-telephone me-2 text-muted"></i>{{ child.parent2_phone }}</p>
+                        <h6 class="text-muted mb-2">Mère</h6>
+                        <p class="mb-1"><strong>{{ child.mother_name }}</strong></p>
+                        <p class="mb-0"><i class="bi bi-telephone me-2 text-muted"></i>{{ child.mother_phone }}</p>
                     </div>
                     {% endif %}
                 </div>

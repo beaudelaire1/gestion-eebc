@@ -249,13 +249,13 @@ class Command(BaseCommand):
         for dept_name in departments:
             Department.objects.get_or_create(
                 name=dept_name,
-                defaults={'description': f"Département {dept_name} de l'église EEBC Guyane"}
+                defaults={'description': f"Département {dept_name} de l'église EEBC"}
             )
         
         # Groupes
         self.stdout.write("   -> Groupes...")
         groups_data = [
-            {'name': 'Jeunesse EEBC Guyane', 'group_type': 'youth', 'meeting_day': 'saturday', 'color': '#8b5cf6'},
+            {'name': 'Jeunesse EEBC', 'group_type': 'youth', 'meeting_day': 'saturday', 'color': '#8b5cf6'},
             {'name': 'Chorale Gospel', 'group_type': 'choir', 'meeting_day': 'thursday', 'color': '#ec4899'},
             {'name': 'The Ray of Sunshine', 'group_type': 'service', 'meeting_day': 'wednesday', 'color': '#f59e0b'},
             {'name': 'Groupe de prière', 'group_type': 'prayer', 'meeting_day': 'tuesday', 'color': '#10b981'},
@@ -295,7 +295,7 @@ class Command(BaseCommand):
                     'category': culte_cat,
                     'start_time': '09:00',
                     'end_time': '11:30',
-                    'location': 'Temple EEBC - Cayenne',
+                    'location': 'Temple EEBC - Cabassou',
                     'visibility': 'public',
                     'recurrence': 'weekly',
                 }
@@ -307,7 +307,7 @@ class Command(BaseCommand):
                     'category': club_cat,
                     'start_time': '09:00',
                     'end_time': '10:30',
-                    'location': 'Salles enfants - Cayenne',
+                    'location': 'Salles enfants - Cabassou',
                     'visibility': 'members',
                 }
             )
@@ -317,7 +317,7 @@ class Command(BaseCommand):
         Campaign.objects.get_or_create(
             name="Rénovation du temple",
             defaults={
-                'description': "Collecte pour la rénovation de la toiture et la climatisation du temple de Cayenne.",
+                'description': "Collecte pour la rénovation de la toiture et la climatisation du temple de Cabassou.",
                 'goal_amount': Decimal('25000.00'),
                 'collected_amount': Decimal('12500.00'),
                 'start_date': today - timedelta(days=30),
@@ -385,9 +385,9 @@ class Command(BaseCommand):
         self.stdout.write("   -> Annonces...")
         admin_user = User.objects.filter(username='admin').first()
         Announcement.objects.get_or_create(
-            title="Bienvenue sur Gestion EEBC Guyane!",
+            title="Bienvenue sur Gestion EEBC!",
             defaults={
-                'content': "Le nouveau système de gestion de l'église EEBC Guyane est maintenant opérationnel. Bonne utilisation à tous!",
+                'content': "Le nouveau système de gestion de l'église EEBC est maintenant opérationnel. Bonne utilisation à tous!",
                 'is_active': True,
                 'is_pinned': True,
                 'author': admin_user,

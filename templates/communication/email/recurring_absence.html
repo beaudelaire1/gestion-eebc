@@ -1,0 +1,92 @@
+{% extends "communication/email/base.html" %}
+
+{% block title %}Absences récurrentes - Club Biblique EEBC{% endblock %}
+
+{% block header_color %}#f59e0b{% endblock %}
+{% block header_color_end %}#d97706{% endblock %}
+{% block header_icon %}⚠️{% endblock %}
+{% block header_title %}Absences récurrentes{% endblock %}
+{% block header_subtitle %}
+<p style="color: rgba(255,255,255,0.9); margin: 10px 0 0; font-size: 16px;">
+    {{ absence_count }} absences consécutives détectées
+</p>
+{% endblock %}
+
+{% block content %}
+<p style="color: #0B0F19; margin: 0 0 20px; font-size: 16px; line-height: 1.6;">
+    {% if parent_name %}Cher(e) {{ parent_name }},{% else %}Chers parents,{% endif %}
+</p>
+
+<p style="color: #64748b; margin: 0 0 25px; font-size: 16px; line-height: 1.6;">
+    Nous avons remarqué que <strong style="color: #0B0F19;">{{ child.first_name }} {{ child.last_name }}</strong> 
+    a été absent(e) lors des <strong style="color: #f59e0b;">{{ absence_count }} dernières sessions</strong> du Club Biblique.
+</p>
+
+<!-- Alerte -->
+<table width="100%" cellpadding="0" cellspacing="0" style="background: #fef3c7; border-radius: 12px; border-left: 4px solid #f59e0b;">
+    <tr>
+        <td style="padding: 25px;">
+            <h3 style="color: #92400e; margin: 0 0 15px; font-size: 18px; font-weight: 600;">
+                📋 Détails de l'enfant
+            </h3>
+            
+            <p style="color: #78350f; margin: 0 0 8px; font-size: 15px;">
+                👤 <strong>Nom :</strong> {{ child.first_name }} {{ child.last_name }}
+            </p>
+            
+            <p style="color: #78350f; margin: 0 0 8px; font-size: 15px;">
+                📚 <strong>Classe :</strong> {{ child.bible_class.name }}
+            </p>
+            
+            <p style="color: #78350f; margin: 0; font-size: 15px;">
+                📅 <strong>Absences :</strong> {{ absence_count }} sessions consécutives
+            </p>
+        </td>
+    </tr>
+</table>
+
+<!-- Liste des absences -->
+{% if absences %}
+<div style="margin-top: 25px;">
+    <h3 style="color: #0B0F19; margin: 0 0 15px; font-size: 18px; font-weight: 600;">
+        📅 Sessions manquées
+    </h3>
+    
+    <table width="100%" cellpadding="0" cellspacing="0" style="border-collapse: collapse;">
+        {% for absence in absences %}
+        <tr>
+            <td style="padding: 12px 15px; border-bottom: 1px solid #e2e8f0; {% if forloop.first %}border-top: 1px solid #e2e8f0;{% endif %}">
+                <span style="color: #ef4444; font-size: 16px;">✗</span>
+                <span style="color: #64748b; font-size: 15px; margin-left: 10px;">
+                    {{ absence.session.date|date:"l j F Y" }}
+                    {% if absence.session.theme %} - {{ absence.session.theme }}{% endif %}
+                </span>
+            </td>
+        </tr>
+        {% endfor %}
+    </table>
+</div>
+{% endif %}
+
+<!-- Message d'encouragement -->
+<div style="margin-top: 25px; padding: 20px; background: #eff6ff; border-radius: 12px;">
+    <p style="color: #1e40af; margin: 0; font-size: 15px; line-height: 1.6;">
+        💙 Nous nous soucions du bien-être de {{ child.first_name }} et souhaitons nous assurer que tout va bien. 
+        Si vous rencontrez des difficultés ou si vous souhaitez nous informer de la situation, 
+        n'hésitez pas à nous contacter.
+    </p>
+</div>
+
+<p style="color: #64748b; margin: 25px 0 0; font-size: 15px; line-height: 1.6;">
+    Nous espérons revoir {{ child.first_name }} très bientôt au Club Biblique ! 🙏
+</p>
+{% endblock %}
+
+{% block footer %}
+<p style="color: #64748b; margin: 0; font-size: 14px;">
+    Pour toute question, contactez le responsable du Club Biblique.
+</p>
+<p style="color: #94a3b8; margin: 10px 0 0; font-size: 12px;">
+    EEBC - Église Évangélique Baptiste de Cabassou
+</p>
+{% endblock %}

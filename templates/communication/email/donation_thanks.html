@@ -1,0 +1,78 @@
+{% extends "communication/email/base.html" %}
+
+{% block title %}Merci pour votre don - EEBC{% endblock %}
+
+{% block header_color %}#10b981{% endblock %}
+{% block header_color_end %}#059669{% endblock %}
+{% block header_icon %}💝{% endblock %}
+{% block header_title %}Merci pour votre générosité !{% endblock %}
+{% block header_subtitle %}
+<p style="color: rgba(255,255,255,0.9); margin: 10px 0 0; font-size: 16px;">
+    Votre don fait la différence
+</p>
+{% endblock %}
+
+{% block content %}
+<p style="color: #0B0F19; margin: 0 0 20px; font-size: 16px; line-height: 1.6;">
+    {% if donor_name %}Cher(e) {{ donor_name }},{% else %}Cher(e) donateur(trice),{% endif %}
+</p>
+
+<p style="color: #64748b; margin: 0 0 25px; font-size: 16px; line-height: 1.6;">
+    Nous tenons à vous remercier chaleureusement pour votre don généreux à notre campagne.
+    Votre soutien est précieux et contribue directement à notre mission.
+</p>
+
+<!-- Détails du don -->
+<table width="100%" cellpadding="0" cellspacing="0" style="background: #ecfdf5; border-radius: 12px; border-left: 4px solid #10b981;">
+    <tr>
+        <td style="padding: 25px;">
+            <h3 style="color: #0B0F19; margin: 0 0 15px; font-size: 18px; font-weight: 600;">
+                Récapitulatif de votre don
+            </h3>
+            
+            <p style="color: #64748b; margin: 0 0 8px; font-size: 15px;">
+                🎯 <strong>Campagne :</strong> {{ campaign.name }}
+            </p>
+            
+            <p style="color: #10b981; margin: 0 0 8px; font-size: 22px; font-weight: 700;">
+                💰 {{ donation.amount }} €
+            </p>
+            
+            <p style="color: #64748b; margin: 0; font-size: 15px;">
+                📅 <strong>Date :</strong> {{ donation.date|date:"j F Y" }}
+            </p>
+        </td>
+    </tr>
+</table>
+
+<!-- Progression de la campagne -->
+{% if campaign.goal %}
+<div style="margin-top: 25px; padding: 20px; background: #f8fafc; border-radius: 12px;">
+    <h4 style="color: #0B0F19; margin: 0 0 15px; font-size: 16px; font-weight: 600;">
+        Progression de la campagne
+    </h4>
+    
+    <div style="background: #e2e8f0; border-radius: 10px; height: 20px; overflow: hidden;">
+        <div style="background: linear-gradient(90deg, #10b981, #059669); height: 100%; width: {{ campaign.progress_percentage }}%; min-width: 5%;"></div>
+    </div>
+    
+    <p style="color: #64748b; margin: 10px 0 0; font-size: 14px; text-align: center;">
+        <strong>{{ campaign.current_amount }} €</strong> collectés sur <strong>{{ campaign.goal }} €</strong>
+        ({{ campaign.progress_percentage }}%)
+    </p>
+</div>
+{% endif %}
+
+<p style="color: #64748b; margin: 25px 0 0; font-size: 15px; line-height: 1.6;">
+    Que Dieu vous bénisse abondamment pour votre générosité ! 🙏
+</p>
+{% endblock %}
+
+{% block footer %}
+<p style="color: #64748b; margin: 0; font-size: 14px;">
+    Merci de tout cœur ! 💚
+</p>
+<p style="color: #94a3b8; margin: 10px 0 0; font-size: 12px;">
+    EEBC - Église Évangélique Baptiste de Cabassou
+</p>
+{% endblock %}

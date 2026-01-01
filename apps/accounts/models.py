@@ -14,6 +14,9 @@ class User(AbstractUser):
         MONITEUR = 'moniteur', 'Moniteur'
         CHAUFFEUR = 'chauffeur', 'Chauffeur'
         RESPONSABLE_GROUPE = 'responsable_groupe', 'Responsable de Groupe'
+        SECRETARIAT = 'secretariat', 'Secrétariat'
+        FINANCE = 'finance', 'Finance'
+        ENCADRANT = 'encadrant', 'Encadrant'
         MEMBRE = 'membre', 'Membre'
     
     role = models.CharField(

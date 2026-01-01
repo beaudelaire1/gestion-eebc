@@ -1,0 +1,66 @@
+{% extends "communication/email/base.html" %}
+
+{% block title %}Événement annulé - EEBC{% endblock %}
+
+{% block header_color %}#ef4444{% endblock %}
+{% block header_color_end %}#dc2626{% endblock %}
+{% block header_icon %}❌{% endblock %}
+{% block header_title %}Événement annulé{% endblock %}
+{% block header_subtitle %}
+<p style="color: rgba(255,255,255,0.9); margin: 10px 0 0; font-size: 16px;">
+    Un événement prévu a été annulé
+</p>
+{% endblock %}
+
+{% block content %}
+<p style="color: #0B0F19; margin: 0 0 20px; font-size: 16px; line-height: 1.6;">
+    {% if recipient_name %}Bonjour {{ recipient_name }},{% else %}Bonjour,{% endif %}
+</p>
+
+<p style="color: #64748b; margin: 0 0 25px; font-size: 16px; line-height: 1.6;">
+    Nous vous informons que l'événement suivant a été <strong style="color: #ef4444;">annulé</strong>.
+</p>
+
+<!-- Carte événement annulé -->
+<table width="100%" cellpadding="0" cellspacing="0" style="background: #fef2f2; border-radius: 12px; border-left: 4px solid #ef4444;">
+    <tr>
+        <td style="padding: 25px;">
+            <h2 style="color: #991b1b; margin: 0 0 15px; font-size: 22px; font-weight: 700; text-decoration: line-through;">
+                {{ event.title }}
+            </h2>
+            
+            <p style="color: #64748b; margin: 0 0 10px; font-size: 16px; text-decoration: line-through;">
+                📆 {{ event.start_date|date:"l j F Y" }}
+                {% if event.start_time %} à {{ event.start_time|time:"H:i" }}{% endif %}
+            </p>
+            
+            {% if event.location %}
+            <p style="color: #64748b; margin: 0 0 10px; font-size: 16px; text-decoration: line-through;">
+                📍 {{ event.location }}
+            </p>
+            {% endif %}
+            
+            <p style="margin: 15px 0 0;">
+                <span style="display: inline-block; background: #ef4444; color: white; padding: 6px 14px; border-radius: 20px; font-size: 14px; font-weight: 600;">
+                    ANNULÉ
+                </span>
+            </p>
+        </td>
+    </tr>
+</table>
+
+{% if cancellation_reason %}
+<div style="margin-top: 25px; padding: 20px; background: #fef3c7; border-radius: 12px; border-left: 4px solid #f59e0b;">
+    <h3 style="color: #92400e; margin: 0 0 10px; font-size: 16px; font-weight: 600;">
+        ℹ️ Raison de l'annulation
+    </h3>
+    <p style="color: #78350f; margin: 0; font-size: 15px; line-height: 1.6;">
+        {{ cancellation_reason }}
+    </p>
+</div>
+{% endif %}
+
+<p style="color: #64748b; margin: 25px 0 0; font-size: 15px; line-height: 1.6;">
+    Nous nous excusons pour tout désagrément. N'hésitez pas à consulter le calendrier pour les prochains événements.
+</p>
+{% endblock %}

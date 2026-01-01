@@ -290,6 +290,39 @@ def take_attendance(request, session_pk, class_pk):
         
         messages.success(request, f"Appel enregistré pour {bible_class}")
         
+        # Envoyer notification de fin d'appel aux responsables
+        try:
+            from apps.communication.email_service import send_session_completed
+            from apps.bibleclub.models import Monitor
+            
+            # Calculer les stats
+            present = attendances.filter(status__in=['present', 'late']).count()
+            absent = attendances.filter(status__in=['absent', 'absent_notified', 'excused']).count()
+            total = present + absent
+            stats = {
+                'present': present,
+                'absent': absent,
+                'total': total,
+                'attendance_rate': round((present / total * 100) if total > 0 else 0),
+            }
+            
+            # Notifier les moniteurs principaux et admins
+            lead_monitors = Monitor.objects.filter(
+                Q(is_lead=True) | Q(bible_class=bible_class, is_lead=True)
+            ).select_related('user')
+            
+            for monitor in lead_monitors:
+                if monitor.user.email:
+                    send_session_completed(
+                        session=session,
+                        recipient_email=monitor.user.email,
+                        recipient_name=monitor.user.get_full_name(),
+                        stats=stats
+                    )
+        except Exception as e:
+            import logging
+            logging.getLogger(__name__).error(f"Erreur notification appel: {e}")
+        
         if request.htmx:
             return render(request, 'bibleclub/partials/attendance_saved.html', {
                 'bible_class': bible_class,

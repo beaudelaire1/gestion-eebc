@@ -32,6 +32,7 @@ class Event(models.Model):
         WEEKLY = 'weekly', 'Hebdomadaire'
         BIWEEKLY = 'biweekly', 'Bihebdomadaire'
         MONTHLY = 'monthly', 'Mensuel'
+        TRIMESTERLY = 'trimesterly', 'Trimestriel'
         YEARLY = 'yearly', 'Annuel'
     
     class NotificationScope(models.TextChoices):
@@ -76,7 +77,7 @@ class Event(models.Model):
     
     # Visibilité
     visibility = models.CharField(
-        max_length=10,
+        max_length=20,
         choices=Visibility.choices,
         default=Visibility.PUBLIC,
         verbose_name="Visibilité"
@@ -92,9 +93,8 @@ class Event(models.Model):
     )
     
     # Responsable
-    organizer = models.ForeignKey(
+    organizers = models.ManyToManyField(
         settings.AUTH_USER_MODEL,
-        on_delete=models.SET_NULL,
         null=True,
         blank=True,
         related_name='organized_events',
@@ -177,8 +177,10 @@ class Event(models.Model):
             return []
         
         if self.notification_scope == self.NotificationScope.ORGANIZER:
-            if self.organizer and self.organizer.email:
-                emails.add(self.organizer.email)
+            # ManyToMany - récupérer tous les organisateurs
+            for organizer in self.organizers.all():
+                if organizer.email:
+                    emails.add(organizer.email)
         
         elif self.notification_scope == self.NotificationScope.GROUP:
             if self.group:

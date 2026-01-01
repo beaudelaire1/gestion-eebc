@@ -76,12 +76,12 @@ class MonitorAdmin(admin.ModelAdmin):
 @admin.register(Child)
 class ChildAdmin(admin.ModelAdmin):
     form = ChildAdminForm  # Utiliser le formulaire personnalisé
-    list_display = ['photo_thumbnail', 'last_name', 'first_name', 'age', 'bible_class', 'parent1_name', 
+    list_display = ['photo_thumbnail', 'last_name', 'first_name', 'age', 'bible_class', 'father_name',
                     'needs_transport', 'is_active']
     list_display_links = ['photo_thumbnail', 'last_name', 'first_name']
     list_filter = ['is_active', 'bible_class', 'needs_transport', 'gender']
-    search_fields = ['first_name', 'last_name', 'parent1_name', 'parent1_phone', 
-                     'parent2_name', 'parent2_phone']
+    search_fields = ['first_name', 'last_name', 'father_name', 'father_phone',
+                     'mother_name', 'mother_phone']
     date_hierarchy = 'registration_date'
     list_per_page = 25
     
@@ -92,11 +92,11 @@ class ChildAdmin(admin.ModelAdmin):
         ('Classe', {
             'fields': ('bible_class', 'is_active')
         }),
-        ('Parent 1', {
-            'fields': ('parent1_name', 'parent1_phone', 'parent1_email')
+        ('Pere', {
+            'fields': ('father_name', 'father_phone', 'father_email')
         }),
-        ('Parent 2', {
-            'fields': ('parent2_name', 'parent2_phone'),
+        ('Mere', {
+            'fields': ('mother_name', 'mother_phone', 'mother_email'),
             'classes': ('collapse',)
         }),
         ('Contact d\'urgence', {

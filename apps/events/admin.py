@@ -16,8 +16,8 @@ class EventRegistrationInline(admin.TabularInline):
 
 @admin.register(Event)
 class EventAdmin(admin.ModelAdmin):
-    list_display = ['title', 'category', 'start_date', 'start_time', 'location', 
-                    'visibility', 'is_cancelled']
+    list_display = ['title', 'category', 'start_date', 'start_time', 'location',
+                    'visibility']
     list_filter = ['visibility', 'is_cancelled', 'category', 'recurrence']
     search_fields = ['title', 'description', 'location']
     date_hierarchy = 'start_date'
@@ -33,12 +33,17 @@ class EventAdmin(admin.ModelAdmin):
         ('Lieu', {
             'fields': ('location', 'address')
         }),
+
+        ('Organisateur', {
+            'fields': ('organizers',)
+        }),
+
         ('Récurrence', {
             'fields': ('recurrence', 'recurrence_end_date'),
             'classes': ('collapse',)
         }),
         ('Paramètres', {
-            'fields': ('visibility', 'organizer', 'department', 'group', 'notify_before', 'is_cancelled')
+            'fields': ('visibility', 'department', 'group', 'notify_before', 'is_cancelled')
         }),
     )
 

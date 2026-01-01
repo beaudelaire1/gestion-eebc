@@ -133,12 +133,13 @@ class Child(models.Model):
     )
     
     # Contacts parents
-    parent1_name = models.CharField(max_length=200, verbose_name="Parent 1 - Nom")
-    parent1_phone = models.CharField(max_length=20, verbose_name="Parent 1 - Téléphone")
-    parent1_email = models.EmailField(blank=True, verbose_name="Parent 1 - Email")
+    father_name = models.CharField(max_length=200, verbose_name="Nom du père")
+    father_phone = models.CharField(max_length=20, verbose_name="Téléphone du père")
+    father_email = models.EmailField(blank=True, verbose_name="Email du père")
     
-    parent2_name = models.CharField(max_length=200, blank=True, verbose_name="Parent 2 - Nom")
-    parent2_phone = models.CharField(max_length=20, blank=True, verbose_name="Parent 2 - Téléphone")
+    mother_name = models.CharField(max_length=200, blank=True, verbose_name="Nom de la mère")
+    mother_phone = models.CharField(max_length=20, blank=True, verbose_name="Téléphone de la mère")
+    mother_email = models.EmailField(blank=True, verbose_name="Email de la mère")
     
     # Contact d'urgence
     emergency_contact = models.CharField(max_length=200, blank=True, verbose_name="Contact d'urgence")

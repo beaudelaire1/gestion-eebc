@@ -1,0 +1,66 @@
+{% extends "communication/email/base.html" %}
+
+{% block title %}Nouvelle session - Club Biblique EEBC{% endblock %}
+
+{% block header_color %}#8b5cf6{% endblock %}
+{% block header_color_end %}#7c3aed{% endblock %}
+{% block header_icon %}📚{% endblock %}
+{% block header_title %}Nouvelle session planifiée{% endblock %}
+{% block header_subtitle %}
+<p style="color: rgba(255,255,255,0.9); margin: 10px 0 0; font-size: 16px;">
+    Club Biblique - {{ session.date|date:"l j F Y" }}
+</p>
+{% endblock %}
+
+{% block content %}
+<p style="color: #0B0F19; margin: 0 0 20px; font-size: 16px; line-height: 1.6;">
+    {% if monitor %}Bonjour {{ monitor.user.first_name|default:monitor.user.username }},{% else %}Bonjour,{% endif %}
+</p>
+
+<p style="color: #64748b; margin: 0 0 25px; font-size: 16px; line-height: 1.6;">
+    Une nouvelle session du Club Biblique a été planifiée. Préparez-vous !
+</p>
+
+<!-- Détails de la session -->
+<table width="100%" cellpadding="0" cellspacing="0" style="background: #f5f3ff; border-radius: 12px; border-left: 4px solid #8b5cf6;">
+    <tr>
+        <td style="padding: 25px;">
+            <h3 style="color: #5b21b6; margin: 0 0 15px; font-size: 18px; font-weight: 600;">
+                📅 Détails de la session
+            </h3>
+            
+            <p style="color: #64748b; margin: 0 0 8px; font-size: 15px;">
+                📆 <strong>Date :</strong> {{ session.date|date:"l j F Y" }}
+            </p>
+            
+            {% if session.theme %}
+            <p style="color: #64748b; margin: 0 0 8px; font-size: 15px;">
+                📖 <strong>Thème :</strong> {{ session.theme }}
+            </p>
+            {% endif %}
+            
+            {% if monitor.bible_class %}
+            <p style="color: #64748b; margin: 0; font-size: 15px;">
+                🏫 <strong>Votre classe :</strong> {{ monitor.bible_class.name }}
+            </p>
+            {% endif %}
+        </td>
+    </tr>
+</table>
+
+{% if monitor.bible_class %}
+<div style="margin-top: 25px; padding: 20px; background: #eff6ff; border-radius: 12px;">
+    <h3 style="color: #1e40af; margin: 0 0 10px; font-size: 16px; font-weight: 600;">
+        👶 Enfants de votre classe
+    </h3>
+    <p style="color: #3b82f6; margin: 0; font-size: 24px; font-weight: 700;">
+        {{ monitor.bible_class.children_count }} enfants inscrits
+    </p>
+</div>
+{% endif %}
+
+<p style="color: #64748b; margin: 25px 0 0; font-size: 15px; line-height: 1.6;">
+    N'oubliez pas de préparer votre matériel et d'arriver à l'heure. 
+    Que Dieu bénisse cette session ! 🙏
+</p>
+{% endblock %}

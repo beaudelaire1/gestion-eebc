@@ -44,6 +44,12 @@ static/collected/
 .env.local
 .env.*.local
 
+# Fichiers sensibles
+interdit
+interdit.txt
+*.secret
+test_email.py
+
 # IDE
 .idea/
 .vscode/

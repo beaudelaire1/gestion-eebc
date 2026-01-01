@@ -1,7 +1,7 @@
 {% extends 'base.html' %}
 {% load humanize %}
 
-{% block title %}Tableau de bord - EEBC Guyane{% endblock %}
+{% block title %}Tableau de bord - EEBC{% endblock %}
 {% block page_title %}Tableau de bord{% endblock %}
 {% block page_subtitle %}Bienvenue, {{ request.user.first_name|default:request.user.username }} 👋{% endblock %}
 
@@ -684,7 +684,7 @@
                                 </h6>
                                 <small class="text-muted">{{ announcement.created_at|naturalday }}</small>
                             </div>
-                            <p class="mb-0 text-muted small">{{ announcement.content|truncatewords:25 }}</p>
+                            <p class="mb-0 text-muted small">{{ announcement.content|truncatewords:40 }}</p>
                         </div>
                     </div>
                     {% endfor %}

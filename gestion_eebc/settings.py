@@ -5,9 +5,13 @@ ERP minimaliste pour église - Club Biblique & Calendrier Intelligent
 
 import os
 from pathlib import Path
+from dotenv import load_dotenv
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
+
+# Charger les variables d'environnement depuis .env
+load_dotenv(BASE_DIR / '.env')
 
 # SECURITY WARNING: keep the secret key used in production secret!
 import secrets
@@ -142,14 +146,23 @@ CRISPY_TEMPLATE_PACK = "bootstrap5"
 
 
 # Email settings
-EMAIL_BACKEND = os.environ.get(
-    'EMAIL_BACKEND', 
-    'django.core.mail.backends.console.EmailBackend'
-)
+_email_backend = os.environ.get('EMAIL_BACKEND', 'console')
+if _email_backend == 'smtp':
+    EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+elif _email_backend == 'console':
+    EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
+elif _email_backend == 'file':
+    EMAIL_BACKEND = 'django.core.mail.backends.filebased.EmailBackend'
+    EMAIL_FILE_PATH = BASE_DIR / 'sent_emails'
+else:
+    EMAIL_BACKEND = _email_backend
+
 DEFAULT_FROM_EMAIL = os.environ.get('DEFAULT_FROM_EMAIL', 'noreply@eebc-guyane.org')
-EMAIL_HOST = os.environ.get('EMAIL_HOST', 'localhost')
-EMAIL_PORT = int(os.environ.get('EMAIL_PORT', 25))
-EMAIL_USE_TLS = os.environ.get('EMAIL_USE_TLS', 'False').lower() in ('true', '1', 'yes')
+EMAIL_HOST = os.environ.get('EMAIL_HOST', 'smtp.gmail.com')
+EMAIL_PORT = int(os.environ.get('EMAIL_PORT', 587))
+EMAIL_USE_TLS = os.environ.get('EMAIL_USE_TLS', 'True').lower() in ('true', '1', 'yes')
+EMAIL_HOST_USER = os.environ.get('EMAIL_HOST_USER', '')
+EMAIL_HOST_PASSWORD = os.environ.get('EMAIL_HOST_PASSWORD', '')
 
 
 # Login URLs
@@ -163,15 +176,15 @@ LOGOUT_REDIRECT_URL = 'accounts:login'
 # =============================================================================
 JAZZMIN_SETTINGS = {
     # Titre et branding
-    "site_title": "EEBC Guyane",
-    "site_header": "EEBC Guyane",
+    "site_title": "EEBC",
+    "site_header": "EEBC",
     "site_brand": "Gestion EEBC",
     "site_logo": None,
     "login_logo": None,
     "site_logo_classes": "img-circle",
     "site_icon": None,
-    "welcome_sign": "Bienvenue sur Gestion EEBC Guyane",
-    "copyright": "EEBC Guyane - Église Évangélique Baptiste de Cayenne",
+    "welcome_sign": "Bienvenue sur Gestion EEBC",
+    "copyright": "EEBC - Église Évangélique Baptiste de Cabassou",
     
     # Recherche
     "search_model": ["accounts.User", "members.Member", "bibleclub.Child"],
