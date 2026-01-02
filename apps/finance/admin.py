@@ -99,11 +99,49 @@ class FinanceCategoryAdmin(admin.ModelAdmin):
 class ReceiptProofAdmin(admin.ModelAdmin):
     """Admin pour les preuves de paiement."""
     
-    list_display = ['transaction', 'proof_type', 'ocr_status', 'uploaded_at', 'uploaded_by']
+    list_display = ['transaction', 'proof_type', 'ocr_status_badge', 'ocr_confidence_display', 
+                    'uploaded_at', 'uploaded_by']
     list_filter = ['proof_type', 'ocr_status', 'uploaded_at']
     search_fields = ['transaction__reference', 'notes']
     readonly_fields = ['ocr_raw_text', 'ocr_extracted_amount', 'ocr_extracted_date', 
                        'ocr_confidence', 'ocr_processed_at']
+    
+    actions = ['process_ocr_action']
+    
+    def ocr_status_badge(self, obj):
+        colors = {
+            'non_traite': 'secondary',
+            'en_cours': 'warning',
+            'termine': 'success',
+            'echec': 'danger',
+        }
+        return format_html(
+            '<span class="badge bg-{}">{}</span>',
+            colors.get(obj.ocr_status, 'secondary'),
+            obj.get_ocr_status_display()
+        )
+    ocr_status_badge.short_description = 'OCR'
+    
+    def ocr_confidence_display(self, obj):
+        if obj.ocr_confidence:
+            color = 'success' if obj.ocr_confidence > 70 else 'warning' if obj.ocr_confidence > 40 else 'danger'
+            return format_html(
+                '<span class="badge bg-{}">{:.0f}%</span>',
+                color, obj.ocr_confidence
+            )
+        return '-'
+    ocr_confidence_display.short_description = 'Confiance'
+    
+    def process_ocr_action(self, request, queryset):
+        """Traite les reçus sélectionnés avec OCR."""
+        processed = 0
+        for receipt in queryset.filter(ocr_status__in=['non_traite', 'echec']):
+            result = receipt.process_ocr()
+            if result and 'error' not in result:
+                processed += 1
+        
+        self.message_user(request, f"{processed} reçu(s) traité(s) avec OCR.")
+    process_ocr_action.short_description = "Traiter avec OCR"
 
 
 @admin.register(BudgetLine)

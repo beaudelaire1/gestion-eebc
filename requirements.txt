@@ -27,3 +27,6 @@ twilio>=8.10.0
 
 # Paiements en ligne
 stripe>=7.0.0
+
+# OCR pour les reçus
+pytesseract>=0.3.10

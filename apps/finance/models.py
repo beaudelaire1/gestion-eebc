@@ -349,44 +349,13 @@ class ReceiptProof(models.Model):
         """
         Traite l'image avec OCR pour extraire les informations.
         
-        Cette méthode est un placeholder pour l'intégration future
-        d'un service OCR (Tesseract, AWS Textract, Google Vision, etc.)
+        Utilise Tesseract OCR pour extraire montants et dates.
         
         Returns:
             dict: Données extraites ou None si échec
         """
-        # TODO: Implémenter l'intégration OCR
-        # Exemple d'intégration future :
-        # 
-        # from PIL import Image
-        # import pytesseract
-        # 
-        # try:
-        #     self.ocr_status = self.OCRStatus.EN_COURS
-        #     self.save()
-        #     
-        #     img = Image.open(self.image.path)
-        #     text = pytesseract.image_to_string(img, lang='fra')
-        #     
-        #     self.ocr_raw_text = text
-        #     self.ocr_extracted_amount = self._extract_amount(text)
-        #     self.ocr_extracted_date = self._extract_date(text)
-        #     self.ocr_confidence = 0.85
-        #     self.ocr_status = self.OCRStatus.TERMINE
-        #     self.ocr_processed_at = timezone.now()
-        #     self.save()
-        #     
-        #     return {
-        #         'text': text,
-        #         'amount': self.ocr_extracted_amount,
-        #         'date': self.ocr_extracted_date
-        #     }
-        # except Exception as e:
-        #     self.ocr_status = self.OCRStatus.ECHEC
-        #     self.save()
-        #     return None
-        
-        pass
+        from .ocr_service import ocr_service
+        return ocr_service.process_receipt(self)
 
 
 class BudgetLine(models.Model):
