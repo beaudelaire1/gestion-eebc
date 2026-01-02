@@ -437,30 +437,33 @@ This analysis identifies features that exist in the Django admin interface but a
 | Module | Feature | Admin | /app/ | Gap |
 |--------|---------|-------|-------|-----|
 | **Finance** | Transactions | ✅ | ⚠️ | Validation UI missing |
-| | Receipt Proofs | ✅ | ❌ | **CRITICAL** |
-| | OCR Processing | ✅ | ❌ | **CRITICAL** |
-| | Tax Receipts | ✅ | ❌ | **CRITICAL** |
+| | Receipt Proofs | ✅ | ✅ | ✅ DONE |
+| | OCR Processing | ✅ | ✅ | ✅ DONE |
+| | Tax Receipts | ✅ | ✅ | ✅ DONE |
 | | Budget | ✅ | ⚠️ | Limited |
 | | Reports | ✅ | ⚠️ | Placeholder |
 | | Donations (Stripe) | ✅ | ✅ | None |
 | **Accounts** | 2FA Setup | ✅ | ✅ | None |
 | | 2FA Verification | ✅ | ✅ | None |
 | | Backup Codes | ✅ | ✅ | None |
-| **Communication** | Notifications | ✅ | ❌ | **CRITICAL** |
-| | Announcements | ✅ | ❌ | **CRITICAL** |
-| | Email Logs | ✅ | ❌ | **CRITICAL** |
-| | SMS Logs | ✅ | ❌ | **CRITICAL** |
-| **Core** | Sites | ✅ | ❌ | **CRITICAL** |
-| | Cities | ✅ | ❌ | **CRITICAL** |
-| | Neighborhoods | ✅ | ❌ | **CRITICAL** |
-| | Families | ✅ | ❌ | **CRITICAL** |
-| | Family Relationships | ✅ | ❌ | **CRITICAL** |
-| | Mission Campaigns | ✅ | ❌ | **CRITICAL** |
-| | Page Content | ✅ | ❌ | **CRITICAL** |
-| | News Articles | ✅ | ❌ | **CRITICAL** |
-| | Contact Messages | ✅ | ❌ | **CRITICAL** |
-| | Visitor Registrations | ✅ | ❌ | **CRITICAL** |
-| | Site Settings | ✅ | ❌ | **CRITICAL** |
+| **Communication** | Notifications | ✅ | ✅ | ✅ DONE |
+| | Announcements | ✅ | ✅ | ✅ DONE |
+| | Email Logs | ✅ | ✅ | ✅ DONE |
+| | SMS Logs | ✅ | ⚠️ | Partial |
+| **Core** | Sites | ✅ | ❌ | Admin-only |
+| | Cities | ✅ | ❌ | Admin-only |
+| | Neighborhoods | ✅ | ❌ | Admin-only |
+| | Families | ✅ | ✅ | ✅ DONE |
+| | Family Relationships | ✅ | ⚠️ | Partial |
+| | Mission Campaigns | ✅ | ❌ | Admin-only |
+| | Page Content | ✅ | ❌ | Admin-only |
+| | News Articles | ✅ | ❌ | Admin-only |
+| | Contact Messages | ✅ | ❌ | Admin-only |
+| | Visitor Registrations | ✅ | ❌ | Admin-only |
+| | Site Settings | ✅ | ❌ | Admin-only |
+| **Worship** | Monthly Planning | ✅ | ✅ | ✅ DONE |
+| | Role Confirmation | ✅ | ✅ | ✅ DONE |
+| | Notifications | ✅ | ✅ | ✅ DONE |
 
 ---
 

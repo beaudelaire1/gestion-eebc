@@ -1,0 +1,105 @@
+{% extends 'base.html' %}
+
+{% block title %}Familles - EEBC{% endblock %}
+{% block page_title %}Gestion des Familles{% endblock %}
+{% block page_subtitle %}{{ total_count }} famille(s) enregistrée(s){% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-md-8">
+        <form method="get" class="d-flex gap-2">
+            <input type="text" name="search" class="form-control" placeholder="Rechercher une famille..." value="{{ request.GET.search }}">
+            <select name="site" class="form-select" style="width: auto;">
+                <option value="">Tous les sites</option>
+                {% for site in sites %}
+                <option value="{{ site.id }}" {% if request.GET.site == site.id|stringformat:"i" %}selected{% endif %}>{{ site.name }}</option>
+                {% endfor %}
+            </select>
+            <select name="neighborhood" class="form-select" style="width: auto;">
+                <option value="">Tous les quartiers</option>
+                {% for n in neighborhoods %}
+                <option value="{{ n.id }}" {% if request.GET.neighborhood == n.id|stringformat:"i" %}selected{% endif %}>{{ n.name }} ({{ n.city.name }})</option>
+                {% endfor %}
+            </select>
+            <button type="submit" class="btn btn-primary">
+                <i class="bi bi-search"></i>
+            </button>
+        </form>
+    </div>
+    <div class="col-md-4 text-end">
+        <a href="{% url 'members:family_create' %}" class="btn btn-primary">
+            <i class="bi bi-plus-lg me-1"></i>Nouvelle famille
+        </a>
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover mb-0">
+                <thead>
+                    <tr>
+                        <th>Nom de famille</th>
+                        <th>Site</th>
+                        <th>Quartier</th>
+                        <th>Membres</th>
+                        <th>Contact</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for family in families %}
+                    <tr>
+                        <td>
+                            <a href="{% url 'members:family_detail' family.pk %}" class="fw-bold text-decoration-none">
+                                {{ family.name }}
+                            </a>
+                        </td>
+                        <td>
+                            {% if family.site %}
+                            <span class="badge bg-primary">{{ family.site.name }}</span>
+                            {% else %}
+                            <span class="text-muted">-</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if family.neighborhood %}
+                            {{ family.neighborhood.name }}
+                            {% else %}
+                            <span class="text-muted">-</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <span class="badge bg-secondary">{{ family.member_count }}</span>
+                        </td>
+                        <td>
+                            {% if family.phone %}
+                            <i class="bi bi-telephone me-1"></i>{{ family.phone }}
+                            {% endif %}
+                            {% if family.email %}
+                            <br><i class="bi bi-envelope me-1"></i>{{ family.email }}
+                            {% endif %}
+                        </td>
+                        <td>
+                            <a href="{% url 'members:family_detail' family.pk %}" class="btn btn-sm btn-outline-primary">
+                                <i class="bi bi-eye"></i>
+                            </a>
+                            <a href="{% url 'members:family_edit' family.pk %}" class="btn btn-sm btn-outline-secondary">
+                                <i class="bi bi-pencil"></i>
+                            </a>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="6" class="text-center py-4 text-muted">
+                            <i class="bi bi-house-heart fs-1 d-block mb-2"></i>
+                            Aucune famille trouvée
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,17 +1,3 @@
 mdp_google=xdoaogxdtfxhojcm
 mail= nvictus.imperium.core@gmail.com
-
-
-
-# Notification pour le programme du culte (mensuel et hebdomadaire): offrande, dirigéant, programme sur un mois
-# Naissance, décès, baptème, anniversaire de mariage, anniversaire, mariage, etc.
-# Notification pour les réunions de prière, études bibliques, cultes spéciaux, événements d'église
-# Notification pour les événements communautaires, activités de jeunesse, activités de femmes, activités de hommes
-# Notification pour les rappels de dons, collectes de fonds, campagnes de charité
-# Notification pour les alertes d'urgence, situations de crise, besoins de la communauté
-
-# numérisation des photos de reçus de dons, d'offrandes, de factures, etc.
-# banques paiement en ligne et par carte de crédit/débit
-
-# application visite, suivi des membres, nouveaux membres, absents, malades, etc.
-
+https://github.com/beaudelaire1/gestion-eebc/tree/develop

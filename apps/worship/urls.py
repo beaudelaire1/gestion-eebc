@@ -2,6 +2,7 @@
 
 from django.urls import path
 from . import views
+from . import confirmation_views
 
 app_name = 'worship'
 
@@ -25,7 +26,17 @@ urlpatterns = [
     path('culte/<int:pk>/', views.scheduled_service_detail, name='culte_detail'),
     path('culte/<int:pk>/edit/', views.scheduled_service_edit, name='culte_edit'),
     
-    # Rôles (HTMX)
+    # Assignations de rôles avec confirmation
+    path('culte/<int:service_pk>/assignments/', confirmation_views.role_assignments_list, name='role_assignments'),
+    path('culte/<int:service_pk>/assignments/create/', confirmation_views.create_role_assignment, name='create_role_assignment'),
+    path('culte/<int:service_pk>/assignments/send-all/', confirmation_views.send_all_notifications, name='send_all_notifications'),
+    path('assignment/<int:pk>/send/', confirmation_views.send_assignment_notification, name='send_assignment_notification'),
+    
+    # Confirmation publique (sans connexion)
+    path('confirm/<uuid:token>/', confirmation_views.confirm_role, name='confirm_role'),
+    path('decline/<uuid:token>/', confirmation_views.decline_role, name='decline_role'),
+    
+    # Rôles (HTMX - ancien système)
     path('services/<int:service_pk>/roles/assign/', views.role_assign, name='role_assign'),
     path('roles/<int:pk>/confirm/', views.role_confirm, name='role_confirm'),
     path('roles/<int:pk>/decline/', views.role_decline, name='role_decline'),

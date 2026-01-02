@@ -1,108 +1,330 @@
 {% extends 'base.html' %}
-{% load crispy_forms_tags %}
 
-{% block title %}Nouvelle visite - EEBC{% endblock %}
-{% block page_title %}Planifier une visite{% endblock %}
+{% block title %}{% if visit %}Modifier{% else %}Nouvelle{% endif %} visite - EEBC{% endblock %}
+{% block page_title %}{% if visit %}Modifier la visite{% else %}Planifier une visite{% endif %}{% endblock %}
+{% block page_subtitle %}Suivi pastoral{% endblock %}
+
+{% block extra_css %}
+<style>
+    .visit-form-card {
+        border: none;
+        border-radius: 16px;
+        box-shadow: 0 4px 24px rgba(0,0,0,0.08);
+        overflow: hidden;
+    }
+    .visit-form-header {
+        background: linear-gradient(135deg, #0A36FF 0%, #1e3a5f 100%);
+        color: white;
+        padding: 24px 32px;
+    }
+    .visit-form-header h5 {
+        margin: 0;
+        font-weight: 600;
+    }
+    .visit-form-body {
+        padding: 32px;
+    }
+    .form-section {
+        margin-bottom: 32px;
+        padding-bottom: 24px;
+        border-bottom: 1px solid #e2e8f0;
+    }
+    .form-section:last-child {
+        margin-bottom: 0;
+        padding-bottom: 0;
+        border-bottom: none;
+    }
+    .section-title {
+        font-size: 14px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        color: #0A36FF;
+        margin-bottom: 20px;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+    .section-title i {
+        font-size: 18px;
+    }
+    .form-label {
+        font-weight: 600;
+        color: #334155;
+        font-size: 14px;
+        margin-bottom: 8px;
+    }
+    .form-control, .form-select {
+        border: 2px solid #e2e8f0;
+        border-radius: 10px;
+        padding: 12px 16px;
+        font-size: 15px;
+        transition: all 0.2s ease;
+    }
+    .form-control:focus, .form-select:focus {
+        border-color: #0A36FF;
+        box-shadow: 0 0 0 4px rgba(10, 54, 255, 0.1);
+    }
+    .form-control::placeholder {
+        color: #94a3b8;
+    }
+    textarea.form-control {
+        min-height: 100px;
+        resize: vertical;
+    }
+    .form-hint {
+        font-size: 12px;
+        color: #64748b;
+        margin-top: 6px;
+    }
+    .form-check-input {
+        width: 20px;
+        height: 20px;
+        border: 2px solid #cbd5e1;
+        border-radius: 6px;
+    }
+    .form-check-input:checked {
+        background-color: #0A36FF;
+        border-color: #0A36FF;
+    }
+    .form-check-label {
+        font-weight: 500;
+        margin-left: 8px;
+        color: #475569;
+    }
+    .checkbox-card {
+        background: #f8fafc;
+        border: 2px solid #e2e8f0;
+        border-radius: 12px;
+        padding: 16px 20px;
+        display: flex;
+        align-items: center;
+        cursor: pointer;
+        transition: all 0.2s ease;
+    }
+    .checkbox-card:hover {
+        border-color: #0A36FF;
+        background: #f0f4ff;
+    }
+    .checkbox-card.checked {
+        border-color: #0A36FF;
+        background: #f0f4ff;
+    }
+    .btn-submit {
+        background: linear-gradient(135deg, #0A36FF 0%, #0829CC 100%);
+        border: none;
+        padding: 14px 32px;
+        font-weight: 600;
+        font-size: 15px;
+        border-radius: 10px;
+        transition: all 0.2s ease;
+    }
+    .btn-submit:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 20px rgba(10, 54, 255, 0.3);
+    }
+    .btn-cancel {
+        padding: 14px 24px;
+        font-weight: 500;
+        border-radius: 10px;
+    }
+    .quick-select {
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+        margin-top: 8px;
+    }
+    .quick-select-btn {
+        padding: 6px 14px;
+        font-size: 13px;
+        border: 1px solid #e2e8f0;
+        border-radius: 20px;
+        background: white;
+        color: #64748b;
+        cursor: pointer;
+        transition: all 0.2s;
+    }
+    .quick-select-btn:hover {
+        border-color: #0A36FF;
+        color: #0A36FF;
+        background: #f0f4ff;
+    }
+</style>
+{% endblock %}
 
 {% block content %}
 <div class="row justify-content-center">
-    <div class="col-lg-8">
-        <div class="card border-0 shadow-sm">
-            <div class="card-body p-4">
-                <form method="post">
+    <div class="col-lg-9 col-xl-8">
+        <div class="visit-form-card">
+            <div class="visit-form-header">
+                <h5><i class="bi bi-house-heart me-2"></i>{% if visit %}Modifier la visite{% else %}Nouvelle visite pastorale{% endif %}</h5>
+            </div>
+            
+            <div class="visit-form-body">
+                <form method="post" id="visitForm">
                     {% csrf_token %}
                     
-                    <div class="row">
-                        <div class="col-md-6 mb-3">
-                            <label class="form-label">Membre à visiter *</label>
-                            {{ form.member }}
+                    <!-- Section: Informations principales -->
+                    <div class="form-section">
+                        <div class="section-title">
+                            <i class="bi bi-person-badge"></i>
+                            Informations principales
                         </div>
-                        <div class="col-md-6 mb-3">
-                            <label class="form-label">Visiteur</label>
-                            {{ form.visitor }}
-                            <small class="text-muted">Laissez vide pour vous assigner</small>
-                        </div>
-                    </div>
-                    
-                    <div class="row">
-                        <div class="col-md-4 mb-3">
-                            <label class="form-label">Type de visite</label>
-                            {{ form.visit_type }}
-                        </div>
-                        <div class="col-md-4 mb-3">
-                            <label class="form-label">Statut</label>
-                            {{ form.status }}
-                        </div>
-                        <div class="col-md-4 mb-3">
-                            <label class="form-label">Durée (minutes)</label>
-                            {{ form.duration_minutes }}
-                        </div>
-                    </div>
-                    
-                    <div class="row">
-                        <div class="col-md-6 mb-3">
-                            <label class="form-label">Date prévue</label>
-                            {{ form.scheduled_date }}
-                        </div>
-                        <div class="col-md-6 mb-3">
-                            <label class="form-label">Date effective</label>
-                            {{ form.visit_date }}
-                            <small class="text-muted">Si déjà effectuée</small>
-                        </div>
-                    </div>
-                    
-                    <div class="mb-3">
-                        <label class="form-label">Événement de vie lié (optionnel)</label>
-                        {{ form.life_event }}
-                    </div>
-                    
-                    <hr class="my-4">
-                    
-                    <h6 class="mb-3"><i class="bi bi-journal-text me-2"></i>Compte-rendu</h6>
-                    
-                    <div class="mb-3">
-                        <label class="form-label">Résumé de la visite</label>
-                        {{ form.summary }}
-                    </div>
-                    
-                    <div class="mb-3">
-                        <label class="form-label">Sujets de prière</label>
-                        {{ form.prayer_requests }}
-                    </div>
-                    
-                    <div class="row">
-                        <div class="col-md-6 mb-3">
-                            <div class="form-check">
-                                {{ form.follow_up_needed }}
-                                <label class="form-check-label" for="{{ form.follow_up_needed.id_for_label }}">
-                                    Suivi nécessaire
-                                </label>
+                        
+                        <div class="row g-4">
+                            <div class="col-md-6">
+                                <label class="form-label">Membre à visiter <span class="text-danger">*</span></label>
+                                {{ form.member }}
                             </div>
-                        </div>
-                        <div class="col-md-6 mb-3">
-                            <div class="form-check">
-                                {{ form.is_confidential }}
-                                <label class="form-check-label" for="{{ form.is_confidential.id_for_label }}">
-                                    Confidentiel (pasteur uniquement)
-                                </label>
+                            <div class="col-md-6">
+                                <label class="form-label">Visiteur</label>
+                                {{ form.visitor }}
+                                <div class="form-hint">Laissez vide pour vous assigner automatiquement</div>
                             </div>
                         </div>
                     </div>
                     
-                    <div class="mb-3">
-                        <label class="form-label">Notes de suivi</label>
-                        {{ form.follow_up_notes }}
+                    <!-- Section: Planification -->
+                    <div class="form-section">
+                        <div class="section-title">
+                            <i class="bi bi-calendar-event"></i>
+                            Planification
+                        </div>
+                        
+                        <div class="row g-4">
+                            <div class="col-md-4">
+                                <label class="form-label">Type de visite</label>
+                                {{ form.visit_type }}
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label">Statut</label>
+                                {{ form.status }}
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label">Durée estimée</label>
+                                {{ form.duration_minutes }}
+                                <div class="quick-select">
+                                    <span class="quick-select-btn" onclick="setDuration(30)">30 min</span>
+                                    <span class="quick-select-btn" onclick="setDuration(45)">45 min</span>
+                                    <span class="quick-select-btn" onclick="setDuration(60)">1h</span>
+                                    <span class="quick-select-btn" onclick="setDuration(90)">1h30</span>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="row g-4 mt-2">
+                            <div class="col-md-6">
+                                <label class="form-label">Date prévue</label>
+                                {{ form.scheduled_date }}
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label">Date effective</label>
+                                {{ form.visit_date }}
+                                <div class="form-hint">À remplir si la visite a déjà eu lieu</div>
+                            </div>
+                        </div>
+                        
+                        <div class="row g-4 mt-2">
+                            <div class="col-12">
+                                <label class="form-label">Événement de vie lié (optionnel)</label>
+                                {{ form.life_event }}
+                                <div class="form-hint">Associez cette visite à un événement de vie (maladie, deuil, naissance...)</div>
+                            </div>
+                        </div>
                     </div>
                     
-                    <div class="d-flex gap-2 mt-4">
-                        <button type="submit" class="btn btn-primary">
-                            <i class="bi bi-check-lg me-1"></i> Enregistrer
+                    <!-- Section: Compte-rendu -->
+                    <div class="form-section">
+                        <div class="section-title">
+                            <i class="bi bi-journal-text"></i>
+                            Compte-rendu
+                        </div>
+                        
+                        <div class="row g-4">
+                            <div class="col-12">
+                                <label class="form-label">Résumé de la visite</label>
+                                {{ form.summary }}
+                                <div class="form-hint">Décrivez brièvement le déroulement et les points abordés</div>
+                            </div>
+                        </div>
+                        
+                        <div class="row g-4 mt-2">
+                            <div class="col-12">
+                                <label class="form-label">Sujets de prière</label>
+                                {{ form.prayer_requests }}
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Section: Suivi -->
+                    <div class="form-section">
+                        <div class="section-title">
+                            <i class="bi bi-arrow-repeat"></i>
+                            Suivi
+                        </div>
+                        
+                        <div class="row g-4">
+                            <div class="col-md-6">
+                                <label class="checkbox-card" for="{{ form.follow_up_needed.id_for_label }}">
+                                    {{ form.follow_up_needed }}
+                                    <div class="ms-3">
+                                        <div class="fw-semibold">Suivi nécessaire</div>
+                                        <small class="text-muted">Une nouvelle visite sera à planifier</small>
+                                    </div>
+                                </label>
+                            </div>
+                            <div class="col-md-6">
+                                <label class="checkbox-card" for="{{ form.is_confidential.id_for_label }}">
+                                    {{ form.is_confidential }}
+                                    <div class="ms-3">
+                                        <div class="fw-semibold">Confidentiel</div>
+                                        <small class="text-muted">Visible uniquement par le pasteur</small>
+                                    </div>
+                                </label>
+                            </div>
+                        </div>
+                        
+                        <div class="row g-4 mt-2">
+                            <div class="col-12">
+                                <label class="form-label">Notes de suivi</label>
+                                {{ form.follow_up_notes }}
+                                <div class="form-hint">Actions à entreprendre, rappels, etc.</div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Actions -->
+                    <div class="d-flex gap-3 pt-3">
+                        <button type="submit" class="btn btn-primary btn-submit">
+                            <i class="bi bi-check-lg me-2"></i>
+                            {% if visit %}Enregistrer les modifications{% else %}Créer la visite{% endif %}
                         </button>
-                        <a href="{% url 'members:visits' %}" class="btn btn-outline-secondary">Annuler</a>
+                        <a href="{% url 'members:visits' %}" class="btn btn-outline-secondary btn-cancel">
+                            Annuler
+                        </a>
                     </div>
                 </form>
             </div>
         </div>
     </div>
 </div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function setDuration(minutes) {
+    document.getElementById('{{ form.duration_minutes.id_for_label }}').value = minutes;
+}
+
+// Améliorer les checkbox cards
+document.querySelectorAll('.checkbox-card input[type="checkbox"]').forEach(cb => {
+    cb.addEventListener('change', function() {
+        this.closest('.checkbox-card').classList.toggle('checked', this.checked);
+    });
+    // État initial
+    if (cb.checked) {
+        cb.closest('.checkbox-card').classList.add('checked');
+    }
+});
+</script>
 {% endblock %}

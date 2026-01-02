@@ -1,0 +1,157 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ family.name }} - EEBC{% endblock %}
+{% block page_title %}Famille {{ family.name }}{% endblock %}
+{% block page_subtitle %}Détails de la famille{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-lg-4">
+        <div class="card mb-4">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="card-title mb-0">Informations</h5>
+                <a href="{% url 'members:family_edit' family.pk %}" class="btn btn-sm btn-outline-primary">
+                    <i class="bi bi-pencil"></i>
+                </a>
+            </div>
+            <div class="card-body">
+                <div class="mb-3">
+                    <label class="text-muted small">Site</label>
+                    <p class="mb-0">
+                        {% if family.site %}
+                        <span class="badge bg-primary">{{ family.site.name }}</span>
+                        {% else %}
+                        <span class="text-muted">Non assigné</span>
+                        {% endif %}
+                    </p>
+                </div>
+                
+                {% if family.neighborhood %}
+                <div class="mb-3">
+                    <label class="text-muted small">Quartier</label>
+                    <p class="mb-0">{{ family.neighborhood.name }} ({{ family.neighborhood.city.name }})</p>
+                </div>
+                {% endif %}
+                
+                {% if family.address %}
+                <div class="mb-3">
+                    <label class="text-muted small">Adresse</label>
+                    <p class="mb-0">
+                        {{ family.address }}<br>
+                        {% if family.postal_code %}{{ family.postal_code }} {% endif %}{{ family.city }}
+                    </p>
+                </div>
+                {% endif %}
+                
+                {% if family.phone %}
+                <div class="mb-3">
+                    <label class="text-muted small">Téléphone</label>
+                    <p class="mb-0"><i class="bi bi-telephone me-2"></i>{{ family.phone }}</p>
+                </div>
+                {% endif %}
+                
+                {% if family.email %}
+                <div class="mb-3">
+                    <label class="text-muted small">Email</label>
+                    <p class="mb-0"><i class="bi bi-envelope me-2"></i>{{ family.email }}</p>
+                </div>
+                {% endif %}
+                
+                {% if family.latitude and family.longitude %}
+                <div class="mb-3">
+                    <label class="text-muted small">Coordonnées GPS</label>
+                    <p class="mb-0">
+                        <i class="bi bi-geo-alt me-2"></i>
+                        {{ family.latitude }}, {{ family.longitude }}
+                    </p>
+                </div>
+                {% endif %}
+                
+                {% if family.notes %}
+                <div class="mb-0">
+                    <label class="text-muted small">Notes</label>
+                    <p class="mb-0">{{ family.notes }}</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-lg-8">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="card-title mb-0">
+                    <i class="bi bi-people me-2"></i>Membres ({{ members.count }})
+                </h5>
+                <a href="{% url 'members:family_add_member' family.pk %}" class="btn btn-sm btn-primary">
+                    <i class="bi bi-plus-lg me-1"></i>Ajouter
+                </a>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0">
+                        <thead>
+                            <tr>
+                                <th>Membre</th>
+                                <th>Rôle familial</th>
+                                <th>Statut</th>
+                                <th>Contact</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for member in members %}
+                            <tr>
+                                <td>
+                                    <div class="d-flex align-items-center">
+                                        <div class="avatar me-3">
+                                            {{ member.first_name|slice:":1"|upper }}{{ member.last_name|slice:":1"|upper }}
+                                        </div>
+                                        <div>
+                                            <a href="{% url 'members:detail' member.pk %}" class="fw-bold text-decoration-none">
+                                                {{ member.full_name }}
+                                            </a>
+                                            {% if member.birth_date %}
+                                            <br><small class="text-muted">{{ member.age }} ans</small>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                </td>
+                                <td>
+                                    {% if member.family_role %}
+                                    <span class="badge bg-info">{{ member.family_role }}</span>
+                                    {% else %}
+                                    <span class="text-muted">-</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <span class="badge bg-{% if member.status == 'actif' %}success{% elif member.status == 'inactif' %}warning{% else %}secondary{% endif %}">
+                                        {{ member.get_status_display }}
+                                    </span>
+                                </td>
+                                <td>
+                                    {% if member.phone %}
+                                    <small><i class="bi bi-telephone me-1"></i>{{ member.phone }}</small>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="4" class="text-center py-4 text-muted">
+                                    Aucun membre dans cette famille
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="mt-4">
+    <a href="{% url 'members:family_list' %}" class="btn btn-outline-secondary">
+        <i class="bi bi-arrow-left me-1"></i>Retour à la liste
+    </a>
+</div>
+{% endblock %}

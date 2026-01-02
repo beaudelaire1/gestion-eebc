@@ -8,10 +8,16 @@ from django.conf.urls.static import static
 
 # Import des vues admin personnalisées
 from apps.members.admin_views import members_map_view, members_map_data
+# Import des vues de confirmation publiques
+from apps.worship.confirmation_views import confirm_role, decline_role
 
 urlpatterns = [
     # Site vitrine public (page d'accueil par défaut)
     path('', include('apps.core.urls')),
+    
+    # Confirmation des rôles (accessible sans connexion)
+    path('worship/confirm/<uuid:token>/', confirm_role, name='public_confirm_role'),
+    path('worship/decline/<uuid:token>/', decline_role, name='public_decline_role'),
     
     # Vues admin personnalisées (avant admin/)
     path('admin/members/map/', members_map_view, name='admin_members_map'),

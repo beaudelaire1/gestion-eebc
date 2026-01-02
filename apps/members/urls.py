@@ -1,6 +1,7 @@
 from django.urls import path
 from . import views
 from . import kanban_views
+from . import family_views
 
 app_name = 'members'
 
@@ -8,6 +9,13 @@ urlpatterns = [
     # Membres
     path('', views.member_list, name='list'),
     path('<int:pk>/', views.member_detail, name='detail'),
+    
+    # Familles
+    path('families/', family_views.family_list, name='family_list'),
+    path('families/create/', family_views.family_create, name='family_create'),
+    path('families/<int:pk>/', family_views.family_detail, name='family_detail'),
+    path('families/<int:pk>/edit/', family_views.family_edit, name='family_edit'),
+    path('families/<int:pk>/add-member/', family_views.family_add_member, name='family_add_member'),
     
     # Événements de vie (Pastoral CRM)
     path('life-events/', views.life_event_list, name='life_events'),

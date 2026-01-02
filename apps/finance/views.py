@@ -205,7 +205,7 @@ from .models import TaxReceipt, OnlineDonation
 @login_required
 def tax_receipt_list(request):
     """Liste des reçus fiscaux."""
-    receipts = TaxReceipt.objects.select_related('donor', 'created_by').order_by('-created_at')
+    receipts = TaxReceipt.objects.select_related('member', 'issued_by').order_by('-created_at')
     
     # Filtres
     year = request.GET.get('year')
@@ -235,20 +235,20 @@ def tax_receipt_create(request):
     from apps.members.models import Member
     
     if request.method == 'POST':
-        donor_id = request.POST.get('donor')
+        member_id = request.POST.get('member')
         fiscal_year = int(request.POST.get('fiscal_year', date.today().year))
         
-        donor = get_object_or_404(Member, pk=donor_id)
+        member = get_object_or_404(Member, pk=member_id)
         
         # Calculer le total des dons de l'année
         donations = OnlineDonation.objects.filter(
-            donor_email=donor.email,
+            donor_email=member.email,
             status='completed',
             created_at__year=fiscal_year
         )
         
         transactions = FinancialTransaction.objects.filter(
-            member=donor,
+            member=member,
             transaction_type__in=['don', 'dime', 'offrande'],
             status='valide',
             transaction_date__year=fiscal_year
@@ -258,21 +258,35 @@ def tax_receipt_create(request):
                 (transactions.aggregate(Sum('amount'))['amount__sum'] or 0)
         
         if total <= 0:
-            messages.error(request, f"Aucun don trouvé pour {donor.full_name} en {fiscal_year}")
+            messages.error(request, f"Aucun don trouvé pour {member.full_name} en {fiscal_year}")
             return redirect('finance:tax_receipt_create')
+        
+        # Générer le numéro de reçu
+        last_receipt = TaxReceipt.objects.filter(fiscal_year=fiscal_year).order_by('-receipt_number').first()
+        if last_receipt:
+            try:
+                last_num = int(last_receipt.receipt_number.split('-')[-1])
+                new_num = last_num + 1
+            except:
+                new_num = 1
+        else:
+            new_num = 1
+        receipt_number = f"RF-{fiscal_year}-{new_num:04d}"
         
         # Créer le reçu
         receipt = TaxReceipt.objects.create(
-            donor=donor,
+            receipt_number=receipt_number,
+            member=member,
             fiscal_year=fiscal_year,
             total_amount=total,
-            donor_name=donor.full_name,
-            donor_address=f"{donor.address}, {donor.postal_code} {donor.city}",
-            created_by=request.user,
+            donor_name=member.full_name,
+            donor_address=f"{member.address or ''}, {member.postal_code or ''} {member.city or ''}".strip(', '),
+            donor_email=member.email or '',
+            issued_by=request.user,
             status='draft'
         )
         
-        messages.success(request, f"Reçu fiscal créé pour {donor.full_name}")
+        messages.success(request, f"Reçu fiscal créé pour {member.full_name}")
         return redirect('finance:tax_receipt_detail', pk=receipt.pk)
     
     members = Member.objects.filter(status='actif').order_by('last_name', 'first_name')
@@ -289,7 +303,7 @@ def tax_receipt_create(request):
 @login_required
 def tax_receipt_detail(request, pk):
     """Détail d'un reçu fiscal."""
-    receipt = get_object_or_404(TaxReceipt.objects.select_related('donor', 'created_by'), pk=pk)
+    receipt = get_object_or_404(TaxReceipt.objects.select_related('member', 'issued_by'), pk=pk)
     
     context = {
         'receipt': receipt,
@@ -312,7 +326,7 @@ def tax_receipt_pdf(request, pk):
     # Mettre à jour le statut si brouillon
     if receipt.status == 'draft':
         receipt.status = 'issued'
-        receipt.issued_date = date.today()
+        receipt.issue_date = date.today()
         receipt.save()
     
     from django.http import HttpResponse
@@ -330,7 +344,11 @@ def tax_receipt_send(request, pk):
     
     receipt = get_object_or_404(TaxReceipt, pk=pk)
     
-    if not receipt.donor or not receipt.donor.email:
+    # Vérifier l'email
+    recipient_email = receipt.donor_email or (receipt.member.email if receipt.member else None)
+    recipient_name = receipt.donor_name.split()[0] if receipt.donor_name else 'Cher donateur'
+    
+    if not recipient_email:
         messages.error(request, "Le donateur n'a pas d'adresse email")
         return redirect('finance:tax_receipt_detail', pk=pk)
     
@@ -341,7 +359,7 @@ def tax_receipt_send(request, pk):
     # Envoyer l'email
     email = EmailMessage(
         subject=f"Reçu fiscal {receipt.fiscal_year} - {receipt.receipt_number}",
-        body=f"""Bonjour {receipt.donor.first_name},
+        body=f"""Bonjour {recipient_name},
 
 Veuillez trouver ci-joint votre reçu fiscal pour l'année {receipt.fiscal_year}.
 
@@ -354,7 +372,7 @@ Merci pour votre générosité !
 Fraternellement,
 L'équipe EEBC""",
         from_email=None,  # Utilise DEFAULT_FROM_EMAIL
-        to=[receipt.donor.email],
+        to=[recipient_email],
     )
     email.attach(
         f"recu_fiscal_{receipt.receipt_number}.pdf",
@@ -367,7 +385,7 @@ L'équipe EEBC""",
         receipt.status = 'sent'
         receipt.sent_date = date.today()
         receipt.save()
-        messages.success(request, f"Reçu envoyé à {receipt.donor.email}")
+        messages.success(request, f"Reçu envoyé à {recipient_email}")
     except Exception as e:
         messages.error(request, f"Erreur d'envoi : {e}")
     

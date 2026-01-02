@@ -5,6 +5,9 @@
 {% block page_subtitle %}{{ schedule.site.name }}{% endblock %}
 
 {% block page_actions %}
+<a href="{% url 'worship:role_assignments' service.pk %}" class="btn btn-outline-primary me-2">
+    <i class="bi bi-person-check me-1"></i> Assignations
+</a>
 <a href="{% url 'worship:culte_edit' service.pk %}" class="btn btn-primary">
     <i class="bi bi-pencil me-1"></i> Modifier
 </a>

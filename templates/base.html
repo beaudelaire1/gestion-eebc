@@ -632,13 +632,21 @@
             <div class="nav-section">
                 <div class="nav-section-title">Vie d'Église</div>
                 <nav class="nav flex-column">
-                    <a class="nav-link {% if 'worship' in request.path %}active{% endif %}" href="{% url 'worship:service_list' %}">
+                    <a class="nav-link {% if 'worship' in request.path and 'planning' not in request.path %}active{% endif %}" href="{% url 'worship:service_list' %}">
                         <i class="bi bi-calendar-check-fill"></i>
                         <span>Cultes</span>
                     </a>
-                    <a class="nav-link {% if 'finance' in request.path %}active{% endif %}" href="{% url 'finance:dashboard' %}">
+                    <a class="nav-link {% if 'planning' in request.path %}active{% endif %}" href="{% url 'worship:schedule_list' %}">
+                        <i class="bi bi-calendar-month"></i>
+                        <span>Planning mensuel</span>
+                    </a>
+                    <a class="nav-link {% if request.path == '/app/finance/' %}active{% endif %}" href="{% url 'finance:dashboard' %}">
                         <i class="bi bi-cash-coin"></i>
                         <span>Trésorerie</span>
+                    </a>
+                    <a class="nav-link {% if 'tax-receipts' in request.path %}active{% endif %}" href="{% url 'finance:tax_receipt_list' %}">
+                        <i class="bi bi-receipt"></i>
+                        <span>Reçus fiscaux</span>
                     </a>
                     <a class="nav-link {% if 'campaigns' in request.path %}active{% endif %}" href="{% url 'campaigns:list' %}">
                         <i class="bi bi-graph-up-arrow"></i>
@@ -650,9 +658,13 @@
             <div class="nav-section">
                 <div class="nav-section-title">Gestion</div>
                 <nav class="nav flex-column">
-                    <a class="nav-link {% if request.path == '/members/' %}active{% endif %}" href="{% url 'members:list' %}">
+                    <a class="nav-link {% if request.path == '/app/members/' %}active{% endif %}" href="{% url 'members:list' %}">
                         <i class="bi bi-person-badge-fill"></i>
                         <span>Membres</span>
+                    </a>
+                    <a class="nav-link {% if 'families' in request.path %}active{% endif %}" href="{% url 'members:family_list' %}">
+                        <i class="bi bi-house-heart"></i>
+                        <span>Familles</span>
                     </a>
                     <a class="nav-link {% if 'life-events' in request.path %}active{% endif %}" href="{% url 'members:life_events' %}">
                         <i class="bi bi-heart-fill"></i>
@@ -683,6 +695,24 @@
                     <a class="nav-link {% if 'inventory' in request.path %}active{% endif %}" href="{% url 'inventory:list' %}">
                         <i class="bi bi-box-seam-fill"></i>
                         <span>Inventaire</span>
+                    </a>
+                </nav>
+            </div>
+            
+            <div class="nav-section">
+                <div class="nav-section-title">Communication</div>
+                <nav class="nav flex-column">
+                    <a class="nav-link {% if 'notifications' in request.path %}active{% endif %}" href="{% url 'communication:notifications' %}">
+                        <i class="bi bi-bell-fill"></i>
+                        <span>Notifications</span>
+                    </a>
+                    <a class="nav-link {% if 'announcements' in request.path %}active{% endif %}" href="{% url 'communication:announcements' %}">
+                        <i class="bi bi-megaphone-fill"></i>
+                        <span>Annonces</span>
+                    </a>
+                    <a class="nav-link {% if 'email-logs' in request.path %}active{% endif %}" href="{% url 'communication:email_logs' %}">
+                        <i class="bi bi-envelope-fill"></i>
+                        <span>Historique emails</span>
                     </a>
                 </nav>
             </div>

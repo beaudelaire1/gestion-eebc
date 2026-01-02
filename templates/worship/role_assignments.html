@@ -1,0 +1,153 @@
+{% extends 'base.html' %}
+
+{% block title %}Assignations - {{ service.date|date:"d/m/Y" }} - EEBC{% endblock %}
+{% block page_title %}Assignations de rôles{% endblock %}
+{% block page_subtitle %}Culte du {{ service.date|date:"d F Y" }}{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-md-3">
+        <div class="stat-card">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <div class="stat-value">{{ assignments.count }}</div>
+                    <div class="stat-label">Total</div>
+                </div>
+                <div class="stat-icon blue"><i class="bi bi-people"></i></div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="stat-card">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <div class="stat-value">{{ pending_count }}</div>
+                    <div class="stat-label">En attente</div>
+                </div>
+                <div class="stat-icon orange"><i class="bi bi-clock"></i></div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="stat-card">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <div class="stat-value">{{ accepted_count }}</div>
+                    <div class="stat-label">Acceptés</div>
+                </div>
+                <div class="stat-icon green"><i class="bi bi-check-circle"></i></div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="stat-card">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <div class="stat-value">{{ declined_count }}</div>
+                    <div class="stat-label">Refusés</div>
+                </div>
+                <div class="stat-icon purple"><i class="bi bi-x-circle"></i></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <a href="{% url 'worship:schedule_detail' schedule.pk %}" class="btn btn-outline-secondary">
+        <i class="bi bi-arrow-left me-1"></i>Retour au planning
+    </a>
+    <div>
+        <a href="{% url 'worship:send_all_notifications' service.pk %}" class="btn btn-warning me-2">
+            <i class="bi bi-send me-1"></i>Envoyer toutes les notifications
+        </a>
+        <a href="{% url 'worship:create_role_assignment' service.pk %}" class="btn btn-primary">
+            <i class="bi bi-plus-lg me-1"></i>Nouvelle assignation
+        </a>
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover mb-0">
+                <thead>
+                    <tr>
+                        <th>Membre</th>
+                        <th>Rôle</th>
+                        <th>Statut</th>
+                        <th>Notifié</th>
+                        <th>Répondu</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for a in assignments %}
+                    <tr>
+                        <td>
+                            <div class="d-flex align-items-center">
+                                <div class="avatar me-2">
+                                    {{ a.member.first_name|slice:":1"|upper }}{{ a.member.last_name|slice:":1"|upper }}
+                                </div>
+                                <div>
+                                    <strong>{{ a.member.full_name }}</strong>
+                                    {% if a.member.email %}<br><small class="text-muted">{{ a.member.email }}</small>{% endif %}
+                                </div>
+                            </div>
+                        </td>
+                        <td><span class="badge bg-primary">{{ a.get_role_display }}</span></td>
+                        <td>
+                            {% if a.status == 'pending' %}
+                            <span class="badge bg-warning text-dark"><i class="bi bi-clock me-1"></i>En attente</span>
+                            {% elif a.status == 'accepted' %}
+                            <span class="badge bg-success"><i class="bi bi-check me-1"></i>Accepté</span>
+                            {% elif a.status == 'declined' %}
+                            <span class="badge bg-secondary"><i class="bi bi-x me-1"></i>Refusé</span>
+                            {% elif a.status == 'expired' %}
+                            <span class="badge bg-danger"><i class="bi bi-clock-history me-1"></i>Expiré</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if a.notified_at %}
+                            <small>{{ a.notified_at|date:"d/m H:i" }}</small>
+                            {% else %}
+                            <span class="text-muted">-</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if a.responded_at %}
+                            <small>{{ a.responded_at|date:"d/m H:i" }}</small>
+                            {% else %}
+                            <span class="text-muted">-</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if a.status == 'pending' %}
+                            <a href="{% url 'worship:send_assignment_notification' a.pk %}" class="btn btn-sm btn-outline-warning" title="Envoyer notification">
+                                <i class="bi bi-send"></i>
+                            </a>
+                            {% endif %}
+                            {% if a.decline_reason %}
+                            <button class="btn btn-sm btn-outline-info" data-bs-toggle="tooltip" title="{{ a.decline_reason }}">
+                                <i class="bi bi-chat-text"></i>
+                            </button>
+                            {% endif %}
+                            {% if a.suggested_replacement %}
+                            <span class="badge bg-info" title="Remplacement suggéré">
+                                <i class="bi bi-person-plus me-1"></i>{{ a.suggested_replacement.first_name }}
+                            </span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="6" class="text-center py-4 text-muted">
+                            Aucune assignation pour ce culte
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

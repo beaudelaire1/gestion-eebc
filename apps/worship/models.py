@@ -927,6 +927,7 @@ class RoleAssignment(models.Model):
         return False
     
     @property
+    @property
     def confirmation_url(self):
         """URL de confirmation."""
         return f"/worship/confirm/{self.token}/"

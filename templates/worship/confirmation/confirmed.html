@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Participation confirmée - EEBC</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" rel="stylesheet">
+    <style>
+        body {
+            background: linear-gradient(135deg, #28a745 0%, #155724 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        .confirmation-card {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            max-width: 500px;
+            width: 100%;
+            overflow: hidden;
+            text-align: center;
+        }
+        .card-header {
+            background: linear-gradient(135deg, #28a745 0%, #155724 100%);
+            color: white;
+            padding: 40px;
+        }
+        .card-body {
+            padding: 30px;
+        }
+        .checkmark {
+            width: 80px;
+            height: 80px;
+            background: rgba(255,255,255,0.2);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 20px;
+            font-size: 2.5rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="confirmation-card">
+        <div class="card-header">
+            <div class="checkmark">
+                <i class="bi bi-check-lg"></i>
+            </div>
+            <h2 class="mb-1">Merci !</h2>
+            <p class="mb-0 opacity-75">Votre participation est confirmée</p>
+        </div>
+        
+        <div class="card-body">
+            <h5 class="mb-3">{{ assignment.get_role_display }}</h5>
+            <p class="text-muted mb-4">
+                Culte du <strong>{{ assignment.scheduled_service.date|date:"l d F Y" }}</strong><br>
+                à <strong>{{ assignment.scheduled_service.start_time|time:"H:i" }}</strong>
+            </p>
+            
+            <div class="alert alert-success">
+                <i class="bi bi-calendar-check me-2"></i>
+                Nous comptons sur vous !
+            </div>
+            
+            <p class="text-muted small mt-4">
+                {{ assignment.scheduled_service.schedule.site.name }}
+            </p>
+        </div>
+    </div>
+</body>
+</html>

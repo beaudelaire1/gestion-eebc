@@ -61,15 +61,62 @@ class VisitationLogForm(forms.ModelForm):
             'follow_up_needed', 'follow_up_notes', 'is_confidential'
         ]
         widgets = {
-            'scheduled_date': forms.DateInput(attrs={'type': 'date'}),
-            'visit_date': forms.DateInput(attrs={'type': 'date'}),
-            'summary': forms.Textarea(attrs={'rows': 4}),
-            'prayer_requests': forms.Textarea(attrs={'rows': 3}),
-            'follow_up_notes': forms.Textarea(attrs={'rows': 2}),
+            'scheduled_date': forms.DateInput(attrs={
+                'type': 'date',
+                'class': 'form-control'
+            }),
+            'visit_date': forms.DateInput(attrs={
+                'type': 'date',
+                'class': 'form-control'
+            }),
+            'duration_minutes': forms.NumberInput(attrs={
+                'class': 'form-control',
+                'placeholder': '45'
+            }),
+            'summary': forms.Textarea(attrs={
+                'rows': 4,
+                'class': 'form-control',
+                'placeholder': 'Décrivez le déroulement de la visite...'
+            }),
+            'prayer_requests': forms.Textarea(attrs={
+                'rows': 3,
+                'class': 'form-control',
+                'placeholder': 'Sujets de prière mentionnés...'
+            }),
+            'follow_up_notes': forms.Textarea(attrs={
+                'rows': 2,
+                'class': 'form-control',
+                'placeholder': 'Actions à entreprendre...'
+            }),
+            'follow_up_needed': forms.CheckboxInput(attrs={
+                'class': 'form-check-input'
+            }),
+            'is_confidential': forms.CheckboxInput(attrs={
+                'class': 'form-check-input'
+            }),
         }
     
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.fields['member'].queryset = Member.objects.filter(status='actif').order_by('last_name')
+        
+        # Ajouter les classes CSS à tous les champs
+        for field_name, field in self.fields.items():
+            if isinstance(field.widget, (forms.Select, forms.SelectMultiple)):
+                field.widget.attrs['class'] = 'form-select'
+            elif isinstance(field.widget, forms.CheckboxInput):
+                pass  # Déjà défini dans widgets
+            elif not field.widget.attrs.get('class'):
+                field.widget.attrs['class'] = 'form-control'
+        
+        # Queryset pour les membres
+        self.fields['member'].queryset = Member.objects.filter(status='actif').order_by('last_name', 'first_name')
+        self.fields['member'].widget.attrs['class'] = 'form-select'
+        
         self.fields['visitor'].required = False
+        self.fields['visitor'].widget.attrs['class'] = 'form-select'
+        
+        self.fields['visit_type'].widget.attrs['class'] = 'form-select'
+        self.fields['status'].widget.attrs['class'] = 'form-select'
+        
         self.fields['life_event'].required = False
+        self.fields['life_event'].widget.attrs['class'] = 'form-select'

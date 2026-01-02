@@ -1,0 +1,87 @@
+{% extends 'base.html' %}
+
+{% block title %}Nouvelle famille - EEBC{% endblock %}
+{% block page_title %}Nouvelle famille{% endblock %}
+{% block page_subtitle %}Créer une nouvelle famille{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-8">
+        <div class="card">
+            <div class="card-body">
+                <form method="post">
+                    {% csrf_token %}
+                    
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Nom de famille *</label>
+                            <input type="text" name="name" class="form-control" required>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Site</label>
+                            <select name="site" class="form-select">
+                                <option value="">-- Sélectionner --</option>
+                                {% for site in sites %}
+                                <option value="{{ site.id }}">{{ site.name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Quartier</label>
+                        <select name="neighborhood" class="form-select">
+                            <option value="">-- Sélectionner --</option>
+                            {% for n in neighborhoods %}
+                            <option value="{{ n.id }}">{{ n.name }} ({{ n.city.name }})</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    
+                    <hr class="my-4">
+                    <h6 class="mb-3"><i class="bi bi-geo-alt me-2"></i>Adresse</h6>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Adresse</label>
+                        <input type="text" name="address" class="form-control" placeholder="Numéro et rue">
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-4 mb-3">
+                            <label class="form-label">Code postal</label>
+                            <input type="text" name="postal_code" class="form-control">
+                        </div>
+                        <div class="col-md-8 mb-3">
+                            <label class="form-label">Ville</label>
+                            <input type="text" name="city" class="form-control">
+                        </div>
+                    </div>
+                    
+                    <hr class="my-4">
+                    <h6 class="mb-3"><i class="bi bi-telephone me-2"></i>Contact</h6>
+                    
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Téléphone</label>
+                            <input type="tel" name="phone" class="form-control">
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">Email</label>
+                            <input type="email" name="email" class="form-control">
+                        </div>
+                    </div>
+                    
+                    <div class="d-flex justify-content-between mt-4">
+                        <a href="{% url 'members:family_list' %}" class="btn btn-outline-secondary">
+                            <i class="bi bi-arrow-left me-1"></i>Annuler
+                        </a>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="bi bi-check-lg me-1"></i>Créer la famille
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

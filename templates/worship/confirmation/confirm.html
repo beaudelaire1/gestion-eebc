@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Confirmer votre participation - EEBC</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" rel="stylesheet">
+    <style>
+        body {
+            background: linear-gradient(135deg, #0A36FF 0%, #1e3a5f 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        .confirmation-card {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            max-width: 500px;
+            width: 100%;
+            overflow: hidden;
+        }
+        .card-header {
+            background: linear-gradient(135deg, #0A36FF 0%, #1e3a5f 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+        .card-body {
+            padding: 30px;
+        }
+        .info-item {
+            display: flex;
+            align-items: center;
+            padding: 12px 0;
+            border-bottom: 1px solid #eee;
+        }
+        .info-item:last-child {
+            border-bottom: none;
+        }
+        .info-icon {
+            width: 40px;
+            height: 40px;
+            background: #f0f4ff;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-right: 15px;
+            color: #0A36FF;
+        }
+        .btn-confirm {
+            background: #28a745;
+            border: none;
+            padding: 15px 40px;
+            font-size: 1.1rem;
+            font-weight: 600;
+        }
+        .btn-confirm:hover {
+            background: #218838;
+        }
+        .btn-decline {
+            color: #dc3545;
+            text-decoration: none;
+        }
+        .btn-decline:hover {
+            color: #c82333;
+        }
+    </style>
+</head>
+<body>
+    <div class="confirmation-card">
+        <div class="card-header">
+            <i class="bi bi-calendar-check fs-1 mb-3 d-block"></i>
+            <h2 class="mb-1">Confirmation requise</h2>
+            <p class="mb-0 opacity-75">{{ schedule.site.name }}</p>
+        </div>
+        
+        <div class="card-body">
+            <p class="text-center mb-4">
+                Bonjour <strong>{{ assignment.member.first_name }}</strong>,<br>
+                vous êtes sollicité(e) pour participer au culte.
+            </p>
+            
+            <div class="info-item">
+                <div class="info-icon"><i class="bi bi-calendar3"></i></div>
+                <div>
+                    <small class="text-muted">Date</small>
+                    <div class="fw-bold">{{ service.date|date:"l d F Y" }}</div>
+                </div>
+            </div>
+            
+            <div class="info-item">
+                <div class="info-icon"><i class="bi bi-clock"></i></div>
+                <div>
+                    <small class="text-muted">Heure</small>
+                    <div class="fw-bold">{{ service.start_time|time:"H:i" }}</div>
+                </div>
+            </div>
+            
+            <div class="info-item">
+                <div class="info-icon"><i class="bi bi-person-badge"></i></div>
+                <div>
+                    <small class="text-muted">Votre rôle</small>
+                    <div class="fw-bold text-primary">{{ assignment.get_role_display }}</div>
+                </div>
+            </div>
+            
+            {% if service.theme %}
+            <div class="info-item">
+                <div class="info-icon"><i class="bi bi-bookmark"></i></div>
+                <div>
+                    <small class="text-muted">Thème</small>
+                    <div class="fw-bold">{{ service.theme }}</div>
+                </div>
+            </div>
+            {% endif %}
+            
+            {% if assignment.expires_at %}
+            <div class="alert alert-warning mt-4 mb-4">
+                <i class="bi bi-clock-history me-2"></i>
+                Merci de répondre avant le <strong>{{ assignment.expires_at|date:"d/m/Y" }} à {{ assignment.expires_at|time:"H:i" }}</strong>
+            </div>
+            {% endif %}
+            
+            <form method="post" class="text-center mt-4">
+                {% csrf_token %}
+                <button type="submit" class="btn btn-confirm btn-lg text-white mb-3">
+                    <i class="bi bi-check-lg me-2"></i>J'accepte
+                </button>
+                <br>
+                <a href="{% url 'worship:decline_role' assignment.token %}" class="btn-decline">
+                    <i class="bi bi-x-lg me-1"></i>Je ne suis pas disponible
+                </a>
+            </form>
+        </div>
+    </div>
+</body>
+</html>

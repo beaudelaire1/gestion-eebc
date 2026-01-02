@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lien expiré - EEBC</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" rel="stylesheet">
+    <style>
+        body {
+            background: linear-gradient(135deg, #ffc107 0%, #e0a800 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        .confirmation-card {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            max-width: 500px;
+            width: 100%;
+            overflow: hidden;
+            text-align: center;
+        }
+        .card-header {
+            background: linear-gradient(135deg, #ffc107 0%, #e0a800 100%);
+            color: #212529;
+            padding: 40px;
+        }
+        .icon-circle {
+            width: 80px;
+            height: 80px;
+            background: rgba(255,255,255,0.4);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 20px;
+            font-size: 2.5rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="confirmation-card">
+        <div class="card-header">
+            <div class="icon-circle"><i class="bi bi-clock-history"></i></div>
+            <h2 class="mb-1">Lien expiré</h2>
+            <p class="mb-0">Ce lien n'est plus valide</p>
+        </div>
+        <div class="card-body">
+            <p class="text-muted mb-4">
+                Le délai pour répondre à cette demande est dépassé.<br>
+                Veuillez contacter l'équipe de coordination.
+            </p>
+            <p class="text-muted small">
+                Rôle : {{ assignment.get_role_display }}<br>
+                Date : {{ assignment.scheduled_service.date|date:"d/m/Y" }}
+            </p>
+        </div>
+    </div>
+</body>
+</html>

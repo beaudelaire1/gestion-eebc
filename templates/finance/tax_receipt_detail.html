@@ -9,9 +9,9 @@
     <a href="{% url 'finance:tax_receipt_pdf' receipt.pk %}" class="btn btn-danger" target="_blank">
         <i class="bi bi-file-pdf me-1"></i> Télécharger PDF
     </a>
-    {% if receipt.donor and receipt.donor.email %}
+    {% if receipt.donor_email or receipt.member and receipt.member.email %}
     <a href="{% url 'finance:tax_receipt_send' receipt.pk %}" class="btn btn-success"
-       onclick="return confirm('Envoyer le reçu à {{ receipt.donor.email }} ?')">
+       onclick="return confirm('Envoyer le reçu à {{ receipt.donor_email|default:receipt.member.email }} ?')">
         <i class="bi bi-envelope me-1"></i> Envoyer par email
     </a>
     {% endif %}
@@ -63,7 +63,7 @@
                 </div>
                 {% elif receipt.status == 'issued' %}
                 <div class="alert alert-info mb-0">
-                    <i class="bi bi-check-circle me-2"></i> Émis le {{ receipt.issued_date|date:"d/m/Y" }}
+                    <i class="bi bi-check-circle me-2"></i> Émis le {{ receipt.issue_date|date:"d/m/Y" }}
                 </div>
                 {% elif receipt.status == 'sent' %}
                 <div class="alert alert-success mb-0">
@@ -83,8 +83,8 @@
             </div>
             <div class="card-body">
                 <p class="mb-2">
-                    <small class="text-muted">Créé par</small><br>
-                    {{ receipt.created_by.get_full_name|default:receipt.created_by.username }}
+                    <small class="text-muted">Émis par</small><br>
+                    {{ receipt.issued_by.get_full_name|default:receipt.issued_by.username|default:"-" }}
                 </p>
                 <p class="mb-0">
                     <small class="text-muted">Date de création</small><br>
