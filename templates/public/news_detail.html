@@ -1,0 +1,80 @@
+{% extends 'public/base.html' %}
+
+{% block title %}{{ article.title }} - {{ settings.site_name|default:'EEBC' }}{% endblock %}
+{% block meta_description %}{{ article.excerpt|truncatewords:25 }}{% endblock %}
+
+{% block content %}
+<article>
+    <!-- Header -->
+    {% if article.featured_image %}
+    <div style="background: linear-gradient(rgba(0,0,0,0.6), rgba(0,0,0,0.6)), url('{{ article.featured_image.url }}') center/cover; height: 400px;">
+        <div class="container h-100 d-flex align-items-end pb-5">
+            <div class="text-white">
+                <span class="badge bg-primary mb-2">{{ article.get_category_display }}</span>
+                <h1 class="display-5 fw-bold">{{ article.title }}</h1>
+                <p class="lead mb-0">
+                    <i class="bi bi-calendar me-2"></i>{{ article.publish_date|date:"d F Y" }}
+                    {% if article.display_author %}
+                    <span class="ms-3"><i class="bi bi-person me-2"></i>{{ article.display_author }}</span>
+                    {% endif %}
+                </p>
+            </div>
+        </div>
+    </div>
+    {% else %}
+    <section class="hero-section py-5">
+        <div class="container">
+            <span class="badge bg-light text-primary mb-2">{{ article.get_category_display }}</span>
+            <h1 class="display-5 fw-bold">{{ article.title }}</h1>
+            <p class="lead mb-0">
+                <i class="bi bi-calendar me-2"></i>{{ article.publish_date|date:"d F Y" }}
+                {% if article.display_author %}
+                <span class="ms-3"><i class="bi bi-person me-2"></i>{{ article.display_author }}</span>
+                {% endif %}
+            </p>
+        </div>
+    </section>
+    {% endif %}
+    
+    <!-- Content -->
+    <section class="py-5">
+        <div class="container">
+            <div class="row justify-content-center">
+                <div class="col-lg-8">
+                    <div class="lead mb-4 text-muted">
+                        {{ article.excerpt }}
+                    </div>
+                    
+                    <hr class="my-4">
+                    
+                    <div class="article-content">
+                        {{ article.content|safe }}
+                    </div>
+                    
+                    <hr class="my-5">
+                    
+                    <!-- Navigation -->
+                    <div class="d-flex justify-content-between">
+                        <a href="{% url 'public:news_list' %}" class="btn btn-outline-primary">
+                            <i class="bi bi-arrow-left me-2"></i>Retour aux actualités
+                        </a>
+                        
+                        <!-- Partage -->
+                        <div>
+                            <span class="text-muted me-2">Partager :</span>
+                            <a href="https://www.facebook.com/sharer/sharer.php?u={{ request.build_absolute_uri }}" 
+                               target="_blank" class="btn btn-outline-primary btn-sm">
+                                <i class="bi bi-facebook"></i>
+                            </a>
+                            <a href="https://wa.me/?text={{ article.title }} {{ request.build_absolute_uri }}" 
+                               target="_blank" class="btn btn-outline-success btn-sm">
+                                <i class="bi bi-whatsapp"></i>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+</article>
+{% endblock %}

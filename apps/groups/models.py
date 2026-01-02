@@ -17,6 +17,16 @@ class Group(models.Model):
     name = models.CharField(max_length=100, verbose_name="Nom")
     description = models.TextField(blank=True, verbose_name="Description")
     
+    # Site d'appartenance (multi-sites)
+    site = models.ForeignKey(
+        'core.Site',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='groups',
+        verbose_name="Site"
+    )
+    
     group_type = models.CharField(
         max_length=15,
         choices=GroupType.choices,

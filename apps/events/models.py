@@ -46,6 +46,17 @@ class Event(models.Model):
     title = models.CharField(max_length=200, verbose_name="Titre")
     description = models.TextField(blank=True, verbose_name="Description")
     
+    # Site d'appartenance (multi-sites)
+    site = models.ForeignKey(
+        'core.Site',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='events',
+        verbose_name="Site",
+        help_text="Laisser vide pour un événement global"
+    )
+    
     category = models.ForeignKey(
         EventCategory,
         on_delete=models.SET_NULL,
@@ -95,7 +106,6 @@ class Event(models.Model):
     # Responsable
     organizers = models.ManyToManyField(
         settings.AUTH_USER_MODEL,
-        null=True,
         blank=True,
         related_name='organized_events',
         verbose_name="Organisateur"

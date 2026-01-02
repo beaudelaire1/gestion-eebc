@@ -1,0 +1,305 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="{% block meta_description %}{{ settings.meta_description|default:'Église Évangélique Baptiste de Cabassou - Guyane' }}{% endblock %}">
+    
+    <title>{% block title %}{{ settings.site_name|default:'EEBC' }}{% endblock %}</title>
+    
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Bootstrap Icons -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" rel="stylesheet">
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <style>
+        :root {
+            --primary-color: #0A36FF;
+            --secondary-color: #1e3a5f;
+            --accent-color: #f8b500;
+        }
+        
+        body {
+            font-family: 'Poppins', sans-serif;
+            color: #333;
+        }
+        
+        /* Navbar */
+        .navbar-brand {
+            font-weight: 700;
+            font-size: 1.5rem;
+        }
+        
+        .navbar {
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        
+        .nav-link {
+            font-weight: 500;
+            transition: color 0.3s;
+        }
+        
+        .btn-primary {
+            background-color: var(--primary-color);
+            border-color: var(--primary-color);
+        }
+        
+        .btn-primary:hover {
+            background-color: #0830d9;
+            border-color: #0830d9;
+        }
+        
+        .btn-outline-primary {
+            color: var(--primary-color);
+            border: 2px solid var(--primary-color);
+        }
+        
+        .btn-outline-primary:hover {
+            background: var(--primary-color);
+            border-color: var(--primary-color);
+            transform: translateY(-2px);
+        }
+        
+        /* Rounded pills */
+        .rounded-pill {
+            border-radius: 50px !important;
+        }
+        
+        /* Hero Section */
+        .hero-section {
+            background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
+            color: white;
+            padding: 100px 0;
+        }
+        
+        /* Cards */
+        .card {
+            border: none;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            transition: transform 0.4s ease, box-shadow 0.4s ease;
+        }
+        
+        .card:hover {
+            transform: translateY(-8px);
+            box-shadow: 0 15px 35px rgba(0,0,0,0.15);
+        }
+        
+        /* Buttons */
+        .btn {
+            transition: all 0.3s ease;
+        }
+        
+        .btn-primary {
+            background: linear-gradient(135deg, var(--primary-color) 0%, #3b82f6 100%);
+            border: none;
+        }
+        
+        .btn-primary:hover {
+            background: linear-gradient(135deg, #0830d9 0%, var(--primary-color) 100%);
+            transform: translateY(-2px);
+            box-shadow: 0 5px 20px rgba(10, 54, 255, 0.4);
+        }
+        
+        .btn-outline-primary {
+            color: var(--primary-color);
+            border: 2px solid var(--primary-color);
+        }
+        
+        .btn-outline-primary:hover {
+            background: var(--primary-color);
+            border-color: var(--primary-color);
+            transform: translateY(-2px);
+        }
+        
+        /* Rounded pills */
+        .rounded-pill {
+            border-radius: 50px !important;
+        }
+        
+        /* Footer */
+        footer {
+            background-color: var(--secondary-color);
+            color: white;
+        }
+        
+        footer a {
+            color: rgba(255,255,255,0.8);
+            text-decoration: none;
+        }
+        
+        footer a:hover {
+            color: white;
+        }
+        
+        /* Section titles */
+        .section-title {
+            position: relative;
+            margin-bottom: 2rem;
+        }
+        
+        .section-title::after {
+            content: '';
+            position: absolute;
+            bottom: -10px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 60px;
+            height: 3px;
+            background-color: var(--primary-color);
+        }
+        
+        .section-title.text-start::after {
+            left: 0;
+            transform: none;
+        }
+    </style>
+    
+    {% block extra_css %}{% endblock %}
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar navbar-expand-lg navbar-light bg-white sticky-top">
+        <div class="container">
+            <a class="navbar-brand text-primary" href="{% url 'public:home' %}">
+                {% if settings.logo %}
+                    <img src="{{ settings.logo.url }}" alt="{{ settings.site_name }}" height="40">
+                {% else %}
+                    <i class="bi bi-church me-2"></i>{{ settings.site_name|default:'EEBC' }}
+                {% endif %}
+            </a>
+            
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav me-auto">
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'public:home' %}">Accueil</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'public:sites' %}">Nos Églises</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'public:events_list' %}">Événements</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'public:news_list' %}">Actualités</a>
+                    </li>
+                    {% for page in menu_pages %}
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'public:page' page.slug %}">{{ page.title }}</a>
+                    </li>
+                    {% endfor %}
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'public:contact' %}">Contact</a>
+                    </li>
+                </ul>
+                
+                <div class="d-flex align-items-center">
+                    {% if user.is_authenticated %}
+                        <a href="{% url 'dashboard:home' %}" class="btn btn-primary">
+                            <i class="bi bi-grid-fill me-1"></i> Espace membre
+                        </a>
+                    {% else %}
+                        <a href="{% url 'accounts:login' %}" class="btn btn-outline-primary me-2">
+                            <i class="bi bi-box-arrow-in-right me-1"></i> Connexion
+                        </a>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </nav>
+    
+    <!-- Messages -->
+    {% if messages %}
+    <div class="container mt-3">
+        {% for message in messages %}
+        <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+            {{ message }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+    
+    <!-- Main Content -->
+    <main>
+        {% block content %}{% endblock %}
+    </main>
+    
+    <!-- Footer -->
+    <footer class="py-5 mt-5">
+        <div class="container">
+            <div class="row">
+                <div class="col-lg-4 mb-4">
+                    <h5 class="mb-3">{{ settings.site_name|default:'EEBC' }}</h5>
+                    <p class="text-white-50">{{ settings.tagline|default:'Église Évangélique Baptiste de Cabassou' }}</p>
+                    {% if settings.facebook_url or settings.youtube_url or settings.instagram_url %}
+                    <div class="mt-3">
+                        {% if settings.facebook_url %}
+                        <a href="{{ settings.facebook_url }}" target="_blank" class="me-3 fs-4"><i class="bi bi-facebook"></i></a>
+                        {% endif %}
+                        {% if settings.youtube_url %}
+                        <a href="{{ settings.youtube_url }}" target="_blank" class="me-3 fs-4"><i class="bi bi-youtube"></i></a>
+                        {% endif %}
+                        {% if settings.instagram_url %}
+                        <a href="{{ settings.instagram_url }}" target="_blank" class="me-3 fs-4"><i class="bi bi-instagram"></i></a>
+                        {% endif %}
+                    </div>
+                    {% endif %}
+                </div>
+                
+                <div class="col-lg-4 mb-4">
+                    <h5 class="mb-3">Nos Églises</h5>
+                    <ul class="list-unstyled">
+                        {% for site in sites %}
+                        <li class="mb-2">
+                            <i class="bi bi-geo-alt me-2"></i>
+                            <strong>{{ site.name }}</strong><br>
+                            <small class="text-white-50">{{ site.address }}, {{ site.city }}</small>
+                        </li>
+                        {% endfor %}
+                    </ul>
+                </div>
+                
+                <div class="col-lg-4 mb-4">
+                    <h5 class="mb-3">Contact</h5>
+                    {% if settings.email %}
+                    <p><i class="bi bi-envelope me-2"></i> {{ settings.email }}</p>
+                    {% endif %}
+                    {% if settings.phone %}
+                    <p><i class="bi bi-telephone me-2"></i> {{ settings.phone }}</p>
+                    {% endif %}
+                    <a href="{% url 'public:contact' %}" class="btn btn-outline-light btn-sm mt-2">
+                        Nous contacter
+                    </a>
+                </div>
+            </div>
+            
+            <hr class="my-4 bg-white opacity-25">
+            
+            <div class="row align-items-center">
+                <div class="col-md-6 text-center text-md-start">
+                    <small class="text-white-50">
+                        © {% now "Y" %} {{ settings.site_name|default:'EEBC' }}. Tous droits réservés.
+                    </small>
+                </div>
+                <div class="col-md-6 text-center text-md-end">
+                    <small class="text-white-50">
+                        {{ settings.footer_text|default:'' }}
+                    </small>
+                </div>
+            </div>
+        </div>
+    </footer>
+    
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    
+    {% block extra_js %}{% endblock %}
+</body>
+</html>

@@ -1,0 +1,149 @@
+{% extends 'public/base.html' %}
+
+{% block title %}Contact - {{ settings.site_name|default:'EEBC' }}{% endblock %}
+
+{% block content %}
+<section class="hero-section py-5">
+    <div class="container text-center">
+        <h1 class="display-5 fw-bold">Contactez-nous</h1>
+        <p class="lead">Nous serons ravis de vous répondre</p>
+    </div>
+</section>
+
+<section class="py-5">
+    <div class="container">
+        <div class="row">
+            <!-- Formulaire -->
+            <div class="col-lg-7 mb-4">
+                <div class="card">
+                    <div class="card-body p-4">
+                        <h4 class="mb-4">Envoyez-nous un message</h4>
+                        
+                        <form method="post">
+                            {% csrf_token %}
+                            
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label for="id_name" class="form-label">Nom complet *</label>
+                                    <input type="text" class="form-control" id="id_name" name="name" required>
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label for="id_email" class="form-label">Email *</label>
+                                    <input type="email" class="form-control" id="id_email" name="email" required>
+                                </div>
+                            </div>
+                            
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label for="id_phone" class="form-label">Téléphone</label>
+                                    <input type="tel" class="form-control" id="id_phone" name="phone">
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label for="id_subject" class="form-label">Sujet *</label>
+                                    <select class="form-select" id="id_subject" name="subject" required>
+                                        {% for value, label in subjects %}
+                                        <option value="{{ value }}">{{ label }}</option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label for="id_site" class="form-label">Site concerné</label>
+                                <select class="form-select" id="id_site" name="site">
+                                    <option value="">-- Tous les sites --</option>
+                                    {% for site in sites %}
+                                    <option value="{{ site.pk }}">{{ site.name }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label for="id_message" class="form-label">Message *</label>
+                                <textarea class="form-control" id="id_message" name="message" rows="5" required></textarea>
+                            </div>
+                            
+                            <button type="submit" class="btn btn-primary btn-lg">
+                                <i class="bi bi-send me-2"></i>Envoyer
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Informations de contact -->
+            <div class="col-lg-5">
+                <div class="card bg-primary text-white mb-4">
+                    <div class="card-body p-4">
+                        <h4 class="mb-4">Informations de contact</h4>
+                        
+                        {% if settings.email %}
+                        <div class="d-flex mb-3">
+                            <i class="bi bi-envelope fs-4 me-3"></i>
+                            <div>
+                                <strong>Email</strong><br>
+                                <a href="mailto:{{ settings.email }}" class="text-white">{{ settings.email }}</a>
+                            </div>
+                        </div>
+                        {% endif %}
+                        
+                        {% if settings.phone %}
+                        <div class="d-flex mb-3">
+                            <i class="bi bi-telephone fs-4 me-3"></i>
+                            <div>
+                                <strong>Téléphone</strong><br>
+                                <a href="tel:{{ settings.phone }}" class="text-white">{{ settings.phone }}</a>
+                            </div>
+                        </div>
+                        {% endif %}
+                        
+                        {% if settings.facebook_url or settings.youtube_url or settings.instagram_url %}
+                        <hr class="my-4 opacity-25">
+                        <h5>Suivez-nous</h5>
+                        <div class="mt-3">
+                            {% if settings.facebook_url %}
+                            <a href="{{ settings.facebook_url }}" target="_blank" class="btn btn-outline-light me-2">
+                                <i class="bi bi-facebook"></i>
+                            </a>
+                            {% endif %}
+                            {% if settings.youtube_url %}
+                            <a href="{{ settings.youtube_url }}" target="_blank" class="btn btn-outline-light me-2">
+                                <i class="bi bi-youtube"></i>
+                            </a>
+                            {% endif %}
+                            {% if settings.instagram_url %}
+                            <a href="{{ settings.instagram_url }}" target="_blank" class="btn btn-outline-light">
+                                <i class="bi bi-instagram"></i>
+                            </a>
+                            {% endif %}
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+                
+                <!-- Nos églises -->
+                <div class="card">
+                    <div class="card-body p-4">
+                        <h4 class="mb-4">Nos Églises</h4>
+                        
+                        {% for site in sites %}
+                        <div class="{% if not forloop.last %}mb-4 pb-4 border-bottom{% endif %}">
+                            <h5><i class="bi bi-church text-primary me-2"></i>{{ site.name }}</h5>
+                            {% if site.address %}
+                            <p class="mb-1"><i class="bi bi-geo-alt me-2 text-muted"></i>{{ site.address }}, {{ site.city }}</p>
+                            {% endif %}
+                            {% if site.worship_schedule %}
+                            <p class="mb-1"><i class="bi bi-clock me-2 text-muted"></i>{{ site.worship_schedule }}</p>
+                            {% endif %}
+                            {% if site.phone %}
+                            <p class="mb-0"><i class="bi bi-telephone me-2 text-muted"></i>{{ site.phone }}</p>
+                            {% endif %}
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}

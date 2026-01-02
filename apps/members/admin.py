@@ -24,26 +24,41 @@ class MemberAdminForm(forms.ModelForm):
 @admin.register(Member)
 class MemberAdmin(admin.ModelAdmin):
     form = MemberAdminForm  # Utiliser le formulaire personnalisé
-    list_display = ['photo_thumbnail', 'last_name', 'first_name', 'phone', 'email', 'status', 'is_baptized', 'date_joined']
-    list_display_links = ['photo_thumbnail', 'last_name', 'first_name']
-    list_filter = ['status', 'is_baptized', 'gender', 'marital_status', 'city']
-    search_fields = ['first_name', 'last_name', 'email', 'phone', 'address']
+    list_display = ['photo_thumbnail', 'member_id', 'last_name', 'first_name', 'site', 'phone', 'email', 'status', 'is_baptized', 'date_joined']
+    list_display_links = ['photo_thumbnail', 'member_id', 'last_name', 'first_name']
+    list_filter = ['site', 'status', 'is_baptized', 'gender', 'marital_status', 'city', 'family']
+    search_fields = ['member_id', 'first_name', 'last_name', 'email', 'phone', 'address']
     ordering = ['last_name', 'first_name']
     date_hierarchy = 'date_joined'
     list_per_page = 25
+    autocomplete_fields = ['user', 'site', 'family']
     
     fieldsets = (
+        ('Identification', {
+            'fields': ('member_id', 'site', 'photo', 'photo_preview')
+        }),
         ('Identité', {
-            'fields': ('first_name', 'last_name', 'date_of_birth', 'gender', 'photo', 'photo_preview')
+            'fields': ('first_name', 'last_name', 'date_of_birth', 'gender')
         }),
         ('Contact', {
             'fields': ('email', 'phone', 'address', 'city', 'postal_code')
         }),
+        ('Famille', {
+            'fields': ('family', 'family_role', 'marital_status')
+        }),
         ('Situation', {
-            'fields': ('marital_status', 'profession')
+            'fields': ('profession',)
         }),
         ('Église', {
             'fields': ('user', 'status', 'date_joined', 'is_baptized', 'baptism_date')
+        }),
+        ('Dates clés', {
+            'fields': ('wedding_date', 'death_date'),
+            'classes': ('collapse',)
+        }),
+        ('Notifications', {
+            'fields': ('notify_by_email', 'notify_by_sms', 'notify_by_whatsapp', 'whatsapp_number'),
+            'classes': ('collapse',)
         }),
         ('Notes', {
             'fields': ('notes',),
@@ -51,7 +66,7 @@ class MemberAdmin(admin.ModelAdmin):
         }),
     )
     
-    readonly_fields = ['photo_preview']
+    readonly_fields = ['member_id', 'photo_preview']
     
     @admin.display(description='Photo')
     def photo_thumbnail(self, obj):

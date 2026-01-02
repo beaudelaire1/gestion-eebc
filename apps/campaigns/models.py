@@ -10,6 +10,17 @@ class Campaign(models.Model):
     name = models.CharField(max_length=200, verbose_name="Nom de la campagne")
     description = models.TextField(blank=True, verbose_name="Description")
     
+    # Site d'appartenance (multi-sites)
+    site = models.ForeignKey(
+        'core.Site',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='campaigns',
+        verbose_name="Site",
+        help_text="Laisser vide pour une campagne globale"
+    )
+    
     goal_amount = models.DecimalField(
         max_digits=12,
         decimal_places=2,

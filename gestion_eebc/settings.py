@@ -43,6 +43,7 @@ INSTALLED_APPS = [
     'django_filters',
     
     # Local apps
+    'apps.core',         # Module Core - Sites, Familles, Quartiers
     'apps.accounts',
     'apps.members',
     'apps.departments',
@@ -170,7 +171,7 @@ EMAIL_HOST_PASSWORD = os.environ.get('EMAIL_HOST_PASSWORD', '')
 # Login URLs
 LOGIN_URL = 'accounts:login'
 LOGIN_REDIRECT_URL = 'dashboard:home'
-LOGOUT_REDIRECT_URL = 'accounts:login'
+LOGOUT_REDIRECT_URL = 'public:home'
 
 
 # =============================================================================
@@ -213,6 +214,7 @@ JAZZMIN_SETTINGS = {
     # Ordre des apps
     "order_with_respect_to": [
         "accounts",
+        "core",
         "bibleclub",
         "members", 
         "events",
@@ -234,6 +236,21 @@ JAZZMIN_SETTINGS = {
         
         "accounts": "fas fa-user-shield",
         "accounts.User": "fas fa-user-circle",
+        
+        "core": "fas fa-globe",
+        "core.Site": "fas fa-church",
+        "core.City": "fas fa-city",
+        "core.Neighborhood": "fas fa-map-marker-alt",
+        "core.Family": "fas fa-home",
+        "core.FamilyRelationship": "fas fa-link",
+        "core.MissionCampaign": "fas fa-flag",
+        "core.PageContent": "fas fa-file-alt",
+        "core.NewsArticle": "fas fa-newspaper",
+        "core.ContactMessage": "fas fa-envelope",
+        "core.VisitorRegistration": "fas fa-user-plus",
+        "core.PublicEvent": "fas fa-calendar-star",
+        "core.Slider": "fas fa-images",
+        "core.SiteSettings": "fas fa-cog",
         
         "bibleclub": "fas fa-bible",
         "bibleclub.AgeGroup": "fas fa-layer-group",

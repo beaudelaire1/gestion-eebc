@@ -51,6 +51,16 @@ class FinancialTransaction(models.Model):
         help_text="Générée automatiquement si vide"
     )
     
+    # Site d'appartenance (multi-sites)
+    site = models.ForeignKey(
+        'core.Site',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='transactions',
+        verbose_name="Site"
+    )
+    
     amount = models.DecimalField(
         max_digits=12,
         decimal_places=2,

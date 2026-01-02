@@ -1,0 +1,93 @@
+{% extends 'public/base.html' %}
+
+{% block title %}Événements - {{ settings.site_name|default:'EEBC' }}{% endblock %}
+
+{% block content %}
+<section class="hero-section py-5">
+    <div class="container text-center">
+        <h1 class="display-5 fw-bold">Événements</h1>
+        <p class="lead">Découvrez nos prochains événements</p>
+    </div>
+</section>
+
+<section class="py-5">
+    <div class="container">
+        <div class="row">
+            {% for event in events %}
+            <div class="col-md-6 col-lg-4 mb-4">
+                <div class="card h-100">
+                    {% if event.image %}
+                    <img src="{{ event.image.url }}" class="card-img-top" alt="{{ event.title }}" style="height: 180px; object-fit: cover;">
+                    {% else %}
+                    <div class="card-img-top bg-primary d-flex align-items-center justify-content-center" style="height: 180px;">
+                        <i class="bi bi-calendar-event text-white" style="font-size: 3rem;"></i>
+                    </div>
+                    {% endif %}
+                    <div class="card-body">
+                        <div class="d-flex align-items-center mb-3">
+                            <div class="bg-primary text-white text-center rounded p-2 me-3" style="min-width: 60px;">
+                                <div class="fw-bold fs-4">{{ event.start_date|date:"d" }}</div>
+                                <div class="small text-uppercase">{{ event.start_date|date:"M" }}</div>
+                            </div>
+                            <div>
+                                <h5 class="card-title mb-1">{{ event.title }}</h5>
+                                {% if event.start_time %}
+                                <small class="text-muted"><i class="bi bi-clock me-1"></i>{{ event.start_time|time:"H:i" }}</small>
+                                {% endif %}
+                            </div>
+                        </div>
+                        
+                        {% if event.location %}
+                        <p class="card-text small text-muted mb-2">
+                            <i class="bi bi-geo-alt me-1"></i>{{ event.location }}
+                        </p>
+                        {% endif %}
+                        
+                        <p class="card-text">{{ event.description|truncatewords:20 }}</p>
+                    </div>
+                    <div class="card-footer bg-transparent">
+                        <a href="{% url 'public:event_detail' event.slug %}" class="btn btn-outline-primary w-100">
+                            En savoir plus
+                        </a>
+                    </div>
+                </div>
+            </div>
+            {% empty %}
+            <div class="col-12 text-center py-5">
+                <i class="bi bi-calendar-x text-muted" style="font-size: 4rem;"></i>
+                <p class="text-muted mt-3">Aucun événement à venir pour le moment.</p>
+            </div>
+            {% endfor %}
+        </div>
+        
+        <!-- Pagination -->
+        {% if page_obj.has_other_pages %}
+        <nav class="mt-4">
+            <ul class="pagination justify-content-center">
+                {% if page_obj.has_previous %}
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ page_obj.previous_page_number }}">
+                        <i class="bi bi-chevron-left"></i>
+                    </a>
+                </li>
+                {% endif %}
+                
+                {% for num in page_obj.paginator.page_range %}
+                <li class="page-item {% if page_obj.number == num %}active{% endif %}">
+                    <a class="page-link" href="?page={{ num }}">{{ num }}</a>
+                </li>
+                {% endfor %}
+                
+                {% if page_obj.has_next %}
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ page_obj.next_page_number }}">
+                        <i class="bi bi-chevron-right"></i>
+                    </a>
+                </li>
+                {% endif %}
+            </ul>
+        </nav>
+        {% endif %}
+    </div>
+</section>
+{% endblock %}

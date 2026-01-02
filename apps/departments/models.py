@@ -9,6 +9,16 @@ class Department(models.Model):
     name = models.CharField(max_length=100, verbose_name="Nom")
     description = models.TextField(blank=True, verbose_name="Description")
     
+    # Site d'appartenance (multi-sites)
+    site = models.ForeignKey(
+        'core.Site',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='departments',
+        verbose_name="Site"
+    )
+    
     leader = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         on_delete=models.SET_NULL,

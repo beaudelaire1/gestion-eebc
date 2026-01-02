@@ -1,0 +1,27 @@
+{% extends 'emails/base_email.html' %}
+
+{% block content %}
+<h2 style="color: #1e3a5f; margin: 0 0 20px; font-size: 22px;">✉️ Message bien reçu !</h2>
+
+<p style="color: #495057; line-height: 1.6; margin: 0 0 20px;">
+    Bonjour <strong>{{ contact.name }}</strong>,
+</p>
+
+<p style="color: #495057; line-height: 1.6; margin: 0 0 20px;">
+    Nous avons bien reçu votre message et nous vous en remercions. Notre équipe le traitera dans les plus brefs délais.
+</p>
+
+<div style="background-color: #f8f9fa; border-radius: 8px; padding: 20px; margin: 25px 0;">
+    <p style="color: #6c757d; margin: 0 0 10px; font-size: 14px;"><strong>Récapitulatif de votre message :</strong></p>
+    <p style="color: #495057; margin: 0; font-style: italic;">« {{ contact.message|truncatewords:50 }} »</p>
+</div>
+
+<p style="color: #495057; line-height: 1.6; margin: 0 0 20px;">
+    En attendant, n'hésitez pas à nous rendre visite lors de nos cultes. Nous serons heureux de vous accueillir !
+</p>
+
+<p style="color: #495057; line-height: 1.6; margin: 0;">
+    Fraternellement,<br>
+    <strong>L'équipe {{ site_name }}</strong>
+</p>
+{% endblock %}

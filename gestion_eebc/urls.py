@@ -7,20 +7,26 @@ from django.conf import settings
 from django.conf.urls.static import static
 
 urlpatterns = [
+    # Site vitrine public (page d'accueil par défaut)
+    path('', include('apps.core.urls')),
+    
+    # Administration Django
     path('admin/', admin.site.urls),
-    path('', include('apps.dashboard.urls')),
-    path('accounts/', include('apps.accounts.urls')),
-    path('members/', include('apps.members.urls')),
-    path('departments/', include('apps.departments.urls')),
-    path('transport/', include('apps.transport.urls')),
-    path('inventory/', include('apps.inventory.urls')),
-    path('campaigns/', include('apps.campaigns.urls')),
-    path('bibleclub/', include('apps.bibleclub.urls')),
-    path('events/', include('apps.events.urls')),
-    path('groups/', include('apps.groups.urls')),
-    path('communication/', include('apps.communication.urls')),
-    path('finance/', include('apps.finance.urls')),
-    path('worship/', include('apps.worship.urls')),
+    
+    # Application interne (après connexion)
+    path('app/', include('apps.dashboard.urls')),
+    path('app/accounts/', include('apps.accounts.urls')),
+    path('app/members/', include('apps.members.urls')),
+    path('app/departments/', include('apps.departments.urls')),
+    path('app/transport/', include('apps.transport.urls')),
+    path('app/inventory/', include('apps.inventory.urls')),
+    path('app/campaigns/', include('apps.campaigns.urls')),
+    path('app/bibleclub/', include('apps.bibleclub.urls')),
+    path('app/events/', include('apps.events.urls')),
+    path('app/groups/', include('apps.groups.urls')),
+    path('app/communication/', include('apps.communication.urls')),
+    path('app/finance/', include('apps.finance.urls')),
+    path('app/worship/', include('apps.worship.urls')),
 ]
 
 if settings.DEBUG:

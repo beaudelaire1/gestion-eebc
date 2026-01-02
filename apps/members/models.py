@@ -1,5 +1,8 @@
 from django.db import models
 from django.conf import settings
+import random
+import string
+
 
 class Member(models.Model):
     """
@@ -19,6 +22,22 @@ class Member(models.Model):
         DIVORCE = 'divorce', 'Divorcé(e)'
         VEUF = 'veuf', 'Veuf/Veuve'
     
+    class FamilyRole(models.TextChoices):
+        HEAD = 'HEAD', 'Chef de famille'
+        SPOUSE = 'SPOUSE', 'Conjoint(e)'
+        CHILD = 'CHILD', 'Enfant'
+        PARENT = 'PARENT', 'Parent'
+        OTHER = 'OTHER', 'Autre'
+    
+    # ID unique du membre : EEBC-CAB-XXXX ou EEBC-MAC-XXXX
+    member_id = models.CharField(
+        max_length=15,
+        unique=True,
+        blank=True,
+        verbose_name="ID Membre",
+        help_text="Généré automatiquement : EEBC-CAB-XXXX ou EEBC-MAC-XXXX"
+    )
+    
     # Lien optionnel vers un compte utilisateur
     user = models.OneToOneField(
         settings.AUTH_USER_MODEL,
@@ -28,7 +47,34 @@ class Member(models.Model):
         related_name='member_profile',
         verbose_name="Compte utilisateur"
     )
-# crete member id format : EEBC-M-first occurence name and first name and random number
+    
+    # Site d'appartenance (Cabassou ou Macouria)
+    site = models.ForeignKey(
+        'core.Site',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='members',
+        verbose_name="Site"
+    )
+    
+    # Famille
+    family = models.ForeignKey(
+        'core.Family',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='members',
+        verbose_name="Famille"
+    )
+    
+    family_role = models.CharField(
+        max_length=10,
+        choices=FamilyRole.choices,
+        blank=True,
+        verbose_name="Rôle dans la famille"
+    )
+    
     # Identité
     first_name = models.CharField(max_length=100, verbose_name="Prénom")
     last_name = models.CharField(max_length=100, verbose_name="Nom")
@@ -68,6 +114,16 @@ class Member(models.Model):
     is_baptized = models.BooleanField(default=False, verbose_name="Baptisé(e)")
     baptism_date = models.DateField(blank=True, null=True, verbose_name="Date de baptême")
     
+    # Dates clés du cycle de vie
+    wedding_date = models.DateField(blank=True, null=True, verbose_name="Date de mariage")
+    death_date = models.DateField(blank=True, null=True, verbose_name="Date de décès")
+    
+    # Préférences de notification
+    notify_by_email = models.BooleanField(default=True, verbose_name="Notifier par email")
+    notify_by_sms = models.BooleanField(default=False, verbose_name="Notifier par SMS")
+    notify_by_whatsapp = models.BooleanField(default=False, verbose_name="Notifier par WhatsApp")
+    whatsapp_number = models.CharField(max_length=20, blank=True, verbose_name="Numéro WhatsApp")
+    
     # Métadonnées
     notes = models.TextField(blank=True, verbose_name="Notes")
     created_at = models.DateTimeField(auto_now_add=True)
@@ -79,7 +135,48 @@ class Member(models.Model):
         ordering = ['last_name', 'first_name']
     
     def __str__(self):
-        return f"{self.first_name} {self.last_name}"
+        prefix = f"[{self.member_id}] " if self.member_id else ""
+        return f"{prefix}{self.first_name} {self.last_name}"
+    
+    def save(self, *args, **kwargs):
+        """Génère l'ID membre unique si absent."""
+        if not self.member_id:
+            self.member_id = self._generate_member_id()
+        super().save(*args, **kwargs)
+    
+    def _generate_member_id(self):
+        """
+        Génère un ID unique au format EEBC-CAB-XXXX ou EEBC-MAC-XXXX.
+        
+        - CAB pour Cabassou (Cayenne)
+        - MAC pour Macouria
+        - XXXX est un nombre aléatoire à 4 chiffres
+        """
+        # Déterminer le code du site
+        if self.site and self.site.code:
+            site_code = self.site.code
+        else:
+            # Par défaut, Cabassou si pas de site défini
+            site_code = 'CAB'
+        
+        # Générer un ID unique
+        max_attempts = 100
+        for _ in range(max_attempts):
+            random_suffix = ''.join(random.choices(string.digits, k=4))
+            new_id = f"EEBC-{site_code}-{random_suffix}"
+            
+            # Vérifier l'unicité
+            if not Member.objects.filter(member_id=new_id).exists():
+                return new_id
+        
+        # Fallback avec plus de chiffres si nécessaire
+        random_suffix = ''.join(random.choices(string.digits, k=6))
+        return f"EEBC-{site_code}-{random_suffix}"
+    
+    def regenerate_member_id(self):
+        """Régénère l'ID membre (utile si le site change)."""
+        self.member_id = self._generate_member_id()
+        self.save(update_fields=['member_id'])
     
     @property
     def full_name(self):

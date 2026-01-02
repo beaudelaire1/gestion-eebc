@@ -1,0 +1,47 @@
+{% extends 'emails/base_email.html' %}
+
+{% block content %}
+<h2 style="color: #1e3a5f; margin: 0 0 20px; font-size: 22px;">🙏 Bienvenue !</h2>
+
+<p style="color: #495057; line-height: 1.6; margin: 0 0 20px;">
+    Bonjour <strong>{{ registration.first_name }}</strong>,
+</p>
+
+<p style="color: #495057; line-height: 1.6; margin: 0 0 20px;">
+    Merci pour votre intérêt envers notre église ! Nous sommes ravis que vous souhaitiez en savoir plus sur nous.
+</p>
+
+<div style="background-color: #d4edda; border-radius: 8px; padding: 20px; margin: 25px 0; text-align: center;">
+    <p style="color: #155724; margin: 0; font-size: 16px;">
+        Vous avez indiqué être intéressé(e) par :<br>
+        <strong style="font-size: 18px;">{{ registration.get_interest_display }}</strong>
+    </p>
+</div>
+
+<p style="color: #495057; line-height: 1.6; margin: 0 0 20px;">
+    Un membre de notre équipe vous contactera très prochainement pour répondre à vos questions et vous donner plus d'informations.
+</p>
+
+<div style="background-color: #f8f9fa; border-radius: 8px; padding: 20px; margin: 25px 0;">
+    <h3 style="color: #1e3a5f; margin: 0 0 15px; font-size: 16px;">📍 Nos lieux de culte :</h3>
+    <p style="color: #495057; margin: 0 0 10px;">
+        <strong>EEBC Cabassou</strong><br>
+        <span style="color: #6c757d;">5 rue Calimbés 2, Route de Cabassou, 97300 Cayenne</span><br>
+        <span style="color: #6c757d;">Culte : Dimanche 9h30-12h00</span>
+    </p>
+    <p style="color: #495057; margin: 15px 0 0;">
+        <strong>EEBC Macouria</strong><br>
+        <span style="color: #6c757d;">Macouria, 97355</span><br>
+        <span style="color: #6c757d;">Culte : Dimanche 10h00</span>
+    </p>
+</div>
+
+<p style="color: #495057; line-height: 1.6; margin: 0 0 20px;">
+    En attendant, n'hésitez pas à nous rendre visite lors de nos cultes. Vous serez chaleureusement accueilli(e) !
+</p>
+
+<p style="color: #495057; line-height: 1.6; margin: 0;">
+    À très bientôt,<br>
+    <strong>L'équipe {{ site_name }}</strong>
+</p>
+{% endblock %}

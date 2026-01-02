@@ -1,0 +1,765 @@
+{% extends 'public/base.html' %}
+{% load static %}
+
+{% block title %}Accueil - {{ settings.site_name|default:'EEBC' }}{% endblock %}
+
+{% block extra_css %}
+<style>
+/* Hero Carousel Styles */
+.hero-carousel {
+    position: relative;
+    height: 100vh;
+    min-height: 600px;
+    max-height: 900px;
+    overflow: hidden;
+}
+
+.hero-slide {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    opacity: 0;
+    transition: opacity 1.5s ease-in-out;
+    z-index: 1;
+}
+
+.hero-slide.active {
+    opacity: 1;
+    z-index: 2;
+}
+
+.hero-slide-bg {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-size: cover;
+    background-position: center;
+    transform: scale(1.1);
+    transition: transform 8s ease-out;
+}
+
+.hero-slide.active .hero-slide-bg {
+    transform: scale(1);
+}
+
+.hero-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(135deg, rgba(10, 54, 255, 0.8) 0%, rgba(30, 58, 95, 0.9) 100%);
+}
+
+.hero-content {
+    position: relative;
+    z-index: 10;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    padding: 0 5%;
+}
+
+.hero-text {
+    max-width: 700px;
+    color: white;
+}
+
+.hero-text h1 {
+    font-size: 4rem;
+    font-weight: 700;
+    margin-bottom: 1.5rem;
+    opacity: 0;
+    transform: translateY(50px);
+    animation: slideUp 1s ease forwards;
+    animation-delay: 0.3s;
+}
+
+.hero-text p {
+    font-size: 1.4rem;
+    margin-bottom: 2rem;
+    opacity: 0;
+    transform: translateY(50px);
+    animation: slideUp 1s ease forwards;
+    animation-delay: 0.6s;
+}
+
+.hero-text .btn-group-hero {
+    opacity: 0;
+    transform: translateY(50px);
+    animation: slideUp 1s ease forwards;
+    animation-delay: 0.9s;
+}
+
+@keyframes slideUp {
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.hero-btn {
+    padding: 15px 40px;
+    font-size: 1.1rem;
+    font-weight: 600;
+    border-radius: 50px;
+    transition: all 0.4s ease;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+.hero-btn-primary {
+    background: white;
+    color: var(--primary-color);
+    border: none;
+}
+
+.hero-btn-primary:hover {
+    background: var(--accent-color);
+    color: white;
+    transform: translateY(-3px);
+    box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+}
+
+.hero-btn-outline {
+    background: transparent;
+    color: white;
+    border: 2px solid white;
+}
+
+.hero-btn-outline:hover {
+    background: white;
+    color: var(--primary-color);
+    transform: translateY(-3px);
+}
+
+/* Carousel Navigation */
+.carousel-nav {
+    position: absolute;
+    bottom: 50px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 20;
+    display: flex;
+    gap: 15px;
+}
+
+.carousel-dot {
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.4);
+    cursor: pointer;
+    transition: all 0.4s ease;
+    border: 2px solid transparent;
+}
+
+.carousel-dot:hover {
+    background: rgba(255,255,255,0.7);
+}
+
+.carousel-dot.active {
+    background: white;
+    transform: scale(1.3);
+    border-color: var(--primary-color);
+}
+
+/* Carousel Arrows */
+.carousel-arrow {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    z-index: 20;
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.2);
+    border: 2px solid rgba(255,255,255,0.5);
+    color: white;
+    font-size: 1.5rem;
+    cursor: pointer;
+    transition: all 0.4s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.carousel-arrow:hover {
+    background: white;
+    color: var(--primary-color);
+    transform: translateY(-50%) scale(1.1);
+}
+
+.carousel-arrow.prev { left: 30px; }
+.carousel-arrow.next { right: 30px; }
+
+/* Scroll Indicator */
+.scroll-indicator {
+    position: absolute;
+    bottom: 30px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 20;
+    animation: bounce 2s infinite;
+}
+
+.scroll-indicator i {
+    font-size: 2rem;
+    color: white;
+    opacity: 0.7;
+}
+
+@keyframes bounce {
+    0%, 20%, 50%, 80%, 100% { transform: translateX(-50%) translateY(0); }
+    40% { transform: translateX(-50%) translateY(-15px); }
+    60% { transform: translateX(-50%) translateY(-7px); }
+}
+
+/* Sites Section */
+.sites-section {
+    padding: 100px 0;
+    background: linear-gradient(180deg, #f8f9fa 0%, white 100%);
+}
+
+.site-card {
+    background: white;
+    border-radius: 20px;
+    padding: 40px 30px;
+    text-align: center;
+    box-shadow: 0 10px 40px rgba(0,0,0,0.08);
+    transition: all 0.4s ease;
+    height: 100%;
+}
+
+.site-card:hover {
+    transform: translateY(-10px);
+    box-shadow: 0 20px 60px rgba(10, 54, 255, 0.15);
+}
+
+.site-icon {
+    width: 80px;
+    height: 80px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, var(--primary-color) 0%, #3b82f6 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 25px;
+    transition: transform 0.4s ease;
+}
+
+.site-card:hover .site-icon {
+    transform: scale(1.1) rotate(5deg);
+}
+
+.site-icon i {
+    font-size: 2.5rem;
+    color: white;
+}
+
+.site-card h4 {
+    font-weight: 700;
+    margin-bottom: 10px;
+    color: var(--secondary-color);
+}
+
+.site-card .location {
+    color: #6c757d;
+    margin-bottom: 20px;
+}
+
+/* Section Titles */
+.section-header {
+    text-align: center;
+    margin-bottom: 60px;
+}
+
+.section-header h2 {
+    font-size: 2.8rem;
+    font-weight: 700;
+    color: var(--secondary-color);
+    margin-bottom: 15px;
+}
+
+.section-header .subtitle {
+    font-size: 1.2rem;
+    color: #6c757d;
+}
+
+.section-header .divider {
+    width: 80px;
+    height: 4px;
+    background: linear-gradient(90deg, var(--primary-color), var(--accent-color));
+    margin: 20px auto 0;
+    border-radius: 2px;
+}
+
+/* Events Section */
+.events-section {
+    padding: 100px 0;
+    background: white;
+}
+
+.event-card {
+    border-radius: 20px;
+    overflow: hidden;
+    box-shadow: 0 10px 40px rgba(0,0,0,0.08);
+    transition: all 0.4s ease;
+    height: 100%;
+}
+
+.event-card:hover {
+    transform: translateY(-10px);
+    box-shadow: 0 20px 60px rgba(0,0,0,0.15);
+}
+
+.event-card-img {
+    height: 180px;
+    background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    overflow: hidden;
+}
+
+.event-card-img img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.event-date-badge {
+    position: absolute;
+    top: 15px;
+    left: 15px;
+    background: white;
+    padding: 10px 15px;
+    border-radius: 12px;
+    text-align: center;
+    box-shadow: 0 5px 20px rgba(0,0,0,0.2);
+}
+
+.event-date-badge .day {
+    font-size: 1.8rem;
+    font-weight: 700;
+    color: var(--primary-color);
+    line-height: 1;
+}
+
+.event-date-badge .month {
+    font-size: 0.8rem;
+    text-transform: uppercase;
+    color: #6c757d;
+    font-weight: 600;
+}
+
+/* CTA Section */
+.cta-section {
+    padding: 100px 0;
+    background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
+    position: relative;
+    overflow: hidden;
+}
+
+.cta-section::before {
+    content: '';
+    position: absolute;
+    top: -50%;
+    right: -20%;
+    width: 600px;
+    height: 600px;
+    background: rgba(255,255,255,0.05);
+    border-radius: 50%;
+}
+
+.cta-section::after {
+    content: '';
+    position: absolute;
+    bottom: -30%;
+    left: -10%;
+    width: 400px;
+    height: 400px;
+    background: rgba(255,255,255,0.05);
+    border-radius: 50%;
+}
+
+.cta-content {
+    position: relative;
+    z-index: 10;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .hero-carousel {
+        height: 80vh;
+        min-height: 500px;
+    }
+    
+    .hero-text h1 {
+        font-size: 2.5rem;
+    }
+    
+    .hero-text p {
+        font-size: 1.1rem;
+    }
+    
+    .carousel-arrow {
+        width: 45px;
+        height: 45px;
+        font-size: 1.2rem;
+    }
+    
+    .carousel-arrow.prev { left: 15px; }
+    .carousel-arrow.next { right: 15px; }
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Hero Carousel -->
+<section class="hero-carousel" id="heroCarousel">
+    {% if slides %}
+        {% for slide in slides %}
+        <div class="hero-slide {% if forloop.first %}active{% endif %}" data-index="{{ forloop.counter0 }}">
+            <div class="hero-slide-bg" style="background-image: url('{{ slide.image.url }}');"></div>
+            <div class="hero-overlay"></div>
+            <div class="hero-content">
+                <div class="container">
+                    <div class="hero-text">
+                        <h1>{{ slide.title }}</h1>
+                        {% if slide.subtitle %}
+                        <p>{{ slide.subtitle }}</p>
+                        {% endif %}
+                        <div class="btn-group-hero">
+                            {% if slide.button_text and slide.button_url %}
+                            <a href="{{ slide.button_url }}" class="hero-btn hero-btn-primary me-3">{{ slide.button_text }}</a>
+                            {% endif %}
+                            <a href="{% url 'public:sites' %}" class="hero-btn hero-btn-outline">Nos Églises</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+        
+        <!-- Navigation Arrows -->
+        <button class="carousel-arrow prev" onclick="changeSlide(-1)">
+            <i class="bi bi-chevron-left"></i>
+        </button>
+        <button class="carousel-arrow next" onclick="changeSlide(1)">
+            <i class="bi bi-chevron-right"></i>
+        </button>
+        
+        <!-- Dots Navigation -->
+        <div class="carousel-nav">
+            {% for slide in slides %}
+            <div class="carousel-dot {% if forloop.first %}active{% endif %}" data-index="{{ forloop.counter0 }}" onclick="goToSlide({{ forloop.counter0 }})"></div>
+            {% endfor %}
+        </div>
+    {% else %}
+    <!-- Default Hero -->
+    <div class="hero-slide active">
+        <div class="hero-overlay" style="background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);"></div>
+        <div class="hero-content">
+            <div class="container">
+                <div class="hero-text">
+                    <h1>Bienvenue à l'EEBC</h1>
+                    <p>{{ settings.tagline|default:'Église Évangélique Baptiste de Cabassou - Guyane' }}</p>
+                    <div class="btn-group-hero">
+                        <a href="{% url 'public:sites' %}" class="hero-btn hero-btn-primary me-3">Nos Églises</a>
+                        <a href="{% url 'public:contact' %}" class="hero-btn hero-btn-outline">Contact</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+    
+    <!-- Scroll Indicator -->
+    <div class="scroll-indicator">
+        <i class="bi bi-chevron-double-down"></i>
+    </div>
+</section>
+
+<!-- Nos Églises (simplifié) -->
+<section class="sites-section">
+    <div class="container">
+        <div class="section-header" data-aos="fade-up">
+            <h2>Nos Églises</h2>
+            <p class="subtitle">Deux lieux de culte pour vous accueillir en Guyane</p>
+            <div class="divider"></div>
+        </div>
+        
+        <div class="row justify-content-center g-4">
+            {% for site in church_sites %}
+            <div class="col-md-6 col-lg-5" data-aos="fade-up" data-aos-delay="{{ forloop.counter0|add:1 }}00">
+                <div class="site-card">
+                    <div class="site-icon">
+                        <i class="bi bi-church"></i>
+                    </div>
+                    <h4>{{ site.name }}</h4>
+                    <p class="location">
+                        <i class="bi bi-geo-alt me-1"></i>{{ site.city }}
+                    </p>
+                    <a href="{% url 'public:sites' %}" class="btn btn-outline-primary rounded-pill px-4">
+                        Voir les horaires <i class="bi bi-arrow-right ms-2"></i>
+                    </a>
+                </div>
+            </div>
+            {% empty %}
+            <div class="col-12 text-center">
+                <p class="text-muted">Informations à venir...</p>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</section>
+
+<!-- Événements à venir -->
+{% if upcoming_events %}
+<section class="events-section">
+    <div class="container">
+        <div class="section-header" data-aos="fade-up">
+            <h2>Événements à venir</h2>
+            <p class="subtitle">Rejoignez-nous lors de nos prochains rassemblements</p>
+            <div class="divider"></div>
+        </div>
+        
+        <div class="row g-4">
+            {% for event in upcoming_events %}
+            <div class="col-md-6 col-lg-3" data-aos="fade-up" data-aos-delay="{{ forloop.counter0 }}00">
+                <div class="card event-card h-100">
+                    <div class="event-card-img">
+                        {% if event.image %}
+                        <img src="{{ event.image.url }}" alt="{{ event.title }}">
+                        {% else %}
+                        <i class="bi bi-calendar-event text-white" style="font-size: 4rem; opacity: 0.5;"></i>
+                        {% endif %}
+                        <div class="event-date-badge">
+                            <div class="day">{{ event.start_date|date:"d" }}</div>
+                            <div class="month">{{ event.start_date|date:"M" }}</div>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <h6 class="card-title fw-bold">{{ event.title }}</h6>
+                        {% if event.start_time %}
+                        <p class="small text-muted mb-2">
+                            <i class="bi bi-clock me-1"></i>{{ event.start_time|time:"H:i" }}
+                        </p>
+                        {% endif %}
+                        {% if event.location %}
+                        <p class="small text-muted mb-0">
+                            <i class="bi bi-geo-alt me-1"></i>{{ event.location }}
+                        </p>
+                        {% endif %}
+                    </div>
+                    <div class="card-footer bg-transparent border-0 pt-0">
+                        <a href="{% url 'public:event_detail' event.slug %}" class="btn btn-sm btn-outline-primary w-100 rounded-pill">
+                            En savoir plus
+                        </a>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        
+        <div class="text-center mt-5" data-aos="fade-up">
+            <a href="{% url 'public:events_list' %}" class="btn btn-primary btn-lg rounded-pill px-5">
+                Tous les événements <i class="bi bi-arrow-right ms-2"></i>
+            </a>
+        </div>
+    </div>
+</section>
+{% endif %}
+
+<!-- Actualités -->
+{% if featured_articles %}
+<section class="py-5 bg-light">
+    <div class="container">
+        <div class="section-header" data-aos="fade-up">
+            <h2>Actualités</h2>
+            <p class="subtitle">Restez informé de la vie de notre église</p>
+            <div class="divider"></div>
+        </div>
+        
+        <div class="row g-4">
+            {% for article in featured_articles %}
+            <div class="col-md-4" data-aos="fade-up" data-aos-delay="{{ forloop.counter0 }}00">
+                <div class="card h-100" style="border-radius: 20px; overflow: hidden;">
+                    {% if article.featured_image %}
+                    <img src="{{ article.featured_image.url }}" class="card-img-top" alt="{{ article.title }}" style="height: 200px; object-fit: cover;">
+                    {% else %}
+                    <div class="card-img-top bg-secondary d-flex align-items-center justify-content-center" style="height: 200px;">
+                        <i class="bi bi-newspaper text-white" style="font-size: 3rem; opacity: 0.5;"></i>
+                    </div>
+                    {% endif %}
+                    <div class="card-body">
+                        <div class="mb-2">
+                            <span class="badge bg-primary rounded-pill">{{ article.get_category_display }}</span>
+                            <small class="text-muted ms-2">{{ article.publish_date|date:"d M Y" }}</small>
+                        </div>
+                        <h5 class="card-title fw-bold">{{ article.title }}</h5>
+                        <p class="card-text text-muted">{{ article.excerpt|truncatewords:15 }}</p>
+                    </div>
+                    <div class="card-footer bg-transparent border-0">
+                        <a href="{% url 'public:news_detail' article.slug %}" class="btn btn-outline-primary rounded-pill w-100">
+                            Lire la suite
+                        </a>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        
+        <div class="text-center mt-5" data-aos="fade-up">
+            <a href="{% url 'public:news_list' %}" class="btn btn-primary btn-lg rounded-pill px-5">
+                Toutes les actualités <i class="bi bi-arrow-right ms-2"></i>
+            </a>
+        </div>
+    </div>
+</section>
+{% endif %}
+
+<!-- Call to Action -->
+<section class="cta-section text-white text-center">
+    <div class="container cta-content">
+        <h2 class="display-5 fw-bold mb-4" data-aos="fade-up">Vous souhaitez nous rejoindre ?</h2>
+        <p class="lead mb-5 opacity-75" data-aos="fade-up" data-aos-delay="100">
+            Venez nous rencontrer lors de nos cultes ou contactez-nous pour plus d'informations.
+        </p>
+        <div data-aos="fade-up" data-aos-delay="200">
+            <a href="{% url 'public:register' %}" class="hero-btn hero-btn-primary me-3">
+                <i class="bi bi-person-plus me-2"></i>Je suis intéressé(e)
+            </a>
+            <a href="{% url 'public:contact' %}" class="hero-btn hero-btn-outline">
+                <i class="bi bi-envelope me-2"></i>Nous contacter
+            </a>
+        </div>
+    </div>
+</section>
+{% endblock %}
+
+{% block extra_js %}
+<!-- AOS Animation Library -->
+<link href="https://unpkg.com/aos@2.3.1/dist/aos.css" rel="stylesheet">
+<script src="https://unpkg.com/aos@2.3.1/dist/aos.js"></script>
+
+<script>
+// Initialize AOS
+AOS.init({
+    duration: 800,
+    easing: 'ease-out',
+    once: true
+});
+
+// Carousel Logic
+let currentSlide = 0;
+const slides = document.querySelectorAll('.hero-slide');
+const dots = document.querySelectorAll('.carousel-dot');
+const totalSlides = slides.length;
+let autoSlideInterval;
+
+function showSlide(index) {
+    // Handle wrap around
+    if (index >= totalSlides) index = 0;
+    if (index < 0) index = totalSlides - 1;
+    
+    currentSlide = index;
+    
+    // Update slides
+    slides.forEach((slide, i) => {
+        slide.classList.remove('active');
+        if (i === index) {
+            slide.classList.add('active');
+            // Reset animations
+            const h1 = slide.querySelector('h1');
+            const p = slide.querySelector('p');
+            const btnGroup = slide.querySelector('.btn-group-hero');
+            
+            if (h1) { h1.style.animation = 'none'; h1.offsetHeight; h1.style.animation = null; }
+            if (p) { p.style.animation = 'none'; p.offsetHeight; p.style.animation = null; }
+            if (btnGroup) { btnGroup.style.animation = 'none'; btnGroup.offsetHeight; btnGroup.style.animation = null; }
+        }
+    });
+    
+    // Update dots
+    dots.forEach((dot, i) => {
+        dot.classList.toggle('active', i === index);
+    });
+}
+
+function changeSlide(direction) {
+    showSlide(currentSlide + direction);
+    resetAutoSlide();
+}
+
+function goToSlide(index) {
+    showSlide(index);
+    resetAutoSlide();
+}
+
+function resetAutoSlide() {
+    clearInterval(autoSlideInterval);
+    startAutoSlide();
+}
+
+function startAutoSlide() {
+    if (totalSlides > 1) {
+        autoSlideInterval = setInterval(() => {
+            showSlide(currentSlide + 1);
+        }, 6000);
+    }
+}
+
+// Start auto-slide
+startAutoSlide();
+
+// Keyboard navigation
+document.addEventListener('keydown', (e) => {
+    if (e.key === 'ArrowLeft') changeSlide(-1);
+    if (e.key === 'ArrowRight') changeSlide(1);
+});
+
+// Touch/Swipe support
+let touchStartX = 0;
+let touchEndX = 0;
+
+const carousel = document.getElementById('heroCarousel');
+if (carousel) {
+    carousel.addEventListener('touchstart', (e) => {
+        touchStartX = e.changedTouches[0].screenX;
+    });
+    
+    carousel.addEventListener('touchend', (e) => {
+        touchEndX = e.changedTouches[0].screenX;
+        handleSwipe();
+    });
+}
+
+function handleSwipe() {
+    const swipeThreshold = 50;
+    const diff = touchStartX - touchEndX;
+    
+    if (Math.abs(diff) > swipeThreshold) {
+        if (diff > 0) {
+            changeSlide(1); // Swipe left - next
+        } else {
+            changeSlide(-1); // Swipe right - prev
+        }
+    }
+}
+
+// Smooth scroll for scroll indicator
+document.querySelector('.scroll-indicator')?.addEventListener('click', () => {
+    const nextSection = document.querySelector('.sites-section');
+    if (nextSection) {
+        nextSection.scrollIntoView({ behavior: 'smooth' });
+    }
+});
+</script>
+{% endblock %}

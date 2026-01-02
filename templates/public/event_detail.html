@@ -1,0 +1,128 @@
+{% extends 'public/base.html' %}
+
+{% block title %}{{ event.title }} - {{ settings.site_name|default:'EEBC' }}{% endblock %}
+
+{% block content %}
+<!-- Header -->
+{% if event.image %}
+<div style="background: linear-gradient(rgba(0,0,0,0.6), rgba(0,0,0,0.6)), url('{{ event.image.url }}') center/cover; height: 350px;">
+    <div class="container h-100 d-flex align-items-end pb-5">
+        <div class="text-white">
+            <h1 class="display-5 fw-bold">{{ event.title }}</h1>
+        </div>
+    </div>
+</div>
+{% else %}
+<section class="hero-section py-5">
+    <div class="container">
+        <h1 class="display-5 fw-bold">{{ event.title }}</h1>
+    </div>
+</section>
+{% endif %}
+
+<section class="py-5">
+    <div class="container">
+        <div class="row">
+            <!-- Détails -->
+            <div class="col-lg-8 mb-4">
+                <div class="card">
+                    <div class="card-body p-4">
+                        <h4 class="mb-4">Description</h4>
+                        <div class="event-content">
+                            {{ event.description|safe|linebreaks }}
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Sidebar -->
+            <div class="col-lg-4">
+                <div class="card bg-light">
+                    <div class="card-body p-4">
+                        <h5 class="mb-4">Informations</h5>
+                        
+                        <!-- Date -->
+                        <div class="d-flex mb-3">
+                            <div class="bg-primary text-white text-center rounded p-2 me-3" style="min-width: 60px;">
+                                <div class="fw-bold fs-4">{{ event.start_date|date:"d" }}</div>
+                                <div class="small text-uppercase">{{ event.start_date|date:"M" }}</div>
+                            </div>
+                            <div>
+                                <strong>{{ event.start_date|date:"l d F Y" }}</strong>
+                                {% if event.start_time %}
+                                <br><small class="text-muted">{{ event.start_time|time:"H:i" }}{% if event.end_time %} - {{ event.end_time|time:"H:i" }}{% endif %}</small>
+                                {% endif %}
+                            </div>
+                        </div>
+                        
+                        {% if event.end_date and event.end_date != event.start_date %}
+                        <p class="text-muted small">
+                            <i class="bi bi-arrow-right me-1"></i>
+                            Jusqu'au {{ event.end_date|date:"d F Y" }}
+                        </p>
+                        {% endif %}
+                        
+                        <hr>
+                        
+                        <!-- Lieu -->
+                        {% if event.location or event.address %}
+                        <div class="mb-3">
+                            <h6><i class="bi bi-geo-alt text-primary me-2"></i>Lieu</h6>
+                            {% if event.location %}
+                            <p class="mb-1">{{ event.location }}</p>
+                            {% endif %}
+                            {% if event.address %}
+                            <p class="text-muted small mb-0">{{ event.address }}</p>
+                            {% endif %}
+                        </div>
+                        <hr>
+                        {% endif %}
+                        
+                        <!-- Site -->
+                        {% if event.site %}
+                        <div class="mb-3">
+                            <h6><i class="bi bi-church text-primary me-2"></i>Organisé par</h6>
+                            <p class="mb-0">{{ event.site.name }}</p>
+                        </div>
+                        <hr>
+                        {% endif %}
+                        
+                        <!-- Actions -->
+                        <div class="d-grid gap-2">
+                            {% if event.allow_registration %}
+                            <a href="{% url 'public:register' %}?event={{ event.pk }}" class="btn btn-primary">
+                                <i class="bi bi-person-plus me-2"></i>S'inscrire
+                            </a>
+                            {% endif %}
+                            <a href="{% url 'public:contact' %}" class="btn btn-outline-primary">
+                                <i class="bi bi-envelope me-2"></i>Nous contacter
+                            </a>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Partage -->
+                <div class="card mt-3">
+                    <div class="card-body text-center">
+                        <span class="text-muted me-2">Partager :</span>
+                        <a href="https://www.facebook.com/sharer/sharer.php?u={{ request.build_absolute_uri }}" 
+                           target="_blank" class="btn btn-outline-primary btn-sm">
+                            <i class="bi bi-facebook"></i>
+                        </a>
+                        <a href="https://wa.me/?text={{ event.title }} {{ request.build_absolute_uri }}" 
+                           target="_blank" class="btn btn-outline-success btn-sm">
+                            <i class="bi bi-whatsapp"></i>
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="mt-4">
+            <a href="{% url 'public:events_list' %}" class="btn btn-outline-primary">
+                <i class="bi bi-arrow-left me-2"></i>Retour aux événements
+            </a>
+        </div>
+    </div>
+</section>
+{% endblock %}
