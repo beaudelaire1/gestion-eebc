@@ -222,3 +222,33 @@ class SitesView(PublicMixin, TemplateView):
         context = super().get_context_data(**kwargs)
         context['church_sites'] = Site.objects.filter(is_active=True)
         return context
+
+
+class MapView(PublicMixin, TemplateView):
+    """Carte interactive des églises et événements."""
+    template_name = 'public/map.html'
+    
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        
+        # Sites avec coordonnées GPS
+        context['sites'] = Site.objects.filter(
+            is_active=True,
+            latitude__isnull=False,
+            longitude__isnull=False
+        )
+        
+        # Événements à venir avec localisation
+        context['upcoming_events'] = PublicEvent.objects.filter(
+            is_published=True,
+            start_date__gte=timezone.now().date(),
+            site__latitude__isnull=False,
+            site__longitude__isnull=False
+        ).select_related('site').order_by('start_date')[:10]
+        
+        return context
+
+
+class OfflineView(TemplateView):
+    """Page affichée en mode hors ligne."""
+    template_name = 'public/offline.html'

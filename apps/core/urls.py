@@ -24,4 +24,10 @@ urlpatterns = [
     path('don/succes/', DonationSuccessView.as_view(), name='donation_success'),
     path('don/annule/', DonationCancelView.as_view(), name='donation_cancel'),
     path('webhooks/stripe/', StripeWebhookView.as_view(), name='stripe_webhook'),
+    
+    # Carte interactive
+    path('carte/', views.MapView.as_view(), name='map'),
+    
+    # Page offline (PWA)
+    path('offline/', views.OfflineView.as_view(), name='offline'),
 ]

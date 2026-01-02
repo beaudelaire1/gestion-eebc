@@ -1,5 +1,6 @@
 from django.urls import path
 from . import views
+from . import kanban_views
 
 app_name = 'members'
 
@@ -21,5 +22,10 @@ urlpatterns = [
     path('visits/<int:pk>/', views.visit_detail, name='visit_detail'),
     path('visits/<int:pk>/complete/', views.visit_complete, name='visit_complete'),
     path('visits/needed/', views.members_needing_visit, name='members_needing_visit'),
+    
+    # Tableau Kanban des visites
+    path('kanban/', kanban_views.KanbanBoardView.as_view(), name='kanban'),
+    path('kanban/update/', kanban_views.KanbanUpdateView.as_view(), name='kanban_update'),
+    path('kanban/create/', kanban_views.QuickVisitCreateView.as_view(), name='kanban_create'),
 ]
 

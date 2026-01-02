@@ -1,0 +1,448 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Tableau des visites - EEBC{% endblock %}
+
+{% block extra_css %}
+<style>
+    .kanban-board {
+        display: flex;
+        gap: 15px;
+        overflow-x: auto;
+        padding-bottom: 20px;
+    }
+    
+    .kanban-column {
+        min-width: 300px;
+        max-width: 300px;
+        background: #f8f9fa;
+        border-radius: 10px;
+        display: flex;
+        flex-direction: column;
+    }
+    
+    .kanban-header {
+        padding: 15px;
+        border-radius: 10px 10px 0 0;
+        font-weight: 600;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+    }
+    
+    .kanban-header .badge {
+        font-size: 0.8rem;
+    }
+    
+    .kanban-body {
+        padding: 10px;
+        flex: 1;
+        overflow-y: auto;
+        max-height: 500px;
+        min-height: 200px;
+    }
+    
+    .kanban-card {
+        background: white;
+        border-radius: 8px;
+        padding: 12px;
+        margin-bottom: 10px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        cursor: grab;
+        transition: transform 0.2s, box-shadow 0.2s;
+    }
+    
+    .kanban-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+    }
+    
+    .kanban-card.dragging {
+        opacity: 0.5;
+        cursor: grabbing;
+    }
+    
+    .kanban-card-title {
+        font-weight: 600;
+        margin-bottom: 5px;
+    }
+    
+    .kanban-card-meta {
+        font-size: 0.85rem;
+        color: #6c757d;
+    }
+    
+    .kanban-card-badge {
+        font-size: 0.75rem;
+    }
+    
+    .member-avatar {
+        width: 35px;
+        height: 35px;
+        border-radius: 50%;
+        background: var(--bs-primary);
+        color: white;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 600;
+        font-size: 0.9rem;
+    }
+    
+    .sidebar-panel {
+        background: #f8f9fa;
+        border-radius: 10px;
+        padding: 15px;
+        margin-bottom: 15px;
+    }
+    
+    .sidebar-panel h6 {
+        border-bottom: 2px solid var(--bs-primary);
+        padding-bottom: 8px;
+        margin-bottom: 15px;
+    }
+    
+    .member-item {
+        display: flex;
+        align-items: center;
+        padding: 8px;
+        border-radius: 6px;
+        margin-bottom: 5px;
+        background: white;
+        cursor: pointer;
+        transition: background 0.2s;
+    }
+    
+    .member-item:hover {
+        background: #e9ecef;
+    }
+    
+    .stat-card {
+        text-align: center;
+        padding: 15px;
+        border-radius: 8px;
+        background: white;
+    }
+    
+    .stat-card .stat-value {
+        font-size: 2rem;
+        font-weight: 700;
+    }
+    
+    .stat-card .stat-label {
+        font-size: 0.85rem;
+        color: #6c757d;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2 class="mb-1">
+                <i class="bi bi-kanban me-2"></i>
+                Tableau des visites pastorales
+            </h2>
+            <p class="text-muted mb-0">Gérez les visites par glisser-déposer</p>
+        </div>
+        <div>
+            <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#newVisitModal">
+                <i class="bi bi-plus-lg me-2"></i>Nouvelle visite
+            </button>
+        </div>
+    </div>
+    
+    <div class="row">
+        <!-- Statistiques -->
+        <div class="col-12 mb-4">
+            <div class="row g-3">
+                <div class="col-md-4">
+                    <div class="stat-card border-start border-4 border-success">
+                        <div class="stat-value text-success">{{ stats.total_this_month }}</div>
+                        <div class="stat-label">Visites ce mois</div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="stat-card border-start border-4 border-warning">
+                        <div class="stat-value text-warning">{{ stats.pending }}</div>
+                        <div class="stat-label">En attente</div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="stat-card border-start border-4 border-danger">
+                        <div class="stat-value text-danger">{{ stats.overdue }}</div>
+                        <div class="stat-label">En retard</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Tableau Kanban -->
+        <div class="col-lg-9">
+            <div class="kanban-board">
+                {% for column in columns %}
+                <div class="kanban-column" data-status="{{ column.status }}">
+                    <div class="kanban-header bg-{{ column.color }} text-white">
+                        <span>
+                            <i class="{{ column.icon }} me-2"></i>
+                            {{ column.title }}
+                        </span>
+                        <span class="badge bg-white text-{{ column.color }}">
+                            {{ column.visits.count }}
+                        </span>
+                    </div>
+                    <div class="kanban-body" data-status="{{ column.status }}">
+                        {% for visit in column.visits %}
+                        <div class="kanban-card" draggable="true" data-visit-id="{{ visit.id }}">
+                            <div class="d-flex align-items-start">
+                                <div class="member-avatar me-2">
+                                    {{ visit.member.first_name.0 }}{{ visit.member.last_name.0 }}
+                                </div>
+                                <div class="flex-grow-1">
+                                    <div class="kanban-card-title">{{ visit.member.full_name }}</div>
+                                    <div class="kanban-card-meta">
+                                        <i class="bi bi-{{ visit.visit_type }} me-1"></i>
+                                        {{ visit.get_visit_type_display }}
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            {% if visit.scheduled_date %}
+                            <div class="kanban-card-meta mt-2">
+                                <i class="bi bi-calendar me-1"></i>
+                                {{ visit.scheduled_date|date:"d/m/Y" }}
+                            </div>
+                            {% endif %}
+                            
+                            {% if visit.life_event %}
+                            <div class="mt-2">
+                                <span class="badge bg-info kanban-card-badge">
+                                    {{ visit.life_event.get_event_type_display }}
+                                </span>
+                            </div>
+                            {% endif %}
+                            
+                            {% if visit.follow_up_needed %}
+                            <div class="mt-2">
+                                <span class="badge bg-warning kanban-card-badge">
+                                    <i class="bi bi-exclamation-triangle me-1"></i>Suivi requis
+                                </span>
+                            </div>
+                            {% endif %}
+                        </div>
+                        {% empty %}
+                        <div class="text-center text-muted py-4">
+                            <i class="bi bi-inbox" style="font-size: 2rem;"></i>
+                            <p class="mb-0 mt-2">Aucune visite</p>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        
+        <!-- Sidebar -->
+        <div class="col-lg-3">
+            <!-- Membres à visiter -->
+            <div class="sidebar-panel">
+                <h6>
+                    <i class="bi bi-people me-2"></i>
+                    Membres à visiter
+                </h6>
+                {% for item in members_needing_visit %}
+                <div class="member-item" onclick="openNewVisitModal({{ item.member.id }}, '{{ item.member.full_name|escapejs }}')">
+                    <div class="member-avatar me-2" style="width:30px;height:30px;font-size:0.8rem;">
+                        {{ item.member.first_name.0 }}{{ item.member.last_name.0 }}
+                    </div>
+                    <div class="flex-grow-1">
+                        <div class="fw-semibold" style="font-size:0.9rem;">{{ item.member.full_name }}</div>
+                        <small class="text-danger">
+                            {% if item.days %}{{ item.days }} jours{% else %}Jamais visité{% endif %}
+                        </small>
+                    </div>
+                    <i class="bi bi-plus-circle text-primary"></i>
+                </div>
+                {% empty %}
+                <p class="text-muted text-center mb-0">Tous les membres sont à jour</p>
+                {% endfor %}
+            </div>
+            
+            <!-- Événements de vie -->
+            <div class="sidebar-panel">
+                <h6>
+                    <i class="bi bi-heart me-2"></i>
+                    Événements récents
+                </h6>
+                {% for event in pending_life_events %}
+                <div class="member-item" onclick="openNewVisitModal({{ event.primary_member.id }}, '{{ event.primary_member.full_name|escapejs }}', {{ event.id }})">
+                    <div class="me-2">
+                        <span class="badge bg-{{ event.priority }}">
+                            {{ event.get_event_type_display }}
+                        </span>
+                    </div>
+                    <div class="flex-grow-1">
+                        <div class="fw-semibold" style="font-size:0.9rem;">{{ event.primary_member.full_name }}</div>
+                        <small class="text-muted">{{ event.event_date|date:"d/m/Y" }}</small>
+                    </div>
+                </div>
+                {% empty %}
+                <p class="text-muted text-center mb-0">Aucun événement en attente</p>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal nouvelle visite -->
+<div class="modal fade" id="newVisitModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Planifier une visite</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="newVisitForm">
+                    <input type="hidden" id="visitMemberId" name="member_id">
+                    <input type="hidden" id="visitLifeEventId" name="life_event_id">
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Membre</label>
+                        <input type="text" class="form-control" id="visitMemberName" readonly>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Type de visite</label>
+                        <select class="form-select" name="visit_type" id="visitType">
+                            <option value="domicile">Visite à domicile</option>
+                            <option value="hopital">Visite à l'hôpital</option>
+                            <option value="telephone">Appel téléphonique</option>
+                            <option value="zoom">Appel vidéo</option>
+                            <option value="bureau">Rencontre au bureau</option>
+                        </select>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Date prévue</label>
+                        <input type="date" class="form-control" name="scheduled_date" id="visitDate">
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
+                <button type="button" class="btn btn-primary" onclick="createVisit()">
+                    <i class="bi bi-check-lg me-2"></i>Planifier
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Drag and Drop
+    const cards = document.querySelectorAll('.kanban-card');
+    const columns = document.querySelectorAll('.kanban-body');
+    
+    cards.forEach(card => {
+        card.addEventListener('dragstart', dragStart);
+        card.addEventListener('dragend', dragEnd);
+    });
+    
+    columns.forEach(column => {
+        column.addEventListener('dragover', dragOver);
+        column.addEventListener('drop', drop);
+    });
+    
+    function dragStart(e) {
+        e.target.classList.add('dragging');
+        e.dataTransfer.setData('text/plain', e.target.dataset.visitId);
+    }
+    
+    function dragEnd(e) {
+        e.target.classList.remove('dragging');
+    }
+    
+    function dragOver(e) {
+        e.preventDefault();
+    }
+    
+    function drop(e) {
+        e.preventDefault();
+        const visitId = e.dataTransfer.getData('text/plain');
+        const newStatus = e.currentTarget.dataset.status;
+        const card = document.querySelector(`[data-visit-id="${visitId}"]`);
+        
+        // Déplacer la carte visuellement
+        e.currentTarget.appendChild(card);
+        
+        // Mettre à jour le serveur
+        updateVisitStatus(visitId, newStatus);
+    }
+});
+
+function updateVisitStatus(visitId, newStatus) {
+    fetch('{% url "members:kanban_update" %}', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': '{{ csrf_token }}'
+        },
+        body: JSON.stringify({
+            visit_id: visitId,
+            status: newStatus
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            // Notification de succès
+            console.log(data.message);
+        } else {
+            alert('Erreur: ' + data.error);
+            location.reload();
+        }
+    });
+}
+
+function openNewVisitModal(memberId, memberName, lifeEventId = null) {
+    document.getElementById('visitMemberId').value = memberId;
+    document.getElementById('visitMemberName').value = memberName;
+    document.getElementById('visitLifeEventId').value = lifeEventId || '';
+    document.getElementById('visitDate').value = new Date().toISOString().split('T')[0];
+    
+    new bootstrap.Modal(document.getElementById('newVisitModal')).show();
+}
+
+function createVisit() {
+    const form = document.getElementById('newVisitForm');
+    const data = {
+        member_id: document.getElementById('visitMemberId').value,
+        visit_type: document.getElementById('visitType').value,
+        scheduled_date: document.getElementById('visitDate').value,
+        life_event_id: document.getElementById('visitLifeEventId').value || null
+    };
+    
+    fetch('{% url "members:kanban_create" %}', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': '{{ csrf_token }}'
+        },
+        body: JSON.stringify(data)
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            location.reload();
+        } else {
+            alert('Erreur: ' + data.error);
+        }
+    });
+}
+</script>
+{% endblock %}

@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hors ligne - EEBC</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" rel="stylesheet">
+    <style>
+        body {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: linear-gradient(135deg, #0A36FF 0%, #1e3a5f 100%);
+            color: white;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        .offline-container {
+            text-align: center;
+            padding: 40px;
+        }
+        
+        .offline-icon {
+            font-size: 5rem;
+            margin-bottom: 20px;
+            animation: pulse 2s infinite;
+        }
+        
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+        
+        .btn-retry {
+            background: white;
+            color: #0A36FF;
+            border: none;
+            padding: 12px 30px;
+            border-radius: 50px;
+            font-weight: 600;
+            transition: transform 0.3s;
+        }
+        
+        .btn-retry:hover {
+            transform: scale(1.05);
+            background: #f8f9fa;
+            color: #0A36FF;
+        }
+    </style>
+</head>
+<body>
+    <div class="offline-container">
+        <div class="offline-icon">
+            <i class="bi bi-wifi-off"></i>
+        </div>
+        
+        <h1 class="display-5 fw-bold mb-3">Vous êtes hors ligne</h1>
+        
+        <p class="lead mb-4">
+            Impossible de se connecter à Internet.<br>
+            Vérifiez votre connexion et réessayez.
+        </p>
+        
+        <button class="btn btn-retry" onclick="window.location.reload()">
+            <i class="bi bi-arrow-clockwise me-2"></i>
+            Réessayer
+        </button>
+        
+        <div class="mt-5">
+            <p class="small opacity-75">
+                <i class="bi bi-church me-2"></i>
+                EEBC - Église Évangélique Baptiste de Cabassou
+            </p>
+        </div>
+    </div>
+</body>
+</html>

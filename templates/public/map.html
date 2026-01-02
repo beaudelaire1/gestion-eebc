@@ -1,0 +1,245 @@
+{% extends 'public/base.html' %}
+
+{% block title %}Carte des églises - {{ settings.site_name|default:'EEBC' }}{% endblock %}
+
+{% block extra_css %}
+<!-- Leaflet CSS -->
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<style>
+    #map {
+        height: 600px;
+        width: 100%;
+        border-radius: 10px;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+    }
+    
+    .leaflet-popup-content {
+        min-width: 200px;
+    }
+    
+    .popup-title {
+        font-weight: bold;
+        font-size: 1.1rem;
+        color: var(--primary-color);
+        margin-bottom: 8px;
+    }
+    
+    .popup-info {
+        margin: 5px 0;
+        font-size: 0.9rem;
+    }
+    
+    .popup-info i {
+        width: 20px;
+        color: var(--primary-color);
+    }
+    
+    .map-legend {
+        background: white;
+        padding: 15px;
+        border-radius: 8px;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    }
+    
+    .legend-item {
+        display: flex;
+        align-items: center;
+        margin: 5px 0;
+    }
+    
+    .legend-marker {
+        width: 20px;
+        height: 20px;
+        border-radius: 50%;
+        margin-right: 10px;
+    }
+    
+    .marker-church { background: #0A36FF; }
+    .marker-family { background: #28a745; }
+    .marker-event { background: #ffc107; }
+</style>
+{% endblock %}
+
+{% block content %}
+<section class="hero-section py-4">
+    <div class="container text-center">
+        <h1 class="display-5 fw-bold">Carte interactive</h1>
+        <p class="lead">Localisez nos églises et événements</p>
+    </div>
+</section>
+
+<section class="py-4">
+    <div class="container">
+        <div class="row">
+            <div class="col-lg-9">
+                <div id="map"></div>
+            </div>
+            <div class="col-lg-3">
+                <!-- Légende -->
+                <div class="map-legend mb-4">
+                    <h5 class="mb-3">Légende</h5>
+                    <div class="legend-item">
+                        <div class="legend-marker marker-church"></div>
+                        <span>Églises</span>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-marker marker-event"></div>
+                        <span>Événements</span>
+                    </div>
+                </div>
+                
+                <!-- Liste des sites -->
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="mb-0">Nos églises</h5>
+                    </div>
+                    <div class="list-group list-group-flush">
+                        {% for site in sites %}
+                        <a href="#" class="list-group-item list-group-item-action site-link" 
+                           data-lat="{{ site.latitude }}" data-lng="{{ site.longitude }}"
+                           data-name="{{ site.name }}">
+                            <i class="bi bi-geo-alt me-2 text-primary"></i>
+                            {{ site.name }}
+                        </a>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}
+
+{% block extra_js %}
+<!-- Leaflet JS -->
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Centre de la Guyane (Cayenne)
+    const defaultCenter = [4.9225, -52.3058];
+    const defaultZoom = 11;
+    
+    // Initialiser la carte
+    const map = L.map('map').setView(defaultCenter, defaultZoom);
+    
+    // Couche OpenStreetMap
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+    }).addTo(map);
+    
+    // Icônes personnalisées
+    const churchIcon = L.divIcon({
+        className: 'custom-marker',
+        html: '<div style="background:#0A36FF;width:30px;height:30px;border-radius:50%;display:flex;align-items:center;justify-content:center;color:white;font-size:16px;box-shadow:0 2px 5px rgba(0,0,0,0.3);"><i class="bi bi-church"></i></div>',
+        iconSize: [30, 30],
+        iconAnchor: [15, 15],
+        popupAnchor: [0, -15]
+    });
+    
+    const eventIcon = L.divIcon({
+        className: 'custom-marker',
+        html: '<div style="background:#ffc107;width:25px;height:25px;border-radius:50%;display:flex;align-items:center;justify-content:center;color:#333;font-size:14px;box-shadow:0 2px 5px rgba(0,0,0,0.3);"><i class="bi bi-calendar-event"></i></div>',
+        iconSize: [25, 25],
+        iconAnchor: [12, 12],
+        popupAnchor: [0, -12]
+    });
+    
+    // Groupe de marqueurs
+    const markers = L.featureGroup().addTo(map);
+    
+    // Données des sites
+    const sites = [
+        {% for site in sites %}
+        {% if site.latitude and site.longitude %}
+        {
+            name: "{{ site.name }}",
+            lat: {{ site.latitude }},
+            lng: {{ site.longitude }},
+            address: "{{ site.address|escapejs }}",
+            city: "{{ site.city }}",
+            phone: "{{ site.phone }}",
+            schedule: "{{ site.worship_schedule|escapejs }}",
+            type: 'church'
+        },
+        {% endif %}
+        {% endfor %}
+    ];
+    
+    // Données des événements
+    const events = [
+        {% for event in upcoming_events %}
+        {% if event.site and event.site.latitude and event.site.longitude %}
+        {
+            name: "{{ event.title|escapejs }}",
+            lat: {{ event.site.latitude }},
+            lng: {{ event.site.longitude }},
+            date: "{{ event.start_date|date:'d/m/Y' }}",
+            time: "{{ event.start_time|time:'H:i' }}",
+            location: "{{ event.location|escapejs }}",
+            type: 'event'
+        },
+        {% endif %}
+        {% endfor %}
+    ];
+    
+    // Ajouter les marqueurs des sites
+    sites.forEach(site => {
+        const popup = `
+            <div class="popup-title">${site.name}</div>
+            <div class="popup-info"><i class="bi bi-geo-alt"></i> ${site.address}</div>
+            <div class="popup-info"><i class="bi bi-building"></i> ${site.city}</div>
+            ${site.phone ? `<div class="popup-info"><i class="bi bi-telephone"></i> ${site.phone}</div>` : ''}
+            ${site.schedule ? `<div class="popup-info"><i class="bi bi-clock"></i> ${site.schedule}</div>` : ''}
+            <div class="mt-2">
+                <a href="https://www.google.com/maps/dir/?api=1&destination=${site.lat},${site.lng}" 
+                   target="_blank" class="btn btn-sm btn-primary">
+                    <i class="bi bi-signpost-2"></i> Itinéraire
+                </a>
+            </div>
+        `;
+        
+        L.marker([site.lat, site.lng], {icon: churchIcon})
+            .bindPopup(popup)
+            .addTo(markers);
+    });
+    
+    // Ajouter les marqueurs des événements
+    events.forEach(event => {
+        const popup = `
+            <div class="popup-title">${event.name}</div>
+            <div class="popup-info"><i class="bi bi-calendar"></i> ${event.date}</div>
+            ${event.time ? `<div class="popup-info"><i class="bi bi-clock"></i> ${event.time}</div>` : ''}
+            ${event.location ? `<div class="popup-info"><i class="bi bi-geo-alt"></i> ${event.location}</div>` : ''}
+        `;
+        
+        L.marker([event.lat, event.lng], {icon: eventIcon})
+            .bindPopup(popup)
+            .addTo(markers);
+    });
+    
+    // Ajuster la vue pour montrer tous les marqueurs
+    if (markers.getLayers().length > 0) {
+        map.fitBounds(markers.getBounds(), {padding: [50, 50]});
+    }
+    
+    // Clic sur les liens de sites
+    document.querySelectorAll('.site-link').forEach(link => {
+        link.addEventListener('click', function(e) {
+            e.preventDefault();
+            const lat = parseFloat(this.dataset.lat);
+            const lng = parseFloat(this.dataset.lng);
+            if (lat && lng) {
+                map.setView([lat, lng], 15);
+                // Ouvrir le popup du marqueur correspondant
+                markers.eachLayer(layer => {
+                    const pos = layer.getLatLng();
+                    if (Math.abs(pos.lat - lat) < 0.001 && Math.abs(pos.lng - lng) < 0.001) {
+                        layer.openPopup();
+                    }
+                });
+            }
+        });
+    });
+});
+</script>
+{% endblock %}
