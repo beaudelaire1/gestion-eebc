@@ -1,0 +1,55 @@
+{% extends 'public/base.html' %}
+
+{% block title %}Merci pour votre don - EEBC{% endblock %}
+
+{% block content %}
+<section class="py-5">
+    <div class="container">
+        <div class="row justify-content-center">
+            <div class="col-lg-6 text-center">
+                
+                <div class="mb-4">
+                    <i class="bi bi-check-circle-fill text-success" style="font-size: 5rem;"></i>
+                </div>
+                
+                <h1 class="display-5 fw-bold text-success mb-3">Merci !</h1>
+                
+                <p class="lead mb-4">
+                    Votre don a été reçu avec succès.
+                </p>
+                
+                {% if donation %}
+                <div class="card mb-4">
+                    <div class="card-body">
+                        <h5 class="card-title">Récapitulatif</h5>
+                        <p class="mb-1"><strong>Montant :</strong> {{ donation.amount }}€</p>
+                        <p class="mb-1"><strong>Type :</strong> {{ donation.get_donation_type_display }}</p>
+                        {% if donation.transaction %}
+                        <p class="mb-0"><strong>Référence :</strong> {{ donation.transaction.reference }}</p>
+                        {% endif %}
+                    </div>
+                </div>
+                {% endif %}
+                
+                <p class="text-muted mb-4">
+                    Un reçu vous sera envoyé par email.
+                </p>
+                
+                <blockquote class="blockquote">
+                    <p class="mb-0 fst-italic">
+                        "Dieu aime celui qui donne avec joie."
+                    </p>
+                    <footer class="blockquote-footer">2 Corinthiens 9:7</footer>
+                </blockquote>
+                
+                <div class="mt-4">
+                    <a href="{% url 'public:home' %}" class="btn btn-primary">
+                        <i class="bi bi-house me-2"></i>Retour à l'accueil
+                    </a>
+                </div>
+                
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}

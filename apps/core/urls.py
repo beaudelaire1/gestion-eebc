@@ -1,5 +1,9 @@
 from django.urls import path
 from . import views
+from apps.finance.donation_views import (
+    DonationPageView, CreateDonationSessionView,
+    DonationSuccessView, DonationCancelView, StripeWebhookView
+)
 
 app_name = 'public'
 
@@ -13,4 +17,11 @@ urlpatterns = [
     path('inscription/', views.VisitorRegistrationView.as_view(), name='register'),
     path('nos-eglises/', views.SitesView.as_view(), name='sites'),
     path('page/<slug:slug>/', views.PageDetailView.as_view(), name='page'),
+    
+    # Dons en ligne
+    path('don/', DonationPageView.as_view(), name='donation'),
+    path('don/creer-session/', CreateDonationSessionView.as_view(), name='donation_create_session'),
+    path('don/succes/', DonationSuccessView.as_view(), name='donation_success'),
+    path('don/annule/', DonationCancelView.as_view(), name='donation_cancel'),
+    path('webhooks/stripe/', StripeWebhookView.as_view(), name='stripe_webhook'),
 ]

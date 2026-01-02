@@ -463,3 +463,278 @@ class BudgetLine(models.Model):
         if self.planned_amount == 0:
             return 0
         return (self.variance / self.planned_amount) * 100
+
+
+# =============================================================================
+# DONS EN LIGNE (STRIPE)
+# =============================================================================
+
+class OnlineDonation(models.Model):
+    """
+    Don effectué en ligne via Stripe.
+    
+    Stocke les informations spécifiques aux paiements en ligne
+    et fait le lien avec la transaction financière.
+    """
+    
+    class DonationType(models.TextChoices):
+        DON = 'don', 'Don'
+        DIME = 'dime', 'Dîme'
+        OFFRANDE = 'offrande', 'Offrande'
+    
+    class Status(models.TextChoices):
+        PENDING = 'pending', 'En attente'
+        COMPLETED = 'completed', 'Complété'
+        FAILED = 'failed', 'Échoué'
+        REFUNDED = 'refunded', 'Remboursé'
+        CANCELLED = 'cancelled', 'Annulé'
+    
+    # Identifiants Stripe
+    stripe_session_id = models.CharField(
+        max_length=255,
+        unique=True,
+        verbose_name="ID Session Stripe"
+    )
+    stripe_payment_intent = models.CharField(
+        max_length=255,
+        blank=True,
+        verbose_name="ID Payment Intent"
+    )
+    stripe_subscription_id = models.CharField(
+        max_length=255,
+        blank=True,
+        verbose_name="ID Abonnement",
+        help_text="Pour les dons récurrents"
+    )
+    
+    # Montant et type
+    amount = models.DecimalField(
+        max_digits=10,
+        decimal_places=2,
+        validators=[MinValueValidator(Decimal('1.00'))],
+        verbose_name="Montant (€)"
+    )
+    
+    donation_type = models.CharField(
+        max_length=20,
+        choices=DonationType.choices,
+        default=DonationType.DON,
+        verbose_name="Type de don"
+    )
+    
+    is_recurring = models.BooleanField(
+        default=False,
+        verbose_name="Don récurrent"
+    )
+    
+    recurring_interval = models.CharField(
+        max_length=10,
+        blank=True,
+        choices=[('month', 'Mensuel'), ('year', 'Annuel')],
+        verbose_name="Fréquence"
+    )
+    
+    # Donateur
+    donor_email = models.EmailField(verbose_name="Email du donateur")
+    donor_name = models.CharField(max_length=200, blank=True, verbose_name="Nom du donateur")
+    
+    # Liens
+    member = models.ForeignKey(
+        'members.Member',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='online_donations',
+        verbose_name="Membre"
+    )
+    
+    site = models.ForeignKey(
+        'core.Site',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='online_donations',
+        verbose_name="Site"
+    )
+    
+    transaction = models.OneToOneField(
+        FinancialTransaction,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='online_donation',
+        verbose_name="Transaction"
+    )
+    
+    # Statut
+    status = models.CharField(
+        max_length=20,
+        choices=Status.choices,
+        default=Status.PENDING,
+        verbose_name="Statut"
+    )
+    
+    # Métadonnées
+    ip_address = models.GenericIPAddressField(null=True, blank=True, verbose_name="Adresse IP")
+    user_agent = models.TextField(blank=True, verbose_name="User Agent")
+    
+    created_at = models.DateTimeField(auto_now_add=True, verbose_name="Créé le")
+    completed_at = models.DateTimeField(null=True, blank=True, verbose_name="Complété le")
+    
+    class Meta:
+        verbose_name = "Don en ligne"
+        verbose_name_plural = "Dons en ligne"
+        ordering = ['-created_at']
+    
+    def __str__(self):
+        return f"{self.donor_email} - {self.amount}€ ({self.get_status_display()})"
+
+
+class TaxReceipt(models.Model):
+    """
+    Reçu fiscal pour les dons.
+    
+    Génère des reçus fiscaux numérotés conformes à la réglementation
+    française pour les dons aux associations cultuelles.
+    """
+    
+    class Status(models.TextChoices):
+        DRAFT = 'draft', 'Brouillon'
+        ISSUED = 'issued', 'Émis'
+        SENT = 'sent', 'Envoyé'
+        CANCELLED = 'cancelled', 'Annulé'
+    
+    # Numérotation
+    receipt_number = models.CharField(
+        max_length=20,
+        unique=True,
+        verbose_name="Numéro de reçu"
+    )
+    
+    fiscal_year = models.PositiveIntegerField(verbose_name="Année fiscale")
+    
+    # Donateur
+    donor_name = models.CharField(max_length=200, verbose_name="Nom du donateur")
+    donor_address = models.TextField(verbose_name="Adresse du donateur")
+    donor_email = models.EmailField(blank=True, verbose_name="Email")
+    
+    # Membre lié (optionnel)
+    member = models.ForeignKey(
+        'members.Member',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='tax_receipts',
+        verbose_name="Membre"
+    )
+    
+    # Montant total des dons
+    total_amount = models.DecimalField(
+        max_digits=12,
+        decimal_places=2,
+        verbose_name="Montant total"
+    )
+    
+    # Transactions incluses
+    transactions = models.ManyToManyField(
+        FinancialTransaction,
+        related_name='tax_receipts',
+        verbose_name="Transactions"
+    )
+    
+    # Statut
+    status = models.CharField(
+        max_length=15,
+        choices=Status.choices,
+        default=Status.DRAFT,
+        verbose_name="Statut"
+    )
+    
+    # PDF généré
+    pdf_file = models.FileField(
+        upload_to='finance/tax_receipts/%Y/',
+        blank=True,
+        null=True,
+        verbose_name="Fichier PDF"
+    )
+    
+    # Dates
+    issue_date = models.DateField(null=True, blank=True, verbose_name="Date d'émission")
+    sent_date = models.DateField(null=True, blank=True, verbose_name="Date d'envoi")
+    
+    # Métadonnées
+    issued_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        related_name='issued_tax_receipts',
+        verbose_name="Émis par"
+    )
+    
+    notes = models.TextField(blank=True, verbose_name="Notes")
+    created_at = models.DateTimeField(auto_now_add=True)
+    
+    class Meta:
+        verbose_name = "Reçu fiscal"
+        verbose_name_plural = "Reçus fiscaux"
+        ordering = ['-fiscal_year', '-receipt_number']
+    
+    def __str__(self):
+        return f"Reçu {self.receipt_number} - {self.donor_name} ({self.total_amount}€)"
+    
+    def save(self, *args, **kwargs):
+        if not self.receipt_number:
+            self.receipt_number = self._generate_receipt_number()
+        super().save(*args, **kwargs)
+    
+    def _generate_receipt_number(self):
+        """Génère un numéro de reçu unique."""
+        import datetime
+        
+        year = self.fiscal_year or datetime.date.today().year
+        
+        # Compter les reçus existants pour cette année
+        count = TaxReceipt.objects.filter(fiscal_year=year).count() + 1
+        
+        return f"RF-{year}-{count:04d}"
+    
+    def generate_pdf(self):
+        """Génère le PDF du reçu fiscal."""
+        from .pdf_service import save_tax_receipt_pdf
+        return save_tax_receipt_pdf(self)
+    
+    def send_by_email(self):
+        """Envoie le reçu par email."""
+        from apps.communication.notification_service import notification_service
+        from django.utils import timezone
+        
+        if not self.pdf_file:
+            self.generate_pdf()
+        
+        message = f"""Reçu fiscal {self.receipt_number}
+
+Cher(e) {self.donor_name},
+
+Veuillez trouver ci-joint votre reçu fiscal pour l'année {self.fiscal_year}.
+
+Montant total des dons : {self.total_amount}€
+
+Ce document vous permet de bénéficier d'une réduction d'impôt 
+conformément à l'article 200 du Code Général des Impôts.
+
+Merci pour votre générosité.
+
+EEBC - Église Évangélique Baptiste de Cabassou
+"""
+        
+        # TODO: Ajouter la pièce jointe PDF
+        notification_service.send_notification(
+            recipient={'email': self.donor_email, 'name': self.donor_name},
+            message=message,
+            subject=f"Reçu fiscal {self.receipt_number} - EEBC",
+            channels=['email']
+        )
+        
+        self.status = self.Status.SENT
+        self.sent_date = timezone.now().date()
+        self.save()

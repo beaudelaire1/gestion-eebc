@@ -1,0 +1,219 @@
+{% extends 'public/base.html' %}
+
+{% block title %}Faire un don - EEBC{% endblock %}
+
+{% block content %}
+<section class="hero-section py-5 bg-primary text-white">
+    <div class="container text-center">
+        <h1 class="display-5 fw-bold">Faire un don</h1>
+        <p class="lead">Soutenez l'œuvre de Dieu à travers votre générosité</p>
+    </div>
+</section>
+
+<section class="py-5">
+    <div class="container">
+        <div class="row justify-content-center">
+            <div class="col-lg-8">
+                
+                {% if not stripe_configured %}
+                <div class="alert alert-warning">
+                    <i class="bi bi-exclamation-triangle me-2"></i>
+                    Le paiement en ligne n'est pas encore configuré. 
+                    Veuillez contacter l'église pour effectuer un don.
+                </div>
+                {% else %}
+                
+                <!-- Citation biblique -->
+                <div class="text-center mb-5">
+                    <blockquote class="blockquote">
+                        <p class="mb-0 fst-italic">
+                            "Chacun donne comme il l'a résolu en son cœur, sans tristesse ni contrainte ; 
+                            car Dieu aime celui qui donne avec joie."
+                        </p>
+                        <footer class="blockquote-footer mt-2">2 Corinthiens 9:7</footer>
+                    </blockquote>
+                </div>
+                
+                <!-- Formulaire de don -->
+                <div class="card shadow">
+                    <div class="card-body p-4">
+                        <form id="donation-form">
+                            <!-- Type de don -->
+                            <div class="mb-4">
+                                <label class="form-label fw-bold">Type de don</label>
+                                <div class="btn-group w-100" role="group">
+                                    <input type="radio" class="btn-check" name="donation_type" id="type_don" value="don" checked>
+                                    <label class="btn btn-outline-primary" for="type_don">Don</label>
+                                    
+                                    <input type="radio" class="btn-check" name="donation_type" id="type_dime" value="dime">
+                                    <label class="btn btn-outline-primary" for="type_dime">Dîme</label>
+                                    
+                                    <input type="radio" class="btn-check" name="donation_type" id="type_offrande" value="offrande">
+                                    <label class="btn btn-outline-primary" for="type_offrande">Offrande</label>
+                                </div>
+                            </div>
+                            
+                            <!-- Montant -->
+                            <div class="mb-4">
+                                <label class="form-label fw-bold">Montant</label>
+                                <div class="row g-2 mb-2">
+                                    <div class="col">
+                                        <button type="button" class="btn btn-outline-secondary w-100 amount-btn" data-amount="10">10€</button>
+                                    </div>
+                                    <div class="col">
+                                        <button type="button" class="btn btn-outline-secondary w-100 amount-btn" data-amount="20">20€</button>
+                                    </div>
+                                    <div class="col">
+                                        <button type="button" class="btn btn-outline-secondary w-100 amount-btn" data-amount="50">50€</button>
+                                    </div>
+                                    <div class="col">
+                                        <button type="button" class="btn btn-outline-secondary w-100 amount-btn" data-amount="100">100€</button>
+                                    </div>
+                                </div>
+                                <div class="input-group">
+                                    <span class="input-group-text">€</span>
+                                    <input type="number" class="form-control form-control-lg" id="amount" 
+                                           name="amount" min="1" step="0.01" placeholder="Autre montant" required>
+                                </div>
+                            </div>
+                            
+                            <!-- Don récurrent -->
+                            <div class="mb-4">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" id="recurring" name="recurring">
+                                    <label class="form-check-label" for="recurring">
+                                        Don récurrent (mensuel)
+                                    </label>
+                                </div>
+                            </div>
+                            
+                            <!-- Email -->
+                            <div class="mb-4">
+                                <label for="email" class="form-label fw-bold">Email</label>
+                                <input type="email" class="form-control" id="email" name="email" 
+                                       placeholder="votre@email.com" required>
+                                <div class="form-text">Pour recevoir votre reçu de don</div>
+                            </div>
+                            
+                            <!-- Site -->
+                            <div class="mb-4">
+                                <label for="site" class="form-label fw-bold">Site (optionnel)</label>
+                                <select class="form-select" id="site" name="site_id">
+                                    <option value="">-- Général --</option>
+                                    {% for site in sites %}
+                                    <option value="{{ site.id }}">{{ site.name }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            
+                            <!-- Bouton -->
+                            <div class="d-grid">
+                                <button type="submit" class="btn btn-primary btn-lg" id="submit-btn">
+                                    <i class="bi bi-heart-fill me-2"></i>
+                                    Faire un don
+                                </button>
+                            </div>
+                            
+                            <!-- Sécurité -->
+                            <div class="text-center mt-3">
+                                <small class="text-muted">
+                                    <i class="bi bi-shield-check me-1"></i>
+                                    Paiement sécurisé par Stripe
+                                </small>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+                
+                {% endif %}
+                
+                <!-- Autres moyens de don -->
+                <div class="card mt-4">
+                    <div class="card-header">
+                        <h5 class="mb-0">Autres moyens de donner</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <h6><i class="bi bi-cash me-2"></i>En espèces</h6>
+                                <p class="text-muted small">Lors des cultes, dans les enveloppes prévues à cet effet.</p>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <h6><i class="bi bi-bank me-2"></i>Virement bancaire</h6>
+                                <p class="text-muted small">Contactez-nous pour obtenir nos coordonnées bancaires.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+            </div>
+        </div>
+    </div>
+</section>
+
+{% if stripe_configured %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const form = document.getElementById('donation-form');
+    const amountInput = document.getElementById('amount');
+    const amountBtns = document.querySelectorAll('.amount-btn');
+    const submitBtn = document.getElementById('submit-btn');
+    
+    // Boutons de montant prédéfini
+    amountBtns.forEach(btn => {
+        btn.addEventListener('click', function() {
+            amountInput.value = this.dataset.amount;
+            amountBtns.forEach(b => b.classList.remove('active', 'btn-primary'));
+            amountBtns.forEach(b => b.classList.add('btn-outline-secondary'));
+            this.classList.remove('btn-outline-secondary');
+            this.classList.add('active', 'btn-primary');
+        });
+    });
+    
+    // Soumission du formulaire
+    form.addEventListener('submit', async function(e) {
+        e.preventDefault();
+        
+        submitBtn.disabled = true;
+        submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Traitement...';
+        
+        const data = {
+            amount: parseFloat(amountInput.value),
+            type: document.querySelector('input[name="donation_type"]:checked').value,
+            email: document.getElementById('email').value,
+            site_id: document.getElementById('site').value || null,
+            recurring: document.getElementById('recurring').checked,
+        };
+        
+        try {
+            const response = await fetch('/don/creer-session/', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': '{{ csrf_token }}',
+                },
+                body: JSON.stringify(data),
+            });
+            
+            const result = await response.json();
+            
+            if (result.error) {
+                alert(result.error);
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = '<i class="bi bi-heart-fill me-2"></i>Faire un don';
+                return;
+            }
+            
+            // Rediriger vers Stripe
+            window.location.href = result.url;
+            
+        } catch (error) {
+            alert('Une erreur est survenue. Veuillez réessayer.');
+            submitBtn.disabled = false;
+            submitBtn.innerHTML = '<i class="bi bi-heart-fill me-2"></i>Faire un don';
+        }
+    });
+});
+</script>
+{% endif %}
+{% endblock %}

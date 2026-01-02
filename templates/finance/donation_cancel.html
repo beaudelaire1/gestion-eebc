@@ -1,0 +1,39 @@
+{% extends 'public/base.html' %}
+
+{% block title %}Don annulé - EEBC{% endblock %}
+
+{% block content %}
+<section class="py-5">
+    <div class="container">
+        <div class="row justify-content-center">
+            <div class="col-lg-6 text-center">
+                
+                <div class="mb-4">
+                    <i class="bi bi-x-circle text-warning" style="font-size: 5rem;"></i>
+                </div>
+                
+                <h1 class="display-5 fw-bold mb-3">Don annulé</h1>
+                
+                <p class="lead mb-4">
+                    Votre don n'a pas été effectué.
+                </p>
+                
+                <p class="text-muted mb-4">
+                    Si vous avez rencontré un problème, n'hésitez pas à nous contacter 
+                    ou à réessayer.
+                </p>
+                
+                <div class="d-flex justify-content-center gap-3">
+                    <a href="{% url 'public:donation' %}" class="btn btn-primary">
+                        <i class="bi bi-arrow-repeat me-2"></i>Réessayer
+                    </a>
+                    <a href="{% url 'public:home' %}" class="btn btn-outline-secondary">
+                        <i class="bi bi-house me-2"></i>Accueil
+                    </a>
+                </div>
+                
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}

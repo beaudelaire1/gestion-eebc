@@ -126,3 +126,123 @@ class BudgetLineAdmin(admin.ModelAdmin):
             color, variance, obj.variance_percent
         )
     variance_display.short_description = 'Écart'
+
+
+# Import des nouveaux modèles
+from .models import OnlineDonation, TaxReceipt
+
+
+@admin.register(OnlineDonation)
+class OnlineDonationAdmin(admin.ModelAdmin):
+    """Admin pour les dons en ligne."""
+    
+    list_display = [
+        'donor_email', 'amount', 'donation_type', 'status_badge',
+        'is_recurring', 'site', 'created_at'
+    ]
+    list_filter = ['status', 'donation_type', 'is_recurring', 'site', 'created_at']
+    search_fields = ['donor_email', 'donor_name', 'stripe_session_id']
+    date_hierarchy = 'created_at'
+    readonly_fields = [
+        'stripe_session_id', 'stripe_payment_intent', 'stripe_subscription_id',
+        'transaction', 'created_at', 'completed_at', 'ip_address', 'user_agent'
+    ]
+    
+    fieldsets = (
+        ('Donateur', {
+            'fields': ('donor_email', 'donor_name', 'member')
+        }),
+        ('Don', {
+            'fields': ('amount', 'donation_type', 'is_recurring', 'recurring_interval', 'site')
+        }),
+        ('Stripe', {
+            'fields': ('stripe_session_id', 'stripe_payment_intent', 'stripe_subscription_id'),
+            'classes': ('collapse',)
+        }),
+        ('Statut', {
+            'fields': ('status', 'transaction', 'created_at', 'completed_at')
+        }),
+        ('Métadonnées', {
+            'fields': ('ip_address', 'user_agent'),
+            'classes': ('collapse',)
+        }),
+    )
+    
+    def status_badge(self, obj):
+        colors = {
+            'pending': 'warning',
+            'completed': 'success',
+            'failed': 'danger',
+            'refunded': 'info',
+            'cancelled': 'secondary',
+        }
+        return format_html(
+            '<span class="badge bg-{}">{}</span>',
+            colors.get(obj.status, 'secondary'),
+            obj.get_status_display()
+        )
+    status_badge.short_description = 'Statut'
+
+
+@admin.register(TaxReceipt)
+class TaxReceiptAdmin(admin.ModelAdmin):
+    """Admin pour les reçus fiscaux."""
+    
+    list_display = [
+        'receipt_number', 'donor_name', 'fiscal_year', 'total_amount',
+        'status_badge', 'issue_date', 'sent_date'
+    ]
+    list_filter = ['status', 'fiscal_year']
+    search_fields = ['receipt_number', 'donor_name', 'donor_email']
+    filter_horizontal = ['transactions']
+    readonly_fields = ['receipt_number', 'created_at']
+    
+    fieldsets = (
+        ('Reçu', {
+            'fields': ('receipt_number', 'fiscal_year', 'status')
+        }),
+        ('Donateur', {
+            'fields': ('donor_name', 'donor_address', 'donor_email', 'member')
+        }),
+        ('Montant', {
+            'fields': ('total_amount', 'transactions')
+        }),
+        ('Document', {
+            'fields': ('pdf_file', 'issue_date', 'sent_date', 'issued_by')
+        }),
+        ('Notes', {
+            'fields': ('notes',),
+            'classes': ('collapse',)
+        }),
+    )
+    
+    def status_badge(self, obj):
+        colors = {
+            'draft': 'secondary',
+            'issued': 'primary',
+            'sent': 'success',
+            'cancelled': 'danger',
+        }
+        return format_html(
+            '<span class="badge bg-{}">{}</span>',
+            colors.get(obj.status, 'secondary'),
+            obj.get_status_display()
+        )
+    status_badge.short_description = 'Statut'
+    
+    actions = ['generate_pdfs', 'send_by_email']
+    
+    def generate_pdfs(self, request, queryset):
+        for receipt in queryset:
+            receipt.generate_pdf()
+        self.message_user(request, f"{queryset.count()} PDF(s) généré(s).")
+    generate_pdfs.short_description = "Générer les PDF"
+    
+    def send_by_email(self, request, queryset):
+        sent = 0
+        for receipt in queryset.filter(status__in=['issued', 'draft']):
+            if receipt.donor_email:
+                receipt.send_by_email()
+                sent += 1
+        self.message_user(request, f"{sent} reçu(s) envoyé(s) par email.")
+    send_by_email.short_description = "Envoyer par email"

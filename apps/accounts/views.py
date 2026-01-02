@@ -9,7 +9,7 @@ from .forms import CustomLoginForm, UserProfileForm
 
 
 class CustomLoginView(LoginView):
-    """Vue de connexion personnalisée."""
+    """Vue de connexion personnalisée avec support 2FA."""
     form_class = CustomLoginForm
     template_name = 'accounts/login.html'
     redirect_authenticated_user = True
@@ -18,13 +18,23 @@ class CustomLoginView(LoginView):
         return reverse_lazy('dashboard:home')
     
     def form_valid(self, form):
-        messages.success(self.request, f"Bienvenue, {form.get_user().get_full_name() or form.get_user().username}!")
+        user = form.get_user()
+        
+        # Vérifier si la 2FA est activée
+        if user.two_factor_enabled:
+            # Stocker l'ID utilisateur en session et rediriger vers la vérification 2FA
+            self.request.session['two_factor_user_id'] = user.id
+            self.request.session['two_factor_next'] = self.get_success_url()
+            return redirect('accounts:two_factor_verify')
+        
+        # Connexion normale si pas de 2FA
+        messages.success(self.request, f"Bienvenue, {user.get_full_name() or user.username}!")
         return super().form_valid(form)
 
 
 class CustomLogoutView(LogoutView):
     """Vue de déconnexion personnalisée."""
-    next_page = 'accounts:login'
+    next_page = 'public:home'
     
     def dispatch(self, request, *args, **kwargs):
         messages.info(request, "Vous avez été déconnecté avec succès.")
@@ -43,5 +53,10 @@ def profile_view(request):
     else:
         form = UserProfileForm(instance=request.user)
     
-    return render(request, 'accounts/profile.html', {'form': form})
+    context = {
+        'form': form,
+        'two_factor_enabled': request.user.two_factor_enabled,
+    }
+    
+    return render(request, 'accounts/profile.html', context)
 
