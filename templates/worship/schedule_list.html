@@ -1,0 +1,103 @@
+{% extends 'base.html' %}
+
+{% block title %}Plannings mensuels{% endblock %}
+{% block page_title %}Plannings des cultes{% endblock %}
+{% block page_subtitle %}Gérez la programmation mensuelle des cultes{% endblock %}
+
+{% block page_actions %}
+<a href="{% url 'worship:schedule_create' %}" class="btn btn-primary">
+    <i class="bi bi-plus-lg me-1"></i> Nouveau planning
+</a>
+{% endblock %}
+
+{% block content %}
+<!-- Filtres -->
+<div class="card border-0 shadow-sm mb-4">
+    <div class="card-body">
+        <form method="get" class="row g-3 align-items-end">
+            <div class="col-md-4">
+                <label class="form-label">Site</label>
+                <select name="site" class="form-select">
+                    <option value="">Tous les sites</option>
+                    {% for site in sites %}
+                    <option value="{{ site.id }}" {% if selected_site == site.id|stringformat:"s" %}selected{% endif %}>
+                        {{ site.name }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-4">
+                <label class="form-label">Année</label>
+                <select name="year" class="form-select">
+                    <option value="">Toutes</option>
+                    {% for y in years %}
+                    <option value="{{ y }}" {% if selected_year == y|stringformat:"s" %}selected{% endif %}>{{ y }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-4">
+                <button type="submit" class="btn btn-outline-primary w-100">
+                    <i class="bi bi-filter me-1"></i> Filtrer
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Liste des plannings -->
+<div class="row g-4">
+    {% for schedule in schedules %}
+    <div class="col-md-6 col-lg-4">
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0">
+                    <i class="bi bi-calendar3 me-2"></i>
+                    {{ schedule.month_name }} {{ schedule.year }}
+                </h5>
+            </div>
+            <div class="card-body">
+                <p class="text-muted mb-2">
+                    <i class="bi bi-geo-alt me-1"></i> {{ schedule.site.name }}
+                </p>
+                
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <span class="badge bg-{% if schedule.status == 'publie' %}success{% elif schedule.status == 'valide' %}info{% elif schedule.status == 'en_cours' %}warning{% else %}secondary{% endif %} fs-6">
+                        {{ schedule.get_status_display }}
+                    </span>
+                    <span class="text-muted">
+                        {{ schedule.services.count }} culte(s)
+                    </span>
+                </div>
+                
+                <div class="small text-muted mb-3">
+                    <i class="bi bi-bell me-1"></i>
+                    Notifications: 
+                    {% if schedule.notify_by_email %}📧{% endif %}
+                    {% if schedule.notify_by_sms %}📱{% endif %}
+                    {% if schedule.notify_by_whatsapp %}💬{% endif %}
+                    (J-{{ schedule.days_before_service }})
+                </div>
+            </div>
+            <div class="card-footer bg-transparent border-0">
+                <a href="{% url 'worship:schedule_detail' schedule.pk %}" class="btn btn-outline-primary w-100">
+                    <i class="bi bi-eye me-1"></i> Voir le planning
+                </a>
+            </div>
+        </div>
+    </div>
+    {% empty %}
+    <div class="col-12">
+        <div class="card border-0 shadow-sm">
+            <div class="card-body text-center py-5">
+                <i class="bi bi-calendar-x display-1 text-muted"></i>
+                <h4 class="mt-3">Aucun planning</h4>
+                <p class="text-muted">Créez votre premier planning mensuel</p>
+                <a href="{% url 'worship:schedule_create' %}" class="btn btn-primary">
+                    <i class="bi bi-plus-lg me-1"></i> Créer un planning
+                </a>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+{% endblock %}

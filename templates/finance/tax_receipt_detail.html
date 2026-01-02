@@ -1,0 +1,103 @@
+{% extends 'base.html' %}
+
+{% block title %}Reçu {{ receipt.receipt_number }}{% endblock %}
+{% block page_title %}Reçu fiscal {{ receipt.receipt_number }}{% endblock %}
+{% block page_subtitle %}Année fiscale {{ receipt.fiscal_year }}{% endblock %}
+
+{% block page_actions %}
+<div class="btn-group">
+    <a href="{% url 'finance:tax_receipt_pdf' receipt.pk %}" class="btn btn-danger" target="_blank">
+        <i class="bi bi-file-pdf me-1"></i> Télécharger PDF
+    </a>
+    {% if receipt.donor and receipt.donor.email %}
+    <a href="{% url 'finance:tax_receipt_send' receipt.pk %}" class="btn btn-success"
+       onclick="return confirm('Envoyer le reçu à {{ receipt.donor.email }} ?')">
+        <i class="bi bi-envelope me-1"></i> Envoyer par email
+    </a>
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block content %}
+<div class="row g-4">
+    <div class="col-lg-8">
+        <div class="card border-0 shadow-sm">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0">
+                    <i class="bi bi-file-earmark-text me-2"></i>
+                    Reçu fiscal n° {{ receipt.receipt_number }}
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="row g-4">
+                    <div class="col-md-6">
+                        <label class="text-muted small">Donateur</label>
+                        <div class="fs-5 fw-bold">{{ receipt.donor_name }}</div>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="text-muted small">Adresse</label>
+                        <div>{{ receipt.donor_address|default:"-" }}</div>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="text-muted small">Année fiscale</label>
+                        <div class="fs-5">{{ receipt.fiscal_year }}</div>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="text-muted small">Montant total des dons</label>
+                        <div class="fs-3 fw-bold text-success">{{ receipt.total_amount|floatformat:2 }} €</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-lg-4">
+        <div class="card border-0 shadow-sm mb-4">
+            <div class="card-header bg-transparent">
+                <h6 class="mb-0">Statut</h6>
+            </div>
+            <div class="card-body">
+                {% if receipt.status == 'draft' %}
+                <div class="alert alert-secondary mb-0">
+                    <i class="bi bi-pencil me-2"></i> Brouillon
+                </div>
+                {% elif receipt.status == 'issued' %}
+                <div class="alert alert-info mb-0">
+                    <i class="bi bi-check-circle me-2"></i> Émis le {{ receipt.issued_date|date:"d/m/Y" }}
+                </div>
+                {% elif receipt.status == 'sent' %}
+                <div class="alert alert-success mb-0">
+                    <i class="bi bi-envelope-check me-2"></i> Envoyé le {{ receipt.sent_date|date:"d/m/Y" }}
+                </div>
+                {% elif receipt.status == 'cancelled' %}
+                <div class="alert alert-danger mb-0">
+                    <i class="bi bi-x-circle me-2"></i> Annulé
+                </div>
+                {% endif %}
+            </div>
+        </div>
+        
+        <div class="card border-0 shadow-sm">
+            <div class="card-header bg-transparent">
+                <h6 class="mb-0">Informations</h6>
+            </div>
+            <div class="card-body">
+                <p class="mb-2">
+                    <small class="text-muted">Créé par</small><br>
+                    {{ receipt.created_by.get_full_name|default:receipt.created_by.username }}
+                </p>
+                <p class="mb-0">
+                    <small class="text-muted">Date de création</small><br>
+                    {{ receipt.created_at|date:"d/m/Y H:i" }}
+                </p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="mt-4">
+    <a href="{% url 'finance:tax_receipt_list' %}" class="btn btn-outline-secondary">
+        <i class="bi bi-arrow-left me-1"></i> Retour à la liste
+    </a>
+</div>
+{% endblock %}

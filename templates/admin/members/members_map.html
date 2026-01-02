@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Carte des membres - EEBC Admin</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body { font-family: 'Segoe UI', sans-serif; background: #f4f6f9; }
+        .header {
+            background: linear-gradient(135deg, #0A36FF 0%, #1e3a5f 100%);
+            color: white;
+            padding: 15px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .header h1 { margin: 0; font-size: 1.5rem; }
+        .header a { color: white; text-decoration: none; }
+        .container-fluid { padding: 20px; }
+        #map-container { display: flex; gap: 20px; }
+        #map {
+            flex: 1;
+            height: 600px;
+            border-radius: 10px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+        .sidebar {
+            width: 280px;
+            background: white;
+            border-radius: 10px;
+            padding: 15px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+        .filter-group { margin-bottom: 15px; }
+        .filter-group label {
+            display: block;
+            font-weight: 600;
+            margin-bottom: 5px;
+            color: #333;
+        }
+        .stats-card {
+            background: #f8f9fa;
+            border-radius: 8px;
+            padding: 15px;
+            margin-top: 15px;
+        }
+        .stats-card h5 { color: #0A36FF; margin-bottom: 10px; }
+        .stat-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 5px 0;
+            border-bottom: 1px solid #eee;
+        }
+        .stat-value { font-weight: 700; color: #0A36FF; }
+        .legend { margin-top: 15px; }
+        .legend-item { display: flex; align-items: center; margin: 8px 0; }
+        .legend-marker {
+            width: 20px; height: 20px;
+            border-radius: 50%; margin-right: 10px;
+        }
+        .marker-site { background: #0A36FF; }
+        .marker-family { background: #28a745; }
+        .popup-title {
+            font-weight: bold; font-size: 14px;
+            color: #0A36FF; margin-bottom: 5px;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>🗺️ Carte des membres</h1>
+        <a href="/admin/">← Retour à l'admin</a>
+    </div>
+    
+    <div class="container-fluid">
+        <div id="map-container">
+            <div id="map"></div>
+            
+            <div class="sidebar">
+                <div class="filter-group">
+                    <label>Site</label>
+                    <select id="filter-site" class="form-select">
+                        <option value="">Tous les sites</option>
+                        {% for site in sites %}
+                        <option value="{{ site.id }}">{{ site.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                
+                <div class="filter-group">
+                    <label>Statut membre</label>
+                    <select id="filter-status" class="form-select">
+                        <option value="">Tous</option>
+                        <option value="actif">Actif</option>
+                        <option value="inactif">Inactif</option>
+                        <option value="visiteur">Visiteur</option>
+                    </select>
+                </div>
+                
+                <button class="btn btn-primary w-100" onclick="loadMapData()">
+                    🔄 Actualiser
+                </button>
+                
+                <div class="stats-card">
+                    <h5>📊 Statistiques</h5>
+                    <div class="stat-row">
+                        <span>Total membres</span>
+                        <span class="stat-value" id="stat-total">-</span>
+                    </div>
+                    <div class="stat-row">
+                        <span>Avec famille</span>
+                        <span class="stat-value" id="stat-family">-</span>
+                    </div>
+                    <div class="stat-row">
+                        <span>Familles localisées</span>
+                        <span class="stat-value" id="stat-coords">-</span>
+                    </div>
+                </div>
+                
+                <div class="legend">
+                    <h6>Légende</h6>
+                    <div class="legend-item">
+                        <div class="legend-marker marker-site"></div>
+                        <span>Églises</span>
+                    </div>
+                    <div class="legend-item">
+                        <div class="legend-marker marker-family"></div>
+                        <span>Familles</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script>
+        let map;
+        
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('Init carte...');
+            
+            map = L.map('map').setView([4.9225, -52.3058], 11);
+            
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                attribution: '© OpenStreetMap'
+            }).addTo(map);
+            
+            loadMapData();
+        });
+        
+        function loadMapData() {
+            const site = document.getElementById('filter-site').value;
+            const status = document.getElementById('filter-status').value;
+            
+            let url = '/admin/members/map/data/?';
+            if (site) url += 'site=' + site + '&';
+            if (status) url += 'status=' + status;
+            
+            console.log('Fetching:', url);
+            
+            fetch(url)
+                .then(r => r.json())
+                .then(data => {
+                    console.log('Data:', data);
+                    
+                    // Clear existing markers
+                    map.eachLayer(layer => {
+                        if (layer instanceof L.Marker) {
+                            map.removeLayer(layer);
+                        }
+                    });
+                    
+                    // Add sites
+                    data.sites.forEach(site => {
+                        console.log('Adding site:', site.name);
+                        L.marker([site.lat, site.lng])
+                            .bindPopup(`<div class="popup-title">⛪ ${site.name}</div>
+                                <p>${site.address}<br>${site.city}</p>
+                                <p><strong>${site.member_count} membres</strong></p>`)
+                            .addTo(map);
+                    });
+                    
+                    // Add families
+                    data.families.forEach(f => {
+                        const greenIcon = L.icon({
+                            iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-green.png',
+                            shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-shadow.png',
+                            iconSize: [25, 41],
+                            iconAnchor: [12, 41],
+                            popupAnchor: [1, -34]
+                        });
+                        
+                        let members = f.members.map(m => `• ${m.name}`).join('<br>');
+                        L.marker([f.lat, f.lng], {icon: greenIcon})
+                            .bindPopup(`<div class="popup-title">🏠 ${f.name}</div>
+                                <p>${f.address}<br>${f.neighborhood}</p>
+                                <p><strong>${f.member_count} membres</strong></p>
+                                <small>${members}</small>`)
+                            .addTo(map);
+                    });
+                    
+                    // Update stats
+                    document.getElementById('stat-total').textContent = data.stats.total_members;
+                    document.getElementById('stat-family').textContent = data.stats.members_with_family;
+                    document.getElementById('stat-coords').textContent = 
+                        data.stats.families_with_coords + '/' + data.stats.families_total;
+                })
+                .catch(err => console.error('Error:', err));
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,59 @@
+{% extends 'base.html' %}
+
+{% block title %}Nouvelle annonce{% endblock %}
+{% block page_title %}Créer une annonce{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-8">
+        <div class="card border-0 shadow-sm">
+            <div class="card-body p-4">
+                <form method="post">
+                    {% csrf_token %}
+                    
+                    <div class="mb-4">
+                        <label class="form-label fw-bold">Titre</label>
+                        <input type="text" name="title" class="form-control form-control-lg" required
+                               placeholder="Titre de l'annonce">
+                    </div>
+                    
+                    <div class="mb-4">
+                        <label class="form-label fw-bold">Contenu</label>
+                        <textarea name="content" class="form-control" rows="6" required
+                                  placeholder="Contenu de l'annonce..."></textarea>
+                    </div>
+                    
+                    <div class="row mb-4">
+                        <div class="col-md-6">
+                            <label class="form-label">Date de début (optionnel)</label>
+                            <input type="date" name="start_date" class="form-control">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Date de fin (optionnel)</label>
+                            <input type="date" name="end_date" class="form-control">
+                        </div>
+                    </div>
+                    
+                    <div class="mb-4">
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" name="is_pinned" id="is_pinned">
+                            <label class="form-check-label" for="is_pinned">
+                                <i class="bi bi-pin-angle me-1"></i> Épingler cette annonce
+                            </label>
+                        </div>
+                    </div>
+                    
+                    <div class="d-grid gap-2">
+                        <button type="submit" class="btn btn-primary btn-lg">
+                            <i class="bi bi-megaphone me-2"></i> Publier l'annonce
+                        </button>
+                        <a href="{% url 'communication:announcements' %}" class="btn btn-outline-secondary">
+                            Annuler
+                        </a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

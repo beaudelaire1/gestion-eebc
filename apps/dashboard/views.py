@@ -171,7 +171,7 @@ def home(request):
                 'icon': 'person-exclamation',
                 'title': 'Rôles non confirmés',
                 'message': f"{worship_stats['unconfirmed_roles_count']} rôle(s) non confirmé(s) pour le culte de dimanche.",
-                'link': f'/worship/services/{next_service.pk}/'
+                'link': f'/app/worship/services/{next_service.pk}/'
             })
     
     context = {

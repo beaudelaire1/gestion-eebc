@@ -115,131 +115,34 @@
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    // Centre de la Guyane (Cayenne)
-    const defaultCenter = [4.9225, -52.3058];
-    const defaultZoom = 11;
+    console.log('Initialisation de la carte...');
     
-    // Initialiser la carte
-    const map = L.map('map').setView(defaultCenter, defaultZoom);
+    // Centre de la Guyane (Cayenne)
+    const map = L.map('map').setView([4.9225, -52.3058], 11);
     
     // Couche OpenStreetMap
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+        attribution: '&copy; OpenStreetMap contributors'
     }).addTo(map);
     
-    // Icônes personnalisées
-    const churchIcon = L.divIcon({
-        className: 'custom-marker',
-        html: '<div style="background:#0A36FF;width:30px;height:30px;border-radius:50%;display:flex;align-items:center;justify-content:center;color:white;font-size:16px;box-shadow:0 2px 5px rgba(0,0,0,0.3);"><i class="bi bi-church"></i></div>',
-        iconSize: [30, 30],
-        iconAnchor: [15, 15],
-        popupAnchor: [0, -15]
-    });
-    
-    const eventIcon = L.divIcon({
-        className: 'custom-marker',
-        html: '<div style="background:#ffc107;width:25px;height:25px;border-radius:50%;display:flex;align-items:center;justify-content:center;color:#333;font-size:14px;box-shadow:0 2px 5px rgba(0,0,0,0.3);"><i class="bi bi-calendar-event"></i></div>',
-        iconSize: [25, 25],
-        iconAnchor: [12, 12],
-        popupAnchor: [0, -12]
-    });
-    
-    // Groupe de marqueurs
-    const markers = L.featureGroup().addTo(map);
-    
-    // Données des sites
-    const sites = [
-        {% for site in sites %}
-        {% if site.latitude and site.longitude %}
-        {
-            name: "{{ site.name }}",
-            lat: {{ site.latitude }},
-            lng: {{ site.longitude }},
-            address: "{{ site.address|escapejs }}",
-            city: "{{ site.city }}",
-            phone: "{{ site.phone }}",
-            schedule: "{{ site.worship_schedule|escapejs }}",
-            type: 'church'
-        },
-        {% endif %}
-        {% endfor %}
-    ];
-    
-    // Données des événements
-    const events = [
-        {% for event in upcoming_events %}
-        {% if event.site and event.site.latitude and event.site.longitude %}
-        {
-            name: "{{ event.title|escapejs }}",
-            lat: {{ event.site.latitude }},
-            lng: {{ event.site.longitude }},
-            date: "{{ event.start_date|date:'d/m/Y' }}",
-            time: "{{ event.start_time|time:'H:i' }}",
-            location: "{{ event.location|escapejs }}",
-            type: 'event'
-        },
-        {% endif %}
-        {% endfor %}
-    ];
-    
-    // Ajouter les marqueurs des sites
-    sites.forEach(site => {
-        const popup = `
-            <div class="popup-title">${site.name}</div>
-            <div class="popup-info"><i class="bi bi-geo-alt"></i> ${site.address}</div>
-            <div class="popup-info"><i class="bi bi-building"></i> ${site.city}</div>
-            ${site.phone ? `<div class="popup-info"><i class="bi bi-telephone"></i> ${site.phone}</div>` : ''}
-            ${site.schedule ? `<div class="popup-info"><i class="bi bi-clock"></i> ${site.schedule}</div>` : ''}
-            <div class="mt-2">
-                <a href="https://www.google.com/maps/dir/?api=1&destination=${site.lat},${site.lng}" 
-                   target="_blank" class="btn btn-sm btn-primary">
-                    <i class="bi bi-signpost-2"></i> Itinéraire
-                </a>
-            </div>
-        `;
-        
-        L.marker([site.lat, site.lng], {icon: churchIcon})
-            .bindPopup(popup)
-            .addTo(markers);
-    });
+    // Ajouter les marqueurs des sites directement
+    {% for site in sites %}
+    console.log('Ajout site: {{ site.name }}');
+    L.marker([{{ site.latitude }}, {{ site.longitude }}])
+        .bindPopup('<strong>{{ site.name|escapejs }}</strong><br>{{ site.address|escapejs }}<br>{{ site.city|escapejs }}')
+        .addTo(map);
+    {% empty %}
+    console.log('Aucun site trouvé avec coordonnées GPS');
+    {% endfor %}
     
     // Ajouter les marqueurs des événements
-    events.forEach(event => {
-        const popup = `
-            <div class="popup-title">${event.name}</div>
-            <div class="popup-info"><i class="bi bi-calendar"></i> ${event.date}</div>
-            ${event.time ? `<div class="popup-info"><i class="bi bi-clock"></i> ${event.time}</div>` : ''}
-            ${event.location ? `<div class="popup-info"><i class="bi bi-geo-alt"></i> ${event.location}</div>` : ''}
-        `;
-        
-        L.marker([event.lat, event.lng], {icon: eventIcon})
-            .bindPopup(popup)
-            .addTo(markers);
-    });
+    {% for event in upcoming_events %}
+    L.marker([{{ event.site.latitude }}, {{ event.site.longitude }}])
+        .bindPopup('<strong>{{ event.title|escapejs }}</strong><br>{{ event.start_date|date:"d/m/Y" }}')
+        .addTo(map);
+    {% endfor %}
     
-    // Ajuster la vue pour montrer tous les marqueurs
-    if (markers.getLayers().length > 0) {
-        map.fitBounds(markers.getBounds(), {padding: [50, 50]});
-    }
-    
-    // Clic sur les liens de sites
-    document.querySelectorAll('.site-link').forEach(link => {
-        link.addEventListener('click', function(e) {
-            e.preventDefault();
-            const lat = parseFloat(this.dataset.lat);
-            const lng = parseFloat(this.dataset.lng);
-            if (lat && lng) {
-                map.setView([lat, lng], 15);
-                // Ouvrir le popup du marqueur correspondant
-                markers.eachLayer(layer => {
-                    const pos = layer.getLatLng();
-                    if (Math.abs(pos.lat - lat) < 0.001 && Math.abs(pos.lng - lng) < 0.001) {
-                        layer.openPopup();
-                    }
-                });
-            }
-        });
-    });
+    console.log('Carte initialisée');
 });
 </script>
 {% endblock %}

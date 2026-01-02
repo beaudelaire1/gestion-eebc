@@ -193,3 +193,255 @@ def reports(request):
     """Rapports financiers."""
     # Placeholder pour les rapports avancés
     return render(request, 'finance/reports.html')
+
+
+# =============================================================================
+# REÇUS FISCAUX
+# =============================================================================
+
+from .models import TaxReceipt, OnlineDonation
+
+
+@login_required
+def tax_receipt_list(request):
+    """Liste des reçus fiscaux."""
+    receipts = TaxReceipt.objects.select_related('donor', 'created_by').order_by('-created_at')
+    
+    # Filtres
+    year = request.GET.get('year')
+    status = request.GET.get('status')
+    
+    if year:
+        receipts = receipts.filter(fiscal_year=year)
+    if status:
+        receipts = receipts.filter(status=status)
+    
+    # Stats
+    total_amount = receipts.filter(status='issued').aggregate(Sum('total_amount'))['total_amount__sum'] or 0
+    
+    context = {
+        'receipts': receipts,
+        'total_amount': total_amount,
+        'years': TaxReceipt.objects.values_list('fiscal_year', flat=True).distinct().order_by('-fiscal_year'),
+        'statuses': TaxReceipt.Status.choices if hasattr(TaxReceipt, 'Status') else [],
+    }
+    
+    return render(request, 'finance/tax_receipt_list.html', context)
+
+
+@login_required
+def tax_receipt_create(request):
+    """Créer un reçu fiscal."""
+    from apps.members.models import Member
+    
+    if request.method == 'POST':
+        donor_id = request.POST.get('donor')
+        fiscal_year = int(request.POST.get('fiscal_year', date.today().year))
+        
+        donor = get_object_or_404(Member, pk=donor_id)
+        
+        # Calculer le total des dons de l'année
+        donations = OnlineDonation.objects.filter(
+            donor_email=donor.email,
+            status='completed',
+            created_at__year=fiscal_year
+        )
+        
+        transactions = FinancialTransaction.objects.filter(
+            member=donor,
+            transaction_type__in=['don', 'dime', 'offrande'],
+            status='valide',
+            transaction_date__year=fiscal_year
+        )
+        
+        total = (donations.aggregate(Sum('amount'))['amount__sum'] or 0) + \
+                (transactions.aggregate(Sum('amount'))['amount__sum'] or 0)
+        
+        if total <= 0:
+            messages.error(request, f"Aucun don trouvé pour {donor.full_name} en {fiscal_year}")
+            return redirect('finance:tax_receipt_create')
+        
+        # Créer le reçu
+        receipt = TaxReceipt.objects.create(
+            donor=donor,
+            fiscal_year=fiscal_year,
+            total_amount=total,
+            donor_name=donor.full_name,
+            donor_address=f"{donor.address}, {donor.postal_code} {donor.city}",
+            created_by=request.user,
+            status='draft'
+        )
+        
+        messages.success(request, f"Reçu fiscal créé pour {donor.full_name}")
+        return redirect('finance:tax_receipt_detail', pk=receipt.pk)
+    
+    members = Member.objects.filter(status='actif').order_by('last_name', 'first_name')
+    
+    context = {
+        'members': members,
+        'current_year': date.today().year,
+        'years': range(date.today().year - 2, date.today().year + 1),
+    }
+    
+    return render(request, 'finance/tax_receipt_create.html', context)
+
+
+@login_required
+def tax_receipt_detail(request, pk):
+    """Détail d'un reçu fiscal."""
+    receipt = get_object_or_404(TaxReceipt.objects.select_related('donor', 'created_by'), pk=pk)
+    
+    context = {
+        'receipt': receipt,
+    }
+    
+    return render(request, 'finance/tax_receipt_detail.html', context)
+
+
+@login_required
+def tax_receipt_pdf(request, pk):
+    """Générer le PDF d'un reçu fiscal."""
+    from .pdf_service import TaxReceiptPDFService
+    
+    receipt = get_object_or_404(TaxReceipt, pk=pk)
+    
+    # Générer le PDF
+    pdf_service = TaxReceiptPDFService()
+    pdf_content = pdf_service.generate_receipt_pdf(receipt)
+    
+    # Mettre à jour le statut si brouillon
+    if receipt.status == 'draft':
+        receipt.status = 'issued'
+        receipt.issued_date = date.today()
+        receipt.save()
+    
+    from django.http import HttpResponse
+    response = HttpResponse(pdf_content, content_type='application/pdf')
+    response['Content-Disposition'] = f'inline; filename="recu_fiscal_{receipt.receipt_number}.pdf"'
+    
+    return response
+
+
+@login_required
+def tax_receipt_send(request, pk):
+    """Envoyer le reçu fiscal par email."""
+    from .pdf_service import TaxReceiptPDFService
+    from django.core.mail import EmailMessage
+    
+    receipt = get_object_or_404(TaxReceipt, pk=pk)
+    
+    if not receipt.donor or not receipt.donor.email:
+        messages.error(request, "Le donateur n'a pas d'adresse email")
+        return redirect('finance:tax_receipt_detail', pk=pk)
+    
+    # Générer le PDF
+    pdf_service = TaxReceiptPDFService()
+    pdf_content = pdf_service.generate_receipt_pdf(receipt)
+    
+    # Envoyer l'email
+    email = EmailMessage(
+        subject=f"Reçu fiscal {receipt.fiscal_year} - {receipt.receipt_number}",
+        body=f"""Bonjour {receipt.donor.first_name},
+
+Veuillez trouver ci-joint votre reçu fiscal pour l'année {receipt.fiscal_year}.
+
+Montant total des dons : {receipt.total_amount} €
+
+Ce document est à conserver pour votre déclaration d'impôts.
+
+Merci pour votre générosité !
+
+Fraternellement,
+L'équipe EEBC""",
+        from_email=None,  # Utilise DEFAULT_FROM_EMAIL
+        to=[receipt.donor.email],
+    )
+    email.attach(
+        f"recu_fiscal_{receipt.receipt_number}.pdf",
+        pdf_content,
+        'application/pdf'
+    )
+    
+    try:
+        email.send()
+        receipt.status = 'sent'
+        receipt.sent_date = date.today()
+        receipt.save()
+        messages.success(request, f"Reçu envoyé à {receipt.donor.email}")
+    except Exception as e:
+        messages.error(request, f"Erreur d'envoi : {e}")
+    
+    return redirect('finance:tax_receipt_detail', pk=pk)
+
+
+# =============================================================================
+# JUSTIFICATIFS AVEC OCR
+# =============================================================================
+
+@login_required
+def receipt_proof_list(request):
+    """Liste des justificatifs."""
+    proofs = ReceiptProof.objects.select_related('transaction', 'uploaded_by').order_by('-uploaded_at')
+    
+    # Filtres
+    ocr_status = request.GET.get('ocr_status')
+    if ocr_status:
+        proofs = proofs.filter(ocr_status=ocr_status)
+    
+    context = {
+        'proofs': proofs,
+        'ocr_statuses': ReceiptProof.OCRStatus.choices if hasattr(ReceiptProof, 'OCRStatus') else [],
+    }
+    
+    return render(request, 'finance/receipt_proof_list.html', context)
+
+
+@login_required
+def receipt_proof_upload(request):
+    """Upload d'un justificatif."""
+    if request.method == 'POST':
+        form = ProofUploadForm(request.POST, request.FILES)
+        if form.is_valid():
+            proof = form.save(commit=False)
+            proof.uploaded_by = request.user
+            proof.save()
+            messages.success(request, "Justificatif uploadé. Vous pouvez lancer l'OCR.")
+            return redirect('finance:receipt_proof_list')
+    else:
+        form = ProofUploadForm()
+    
+    context = {
+        'form': form,
+        'transactions': FinancialTransaction.objects.filter(
+            status='en_attente'
+        ).order_by('-transaction_date')[:50],
+    }
+    
+    return render(request, 'finance/receipt_proof_upload.html', context)
+
+
+@login_required
+def receipt_process_ocr(request, pk):
+    """Lancer le traitement OCR sur un justificatif."""
+    from .ocr_service import OCRService
+    
+    proof = get_object_or_404(ReceiptProof, pk=pk)
+    
+    try:
+        ocr_service = OCRService()
+        result = ocr_service.process_receipt(proof.image.path)
+        
+        proof.ocr_status = 'termine'
+        proof.ocr_raw_text = result.get('raw_text', '')
+        proof.ocr_extracted_amount = result.get('amount')
+        proof.ocr_extracted_date = result.get('date')
+        proof.ocr_confidence = result.get('confidence', 0)
+        proof.save()
+        
+        messages.success(request, f"OCR terminé. Montant détecté : {proof.ocr_extracted_amount or 'N/A'}")
+    except Exception as e:
+        proof.ocr_status = 'echec'
+        proof.save()
+        messages.error(request, f"Erreur OCR : {e}")
+    
+    return redirect('finance:receipt_proof_list')

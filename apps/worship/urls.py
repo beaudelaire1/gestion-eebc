@@ -6,11 +6,24 @@ from . import views
 app_name = 'worship'
 
 urlpatterns = [
-    # Services
+    # Services (ancien système)
     path('', views.service_list, name='service_list'),
     path('services/<int:pk>/', views.service_detail, name='service_detail'),
     path('services/create/', views.service_create, name='service_create'),
     path('services/<int:pk>/edit/', views.service_edit, name='service_edit'),
+    
+    # Planification mensuelle (nouveau système)
+    path('planning/', views.monthly_schedule_list, name='schedule_list'),
+    path('planning/create/', views.monthly_schedule_create, name='schedule_create'),
+    path('planning/<int:pk>/', views.monthly_schedule_detail, name='schedule_detail'),
+    path('planning/<int:pk>/edit/', views.monthly_schedule_edit, name='schedule_edit'),
+    path('planning/<int:pk>/generate/', views.generate_sundays, name='generate_sundays'),
+    path('planning/<int:pk>/publish/', views.publish_schedule, name='publish_schedule'),
+    path('planning/<int:pk>/send-notifications/', views.send_notifications, name='send_notifications'),
+    
+    # Cultes programmés
+    path('culte/<int:pk>/', views.scheduled_service_detail, name='culte_detail'),
+    path('culte/<int:pk>/edit/', views.scheduled_service_edit, name='culte_edit'),
     
     # Rôles (HTMX)
     path('services/<int:service_pk>/roles/assign/', views.role_assign, name='role_assign'),

@@ -1,0 +1,105 @@
+{% extends 'base.html' %}
+
+{% block title %}Culte du {{ service.date|date:"d/m/Y" }}{% endblock %}
+{% block page_title %}Culte du {{ service.date|date:"l d F Y" }}{% endblock %}
+{% block page_subtitle %}{{ schedule.site.name }}{% endblock %}
+
+{% block page_actions %}
+<a href="{% url 'worship:culte_edit' service.pk %}" class="btn btn-primary">
+    <i class="bi bi-pencil me-1"></i> Modifier
+</a>
+{% endblock %}
+
+{% block content %}
+<div class="row g-4">
+    <!-- Infos -->
+    <div class="col-lg-8">
+        <div class="card border-0 shadow-sm mb-4">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0">
+                    <i class="bi bi-calendar-event me-2"></i>
+                    {{ service.date|date:"l d F Y" }} à {{ service.start_time|time:"H:i" }}
+                </h5>
+            </div>
+            <div class="card-body">
+                {% if service.theme %}
+                <div class="mb-3">
+                    <label class="text-muted small">Thème</label>
+                    <div class="fs-5 fw-bold">{{ service.theme }}</div>
+                </div>
+                {% endif %}
+                
+                {% if service.bible_text %}
+                <div class="mb-3">
+                    <label class="text-muted small">Texte biblique</label>
+                    <div class="fs-5">{{ service.bible_text }}</div>
+                </div>
+                {% endif %}
+                
+                {% if service.notes %}
+                <div class="mb-3">
+                    <label class="text-muted small">Notes</label>
+                    <div>{{ service.notes }}</div>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+        
+        <!-- Participants -->
+        <div class="card border-0 shadow-sm">
+            <div class="card-header bg-transparent">
+                <h5 class="mb-0"><i class="bi bi-people me-2"></i>Équipe du jour</h5>
+            </div>
+            <div class="card-body p-0">
+                <table class="table table-hover mb-0">
+                    <tbody>
+                        {% for p in participants %}
+                        <tr>
+                            <td class="fw-bold" style="width: 150px;">{{ p.role }}</td>
+                            <td>{{ p.member.full_name }}</td>
+                            <td class="text-muted">{{ p.member.phone }}</td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="3" class="text-center py-4 text-muted">
+                                Aucun participant assigné
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Sidebar -->
+    <div class="col-lg-4">
+        <div class="card border-0 shadow-sm mb-4">
+            <div class="card-header bg-transparent">
+                <h6 class="mb-0">Statut notifications</h6>
+            </div>
+            <div class="card-body">
+                {% if service.notifications_sent %}
+                <div class="alert alert-success mb-0">
+                    <i class="bi bi-check-circle me-2"></i>
+                    Notifications envoyées le {{ service.notifications_sent_at|date:"d/m/Y H:i" }}
+                </div>
+                {% else %}
+                <div class="alert alert-warning mb-0">
+                    <i class="bi bi-clock me-2"></i>
+                    Notifications en attente
+                </div>
+                {% endif %}
+            </div>
+        </div>
+        
+        <div class="card border-0 shadow-sm">
+            <div class="card-body">
+                <a href="{% url 'worship:schedule_detail' schedule.pk %}" class="btn btn-outline-primary w-100">
+                    <i class="bi bi-arrow-left me-1"></i> Retour au planning
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

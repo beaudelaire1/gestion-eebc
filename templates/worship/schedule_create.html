@@ -1,0 +1,64 @@
+{% extends 'base.html' %}
+
+{% block title %}Nouveau planning{% endblock %}
+{% block page_title %}Nouveau planning mensuel{% endblock %}
+{% block page_subtitle %}Créez un planning pour un mois{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-6">
+        <div class="card border-0 shadow-sm">
+            <div class="card-body p-4">
+                <form method="post">
+                    {% csrf_token %}
+                    
+                    <div class="mb-4">
+                        <label class="form-label fw-bold">Site</label>
+                        <select name="site" class="form-select form-select-lg" required>
+                            <option value="">Sélectionnez un site</option>
+                            {% for site in sites %}
+                            <option value="{{ site.id }}">{{ site.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    
+                    <div class="row mb-4">
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold">Mois</label>
+                            <select name="month" class="form-select form-select-lg" required>
+                                {% for num, name in months %}
+                                <option value="{{ num }}" {% if num == current_month %}selected{% endif %}>
+                                    {{ name }}
+                                </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold">Année</label>
+                            <select name="year" class="form-select form-select-lg" required>
+                                {% for y in years %}
+                                <option value="{{ y }}" {% if y == current_year %}selected{% endif %}>{{ y }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div class="alert alert-info">
+                        <i class="bi bi-info-circle me-2"></i>
+                        Après création, vous pourrez générer automatiquement les dimanches du mois et assigner les équipes.
+                    </div>
+                    
+                    <div class="d-grid gap-2">
+                        <button type="submit" class="btn btn-primary btn-lg">
+                            <i class="bi bi-plus-lg me-2"></i> Créer le planning
+                        </button>
+                        <a href="{% url 'worship:schedule_list' %}" class="btn btn-outline-secondary">
+                            Annuler
+                        </a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

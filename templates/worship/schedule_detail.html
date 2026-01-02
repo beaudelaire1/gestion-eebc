@@ -1,0 +1,155 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ schedule.month_name }} {{ schedule.year }} - {{ schedule.site.name }}{% endblock %}
+{% block page_title %}{{ schedule.month_name }} {{ schedule.year }}{% endblock %}
+{% block page_subtitle %}Planning des cultes - {{ schedule.site.name }}{% endblock %}
+
+{% block page_actions %}
+<div class="btn-group">
+    {% if schedule.status == 'brouillon' %}
+    <a href="{% url 'worship:generate_sundays' schedule.pk %}" class="btn btn-info">
+        <i class="bi bi-calendar-plus me-1"></i> Générer dimanches
+    </a>
+    {% endif %}
+    
+    {% if schedule.status != 'publie' %}
+    <a href="{% url 'worship:publish_schedule' schedule.pk %}" class="btn btn-success">
+        <i class="bi bi-send me-1"></i> Publier
+    </a>
+    {% endif %}
+    
+    {% if schedule.status == 'publie' %}
+    <a href="{% url 'worship:send_notifications' schedule.pk %}" class="btn btn-warning">
+        <i class="bi bi-bell me-1"></i> Envoyer notifications
+    </a>
+    {% endif %}
+    
+    <a href="{% url 'worship:schedule_edit' schedule.pk %}" class="btn btn-outline-primary">
+        <i class="bi bi-gear me-1"></i> Paramètres
+    </a>
+</div>
+{% endblock %}
+
+{% block content %}
+<!-- Statut et infos -->
+<div class="row mb-4">
+    <div class="col-md-8">
+        <div class="card border-0 shadow-sm">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <span class="badge bg-{% if schedule.status == 'publie' %}success{% elif schedule.status == 'valide' %}info{% elif schedule.status == 'en_cours' %}warning{% else %}secondary{% endif %} fs-6 me-2">
+                            {{ schedule.get_status_display }}
+                        </span>
+                        <span class="text-muted">{{ services.count }} culte(s) programmé(s)</span>
+                    </div>
+                    <div class="text-muted">
+                        <i class="bi bi-bell me-1"></i>
+                        Notifications: 
+                        {% if schedule.notify_by_email %}<span class="badge bg-primary">Email</span>{% endif %}
+                        {% if schedule.notify_by_sms %}<span class="badge bg-success">SMS</span>{% endif %}
+                        {% if schedule.notify_by_whatsapp %}<span class="badge bg-info">WhatsApp</span>{% endif %}
+                        <span class="ms-2">J-{{ schedule.days_before_service }}</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Liste des cultes -->
+<div class="card border-0 shadow-sm">
+    <div class="card-header bg-transparent">
+        <h5 class="mb-0"><i class="bi bi-calendar-week me-2"></i>Cultes du mois</h5>
+    </div>
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th>Date</th>
+                        <th>Heure</th>
+                        <th>Prédicateur</th>
+                        <th>Dirigeant</th>
+                        <th>Chef chorale</th>
+                        <th>Choristes</th>
+                        <th>Musiciens</th>
+                        <th>Notifs</th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for service in services %}
+                    <tr>
+                        <td>
+                            <strong>{{ service.date|date:"l d" }}</strong>
+                            {% if service.theme %}
+                            <br><small class="text-muted">{{ service.theme|truncatechars:30 }}</small>
+                            {% endif %}
+                        </td>
+                        <td>{{ service.start_time|time:"H:i" }}</td>
+                        <td>
+                            {% if service.preacher %}
+                            <span class="badge bg-primary">{{ service.preacher.first_name }}</span>
+                            {% else %}
+                            <span class="text-danger">—</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if service.worship_leader %}
+                            <span class="badge bg-success">{{ service.worship_leader.first_name }}</span>
+                            {% else %}
+                            <span class="text-danger">—</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if service.choir_leader %}
+                            <span class="badge bg-info">{{ service.choir_leader.first_name }}</span>
+                            {% else %}
+                            <span class="text-muted">—</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <span class="badge bg-secondary">{{ service.singers.count }}</span>
+                        </td>
+                        <td>
+                            <span class="badge bg-secondary">{{ service.musicians.count }}</span>
+                        </td>
+                        <td>
+                            {% if service.notifications_sent %}
+                            <span class="badge bg-success"><i class="bi bi-check"></i></span>
+                            {% else %}
+                            <span class="badge bg-warning"><i class="bi bi-clock"></i></span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <a href="{% url 'worship:culte_edit' service.pk %}" class="btn btn-sm btn-outline-primary">
+                                <i class="bi bi-pencil"></i>
+                            </a>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="9" class="text-center py-4">
+                            <p class="text-muted mb-2">Aucun culte programmé</p>
+                            <a href="{% url 'worship:generate_sundays' schedule.pk %}" class="btn btn-primary">
+                                <i class="bi bi-calendar-plus me-1"></i> Générer les dimanches
+                            </a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Légende -->
+<div class="mt-4">
+    <small class="text-muted">
+        <i class="bi bi-info-circle me-1"></i>
+        Cliquez sur <i class="bi bi-pencil"></i> pour assigner les équipes à chaque culte.
+        Les notifications seront envoyées {{ schedule.days_before_service }} jours avant chaque culte.
+    </small>
+</div>
+{% endblock %}

@@ -6,9 +6,16 @@ from django.urls import path, include
 from django.conf import settings
 from django.conf.urls.static import static
 
+# Import des vues admin personnalisées
+from apps.members.admin_views import members_map_view, members_map_data
+
 urlpatterns = [
     # Site vitrine public (page d'accueil par défaut)
     path('', include('apps.core.urls')),
+    
+    # Vues admin personnalisées (avant admin/)
+    path('admin/members/map/', members_map_view, name='admin_members_map'),
+    path('admin/members/map/data/', members_map_data, name='admin_members_map_data'),
     
     # Administration Django
     path('admin/', admin.site.urls),

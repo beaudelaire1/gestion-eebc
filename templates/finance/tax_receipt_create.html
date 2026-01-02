@@ -1,0 +1,55 @@
+{% extends 'base.html' %}
+
+{% block title %}Nouveau reçu fiscal{% endblock %}
+{% block page_title %}Créer un reçu fiscal{% endblock %}
+{% block page_subtitle %}Générez un reçu fiscal pour un donateur{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-6">
+        <div class="card border-0 shadow-sm">
+            <div class="card-body p-4">
+                <form method="post">
+                    {% csrf_token %}
+                    
+                    <div class="mb-4">
+                        <label class="form-label fw-bold">Donateur</label>
+                        <select name="donor" class="form-select form-select-lg" required>
+                            <option value="">Sélectionnez un membre</option>
+                            {% for member in members %}
+                            <option value="{{ member.id }}">
+                                {{ member.last_name }} {{ member.first_name }}
+                                {% if member.email %}({{ member.email }}){% endif %}
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    
+                    <div class="mb-4">
+                        <label class="form-label fw-bold">Année fiscale</label>
+                        <select name="fiscal_year" class="form-select form-select-lg" required>
+                            {% for y in years %}
+                            <option value="{{ y }}" {% if y == current_year %}selected{% endif %}>{{ y }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    
+                    <div class="alert alert-info">
+                        <i class="bi bi-info-circle me-2"></i>
+                        Le système calculera automatiquement le total des dons (transactions + dons en ligne) pour l'année sélectionnée.
+                    </div>
+                    
+                    <div class="d-grid gap-2">
+                        <button type="submit" class="btn btn-primary btn-lg">
+                            <i class="bi bi-file-earmark-text me-2"></i> Générer le reçu
+                        </button>
+                        <a href="{% url 'finance:tax_receipt_list' %}" class="btn btn-outline-secondary">
+                            Annuler
+                        </a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,111 @@
+{% extends 'base.html' %}
+
+{% block title %}Justificatifs{% endblock %}
+{% block page_title %}Justificatifs{% endblock %}
+{% block page_subtitle %}Gérez les justificatifs de paiement avec OCR{% endblock %}
+
+{% block page_actions %}
+<a href="{% url 'finance:receipt_proof_upload' %}" class="btn btn-primary">
+    <i class="bi bi-upload me-1"></i> Uploader un justificatif
+</a>
+{% endblock %}
+
+{% block content %}
+<!-- Filtres -->
+<div class="card border-0 shadow-sm mb-4">
+    <div class="card-body">
+        <form method="get" class="row g-3 align-items-end">
+            <div class="col-md-6">
+                <label class="form-label">Statut OCR</label>
+                <select name="ocr_status" class="form-select">
+                    <option value="">Tous</option>
+                    <option value="non_traite" {% if request.GET.ocr_status == 'non_traite' %}selected{% endif %}>Non traité</option>
+                    <option value="en_cours" {% if request.GET.ocr_status == 'en_cours' %}selected{% endif %}>En cours</option>
+                    <option value="termine" {% if request.GET.ocr_status == 'termine' %}selected{% endif %}>Terminé</option>
+                    <option value="echec" {% if request.GET.ocr_status == 'echec' %}selected{% endif %}>Échec</option>
+                </select>
+            </div>
+            <div class="col-md-6">
+                <button type="submit" class="btn btn-outline-primary w-100">
+                    <i class="bi bi-filter me-1"></i> Filtrer
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Liste -->
+<div class="row g-4">
+    {% for proof in proofs %}
+    <div class="col-md-6 col-lg-4">
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-header bg-transparent d-flex justify-content-between align-items-center">
+                <span class="text-muted small">{{ proof.uploaded_at|date:"d/m/Y H:i" }}</span>
+                {% if proof.ocr_status == 'non_traite' %}
+                <span class="badge bg-secondary">Non traité</span>
+                {% elif proof.ocr_status == 'en_cours' %}
+                <span class="badge bg-warning">En cours</span>
+                {% elif proof.ocr_status == 'termine' %}
+                <span class="badge bg-success">Terminé</span>
+                {% elif proof.ocr_status == 'echec' %}
+                <span class="badge bg-danger">Échec</span>
+                {% endif %}
+            </div>
+            <div class="card-body">
+                {% if proof.image %}
+                <img src="{{ proof.image.url }}" class="img-fluid rounded mb-3" style="max-height: 150px; object-fit: cover;">
+                {% endif %}
+                
+                {% if proof.transaction %}
+                <p class="mb-2">
+                    <small class="text-muted">Transaction</small><br>
+                    <strong>{{ proof.transaction.reference }}</strong>
+                </p>
+                {% endif %}
+                
+                {% if proof.ocr_status == 'termine' %}
+                <div class="bg-light rounded p-2 mb-2">
+                    <small class="text-muted">Données extraites :</small>
+                    <div class="row">
+                        <div class="col-6">
+                            <strong>Montant:</strong> {{ proof.ocr_extracted_amount|default:"-" }}
+                        </div>
+                        <div class="col-6">
+                            <strong>Date:</strong> {{ proof.ocr_extracted_date|default:"-" }}
+                        </div>
+                    </div>
+                    {% if proof.ocr_confidence %}
+                    <small class="text-muted">Confiance: {{ proof.ocr_confidence }}%</small>
+                    {% endif %}
+                </div>
+                {% endif %}
+            </div>
+            <div class="card-footer bg-transparent">
+                {% if proof.ocr_status == 'non_traite' or proof.ocr_status == 'echec' %}
+                <a href="{% url 'finance:receipt_process_ocr' proof.pk %}" class="btn btn-sm btn-primary w-100">
+                    <i class="bi bi-cpu me-1"></i> Lancer OCR
+                </a>
+                {% else %}
+                <a href="{{ proof.image.url }}" class="btn btn-sm btn-outline-primary w-100" target="_blank">
+                    <i class="bi bi-eye me-1"></i> Voir l'image
+                </a>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    {% empty %}
+    <div class="col-12">
+        <div class="card border-0 shadow-sm">
+            <div class="card-body text-center py-5">
+                <i class="bi bi-receipt display-1 text-muted"></i>
+                <h4 class="mt-3">Aucun justificatif</h4>
+                <p class="text-muted">Uploadez votre premier justificatif</p>
+                <a href="{% url 'finance:receipt_proof_upload' %}" class="btn btn-primary">
+                    <i class="bi bi-upload me-1"></i> Uploader
+                </a>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+{% endblock %}

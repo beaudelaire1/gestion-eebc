@@ -1,0 +1,172 @@
+{% extends 'base.html' %}
+
+{% block title %}Culte du {{ service.date|date:"d/m/Y" }}{% endblock %}
+{% block page_title %}Culte du {{ service.date|date:"l d F Y" }}{% endblock %}
+{% block page_subtitle %}{{ schedule.site.name }} - {{ service.start_time|time:"H:i" }}{% endblock %}
+
+{% block content %}
+<form method="post">
+    {% csrf_token %}
+    
+    <div class="row g-4">
+        <!-- Infos générales -->
+        <div class="col-lg-6">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-transparent">
+                    <h5 class="mb-0"><i class="bi bi-info-circle me-2"></i>Informations</h5>
+                </div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <label class="form-label">Heure de début</label>
+                        <input type="time" name="start_time" class="form-control" 
+                               value="{{ service.start_time|time:'H:i' }}">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Thème</label>
+                        <input type="text" name="theme" class="form-control" 
+                               value="{{ service.theme }}" placeholder="Ex: La foi qui déplace les montagnes">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Texte biblique</label>
+                        <input type="text" name="bible_text" class="form-control" 
+                               value="{{ service.bible_text }}" placeholder="Ex: Matthieu 17:20">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Notes</label>
+                        <textarea name="notes" class="form-control" rows="3">{{ service.notes }}</textarea>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Équipe principale -->
+        <div class="col-lg-6">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-transparent">
+                    <h5 class="mb-0"><i class="bi bi-people me-2"></i>Équipe principale</h5>
+                </div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <label class="form-label fw-bold text-primary">
+                            <i class="bi bi-mic me-1"></i> Prédicateur
+                        </label>
+                        <select name="preacher" class="form-select">
+                            <option value="">-- Sélectionner --</option>
+                            {% for member in members %}
+                            <option value="{{ member.id }}" {% if service.preacher_id == member.id %}selected{% endif %}>
+                                {{ member.last_name }} {{ member.first_name }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label fw-bold text-success">
+                            <i class="bi bi-person-badge me-1"></i> Dirigeant de culte
+                        </label>
+                        <select name="worship_leader" class="form-select">
+                            <option value="">-- Sélectionner --</option>
+                            {% for member in members %}
+                            <option value="{{ member.id }}" {% if service.worship_leader_id == member.id %}selected{% endif %}>
+                                {{ member.last_name }} {{ member.first_name }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label fw-bold text-info">
+                            <i class="bi bi-music-note-list me-1"></i> Chef de chorale
+                        </label>
+                        <select name="choir_leader" class="form-select">
+                            <option value="">-- Sélectionner --</option>
+                            {% for member in members %}
+                            <option value="{{ member.id }}" {% if service.choir_leader_id == member.id %}selected{% endif %}>
+                                {{ member.last_name }} {{ member.first_name }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">
+                                <i class="bi bi-speaker me-1"></i> Sonorisation
+                            </label>
+                            <select name="sound_tech" class="form-select">
+                                <option value="">-- Sélectionner --</option>
+                                {% for member in members %}
+                                <option value="{{ member.id }}" {% if service.sound_tech_id == member.id %}selected{% endif %}>
+                                    {{ member.first_name }} {{ member.last_name|slice:":1" }}.
+                                </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label">
+                                <i class="bi bi-projector me-1"></i> Projection
+                            </label>
+                            <select name="projection" class="form-select">
+                                <option value="">-- Sélectionner --</option>
+                                {% for member in members %}
+                                <option value="{{ member.id }}" {% if service.projection_id == member.id %}selected{% endif %}>
+                                    {{ member.first_name }} {{ member.last_name|slice:":1" }}.
+                                </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Choristes -->
+        <div class="col-lg-6">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-transparent">
+                    <h5 class="mb-0"><i class="bi bi-music-note-beamed me-2"></i>Choristes</h5>
+                </div>
+                <div class="card-body">
+                    <select name="singers" class="form-select" multiple size="8">
+                        {% for member in members %}
+                        <option value="{{ member.id }}" {% if member in service.singers.all %}selected{% endif %}>
+                            {{ member.last_name }} {{ member.first_name }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                    <small class="text-muted">Maintenez Ctrl pour sélectionner plusieurs personnes</small>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Musiciens -->
+        <div class="col-lg-6">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-transparent">
+                    <h5 class="mb-0"><i class="bi bi-vinyl me-2"></i>Musiciens</h5>
+                </div>
+                <div class="card-body">
+                    <select name="musicians" class="form-select" multiple size="8">
+                        {% for member in members %}
+                        <option value="{{ member.id }}" {% if member in service.musicians.all %}selected{% endif %}>
+                            {{ member.last_name }} {{ member.first_name }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                    <small class="text-muted">Maintenez Ctrl pour sélectionner plusieurs personnes</small>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Actions -->
+    <div class="mt-4 d-flex gap-2">
+        <button type="submit" class="btn btn-primary btn-lg">
+            <i class="bi bi-check-lg me-2"></i> Enregistrer
+        </button>
+        <a href="{% url 'worship:schedule_detail' schedule.pk %}" class="btn btn-outline-secondary btn-lg">
+            Annuler
+        </a>
+    </div>
+</form>
+{% endblock %}

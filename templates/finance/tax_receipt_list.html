@@ -1,0 +1,115 @@
+{% extends 'base.html' %}
+
+{% block title %}Reçus fiscaux{% endblock %}
+{% block page_title %}Reçus fiscaux{% endblock %}
+{% block page_subtitle %}Gérez les reçus fiscaux pour les donateurs{% endblock %}
+
+{% block page_actions %}
+<a href="{% url 'finance:tax_receipt_create' %}" class="btn btn-primary">
+    <i class="bi bi-plus-lg me-1"></i> Nouveau reçu
+</a>
+{% endblock %}
+
+{% block content %}
+<!-- Stats -->
+<div class="row mb-4">
+    <div class="col-md-4">
+        <div class="card border-0 shadow-sm bg-success text-white">
+            <div class="card-body">
+                <h3 class="mb-0">{{ total_amount|floatformat:2 }} €</h3>
+                <small>Total des reçus émis</small>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Filtres -->
+<div class="card border-0 shadow-sm mb-4">
+    <div class="card-body">
+        <form method="get" class="row g-3 align-items-end">
+            <div class="col-md-4">
+                <label class="form-label">Année fiscale</label>
+                <select name="year" class="form-select">
+                    <option value="">Toutes</option>
+                    {% for y in years %}
+                    <option value="{{ y }}" {% if request.GET.year == y|stringformat:"s" %}selected{% endif %}>{{ y }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-4">
+                <label class="form-label">Statut</label>
+                <select name="status" class="form-select">
+                    <option value="">Tous</option>
+                    <option value="draft" {% if request.GET.status == 'draft' %}selected{% endif %}>Brouillon</option>
+                    <option value="issued" {% if request.GET.status == 'issued' %}selected{% endif %}>Émis</option>
+                    <option value="sent" {% if request.GET.status == 'sent' %}selected{% endif %}>Envoyé</option>
+                </select>
+            </div>
+            <div class="col-md-4">
+                <button type="submit" class="btn btn-outline-primary w-100">
+                    <i class="bi bi-filter me-1"></i> Filtrer
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Liste -->
+<div class="card border-0 shadow-sm">
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th>N° Reçu</th>
+                        <th>Donateur</th>
+                        <th>Année</th>
+                        <th>Montant</th>
+                        <th>Statut</th>
+                        <th>Date</th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for receipt in receipts %}
+                    <tr>
+                        <td><strong>{{ receipt.receipt_number }}</strong></td>
+                        <td>{{ receipt.donor_name }}</td>
+                        <td>{{ receipt.fiscal_year }}</td>
+                        <td class="fw-bold text-success">{{ receipt.total_amount|floatformat:2 }} €</td>
+                        <td>
+                            {% if receipt.status == 'draft' %}
+                            <span class="badge bg-secondary">Brouillon</span>
+                            {% elif receipt.status == 'issued' %}
+                            <span class="badge bg-info">Émis</span>
+                            {% elif receipt.status == 'sent' %}
+                            <span class="badge bg-success">Envoyé</span>
+                            {% elif receipt.status == 'cancelled' %}
+                            <span class="badge bg-danger">Annulé</span>
+                            {% endif %}
+                        </td>
+                        <td>{{ receipt.created_at|date:"d/m/Y" }}</td>
+                        <td>
+                            <div class="btn-group btn-group-sm">
+                                <a href="{% url 'finance:tax_receipt_detail' receipt.pk %}" class="btn btn-outline-primary">
+                                    <i class="bi bi-eye"></i>
+                                </a>
+                                <a href="{% url 'finance:tax_receipt_pdf' receipt.pk %}" class="btn btn-outline-danger" target="_blank">
+                                    <i class="bi bi-file-pdf"></i>
+                                </a>
+                            </div>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="7" class="text-center py-4 text-muted">
+                            Aucun reçu fiscal
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}
