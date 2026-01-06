@@ -1,4 +1,0 @@
-# file: C:\Users\vilme\OneDrive\Bureau\eebc_project\apps\groups\urls.py
-# hypothesis_version: 6.148.7
-
-['<int:pk>/', 'detail', 'groups', 'list']

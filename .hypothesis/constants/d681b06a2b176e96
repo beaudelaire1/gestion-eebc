@@ -1,4 +1,0 @@
-# file: C:\Users\vilme\OneDrive\Bureau\eebc_project\apps\accounts\migrations\0006_add_rate_limiting_and_password_token.py
-# hypothesis_version: 6.148.7
-
-['-created_at', 'Créé le', 'Expire le', 'ID', 'PasswordChangeToken', 'Token', 'Utilisateur', 'Utilisé', "Verrouillé jusqu'à", 'accounts', 'created_at', 'expires_at', 'id', 'last_login_ip', 'locked_until', 'ordering', 'token', 'used', 'user', 'verbose_name', 'verbose_name_plural']

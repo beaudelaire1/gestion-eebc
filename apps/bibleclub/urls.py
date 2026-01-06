@@ -13,7 +13,10 @@ urlpatterns = [
     
     # Enfants
     path('children/', views.children_list, name='children_list'),
+    path('children/create/', views.child_create, name='child_create'),
     path('children/<int:pk>/', views.child_detail, name='child_detail'),
+    path('children/<int:pk>/edit/', views.child_edit, name='child_edit'),
+    path('children/<int:pk>/delete/', views.child_delete, name='child_delete'),
     
     # Sessions
     path('sessions/', views.session_list, name='session_list'),

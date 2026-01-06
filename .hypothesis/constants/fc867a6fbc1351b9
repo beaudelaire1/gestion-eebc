@@ -1,4 +1,0 @@
-# file: C:\Users\vilme\OneDrive\Bureau\eebc_project\apps\core\urls.py
-# hypothesis_version: 6.148.7
-
-['actualites/', 'carte/', 'contact', 'contact/', 'don/', 'don/annule/', 'don/creer-session/', 'don/succes/', 'donation', 'donation_cancel', 'donation_success', 'evenements/', 'event_detail', 'events_list', 'home', 'inscription/', 'map', 'news_detail', 'news_list', 'nos-eglises/', 'offline', 'offline/', 'page', 'page/<slug:slug>/', 'public', 'register', 'sites', 'stripe_webhook', 'webhooks/stripe/']

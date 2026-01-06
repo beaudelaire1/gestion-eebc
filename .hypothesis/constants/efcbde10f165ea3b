@@ -1,4 +1,0 @@
-# file: C:\Users\vilme\OneDrive\Bureau\eebc_project\gestion_eebc\celery.py
-# hypothesis_version: 6.148.7
-
-['America/Cayenne', 'CELERY', 'cleanup-old-logs', 'django.conf:settings', 'gestion_eebc', 'schedule', 'send-birthday-wishes', 'send-event-reminders', 'task']

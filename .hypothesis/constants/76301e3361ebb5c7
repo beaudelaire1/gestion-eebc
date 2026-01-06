@@ -1,4 +1,0 @@
-# file: C:\Users\vilme\OneDrive\Bureau\eebc_project\apps\members\urls.py
-# hypothesis_version: 6.148.7
-
-['<int:pk>/', 'detail', 'families/', 'families/<int:pk>/', 'families/create/', 'family_add_member', 'family_create', 'family_detail', 'family_edit', 'family_list', 'kanban', 'kanban/', 'kanban/create/', 'kanban/update/', 'kanban_create', 'kanban_update', 'life-events/', 'life-events/create/', 'life_event_create', 'life_event_detail', 'life_events', 'list', 'map', 'map/', 'map/data/', 'map_data', 'members', 'visit_complete', 'visit_create', 'visit_detail', 'visits', 'visits/', 'visits/<int:pk>/', 'visits/create/', 'visits/needed/']

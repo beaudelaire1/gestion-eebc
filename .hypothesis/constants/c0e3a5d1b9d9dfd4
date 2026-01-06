@@ -1,4 +1,0 @@
-# file: C:\Users\vilme\OneDrive\Bureau\eebc_project\apps\core\validators.py
-# hypothesis_version: 6.148.7
-
-[100, 120, 365, 1024, '"', '&', "'", '.', '<', '>', '[A-Z]', '[\\s\\-\\(\\)\\.]+', '[a-z]', '\\d', '^[0-9]{5}$', 'doc', 'docx', 'gif', 'javascript', 'jpeg', 'jpg', 'name', 'pdf', 'png', 'script', 'size', 'txt', 'webp']

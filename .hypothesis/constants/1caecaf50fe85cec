@@ -1,4 +1,0 @@
-# file: C:\Users\vilme\OneDrive\Bureau\eebc_project\apps\communication\admin.py
-# hypothesis_version: 6.148.7
-
-[300, 400, '%d/%m/%Y %H:%M', 'Content-Disposition', 'Contenu', "Contenu de l'email", 'Date création', 'Destinataire', 'Email', 'Erreur', 'Horodatage', 'Marquer comme échoué', 'Métadonnées', 'Nom', 'Statut', 'Sujet', '__all__', 'author', 'body', 'classes', 'collapse', 'content', 'created_at', 'end_date', 'error_message', 'event_notification', 'event_reminder', 'export_failed_emails', 'failed', 'fields', 'height', 'html_content', 'is_active', 'is_default', 'is_pinned', 'is_read', 'mark_as_failed', 'message', 'name', 'notification_type', 'pending', 'plugins', 'read_at', 'recipient', 'recipient__username', 'recipient_email', 'recipient_name', 'recipient_phone', 'rows', 'sent_at', 'start_date', 'status', 'subject', 'template_type', 'text/csv', 'text_content', 'title', 'toolbar', 'updated_at', 'variables_help']

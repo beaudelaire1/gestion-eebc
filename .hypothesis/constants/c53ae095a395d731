@@ -1,4 +1,0 @@
-# file: C:\Users\vilme\OneDrive\Bureau\eebc_project\apps\finance\urls.py
-# hypothesis_version: 6.148.7
-
-['batch_ocr_status_api', 'batch_retry_ocr', 'budget-requests/', 'budget/', 'budget_create', 'budget_dashboard', 'budget_detail', 'budget_edit', 'budget_export_excel', 'budget_list', 'budget_overview', 'budget_print', 'budget_request_list', 'budget_submit', 'budgets/', 'budgets/create/', 'budgets/export-list/', 'budgets/list/', 'dashboard', 'finance', 'proof_upload', 'receipt_process_ocr', 'receipt_proof_list', 'receipt_proof_upload', 'receipts/', 'receipts/upload/', 'reports', 'reports/', 'tax-receipts/', 'tax-receipts/create/', 'tax_receipt_create', 'tax_receipt_detail', 'tax_receipt_list', 'tax_receipt_pdf', 'tax_receipt_send', 'transaction_create', 'transaction_detail', 'transaction_list', 'transaction_validate', 'transactions/', 'transactions/create/']

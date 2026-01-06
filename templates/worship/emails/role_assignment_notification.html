@@ -1,0 +1,157 @@
+{% extends 'emails/base.html' %}
+{% load humanize %}
+
+{% block title %}Confirmation requise - {{ role_display }}{% endblock %}
+
+{% block content %}
+<div class="email-header">
+    <h1>🙏 Confirmation requise</h1>
+    <p>Service de culte du {{ service_date|date:"l d F Y" }}</p>
+</div>
+
+<div class="email-content">
+    <p>Bonjour <strong>{{ member_name }}</strong>,</p>
+    
+    <p>Vous êtes sollicité(e) pour participer au culte suivant :</p>
+    
+    <div class="service-details">
+        <div class="detail-item">
+            <span class="icon">📅</span>
+            <span class="label">Date :</span>
+            <span class="value">{{ service_date|date:"l d F Y" }}</span>
+        </div>
+        <div class="detail-item">
+            <span class="icon">⏰</span>
+            <span class="label">Heure :</span>
+            <span class="value">{{ service_time|time:"H:i" }}</span>
+        </div>
+        <div class="detail-item">
+            <span class="icon">📍</span>
+            <span class="label">Lieu :</span>
+            <span class="value">{{ site_name }}</span>
+        </div>
+        <div class="detail-item">
+            <span class="icon">🎯</span>
+            <span class="label">Rôle :</span>
+            <span class="value role-highlight">{{ role_display }}</span>
+        </div>
+        {% if theme %}
+        <div class="detail-item">
+            <span class="icon">📖</span>
+            <span class="label">Thème :</span>
+            <span class="value">{{ theme }}</span>
+        </div>
+        {% endif %}
+    </div>
+    
+    <p>Merci de confirmer votre disponibilité :</p>
+    
+    <div class="action-buttons">
+        <a href="{{ confirm_url }}" class="btn btn-accept">
+            ✅ J'ACCEPTE
+        </a>
+        <a href="{{ decline_url }}" class="btn btn-decline">
+            ❌ JE REFUSE
+        </a>
+    </div>
+    
+    {% if expires_at %}
+    <div class="deadline-notice">
+        <p>⏰ Merci de répondre avant le <strong>{{ expires_at|date:"d/m/Y à H:i" }}</strong>.</p>
+    </div>
+    {% endif %}
+</div>
+
+<div class="email-footer">
+    <p>Fraternellement,<br>{{ site_name }}</p>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+    .service-details {
+        background: #f8f9fa;
+        border: 1px solid #e9ecef;
+        border-radius: 8px;
+        padding: 20px;
+        margin: 20px 0;
+    }
+    
+    .detail-item {
+        display: flex;
+        align-items: center;
+        margin: 8px 0;
+        padding: 5px 0;
+    }
+    
+    .detail-item .icon {
+        width: 30px;
+        font-size: 16px;
+    }
+    
+    .detail-item .label {
+        font-weight: 600;
+        color: #495057;
+        min-width: 80px;
+    }
+    
+    .detail-item .value {
+        color: #212529;
+    }
+    
+    .role-highlight {
+        color: #0A36FF !important;
+        font-weight: 700;
+    }
+    
+    .action-buttons {
+        text-align: center;
+        margin: 30px 0;
+    }
+    
+    .btn {
+        display: inline-block;
+        padding: 15px 40px;
+        margin: 10px;
+        text-decoration: none;
+        border-radius: 8px;
+        font-weight: 700;
+        font-size: 16px;
+        transition: all 0.3s ease;
+    }
+    
+    .btn-accept {
+        background: #28a745;
+        color: white;
+    }
+    
+    .btn-accept:hover {
+        background: #218838;
+        transform: translateY(-2px);
+    }
+    
+    .btn-decline {
+        background: #dc3545;
+        color: white;
+    }
+    
+    .btn-decline:hover {
+        background: #c82333;
+        transform: translateY(-2px);
+    }
+    
+    .deadline-notice {
+        background: #fff3cd;
+        border: 1px solid #ffeaa7;
+        border-radius: 6px;
+        padding: 15px;
+        margin: 20px 0;
+        color: #856404;
+    }
+    
+    .deadline-notice p {
+        margin: 0;
+        font-size: 14px;
+    }
+</style>
+{% endblock %}

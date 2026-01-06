@@ -1,4 +1,0 @@
-# file: C:\Users\vilme\OneDrive\Bureau\eebc_project\apps\transport\migrations\0002_transportrequest_requester_email.py
-# hypothesis_version: 6.148.7
-
-[254, '0001_initial', 'Email du demandeur', 'requester_email', 'transport', 'transportrequest']

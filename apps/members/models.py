@@ -3,6 +3,8 @@ from django.conf import settings
 import random
 import string
 
+from .managers import MemberManager
+
 
 class Member(models.Model):
     """
@@ -129,6 +131,9 @@ class Member(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
+    # Manager personnalisé
+    objects = MemberManager()
+
     class Meta:
         verbose_name = "Membre"
         verbose_name_plural = "Membres"
@@ -138,44 +143,9 @@ class Member(models.Model):
         prefix = f"[{self.member_id}] " if self.member_id else ""
         return f"{prefix}{self.first_name} {self.last_name}"
     
-    def save(self, *args, **kwargs):
-        """Génère l'ID membre unique si absent."""
-        if not self.member_id:
-            self.member_id = self._generate_member_id()
-        super().save(*args, **kwargs)
-    
-    def _generate_member_id(self):
-        """
-        Génère un ID unique au format EEBC-CAB-XXXX ou EEBC-MAC-XXXX.
-        
-        - CAB pour Cabassou (Cayenne)
-        - MAC pour Macouria
-        - XXXX est un nombre aléatoire à 4 chiffres
-        """
-        # Déterminer le code du site
-        if self.site and self.site.code:
-            site_code = self.site.code
-        else:
-            # Par défaut, Cabassou si pas de site défini
-            site_code = 'CAB'
-        
-        # Générer un ID unique
-        max_attempts = 100
-        for _ in range(max_attempts):
-            random_suffix = ''.join(random.choices(string.digits, k=4))
-            new_id = f"EEBC-{site_code}-{random_suffix}"
-            
-            # Vérifier l'unicité
-            if not Member.objects.filter(member_id=new_id).exists():
-                return new_id
-        
-        # Fallback avec plus de chiffres si nécessaire
-        random_suffix = ''.join(random.choices(string.digits, k=6))
-        return f"EEBC-{site_code}-{random_suffix}"
-    
     def regenerate_member_id(self):
         """Régénère l'ID membre (utile si le site change)."""
-        self.member_id = self._generate_member_id()
+        self.member_id = self.__class__.objects.generate_member_id(self.site)
         self.save(update_fields=['member_id'])
     
     @property
@@ -441,9 +411,13 @@ class VisitationLog(models.Model):
         return f"{self.member} - {date_str} ({self.get_status_display()})"
 
 
-# Extension du modèle Member avec des propriétés calculées
+# Extension du modèle Member avec des propriétés optimisées
 def _get_last_visit_date(self):
     """Retourne la date de la dernière visite effectuée."""
+    # Utiliser l'annotation si disponible, sinon requête
+    if hasattr(self, 'last_visit_date_anno'):
+        return self.last_visit_date_anno
+    
     last_visit = self.visits_received.filter(
         status=VisitationLog.Status.EFFECTUE
     ).order_by('-visit_date').first()
@@ -458,11 +432,19 @@ def _get_days_since_last_visit(self):
     return None
 
 def _needs_visit(self):
-    """Retourne True si le membre n'a pas été visité depuis 6 mois."""
+    """Retourne True si le membre n'a pas été visité depuis le seuil configuré."""
+    from django.conf import settings
+    
+    # Utiliser l'annotation si disponible
+    if hasattr(self, 'needs_visit_anno'):
+        return bool(self.needs_visit_anno)
+    
     days = self.days_since_last_visit
     if days is None:
         return True  # Jamais visité
-    return days > 180  # 6 mois
+    
+    threshold = getattr(settings, 'MEMBER_VISIT_THRESHOLD_DAYS', 180)
+    return days > threshold
 
 def _get_recent_life_events(self):
     """Retourne les événements de vie des 12 derniers mois."""

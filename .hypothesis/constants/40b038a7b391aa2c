@@ -1,4 +1,0 @@
-# file: C:\Users\vilme\OneDrive\Bureau\eebc_project\apps\communication\services.py
-# hypothesis_version: 6.148.7
-
-['CONTACT_EMAIL', 'SITE_URL', 'cancelled', 'contact_email', 'current_year', 'days_before', 'driver', 'email', 'emails/default.html', 'event', 'event_cancelled', 'event_notification', 'event_reminder', 'get_full_name', 'has_driver', 'is_cancelled', 'is_reminder', 'is_today', 'is_tomorrow', 'member', 'name', 'notification_type', 'passenger_email', 'passenger_name', 'recipient_name', 'registrations', 'reminder', 'requester', 'site_name', 'site_url', 'text/html', 'transport_request', 'upcoming']

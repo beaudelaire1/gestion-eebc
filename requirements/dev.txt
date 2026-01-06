@@ -4,6 +4,10 @@
 
 -r base.txt
 
+# Sécurité avancée
+django-cryptography>=1.1
+django-cors-headers>=4.2.0
+
 # Debug
 django-debug-toolbar>=4.2.0
 django-extensions>=3.2.0

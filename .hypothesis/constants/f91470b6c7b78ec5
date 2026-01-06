@@ -1,4 +1,0 @@
-# file: C:\Users\vilme\OneDrive\Bureau\eebc_project\apps\bibleclub\migrations\0003_remove_child_parent1_email_remove_child_parent1_name_and_more.py
-# hypothesis_version: 6.148.7
-
-[200, 254, '0694000000', 'Email de la mère', 'Email du père', 'Nom de la mère', 'Nom du père', 'Téléphone de la mère', 'Téléphone du père', 'bibleclub', 'child', 'father_email', 'father_name', 'father_phone', 'mother_email', 'mother_name', 'mother_phone', 'papa', 'parent1_email', 'parent1_name', 'parent1_phone', 'parent2_name', 'parent2_phone']

@@ -353,19 +353,21 @@
                        hx-get="{% url 'bibleclub:children_list' %}"
                        hx-trigger="keyup changed delay:500ms"
                        hx-target="#children-content"
-                       hx-include="[name='class']">
+                       hx-include="[name='bible_class']"
+                       hx-indicator="#search-loading">
             </div>
         </div>
         <div class="col-md-3">
             <label class="form-label fw-bold">Classe</label>
-            <select class="form-select" name="class"
+            <select class="form-select" name="bible_class"
                     hx-get="{% url 'bibleclub:children_list' %}"
                     hx-trigger="change"
                     hx-target="#children-content"
-                    hx-include="[name='search']">
+                    hx-include="[name='search']"
+                    hx-indicator="#search-loading">
                 <option value="">Toutes les classes</option>
                 {% for bible_class in classes %}
-                <option value="{{ bible_class.pk }}" {% if selected_class == bible_class.pk %}selected{% endif %}>
+                <option value="{{ bible_class.pk }}" {% if selected_bible_class == bible_class.pk %}selected{% endif %}>
                     {{ bible_class }}
                 </option>
                 {% endfor %}
@@ -382,28 +384,41 @@
             </div>
         </div>
         <div class="col-md-2 d-flex gap-2">
-            <!-- Boutons d'export -->
             <div class="dropdown">
-                <button class="btn btn-outline-secondary dropdown-toggle" type="button" 
-                        data-bs-toggle="dropdown" aria-expanded="false" title="Exporter">
-                    <i class="bi bi-download"></i>
+                <button class="btn btn-outline-primary dropdown-toggle" type="button" 
+                        data-bs-toggle="dropdown" aria-expanded="false" title="Import Excel">
+                    <i class="bi bi-upload"></i>
                 </button>
                 <ul class="dropdown-menu dropdown-menu-end">
                     <li>
-                        <a class="dropdown-item" href="{% url 'exports:children_excel' %}{% if selected_class %}?class_id={{ selected_class }}{% endif %}">
-                            <i class="bi bi-file-earmark-excel text-success me-2"></i>
-                            Exporter Excel
+                        <a class="dropdown-item" href="{% url 'imports:create' %}?type=children">
+                            <i class="bi bi-upload text-primary me-2"></i>
+                            Importer des enfants
                         </a>
                     </li>
                     <li>
-                        <a class="dropdown-item" href="{% url 'exports:children_print' %}{% if selected_class %}?class_id={{ selected_class }}{% endif %}" target="_blank">
-                            <i class="bi bi-file-earmark-pdf text-danger me-2"></i>
-                            Exporter PDF
+                        <a class="dropdown-item" href="{% url 'imports:template' 'children' %}">
+                            <i class="bi bi-download text-success me-2"></i>
+                            Télécharger template
+                        </a>
+                    </li>
+                    <li><hr class="dropdown-divider"></li>
+                    <li>
+                        <a class="dropdown-item" href="{% url 'imports:export_children' %}">
+                            <i class="bi bi-file-earmark-excel text-warning me-2"></i>
+                            Exporter tous les enfants
+                        </a>
+                    </li>
+                    <li><hr class="dropdown-divider"></li>
+                    <li>
+                        <a class="dropdown-item" href="{% url 'imports:list' %}">
+                            <i class="bi bi-clock-history text-info me-2"></i>
+                            Historique imports
                         </a>
                     </li>
                 </ul>
             </div>
-            <a href="{% url 'admin:bibleclub_child_add' %}" class="btn btn-primary flex-grow-1">
+            <a href="{% url 'bibleclub:child_create' %}" class="btn btn-primary flex-grow-1">
                 <i class="bi bi-plus-lg me-2"></i>Ajouter
             </a>
         </div>
@@ -469,7 +484,7 @@
                     <a href="{% url 'bibleclub:child_detail' child.pk %}" class="btn btn-outline-secondary">
                         <i class="bi bi-eye me-1"></i> Voir
                     </a>
-                    <a href="{% url 'admin:bibleclub_child_change' child.pk %}" class="btn btn-primary">
+                    <a href="{% url 'bibleclub:child_edit' child.pk %}" class="btn btn-primary">
                         <i class="bi bi-pencil me-1"></i> Modifier
                     </a>
                 </div>
@@ -492,7 +507,7 @@
             </div>
             <h5 class="mb-2">Aucun enfant trouvé</h5>
             <p class="text-muted mb-4">Commencez par ajouter des enfants au Club Biblique</p>
-            <a href="{% url 'admin:bibleclub_child_add' %}" class="btn btn-primary">
+            <a href="{% url 'bibleclub:child_create' %}" class="btn btn-primary">
                 <i class="bi bi-plus-lg me-2"></i>Ajouter un enfant
             </a>
         </div>
@@ -500,6 +515,13 @@
     {% endif %}
 </div>
 {% endblock %}
+
+<!-- Search Loading Indicator -->
+<div id="search-loading" class="htmx-indicator position-fixed top-50 start-50 translate-middle" style="z-index: 9999;">
+    <div class="spinner-border text-primary" role="status">
+        <span class="visually-hidden">Chargement...</span>
+    </div>
+</div>
 
 {% block extra_js %}
 <script>

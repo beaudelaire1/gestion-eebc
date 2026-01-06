@@ -15,6 +15,9 @@ urlpatterns = [
     # Site vitrine public (page d'accueil par défaut)
     path('', include('apps.core.urls')),
     
+    # Health checks (avant tout le reste)
+    path('health/', include('apps.core.health_urls')),
+    
     # Confirmation des rôles (accessible sans connexion)
     path('worship/confirm/<uuid:token>/', confirm_role, name='public_confirm_role'),
     path('worship/decline/<uuid:token>/', decline_role, name='public_decline_role'),
@@ -40,6 +43,7 @@ urlpatterns = [
     path('app/communication/', include('apps.communication.urls')),
     path('app/finance/', include('apps.finance.urls')),
     path('app/worship/', include('apps.worship.urls')),
+    path('app/imports/', include('apps.imports.urls')),  # Import Excel
     
     # Exports et impressions
     path('app/exports/', include('apps.core.export_urls')),

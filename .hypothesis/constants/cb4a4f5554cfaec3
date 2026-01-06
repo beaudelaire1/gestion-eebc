@@ -1,4 +1,0 @@
-# file: C:\Users\vilme\OneDrive\Bureau\eebc_project\apps\bibleclub\views.py
-# hypothesis_version: 6.148.7
-
-[400, 403, 405, 'F', 'M', 'Method not allowed', 'POST', 'Permission denied', 'age_group', 'attendance', 'attendance_by_class', 'attendance_rate', 'attendances', 'bible_class', 'bibleclub/home.html', 'boys_count', 'check_in_time', 'checkins', 'child', 'child_id', 'children', 'class', 'classes', 'created', 'current_session', 'date', 'driver', 'driver__user', 'error', 'first_name', 'girls_count', 'is_admin', 'last_name', 'late', 'message', 'monitor', 'monitors', 'months', 'next_sunday', 'notes', 'present', 'present_count', 'recent_attendances', 'recent_sessions', 'search', 'selected_class', 'session', 'sessions', 'stats', 'status', 'status_choices', 'theme', 'total_sessions', 'transport_count', 'user', 'user_classes']

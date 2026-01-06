@@ -1,0 +1,408 @@
+{% extends 'base.html' %}
+
+{% block title %}Import {{ import_log.file_name }} - EEBC{% endblock %}
+{% block page_title %}Détail de l'import{% endblock %}
+{% block page_subtitle %}{{ import_log.file_name }}{% endblock %}
+
+{% block extra_css %}
+<style>
+    .import-header {
+        background: var(--eebc-white);
+        border-radius: 16px;
+        padding: 2rem;
+        margin-bottom: 2rem;
+        box-shadow: 0 4px 20px rgba(11, 15, 25, 0.04);
+    }
+    
+    .import-status {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 0.75rem 1.25rem;
+        border-radius: 12px;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        font-size: 0.875rem;
+    }
+    
+    .import-status.pending {
+        background-color: #fef3c7;
+        color: #92400e;
+    }
+    
+    .import-status.processing {
+        background-color: #dbeafe;
+        color: #1e40af;
+    }
+    
+    .import-status.success {
+        background-color: #d1fae5;
+        color: #065f46;
+    }
+    
+    .import-status.error {
+        background-color: #fee2e2;
+        color: #991b1b;
+    }
+    
+    .import-status.partial {
+        background-color: #fed7aa;
+        color: #9a3412;
+    }
+    
+    .progress-section {
+        background: var(--eebc-white);
+        border-radius: 16px;
+        padding: 1.5rem;
+        margin-bottom: 2rem;
+        box-shadow: 0 4px 20px rgba(11, 15, 25, 0.04);
+    }
+    
+    .progress-bar-custom {
+        height: 12px;
+        border-radius: 6px;
+        background-color: var(--eebc-gray-200);
+        overflow: hidden;
+        margin-bottom: 1rem;
+    }
+    
+    .progress-fill {
+        height: 100%;
+        background: linear-gradient(90deg, var(--eebc-primary) 0%, var(--eebc-primary-light) 100%);
+        transition: width 0.5s ease;
+        border-radius: 6px;
+    }
+    
+    .stats-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 1rem;
+        margin-bottom: 2rem;
+    }
+    
+    .stat-card {
+        background: var(--eebc-white);
+        border-radius: 12px;
+        padding: 1.25rem;
+        text-align: center;
+        box-shadow: 0 4px 20px rgba(11, 15, 25, 0.04);
+        border: 1px solid var(--eebc-gray-200);
+    }
+    
+    .stat-icon {
+        width: 48px;
+        height: 48px;
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin: 0 auto 0.75rem;
+        font-size: 1.25rem;
+        color: white;
+    }
+    
+    .stat-icon.total { background: var(--eebc-primary); }
+    .stat-icon.success { background: var(--eebc-success); }
+    .stat-icon.error { background: var(--eebc-danger); }
+    .stat-icon.processed { background: var(--eebc-info); }
+    
+    .stat-value {
+        font-size: 1.75rem;
+        font-weight: 700;
+        color: var(--eebc-black);
+        margin-bottom: 0.25rem;
+    }
+    
+    .stat-label {
+        color: var(--eebc-gray-500);
+        font-size: 0.875rem;
+        font-weight: 500;
+    }
+    
+    .log-section {
+        background: var(--eebc-white);
+        border-radius: 16px;
+        overflow: hidden;
+        box-shadow: 0 4px 20px rgba(11, 15, 25, 0.04);
+    }
+    
+    .log-header {
+        background: var(--eebc-gray-50);
+        padding: 1rem 1.5rem;
+        border-bottom: 1px solid var(--eebc-gray-200);
+        display: flex;
+        align-items: center;
+        justify-content: between;
+    }
+    
+    .log-content {
+        padding: 1.5rem;
+        max-height: 400px;
+        overflow-y: auto;
+    }
+    
+    .log-content pre {
+        background: var(--eebc-gray-50);
+        border-radius: 8px;
+        padding: 1rem;
+        font-size: 0.8rem;
+        line-height: 1.4;
+        margin: 0;
+        white-space: pre-wrap;
+        word-wrap: break-word;
+    }
+    
+    .log-empty {
+        text-align: center;
+        color: var(--eebc-gray-500);
+        font-style: italic;
+        padding: 2rem;
+    }
+    
+    .refresh-btn {
+        position: fixed;
+        bottom: 2rem;
+        right: 2rem;
+        width: 56px;
+        height: 56px;
+        border-radius: 50%;
+        background: var(--eebc-primary);
+        color: white;
+        border: none;
+        box-shadow: 0 8px 25px rgba(10, 54, 255, 0.3);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.25rem;
+        transition: all 0.2s ease;
+        z-index: 1000;
+    }
+    
+    .refresh-btn:hover {
+        transform: scale(1.1);
+        box-shadow: 0 12px 35px rgba(10, 54, 255, 0.4);
+    }
+    
+    .refresh-btn.spinning {
+        animation: spin 1s linear infinite;
+    }
+    
+    @keyframes spin {
+        from { transform: rotate(0deg); }
+        to { transform: rotate(360deg); }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- En-tête de l'import -->
+<div class="import-header">
+    <div class="row align-items-center">
+        <div class="col-md-8">
+            <div class="d-flex align-items-center gap-3 mb-3">
+                <div class="import-status {{ import_log.status }}" id="import-status">
+                    <i class="bi bi-{% if import_log.status == 'success' %}check-circle{% elif import_log.status == 'error' %}x-circle{% elif import_log.status == 'processing' %}hourglass-split{% elif import_log.status == 'partial' %}exclamation-triangle{% else %}clock{% endif %}"></i>
+                    <span id="status-text">{{ import_log.get_status_display }}</span>
+                </div>
+                <span class="badge badge--primary">{{ import_log.get_import_type_display }}</span>
+            </div>
+            
+            <h4 class="mb-2">{{ import_log.file_name }}</h4>
+            
+            <div class="d-flex align-items-center gap-3 text-muted">
+                <span><i class="bi bi-person me-1"></i>{{ import_log.imported_by.get_full_name|default:import_log.imported_by.username }}</span>
+                <span><i class="bi bi-calendar me-1"></i>{{ import_log.started_at|date:"d/m/Y H:i" }}</span>
+                {% if import_log.duration %}
+                <span><i class="bi bi-clock me-1"></i>{{ import_log.duration }}</span>
+                {% endif %}
+            </div>
+        </div>
+        
+        <div class="col-md-4 text-end">
+            <a href="{% url 'imports:list' %}" class="btn btn-outline-secondary">
+                <i class="bi bi-arrow-left me-2"></i>Retour à la liste
+            </a>
+        </div>
+    </div>
+</div>
+
+<!-- Progression -->
+{% if import_log.total_rows > 0 %}
+<div class="progress-section">
+    <h6 class="mb-3">Progression de l'import</h6>
+    
+    <div class="progress-bar-custom">
+        <div class="progress-fill" id="progress-fill" style="width: {% widthratio import_log.processed_rows import_log.total_rows 100 %}%"></div>
+    </div>
+    
+    <div class="d-flex justify-content-between text-sm">
+        <span id="progress-text">{{ import_log.processed_rows }} / {{ import_log.total_rows }} lignes traitées</span>
+        <span id="progress-percent">{% widthratio import_log.processed_rows import_log.total_rows 100 %}%</span>
+    </div>
+</div>
+{% endif %}
+
+<!-- Statistiques -->
+<div class="stats-grid">
+    <div class="stat-card">
+        <div class="stat-icon total">
+            <i class="bi bi-file-earmark-text"></i>
+        </div>
+        <div class="stat-value" id="total-rows">{{ import_log.total_rows }}</div>
+        <div class="stat-label">Lignes totales</div>
+    </div>
+    
+    <div class="stat-card">
+        <div class="stat-icon processed">
+            <i class="bi bi-gear"></i>
+        </div>
+        <div class="stat-value" id="processed-rows">{{ import_log.processed_rows }}</div>
+        <div class="stat-label">Lignes traitées</div>
+    </div>
+    
+    <div class="stat-card">
+        <div class="stat-icon success">
+            <i class="bi bi-check-circle"></i>
+        </div>
+        <div class="stat-value" id="success-rows">{{ import_log.success_rows }}</div>
+        <div class="stat-label">Succès</div>
+    </div>
+    
+    <div class="stat-card">
+        <div class="stat-icon error">
+            <i class="bi bi-x-circle"></i>
+        </div>
+        <div class="stat-value" id="error-rows">{{ import_log.error_rows }}</div>
+        <div class="stat-label">Erreurs</div>
+    </div>
+</div>
+
+<!-- Logs de succès -->
+{% if import_log.success_log %}
+<div class="log-section mb-4">
+    <div class="log-header">
+        <h6 class="mb-0"><i class="bi bi-check-circle text-success me-2"></i>Imports réussis</h6>
+    </div>
+    <div class="log-content">
+        <pre id="success-log">{{ import_log.success_log }}</pre>
+    </div>
+</div>
+{% endif %}
+
+<!-- Logs d'erreurs -->
+{% if import_log.error_log %}
+<div class="log-section mb-4">
+    <div class="log-header">
+        <h6 class="mb-0"><i class="bi bi-x-circle text-danger me-2"></i>Erreurs d'import</h6>
+    </div>
+    <div class="log-content">
+        <pre id="error-log">{{ import_log.error_log }}</pre>
+    </div>
+</div>
+{% endif %}
+
+<!-- Bouton de rafraîchissement pour les imports en cours -->
+{% if import_log.status == 'processing' or import_log.status == 'pending' %}
+<button class="refresh-btn" id="refresh-btn" onclick="refreshStatus()">
+    <i class="bi bi-arrow-clockwise"></i>
+</button>
+{% endif %}
+{% endblock %}
+
+{% block extra_js %}
+<script>
+let refreshInterval;
+
+document.addEventListener('DOMContentLoaded', function() {
+    const status = '{{ import_log.status }}';
+    
+    // Auto-refresh pour les imports en cours
+    if (status === 'processing' || status === 'pending') {
+        refreshInterval = setInterval(refreshStatus, 3000);
+    }
+});
+
+function refreshStatus() {
+    const refreshBtn = document.getElementById('refresh-btn');
+    if (refreshBtn) {
+        refreshBtn.classList.add('spinning');
+    }
+    
+    fetch('{% url "imports:status" import_log.pk %}')
+        .then(response => response.json())
+        .then(data => {
+            // Mettre à jour le statut
+            const statusElement = document.getElementById('import-status');
+            const statusText = document.getElementById('status-text');
+            
+            if (statusElement && statusText) {
+                statusElement.className = `import-status ${data.status}`;
+                statusText.textContent = data.status_display;
+                
+                // Mettre à jour l'icône
+                const icon = statusElement.querySelector('i');
+                if (icon) {
+                    let iconClass = 'bi bi-';
+                    switch(data.status) {
+                        case 'success': iconClass += 'check-circle'; break;
+                        case 'error': iconClass += 'x-circle'; break;
+                        case 'processing': iconClass += 'hourglass-split'; break;
+                        case 'partial': iconClass += 'exclamation-triangle'; break;
+                        default: iconClass += 'clock';
+                    }
+                    icon.className = iconClass;
+                }
+            }
+            
+            // Mettre à jour les statistiques
+            document.getElementById('total-rows').textContent = data.total_rows;
+            document.getElementById('processed-rows').textContent = data.processed_rows;
+            document.getElementById('success-rows').textContent = data.success_rows;
+            document.getElementById('error-rows').textContent = data.error_rows;
+            
+            // Mettre à jour la progression
+            if (data.total_rows > 0) {
+                const progressFill = document.getElementById('progress-fill');
+                const progressText = document.getElementById('progress-text');
+                const progressPercent = document.getElementById('progress-percent');
+                
+                const percentage = Math.round((data.processed_rows / data.total_rows) * 100);
+                
+                if (progressFill) {
+                    progressFill.style.width = percentage + '%';
+                }
+                if (progressText) {
+                    progressText.textContent = `${data.processed_rows} / ${data.total_rows} lignes traitées`;
+                }
+                if (progressPercent) {
+                    progressPercent.textContent = percentage + '%';
+                }
+            }
+            
+            // Arrêter le refresh si terminé
+            if (data.completed) {
+                if (refreshInterval) {
+                    clearInterval(refreshInterval);
+                }
+                if (refreshBtn) {
+                    refreshBtn.style.display = 'none';
+                }
+                
+                // Recharger la page pour afficher les logs
+                setTimeout(() => {
+                    window.location.reload();
+                }, 2000);
+            }
+        })
+        .catch(error => {
+            console.error('Erreur lors du refresh:', error);
+        })
+        .finally(() => {
+            if (refreshBtn) {
+                refreshBtn.classList.remove('spinning');
+            }
+        });
+}
+</script>
+{% endblock %}

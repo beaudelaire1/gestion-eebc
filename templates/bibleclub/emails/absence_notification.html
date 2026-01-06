@@ -1,0 +1,114 @@
+{% extends 'emails/base.html' %}
+{% load humanize %}
+
+{% block title %}Absence de {{ child.first_name }} - Club Biblique{% endblock %}
+
+{% block content %}
+<div class="email-header">
+    <h1>📚 Club Biblique EEBC</h1>
+    <p>Notification d'absence</p>
+</div>
+
+<div class="email-content">
+    <p>Bonjour <strong>{{ parent_name }}</strong>,</p>
+    
+    <p>Nous vous informons que <strong>{{ child.first_name }} {{ child.last_name }}</strong> était absent(e) lors de la session du Club Biblique du <strong>{{ session.date|date:"l d F Y" }}</strong>.</p>
+    
+    <div class="child-info">
+        <h3>Informations de la session</h3>
+        <div class="info-grid">
+            <div class="info-item">
+                <span class="label">Enfant :</span>
+                <span class="value">{{ child.first_name }} {{ child.last_name }}</span>
+            </div>
+            <div class="info-item">
+                <span class="label">Classe :</span>
+                <span class="value">{{ bible_class.age_group.name }}</span>
+            </div>
+            <div class="info-item">
+                <span class="label">Date :</span>
+                <span class="value">{{ session.date|date:"l d F Y" }}</span>
+            </div>
+        </div>
+    </div>
+    
+    <p>Si cette absence était prévue ou justifiée, vous pouvez l'ignorer. Sinon, n'hésitez pas à nous contacter pour plus d'informations.</p>
+    
+    <div class="contact-info">
+        <h4>Contact</h4>
+        <p>Pour toute question, contactez-nous :</p>
+        <ul>
+            <li>📧 Email : clubbiblique@eebc.org</li>
+            <li>📱 Téléphone : 0594 XX XX XX</li>
+        </ul>
+    </div>
+</div>
+
+<div class="email-footer">
+    <p>Fraternellement,<br>L'équipe du Club Biblique EEBC</p>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+    .child-info {
+        background: #f8f9fa;
+        border: 1px solid #e9ecef;
+        border-radius: 8px;
+        padding: 20px;
+        margin: 20px 0;
+    }
+    
+    .child-info h3 {
+        margin-top: 0;
+        color: #0A36FF;
+        font-size: 18px;
+    }
+    
+    .info-grid {
+        display: grid;
+        gap: 10px;
+    }
+    
+    .info-item {
+        display: flex;
+        justify-content: space-between;
+        padding: 8px 0;
+        border-bottom: 1px solid #e9ecef;
+    }
+    
+    .info-item:last-child {
+        border-bottom: none;
+    }
+    
+    .info-item .label {
+        font-weight: 600;
+        color: #495057;
+    }
+    
+    .info-item .value {
+        color: #212529;
+    }
+    
+    .contact-info {
+        background: #e3f2fd;
+        border-left: 4px solid #2196f3;
+        padding: 15px;
+        margin: 20px 0;
+    }
+    
+    .contact-info h4 {
+        margin-top: 0;
+        color: #1976d2;
+    }
+    
+    .contact-info ul {
+        margin: 10px 0 0 0;
+        padding-left: 20px;
+    }
+    
+    .contact-info li {
+        margin: 5px 0;
+    }
+</style>
+{% endblock %}

@@ -1,4 +1,0 @@
-# file: C:\Users\vilme\OneDrive\Bureau\eebc_project\apps\accounts\views.py
-# hypothesis_version: 6.148.7
-
-['POST', 'accounts/login.html', 'accounts:create_user', 'accounts:login', 'accounts:profile', 'admin', 'dashboard:home', 'email', 'error', 'first_name', 'form', 'last_name', 'message', 'new_password1', 'next', 'password', 'phone', 'public:home', 'role', 'secretariat', 'success', 'token', 'user', 'username', 'users']

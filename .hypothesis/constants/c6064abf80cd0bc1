@@ -1,4 +1,0 @@
-# file: C:\Users\vilme\OneDrive\Bureau\eebc_project\apps\worship\migrations\0003_roleassignment.py
-# hypothesis_version: 6.148.7
-
-['0003_initial_core', 'Accepté', 'Assignation de rôle', 'Chef de chorale', 'Choriste', 'Culte', 'Dirigeant de culte', 'En attente', 'Expire le', 'Expiré', 'ID', 'Membre', 'Musicien', 'Notifié le', 'Projection', 'Prédicateur', 'Raison du refus', 'Refusé', 'Remplacement suggéré', 'RoleAssignment', 'Répondu le', 'Rôle', 'Sonorisation', 'Statut', 'Token', 'accepted', 'choir_leader', 'created_at', 'decline_reason', 'declined', 'expired', 'expires_at', 'id', 'member', 'members', 'members.member', 'musician', 'notified_at', 'ordering', 'pending', 'preacher', 'projection', 'responded_at', 'role', 'role_assignments', 'scheduled_service', 'singer', 'sound_tech', 'status', 'token', 'unique_together', 'verbose_name', 'verbose_name_plural', 'worship', 'worship_leader']

@@ -1,0 +1,348 @@
+{% extends 'base.html' %}
+
+{% block title %}Hub d'Exports - EEBC{% endblock %}
+{% block page_title %}Centre d'Export et Import{% endblock %}
+{% block page_subtitle %}Tous vos exports et imports centralisés{% endblock %}
+
+{% block extra_css %}
+<style>
+    .export-category {
+        margin-bottom: 2rem;
+    }
+    
+    .export-category-title {
+        font-size: 1.2rem;
+        font-weight: 700;
+        color: var(--eebc-black);
+        margin-bottom: 1rem;
+        padding-bottom: 0.5rem;
+        border-bottom: 2px solid var(--eebc-primary);
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+    
+    .export-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+        gap: 1.5rem;
+    }
+    
+    .export-card {
+        background: var(--eebc-white);
+        border-radius: 16px;
+        padding: 1.5rem;
+        box-shadow: 0 4px 15px rgba(11, 15, 25, 0.06);
+        border: 2px solid transparent;
+        transition: all 0.3s ease;
+        position: relative;
+        overflow: hidden;
+    }
+    
+    .export-card:hover {
+        transform: translateY(-4px);
+        box-shadow: 0 15px 40px rgba(10, 54, 255, 0.15);
+        border-color: var(--eebc-primary);
+    }
+    
+    .export-card.sensitive::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        right: 0;
+        width: 0;
+        height: 0;
+        border-style: solid;
+        border-width: 0 30px 30px 0;
+        border-color: transparent #f59e0b transparent transparent;
+    }
+    
+    .export-card.sensitive::after {
+        content: '🔒';
+        position: absolute;
+        top: 5px;
+        right: 5px;
+        font-size: 0.8rem;
+        color: white;
+    }
+    
+    .export-icon {
+        width: 50px;
+        height: 50px;
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.5rem;
+        color: white;
+        margin-bottom: 1rem;
+    }
+    
+    .export-icon.excel {
+        background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%);
+    }
+    
+    .export-icon.pdf {
+        background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+    }
+    
+    .export-icon.csv {
+        background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+    }
+    
+    .export-title {
+        font-size: 1.1rem;
+        font-weight: 700;
+        color: var(--eebc-black);
+        margin-bottom: 0.5rem;
+    }
+    
+    .export-description {
+        font-size: 0.9rem;
+        color: var(--eebc-gray-600);
+        margin-bottom: 1rem;
+        line-height: 1.4;
+    }
+    
+    .export-btn {
+        width: 100%;
+        padding: 0.75rem;
+        border-radius: 10px;
+        font-weight: 600;
+        font-size: 0.9rem;
+        border: none;
+        transition: all 0.2s ease;
+    }
+    
+    .export-btn.excel {
+        background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%);
+        color: white;
+    }
+    
+    .export-btn.pdf {
+        background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+        color: white;
+    }
+    
+    .export-btn:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+    }
+    
+    .stats-overview {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 1rem;
+        margin-bottom: 2rem;
+    }
+    
+    .stat-card {
+        background: var(--eebc-white);
+        border-radius: 12px;
+        padding: 1.25rem;
+        text-align: center;
+        box-shadow: 0 4px 15px rgba(11, 15, 25, 0.06);
+    }
+    
+    .stat-value {
+        font-size: 2rem;
+        font-weight: 800;
+        font-family: 'JetBrains Mono', monospace;
+        color: var(--eebc-primary);
+        line-height: 1;
+    }
+    
+    .stat-label {
+        font-size: 0.85rem;
+        color: var(--eebc-gray-500);
+        font-weight: 500;
+        margin-top: 0.5rem;
+    }
+    
+    .recent-exports {
+        background: var(--eebc-white);
+        border-radius: 16px;
+        padding: 1.5rem;
+        box-shadow: 0 4px 15px rgba(11, 15, 25, 0.06);
+        margin-top: 2rem;
+    }
+    
+    .recent-export-item {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        padding: 0.75rem 0;
+        border-bottom: 1px solid var(--eebc-gray-100);
+    }
+    
+    .recent-export-item:last-child {
+        border-bottom: none;
+    }
+    
+    .recent-export-icon {
+        width: 40px;
+        height: 40px;
+        border-radius: 8px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: var(--eebc-gray-100);
+        color: var(--eebc-gray-600);
+    }
+    
+    .quick-actions {
+        background: linear-gradient(135deg, var(--eebc-primary) 0%, var(--eebc-primary-dark) 100%);
+        color: white;
+        border-radius: 16px;
+        padding: 1.5rem;
+        margin-bottom: 2rem;
+    }
+    
+    .quick-actions h5 {
+        color: white;
+        margin-bottom: 1rem;
+    }
+    
+    .quick-action-links {
+        display: flex;
+        gap: 1rem;
+        flex-wrap: wrap;
+    }
+    
+    .quick-action-link {
+        background: rgba(255, 255, 255, 0.2);
+        color: white;
+        padding: 0.5rem 1rem;
+        border-radius: 8px;
+        text-decoration: none;
+        font-weight: 500;
+        transition: all 0.2s ease;
+        backdrop-filter: blur(10px);
+    }
+    
+    .quick-action-link:hover {
+        background: rgba(255, 255, 255, 0.3);
+        color: white;
+        text-decoration: none;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Statistiques Overview -->
+<div class="stats-overview">
+    <div class="stat-card">
+        <div class="stat-value">{{ export_stats.total }}</div>
+        <div class="stat-label">Exports disponibles</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-value">{{ export_stats.by_format.excel|default:0 }}</div>
+        <div class="stat-label">Formats Excel</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-value">{{ export_stats.by_format.pdf|default:0 }}</div>
+        <div class="stat-label">Formats PDF</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-value">{{ export_stats.sensitive_count }}</div>
+        <div class="stat-label">Données sensibles</div>
+    </div>
+</div>
+
+<!-- Actions rapides -->
+<div class="quick-actions">
+    <h5><i class="bi bi-lightning-fill me-2"></i>Actions rapides</h5>
+    <div class="quick-action-links">
+        <a href="{% url 'imports:list' %}" class="quick-action-link">
+            <i class="bi bi-clock-history me-2"></i>Historique imports
+        </a>
+        <a href="{% url 'imports:create' %}" class="quick-action-link">
+            <i class="bi bi-upload me-2"></i>Nouvel import
+        </a>
+        <a href="{% url 'imports:template' 'members' %}" class="quick-action-link">
+            <i class="bi bi-download me-2"></i>Template membres
+        </a>
+        <a href="{% url 'imports:template' 'children' %}" class="quick-action-link">
+            <i class="bi bi-download me-2"></i>Template enfants
+        </a>
+    </div>
+</div>
+
+<!-- Exports par catégorie -->
+{% for category, exports in user_exports.items %}
+<div class="export-category">
+    <h3 class="export-category-title">
+        {% if category == 'Personnes' %}
+            <i class="bi bi-people-fill text-primary"></i>
+        {% elif category == 'Finances' %}
+            <i class="bi bi-cash-stack text-success"></i>
+        {% elif category == 'Événements' %}
+            <i class="bi bi-calendar-event text-info"></i>
+        {% elif category == 'Culte' %}
+            <i class="bi bi-music-note-beamed text-purple"></i>
+        {% else %}
+            <i class="bi bi-folder text-secondary"></i>
+        {% endif %}
+        {{ category }}
+    </h3>
+    
+    <div class="export-grid">
+        {% for export_key, export_config in exports %}
+        <div class="export-card {% if export_config.sensitive %}sensitive{% endif %}">
+            <div class="export-icon {{ export_config.format_type }}">
+                <i class="{{ export_config.icon }}"></i>
+            </div>
+            
+            <h4 class="export-title">{{ export_config.name }}</h4>
+            <p class="export-description">{{ export_config.description }}</p>
+            
+            <a href="{{ export_config.get_url }}" class="btn export-btn {{ export_config.format_type }}">
+                <i class="bi bi-download me-2"></i>
+                {% if export_config.format_type == 'excel' %}
+                    Exporter Excel
+                {% elif export_config.format_type == 'pdf' %}
+                    Télécharger PDF
+                {% else %}
+                    Télécharger
+                {% endif %}
+            </a>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endfor %}
+
+<!-- Historique récent -->
+{% if recent_exports %}
+<div class="recent-exports">
+    <h5 class="mb-3">
+        <i class="bi bi-clock-history me-2"></i>
+        Exports récents
+    </h5>
+    
+    {% for export in recent_exports %}
+    <div class="recent-export-item">
+        <div class="recent-export-icon">
+            <i class="bi bi-file-earmark-excel"></i>
+        </div>
+        <div class="flex-grow-1">
+            <div class="fw-semibold">{{ export.file_name }}</div>
+            <small class="text-muted">
+                {{ export.started_at|date:"d/m/Y H:i" }} • 
+                {{ export.success_rows }} enregistrement{{ export.success_rows|pluralize }}
+            </small>
+        </div>
+        <div class="text-end">
+            <span class="badge bg-success">Réussi</span>
+        </div>
+    </div>
+    {% endfor %}
+    
+    <div class="text-center mt-3">
+        <a href="{% url 'imports:list' %}" class="btn btn-outline-primary btn-sm">
+            Voir tout l'historique
+        </a>
+    </div>
+</div>
+{% endif %}
+{% endblock %}

@@ -9,7 +9,10 @@ app_name = 'members'
 urlpatterns = [
     # Membres
     path('', views.member_list, name='list'),
+    path('create/', views.member_create, name='create'),
     path('<int:pk>/', views.member_detail, name='detail'),
+    path('<int:pk>/edit/', views.member_edit, name='edit'),
+    path('<int:pk>/delete/', views.member_delete, name='delete'),
     
     # Carte des membres
     path('map/', admin_views.members_map_view, name='map'),

@@ -98,6 +98,69 @@ def member_detail(request, pk):
     return render(request, 'members/member_detail.html', context)
 
 
+@login_required
+@role_required('admin', 'secretariat')
+def member_create(request):
+    """Créer un nouveau membre."""
+    from .forms import MemberForm
+    
+    if request.method == 'POST':
+        form = MemberForm(request.POST, request.FILES)
+        if form.is_valid():
+            member = form.save()
+            messages.success(request, f"Membre {member.full_name} créé avec succès.")
+            return redirect('members:detail', pk=member.pk)
+    else:
+        form = MemberForm()
+    
+    return render(request, 'members/member_form.html', {
+        'form': form,
+        'title': 'Nouveau membre',
+        'submit_text': 'Créer le membre'
+    })
+
+
+@login_required
+@role_required('admin', 'secretariat')
+def member_edit(request, pk):
+    """Modifier un membre."""
+    member = get_object_or_404(Member, pk=pk)
+    from .forms import MemberForm
+    
+    if request.method == 'POST':
+        form = MemberForm(request.POST, request.FILES, instance=member)
+        if form.is_valid():
+            member = form.save()
+            messages.success(request, f"Membre {member.full_name} modifié avec succès.")
+            return redirect('members:detail', pk=member.pk)
+    else:
+        form = MemberForm(instance=member)
+    
+    return render(request, 'members/member_form.html', {
+        'form': form,
+        'member': member,
+        'title': f'Modifier {member.full_name}',
+        'submit_text': 'Enregistrer les modifications'
+    })
+
+
+@login_required
+@role_required('admin', 'secretariat')
+def member_delete(request, pk):
+    """Supprimer un membre (avec confirmation)."""
+    member = get_object_or_404(Member, pk=pk)
+    
+    if request.method == 'POST':
+        member_name = member.full_name
+        member.delete()
+        messages.success(request, f"Membre {member_name} supprimé avec succès.")
+        return redirect('members:list')
+    
+    return render(request, 'members/member_confirm_delete.html', {
+        'member': member
+    })
+
+
 # =============================================================================
 # VUES PASTORAL CRM - Événements de vie
 # =============================================================================

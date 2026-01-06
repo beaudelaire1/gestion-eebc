@@ -1,4 +1,0 @@
-# file: C:\Users\vilme\OneDrive\Bureau\eebc_project\apps\campaigns\migrations\0001_initial.py
-# hypothesis_version: 6.148.7
-
-[200, '-donation_date', '-start_date', 'Active', 'Campagne', 'Campagnes', 'Campaign', 'Date de début', 'Date de fin', 'Date du don', 'Description', 'Don', 'Don anonyme', 'Donation', 'Dons', 'ID', 'Montant (€)', 'Montant collecté (€)', 'Nom de la campagne', 'Nom du donateur', 'Notes', 'Objectif (€)', 'Responsable', 'amount', 'campaign', 'campaigns', 'campaigns.campaign', 'collected_amount', 'created_at', 'description', 'donation_date', 'donations', 'donor_name', 'end_date', 'goal_amount', 'id', 'is_active', 'is_anonymous', 'name', 'notes', 'ordering', 'responsible', 'start_date', 'updated_at', 'verbose_name', 'verbose_name_plural']

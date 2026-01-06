@@ -1,4 +1,0 @@
-# file: C:\Users\vilme\OneDrive\Bureau\eebc_project\apps\core\migrations\0004_remove_event_recap_category.py
-# hypothesis_version: 6.148.7
-
-['0003_public_website', 'Actualité', 'Annonce', 'Catégorie', 'Méditation', 'Témoignage', 'announcement', 'category', 'core', 'devotional', 'news', 'newsarticle', 'testimony']

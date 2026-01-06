@@ -40,6 +40,7 @@ INSTALLED_APPS = [
     'crispy_forms',
     'crispy_bootstrap5',
     'django_filters',
+    'corsheaders',
     
     # Local apps
     'apps.core',
@@ -56,6 +57,7 @@ INSTALLED_APPS = [
     'apps.dashboard',
     'apps.finance',
     'apps.worship',
+    'apps.imports',  # Import Excel pour membres et enfants
 ]
 
 
@@ -63,6 +65,7 @@ INSTALLED_APPS = [
 # MIDDLEWARE
 # =============================================================================
 MIDDLEWARE = [
+    'corsheaders.middleware.CorsMiddleware',
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
@@ -90,6 +93,90 @@ SESSION_TIMEOUT_EXCLUDED_PATHS = [
     '/static/',
     '/media/',
 ]
+
+
+# =============================================================================
+# SECURITY CONFIGURATION
+# =============================================================================
+
+# CORS Configuration
+CORS_ALLOWED_ORIGINS = [
+    "https://eebc.org",
+    "https://www.eebc.org",
+]
+
+CORS_ALLOW_CREDENTIALS = True
+
+CORS_ALLOWED_HEADERS = [
+    'accept',
+    'accept-encoding',
+    'authorization',
+    'content-type',
+    'dnt',
+    'origin',
+    'user-agent',
+    'x-csrftoken',
+    'x-requested-with',
+    'hx-request',
+    'hx-target',
+    'hx-current-url',
+]
+
+# Content Security Policy
+CSP_DEFAULT_SRC = ["'self'"]
+CSP_SCRIPT_SRC = [
+    "'self'",
+    "'unsafe-inline'",  # Nécessaire pour HTMX et Bootstrap
+    "https://cdn.jsdelivr.net",
+    "https://unpkg.com",
+]
+CSP_STYLE_SRC = [
+    "'self'",
+    "'unsafe-inline'",
+    "https://cdn.jsdelivr.net",
+    "https://fonts.googleapis.com",
+]
+CSP_FONT_SRC = [
+    "'self'",
+    "https://fonts.gstatic.com",
+    "https://cdn.jsdelivr.net",
+]
+CSP_IMG_SRC = ["'self'", "data:", "https:"]
+CSP_CONNECT_SRC = ["'self'"]
+
+# Security Headers
+SECURE_REFERRER_POLICY = 'strict-origin-when-cross-origin'
+SECURE_CONTENT_TYPE_NOSNIFF = True
+SECURE_BROWSER_XSS_FILTER = True
+
+# Permissions Policy
+PERMISSIONS_POLICY = {
+    "geolocation": [],
+    "microphone": [],
+    "camera": [],
+}
+
+
+# =============================================================================
+# BUSINESS LOGIC CONFIGURATION
+# =============================================================================
+
+# Seuils et limites métier
+MEMBER_VISIT_THRESHOLD_DAYS = int(os.environ.get('MEMBER_VISIT_THRESHOLD_DAYS', 180))  # 6 mois
+RECURRING_ABSENCE_THRESHOLD = int(os.environ.get('RECURRING_ABSENCE_THRESHOLD', 3))
+ROLE_ASSIGNMENT_EXPIRY_HOURS = int(os.environ.get('ROLE_ASSIGNMENT_EXPIRY_HOURS', 48))
+
+# Validation des données
+ALLOWED_EMAIL_DOMAINS = os.environ.get('ALLOWED_EMAIL_DOMAINS', '').split(',') if os.environ.get('ALLOWED_EMAIL_DOMAINS') else None
+MAX_FINANCIAL_AMOUNT = float(os.environ.get('MAX_FINANCIAL_AMOUNT', 1000000))  # 1M€
+
+# Notifications
+DEFAULT_NOTIFICATION_DAYS_BEFORE = int(os.environ.get('DEFAULT_NOTIFICATION_DAYS_BEFORE', 4))
+DEFAULT_NOTIFICATION_DAY = int(os.environ.get('DEFAULT_NOTIFICATION_DAY', 3))  # Mercredi
+
+# Pagination
+DEFAULT_PAGE_SIZE = int(os.environ.get('DEFAULT_PAGE_SIZE', 25))
+MAX_PAGE_SIZE = int(os.environ.get('MAX_PAGE_SIZE', 100))
 
 
 # =============================================================================

@@ -362,7 +362,7 @@
         <div class="col-md-5">
             <label class="form-label fw-bold">Rechercher</label>
             <div class="input-group">
-                <span class="input-group-text input-group__text">
+                <span class="input-group-text">
                     <i class="bi bi-search"></i>
                 </span>
                 <input type="text" class="form-control" name="search" value="{{ search }}" 
@@ -399,28 +399,41 @@
             </div>
         </div>
         <div class="col-md-2 d-flex gap-2">
-            <!-- Boutons d'export -->
             <div class="dropdown">
-                <button class="btn btn-outline-secondary dropdown-toggle" type="button" 
-                        data-bs-toggle="dropdown" aria-expanded="false" title="Exporter">
-                    <i class="bi bi-download"></i>
+                <button class="btn btn-outline-primary dropdown-toggle" type="button" 
+                        data-bs-toggle="dropdown" aria-expanded="false" title="Import Excel">
+                    <i class="bi bi-upload"></i>
                 </button>
                 <ul class="dropdown-menu dropdown-menu-end">
                     <li>
-                        <a class="dropdown-item" href="{% url 'exports:members_excel' %}{% if status %}?status={{ status }}{% endif %}">
-                            <i class="bi bi-file-earmark-excel text-success me-2"></i>
-                            Exporter Excel
+                        <a class="dropdown-item" href="{% url 'imports:create' %}?type=members">
+                            <i class="bi bi-upload text-primary me-2"></i>
+                            Importer des membres
                         </a>
                     </li>
                     <li>
-                        <a class="dropdown-item" href="{% url 'exports:members_print' %}{% if status %}?status={{ status }}{% endif %}" target="_blank">
-                            <i class="bi bi-file-earmark-pdf text-danger me-2"></i>
-                            Exporter PDF
+                        <a class="dropdown-item" href="{% url 'imports:template' 'members' %}">
+                            <i class="bi bi-download text-success me-2"></i>
+                            Télécharger template
+                        </a>
+                    </li>
+                    <li><hr class="dropdown-divider"></li>
+                    <li>
+                        <a class="dropdown-item" href="{% url 'imports:export_members' %}">
+                            <i class="bi bi-file-earmark-excel text-warning me-2"></i>
+                            Exporter tous les membres
+                        </a>
+                    </li>
+                    <li><hr class="dropdown-divider"></li>
+                    <li>
+                        <a class="dropdown-item" href="{% url 'imports:list' %}">
+                            <i class="bi bi-clock-history text-info me-2"></i>
+                            Historique imports
                         </a>
                     </li>
                 </ul>
             </div>
-            <a href="{% url 'admin:members_member_add' %}" class="btn btn-primary flex-grow-1">
+            <a href="{% url 'members:create' %}" class="btn btn-primary flex-grow-1">
                 <i class="bi bi-plus-lg me-2"></i>Ajouter
             </a>
         </div>
@@ -489,7 +502,7 @@
                     <a href="{% url 'members:detail' member.pk %}" class="btn btn-outline-secondary">
                         <i class="bi bi-eye me-1"></i> Voir
                     </a>
-                    <a href="{% url 'admin:members_member_change' member.pk %}" class="btn btn-primary">
+                    <a href="{% url 'members:edit' member.pk %}" class="btn btn-primary">
                         <i class="bi bi-pencil me-1"></i> Modifier
                     </a>
                 </div>
@@ -499,7 +512,7 @@
     </div>
     
     <!-- Table View (hidden by default) -->
-    <div class="card table-view" id="table-view">
+    <div class="card table-view" id="table-view" style="display: none;">
         <div class="card__body p-0">
             <div class="table-responsive">
                 <table class="table table-hover mb-0">
@@ -532,28 +545,28 @@
                                     </div>
                                 </div>
                             </td>
-                            <td>
+                            <td class="table__cell">
                                 <div>{{ member.phone|default:"-" }}</div>
                                 <small class="text-muted">{{ member.email|default:"" }}</small>
                             </td>
-                            <td>{{ member.city|default:"-" }}</td>
-                            <td>
+                            <td class="table__cell">{{ member.city|default:"-" }}</td>
+                            <td class="table__cell">
                                 <span class="badge bg-{% if member.status == 'actif' %}success{% elif member.status == 'inactif' %}secondary{% elif member.status == 'visiteur' %}info{% else %}warning{% endif %}">
                                     {{ member.get_status_display }}
                                 </span>
                             </td>
-                            <td>
+                            <td class="table__cell">
                                 {% if member.is_baptized %}
                                 <i class="bi bi-check-circle-fill text-success"></i>
                                 {% else %}
                                 <i class="bi bi-x-circle text-muted"></i>
                                 {% endif %}
                             </td>
-                            <td class="text-end">
+                            <td class="table__cell text-end">
                                 <a href="{% url 'members:detail' member.pk %}" class="btn btn-sm btn-outline-secondary">
                                     <i class="bi bi-eye"></i>
                                 </a>
-                                <a href="{% url 'admin:members_member_change' member.pk %}" class="btn btn-sm btn-outline-secondary">
+                                <a href="{% url 'members:edit' member.pk %}" class="btn btn-sm btn-outline-secondary">
                                     <i class="bi bi-pencil"></i>
                                 </a>
                             </td>
@@ -601,7 +614,7 @@
             </div>
             <h5 class="mb-2">Aucun membre trouvé</h5>
             <p class="text-muted mb-4">Commencez par ajouter des membres à l'église</p>
-            <a href="{% url 'admin:members_member_add' %}" class="btn btn-primary">
+            <a href="{% url 'members:create' %}" class="btn btn-primary">
                 <i class="bi bi-plus-lg me-2"></i>Ajouter un membre
             </a>
         </div>
@@ -610,8 +623,10 @@
 </div>
 
 <!-- Search Loading Indicator -->
-<div id="search-loading" class="htmx-indicator">
-    {% include 'components/skeleton_member_list.html' %}
+<div id="search-loading" class="htmx-indicator position-fixed top-50 start-50 translate-middle" style="z-index: 9999;">
+    <div class="spinner-border text-primary" role="status">
+        <span class="visually-hidden">Chargement...</span>
+    </div>
 </div>
 {% endblock %}
 
@@ -639,6 +654,78 @@ document.addEventListener('DOMContentLoaded', function() {
     if (savedView === 'table') {
         showTable();
     }
+    
+    // Debug: vérifier que les éléments sont cliquables
+    console.log('🔍 Vérification des éléments interactifs...');
+    
+    const searchInput = document.querySelector('input[name="search"]');
+    const statusSelect = document.querySelector('select[name="status"]');
+    const addButton = document.querySelector('a[href*="create"]');
+    const gridButton = document.getElementById('btn-grid');
+    const tableButton = document.getElementById('btn-table');
+    
+    if (searchInput) {
+        console.log('✅ Champ de recherche trouvé');
+        searchInput.addEventListener('focus', () => console.log('🎯 Focus sur recherche'));
+    } else {
+        console.log('❌ Champ de recherche non trouvé');
+    }
+    
+    if (statusSelect) {
+        console.log('✅ Sélecteur de statut trouvé');
+        statusSelect.addEventListener('change', () => console.log('🎯 Changement de statut'));
+    } else {
+        console.log('❌ Sélecteur de statut non trouvé');
+    }
+    
+    if (addButton) {
+        console.log('✅ Bouton ajouter trouvé');
+        addButton.addEventListener('click', () => console.log('🎯 Clic sur ajouter'));
+    } else {
+        console.log('❌ Bouton ajouter non trouvé');
+    }
+    
+    if (gridButton && tableButton) {
+        console.log('✅ Boutons de vue trouvés');
+    } else {
+        console.log('❌ Boutons de vue non trouvés');
+    }
+    
+    // Vérifier les overlays qui pourraient bloquer
+    const overlays = document.querySelectorAll('.htmx-indicator, .skeleton-overlay');
+    overlays.forEach((overlay, index) => {
+        const style = window.getComputedStyle(overlay);
+        if (style.display !== 'none') {
+            console.log(`⚠️ Overlay ${index} visible:`, overlay);
+        }
+    });
+    
+    // Vérifier les éléments avec pointer-events: none
+    const allElements = document.querySelectorAll('*');
+    let blockedElements = 0;
+    allElements.forEach(el => {
+        const style = window.getComputedStyle(el);
+        if (style.pointerEvents === 'none') {
+            blockedElements++;
+        }
+    });
+    
+    if (blockedElements > 0) {
+        console.log(`⚠️ ${blockedElements} éléments avec pointer-events: none`);
+    }
+});
+
+// Gestion des erreurs HTMX
+document.body.addEventListener('htmx:responseError', function(evt) {
+    console.error('❌ Erreur HTMX:', evt.detail);
+});
+
+document.body.addEventListener('htmx:timeout', function(evt) {
+    console.error('⏱️ Timeout HTMX:', evt.detail);
+});
+
+document.body.addEventListener('htmx:afterRequest', function(evt) {
+    console.log('✅ Requête HTMX terminée');
 });
 </script>
 {% endblock %}

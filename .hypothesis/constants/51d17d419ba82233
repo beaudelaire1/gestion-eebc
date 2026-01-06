@@ -1,4 +1,0 @@
-# file: C:\Users\vilme\OneDrive\Bureau\eebc_project\gestion_eebc\settings\dev.py
-# hypothesis_version: 6.148.7
-
-['*', '127.0.0.1', 'ENGINE', 'INFO', 'NAME', 'STRIPE_PUBLIC_KEY', 'STRIPE_SECRET_KEY', 'class', 'console', 'db.sqlite3', 'debug_toolbar', 'default', 'django', 'handlers', 'level', 'localhost', 'loggers', 'propagate', 'root', 'version']

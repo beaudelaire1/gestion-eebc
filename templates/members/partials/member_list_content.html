@@ -59,7 +59,7 @@
                 <a href="{% url 'members:detail' member.pk %}" class="btn btn-outline-secondary">
                     <i class="bi bi-eye me-1"></i> Voir
                 </a>
-                <a href="{% url 'admin:members_member_change' member.pk %}" class="btn btn-primary">
+                <a href="{% url 'members:edit' member.pk %}" class="btn btn-primary">
                     <i class="bi bi-pencil me-1"></i> Modifier
                 </a>
             </div>
@@ -70,7 +70,7 @@
 
 <!-- Table View (hidden by default) -->
 <div class="card table-view" id="table-view" style="display: none;">
-    <div class="card-body p-0">
+    <div class="card__body p-0">
         <div class="table-responsive">
             <table class="table table-hover mb-0">
                 <thead>
@@ -87,14 +87,14 @@
                         {% with field='status' label='Statut' target_id='members-content' %}
                             {% include 'components/sortable_header.html' %}
                         {% endwith %}
-                        <th>Baptisé</th>
-                        <th class="text-end">Actions</th>
+                        <th class="table__header">Baptisé</th>
+                        <th class="table__header text-end">Actions</th>
                     </tr>
                 </thead>
                 <tbody>
                     {% for member in members %}
-                    <tr>
-                        <td>
+                    <tr class="table__row">
+                        <td class="table__cell">
                             <div class="d-flex align-items-center">
                                 {% if member.photo %}
                                 <img src="{{ member.photo.url }}" alt="{{ member.full_name }}" 
@@ -112,28 +112,28 @@
                                 </div>
                             </div>
                         </td>
-                        <td>
+                        <td class="table__cell">
                             <div>{{ member.phone|default:"-" }}</div>
                             <small class="text-muted">{{ member.email|default:"" }}</small>
                         </td>
-                        <td>{{ member.city|default:"-" }}</td>
-                        <td>
+                        <td class="table__cell">{{ member.city|default:"-" }}</td>
+                        <td class="table__cell">
                             <span class="badge bg-{% if member.status == 'actif' %}success{% elif member.status == 'inactif' %}secondary{% elif member.status == 'visiteur' %}info{% else %}warning{% endif %}">
                                 {{ member.get_status_display }}
                             </span>
                         </td>
-                        <td>
+                        <td class="table__cell">
                             {% if member.is_baptized %}
                             <i class="bi bi-check-circle-fill text-success"></i>
                             {% else %}
                             <i class="bi bi-x-circle text-muted"></i>
                             {% endif %}
                         </td>
-                        <td class="text-end">
+                        <td class="table__cell text-end">
                             <a href="{% url 'members:detail' member.pk %}" class="btn btn-sm btn-outline-secondary">
                                 <i class="bi bi-eye"></i>
                             </a>
-                            <a href="{% url 'admin:members_member_change' member.pk %}" class="btn btn-sm btn-outline-secondary">
+                            <a href="{% url 'members:edit' member.pk %}" class="btn btn-sm btn-outline-secondary">
                                 <i class="bi bi-pencil"></i>
                             </a>
                         </td>

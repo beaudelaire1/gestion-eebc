@@ -1,4 +1,0 @@
-# file: C:\Users\vilme\OneDrive\Bureau\eebc_project\apps\core\middleware.py
-# hypothesis_version: 6.148.7
-
-[500, ',', '/accounts/login/', 'HTTP_USER_AGENT', 'HTTP_X_FORWARDED_FOR', 'LOGIN_URL', 'REMOTE_ADDR', '_session_expired', 'reason', 'session_timeout']

@@ -1,4 +1,0 @@
-# file: C:\Users\vilme\OneDrive\Bureau\eebc_project\apps\groups\urls.py
-# hypothesis_version: 6.148.7
-
-['<int:pk>/', '<int:pk>/edit/', '<int:pk>/members/', '<int:pk>/statistics/', 'create', 'create/', 'dashboard', 'dashboard/', 'detail', 'generate_meetings', 'groups', 'list', 'meeting_create', 'meeting_update', 'members_manage', 'statistics', 'update']

@@ -1,4 +1,0 @@
-# file: C:\Users\vilme\OneDrive\Bureau\eebc_project\apps\members\views.py
-# hypothesis_version: 6.148.7
-
-[180, 9999, '-event_date', '-scheduled_date', '-visit_date', '1', 'F', 'M', 'POST', 'a_faire', 'actif', 'actifs_count', 'admin', 'asc', 'baptises_count', 'birth_date', 'city', 'completed_month', 'current_order', 'current_sort', 'current_status', 'current_type', 'days_since', 'desc', 'effectue', 'email', 'encadrant', 'event', 'event_types', 'events', 'femmes_count', 'first_name', 'form', 'hommes_count', 'last_name', 'last_visit', 'life_event', 'life_events', 'member', 'members', 'members:life_events', 'members:visit_detail', 'members:visits', 'needs_visit', 'order', 'page', 'pending', 'pending_visits', 'planifie', 'primary_member', 'recorded_by', 'search', 'secretariat', 'sort', 'stats', 'status', 'status_choices', 'statuses', 'to_announce', 'total', 'total_count', 'type', 'visit', 'visit_types', 'visitor', 'visits']

@@ -1,4 +1,0 @@
-# file: C:\Users\vilme\OneDrive\Bureau\eebc_project\apps\inventory\migrations\0001_initial.py
-# hypothesis_version: 6.148.7
-
-[100, 200, 'Bon état', 'Category', 'Catégorie', 'Catégories', "Date d'achat", 'Description', 'Emplacement', 'En maintenance', 'Equipment', 'Hors service', 'ID', 'Neuf', 'Nom', 'Notes', 'Photo', "Prix d'achat", 'Quantité', 'Responsable', 'broken', 'category', 'condition', 'created_at', 'description', 'equipment', 'fair', 'good', 'id', 'inventory.category', 'inventory/photos/', 'location', 'maintenance', 'name', 'new', 'notes', 'ordering', 'photo', 'purchase_date', 'purchase_price', 'quantity', 'responsible', 'updated_at', 'verbose_name', 'verbose_name_plural', 'Équipement', 'Équipements', 'État', 'État moyen']

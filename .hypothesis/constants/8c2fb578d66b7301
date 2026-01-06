@@ -1,4 +1,0 @@
-# file: C:\Users\vilme\OneDrive\Bureau\eebc_project\apps\transport\views.py
-# hypothesis_version: 6.148.7
-
-['#0dcaf0', '#198754', '#6c757d', '#dc3545', '#ffc107', '+00:00', '-event_date', '-event_time', 'Créer', 'Créer la demande', 'DEFAULT_FROM_EMAIL', 'Mettre à jour', 'Non assigné', 'Nouveau chauffeur', 'POST', 'Z', 'admin', 'available_drivers', 'cancelled', 'color', 'completed', 'confirmed', 'description', 'driver', 'driver__user', 'driver_id', 'drivers', 'end', 'extendedProps', 'form', 'id', 'noreply@eebc.org', 'passengers', 'pending', 'phone', 'recent_requests', 'requester', 'requests', 'responsable_groupe', 'secretariat', 'start', 'status', 'submit_text', 'title', 'transport:drivers', 'transport:requests', 'transport_request', 'url', 'user']

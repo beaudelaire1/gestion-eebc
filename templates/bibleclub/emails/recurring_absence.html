@@ -1,0 +1,173 @@
+{% extends 'emails/base.html' %}
+{% load humanize %}
+
+{% block title %}Absences récurrentes de {{ child.first_name }} - Club Biblique{% endblock %}
+
+{% block content %}
+<div class="email-header">
+    <h1>⚠️ Club Biblique EEBC</h1>
+    <p>Absences récurrentes détectées</p>
+</div>
+
+<div class="email-content">
+    <p>Bonjour <strong>{{ parent_name }}</strong>,</p>
+    
+    <p>Nous avons remarqué que <strong>{{ child.first_name }} {{ child.last_name }}</strong> a été absent(e) lors des <strong>{{ absence_count }}</strong> dernières sessions du Club Biblique.</p>
+    
+    <div class="absence-alert">
+        <h3>📊 Résumé des absences</h3>
+        <div class="absence-list">
+            {% for absence in absences %}
+            <div class="absence-item">
+                <span class="date">{{ absence.session.date|date:"d/m/Y" }}</span>
+                <span class="status">{{ absence.get_status_display }}</span>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    
+    <div class="concern-message">
+        <h4>🤝 Notre préoccupation</h4>
+        <p>Le Club Biblique est un moment important pour l'épanouissement spirituel et social de {{ child.first_name }}. Les absences répétées peuvent affecter :</p>
+        <ul>
+            <li>La continuité de l'apprentissage biblique</li>
+            <li>Les liens avec les autres enfants</li>
+            <li>La participation aux activités spéciales</li>
+        </ul>
+    </div>
+    
+    <div class="support-offer">
+        <h4>💙 Comment pouvons-nous aider ?</h4>
+        <p>Nous souhaitons comprendre s'il y a des difficultés particulières et voir comment nous pouvons mieux accompagner {{ child.first_name }}. N'hésitez pas à nous faire part de :</p>
+        <ul>
+            <li>Difficultés de transport</li>
+            <li>Problèmes d'horaires</li>
+            <li>Préoccupations concernant les activités</li>
+            <li>Besoins spécifiques de {{ child.first_name }}</li>
+        </ul>
+    </div>
+    
+    <div class="contact-urgent">
+        <h4>📞 Prenons contact</h4>
+        <p>Nous aimerions échanger avec vous prochainement. Vous pouvez nous contacter :</p>
+        <div class="contact-methods">
+            <div class="contact-method">
+                <strong>📧 Email :</strong> clubbiblique@eebc.org
+            </div>
+            <div class="contact-method">
+                <strong>📱 Téléphone :</strong> 0594 XX XX XX
+            </div>
+            <div class="contact-method">
+                <strong>💬 WhatsApp :</strong> +594 XX XX XX XX
+            </div>
+        </div>
+    </div>
+    
+    <p>Nous restons à votre disposition et espérons retrouver {{ child.first_name }} bientôt parmi nous !</p>
+</div>
+
+<div class="email-footer">
+    <p>Avec toute notre affection,<br>L'équipe du Club Biblique EEBC</p>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+    .absence-alert {
+        background: #fff3cd;
+        border: 1px solid #ffeaa7;
+        border-radius: 8px;
+        padding: 20px;
+        margin: 20px 0;
+    }
+    
+    .absence-alert h3 {
+        margin-top: 0;
+        color: #856404;
+    }
+    
+    .absence-list {
+        margin-top: 15px;
+    }
+    
+    .absence-item {
+        display: flex;
+        justify-content: space-between;
+        padding: 8px 12px;
+        margin: 5px 0;
+        background: white;
+        border-radius: 4px;
+        border-left: 3px solid #ffc107;
+    }
+    
+    .absence-item .date {
+        font-weight: 600;
+    }
+    
+    .absence-item .status {
+        color: #dc3545;
+        font-weight: 500;
+    }
+    
+    .concern-message {
+        background: #f8d7da;
+        border: 1px solid #f5c6cb;
+        border-radius: 8px;
+        padding: 20px;
+        margin: 20px 0;
+    }
+    
+    .concern-message h4 {
+        margin-top: 0;
+        color: #721c24;
+    }
+    
+    .support-offer {
+        background: #d1ecf1;
+        border: 1px solid #bee5eb;
+        border-radius: 8px;
+        padding: 20px;
+        margin: 20px 0;
+    }
+    
+    .support-offer h4 {
+        margin-top: 0;
+        color: #0c5460;
+    }
+    
+    .contact-urgent {
+        background: #d4edda;
+        border: 1px solid #c3e6cb;
+        border-radius: 8px;
+        padding: 20px;
+        margin: 20px 0;
+    }
+    
+    .contact-urgent h4 {
+        margin-top: 0;
+        color: #155724;
+    }
+    
+    .contact-methods {
+        margin-top: 15px;
+    }
+    
+    .contact-method {
+        padding: 8px 0;
+        border-bottom: 1px solid #c3e6cb;
+    }
+    
+    .contact-method:last-child {
+        border-bottom: none;
+    }
+    
+    ul {
+        margin: 10px 0;
+        padding-left: 20px;
+    }
+    
+    li {
+        margin: 5px 0;
+    }
+</style>
+{% endblock %}

@@ -907,16 +907,31 @@ class RoleAssignment(models.Model):
         return f"{self.member.full_name} - {self.get_role_display()} ({self.scheduled_service.date})"
     
     def save(self, *args, **kwargs):
-        # Définir la date d'expiration (48h avant le culte)
+        # Définir la date d'expiration (configurable via settings)
         if not self.expires_at and self.scheduled_service:
             from django.utils import timezone
+            from django.conf import settings
             from datetime import datetime
+            
             service_datetime = datetime.combine(
                 self.scheduled_service.date,
                 self.scheduled_service.start_time
             )
-            self.expires_at = timezone.make_aware(service_datetime) - timedelta(hours=48)
+            
+            expiry_hours = getattr(settings, 'ROLE_ASSIGNMENT_EXPIRY_HOURS', 48)
+            self.expires_at = timezone.make_aware(service_datetime) - timedelta(hours=expiry_hours)
+        
         super().save(*args, **kwargs)
+    
+    def invalidate_previous_assignments(self):
+        """Invalide les assignations précédentes pour le même rôle."""
+        RoleAssignment.objects.filter(
+            scheduled_service=self.scheduled_service,
+            role=self.role,
+            status=self.Status.PENDING
+        ).exclude(pk=self.pk).update(
+            status=self.Status.EXPIRED
+        )
     
     @property
     def is_expired(self):
@@ -1060,47 +1075,22 @@ Fraternellement,
         self.save(update_fields=['notified_at'])
     
     def _get_html_notification(self, confirm_url, decline_url):
-        """Génère le HTML de la notification."""
+        """Génère le HTML de la notification via template."""
+        from django.template.loader import render_to_string
+        
         service = self.scheduled_service
         schedule = service.schedule
         
-        return f"""
-        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-            <div style="background: linear-gradient(135deg, #0A36FF 0%, #1e3a5f 100%); color: white; padding: 20px; text-align: center;">
-                <h1 style="margin: 0;">Confirmation requise</h1>
-            </div>
-            
-            <div style="padding: 30px; background: #f8f9fa;">
-                <p>Bonjour <strong>{self.member.first_name}</strong>,</p>
-                
-                <p>Vous êtes sollicité(e) pour participer au culte :</p>
-                
-                <div style="background: white; padding: 20px; border-radius: 10px; margin: 20px 0;">
-                    <p style="margin: 5px 0;"><strong>📅 Date :</strong> {service.date.strftime('%A %d %B %Y')}</p>
-                    <p style="margin: 5px 0;"><strong>⏰ Heure :</strong> {service.start_time.strftime('%H:%M')}</p>
-                    <p style="margin: 5px 0;"><strong>📍 Lieu :</strong> {schedule.site.name}</p>
-                    <p style="margin: 5px 0;"><strong>🎯 Rôle :</strong> <span style="color: #0A36FF; font-weight: bold;">{self.get_role_display()}</span></p>
-                    {f'<p style="margin: 5px 0;"><strong>📖 Thème :</strong> {service.theme}</p>' if service.theme else ''}
-                </div>
-                
-                <p>Merci de confirmer votre disponibilité :</p>
-                
-                <div style="text-align: center; margin: 30px 0;">
-                    <a href="{confirm_url}" style="background: #28a745; color: white; padding: 15px 40px; text-decoration: none; border-radius: 5px; margin: 10px; display: inline-block; font-weight: bold;">
-                        ✅ J'ACCEPTE
-                    </a>
-                    <a href="{decline_url}" style="background: #dc3545; color: white; padding: 15px 40px; text-decoration: none; border-radius: 5px; margin: 10px; display: inline-block; font-weight: bold;">
-                        ❌ JE REFUSE
-                    </a>
-                </div>
-                
-                <p style="color: #666; font-size: 14px;">
-                    ⏰ Merci de répondre avant le <strong>{self.expires_at.strftime('%d/%m/%Y à %H:%M') if self.expires_at else 'plus tôt possible'}</strong>.
-                </p>
-            </div>
-            
-            <div style="background: #1e3a5f; color: white; padding: 15px; text-align: center; font-size: 12px;">
-                {schedule.site.name}
-            </div>
-        </div>
-        """
+        context = {
+            'member_name': self.member.first_name,
+            'service_date': service.date,
+            'service_time': service.start_time,
+            'site_name': schedule.site.name,
+            'role_display': self.get_role_display(),
+            'theme': service.theme,
+            'confirm_url': confirm_url,
+            'decline_url': decline_url,
+            'expires_at': self.expires_at,
+        }
+        
+        return render_to_string('worship/emails/role_assignment_notification.html', context)

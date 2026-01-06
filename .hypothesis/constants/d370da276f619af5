@@ -1,4 +1,0 @@
-# file: C:\Users\vilme\OneDrive\Bureau\eebc_project\apps\accounts\urls.py
-# hypothesis_version: 6.148.7
-
-['accounts', 'create_user', 'login', 'login/', 'logout', 'logout/', 'profile', 'profile/', 'resend_invitation', 'reset_password', 'user_list', 'users/', 'users/create/']

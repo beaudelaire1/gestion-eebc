@@ -1,4 +1,0 @@
-# file: C:\Users\vilme\OneDrive\Bureau\eebc_project\apps\transport\urls.py
-# hypothesis_version: 6.148.7
-
-['assign_driver', 'calendar', 'calendar/', 'calendar/data/', 'calendar_data', 'driver_create', 'driver_detail', 'driver_update', 'drivers', 'drivers/', 'drivers/<int:pk>/', 'drivers/create/', 'request_create', 'request_detail', 'request_update', 'requests', 'requests/', 'requests/<int:pk>/', 'requests/create/', 'transport']

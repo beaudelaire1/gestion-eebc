@@ -1,4 +1,0 @@
-# file: C:\Users\vilme\OneDrive\Bureau\eebc_project\apps\bibleclub\services.py
-# hypothesis_version: 6.148.7
-
-[100, '-date', '-session__date', 'Enfant non trouvé', 'F', 'M', 'absent', 'absent_count', 'absent_notified', 'active_children', 'assigned_driver', 'attendance', 'attendance_created', 'attendance_rate', 'bible_class', 'boys_count', 'check_in_time', 'child', 'child_id', 'count', 'created', 'date', 'end_date', 'error', 'errors', 'excused', 'excused_count', 'first_name', 'girls_count', 'last_name', 'late', 'late_count', 'message', 'next_sunday', 'notes', 'present', 'present_count', 'recent_attendances', 'recorded_by', 'session', 'sessions', 'sessions_count', 'start_date', 'stats', 'status', 'theme', 'total', 'total_absent', 'total_attendances', 'total_children', 'total_classes', 'total_monitors', 'total_present', 'total_sessions', 'transport_count', 'updated']

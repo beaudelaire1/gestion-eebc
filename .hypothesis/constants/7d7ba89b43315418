@@ -1,4 +1,0 @@
-# file: C:\Users\vilme\OneDrive\Bureau\eebc_project\apps\groups\admin.py
-# hypothesis_version: 6.148.7
-
-['Horaires', 'Informations', 'Membres', 'Statut', 'attendees_count', 'color', 'date', 'description', 'fields', 'group', 'group__name', 'group_type', 'image', 'is_active', 'is_cancelled', 'leader', 'meeting_day', 'meeting_frequency', 'meeting_location', 'meeting_time', 'member_count', 'members', 'name', 'time', 'topic']

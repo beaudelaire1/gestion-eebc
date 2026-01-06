@@ -1,4 +1,0 @@
-# file: C:\Users\vilme\OneDrive\Bureau\eebc_project\apps\members\migrations\0001_initial.py
-# hypothesis_version: 6.148.7
-
-[100, 254, 'Actif', 'Adresse', 'Baptisé(e)', 'Code postal', 'Compte utilisateur', 'Célibataire', "Date d'arrivée", 'Date de baptême', 'Date de naissance', 'Divorcé(e)', 'Email', 'F', 'Féminin', 'Genre', 'ID', 'Inactif', 'M', 'Marié(e)', 'Masculin', 'Member', 'Membre', 'Membres', 'Nom', 'Notes', 'Photo', 'Profession', 'Prénom', 'Situation familiale', 'Statut', 'Transféré', 'Téléphone', 'Veuf/Veuve', 'Ville', 'Visiteur', 'actif', 'address', 'baptism_date', 'celibataire', 'city', 'created_at', 'date_joined', 'date_of_birth', 'divorce', 'email', 'first_name', 'gender', 'id', 'inactif', 'is_baptized', 'last_name', 'marie', 'marital_status', 'member_profile', 'members/photos/', 'notes', 'ordering', 'phone', 'photo', 'postal_code', 'profession', 'status', 'transfere', 'updated_at', 'user', 'verbose_name', 'verbose_name_plural', 'veuf', 'visiteur']

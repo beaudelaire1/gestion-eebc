@@ -1,4 +1,0 @@
-# file: C:\Users\vilme\OneDrive\Bureau\eebc_project\apps\events\urls.py
-# hypothesis_version: 6.148.7
-
-['<int:pk>/', 'api/events/', 'calendar', 'calendar/', 'calendar/pdf/', 'calendar/print/', 'calendar_pdf', 'calendar_print', 'detail', 'events', 'events_json', 'list', 'upcoming', 'upcoming/']

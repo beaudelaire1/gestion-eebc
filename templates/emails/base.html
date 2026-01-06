@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}EEBC{% endblock %}</title>
+    <style>
+        /* Reset styles */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background-color: #f4f4f4;
+        }
+        
+        .email-container {
+            max-width: 600px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+        }
+        
+        .email-header {
+            background: linear-gradient(135deg, #0A36FF 0%, #1e3a5f 100%);
+            color: white;
+            padding: 30px 20px;
+            text-align: center;
+        }
+        
+        .email-header h1 {
+            font-size: 24px;
+            margin-bottom: 10px;
+            font-weight: 700;
+        }
+        
+        .email-header p {
+            font-size: 16px;
+            opacity: 0.9;
+        }
+        
+        .email-content {
+            padding: 30px 20px;
+        }
+        
+        .email-content p {
+            margin-bottom: 15px;
+            font-size: 16px;
+            line-height: 1.6;
+        }
+        
+        .email-footer {
+            background: #1e3a5f;
+            color: white;
+            padding: 20px;
+            text-align: center;
+            font-size: 14px;
+        }
+        
+        .email-footer p {
+            margin: 0;
+        }
+        
+        /* Responsive */
+        @media (max-width: 600px) {
+            .email-container {
+                margin: 10px;
+                border-radius: 8px;
+            }
+            
+            .email-header {
+                padding: 20px 15px;
+            }
+            
+            .email-header h1 {
+                font-size: 20px;
+            }
+            
+            .email-content {
+                padding: 20px 15px;
+            }
+            
+            .email-footer {
+                padding: 15px;
+            }
+        }
+        
+        {% block extra_css %}{% endblock %}
+    </style>
+</head>
+<body>
+    <div class="email-container">
+        {% block content %}{% endblock %}
+    </div>
+</body>
+</html>

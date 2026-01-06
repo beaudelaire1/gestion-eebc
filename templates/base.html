@@ -142,6 +142,10 @@
                         <i class="bi bi-building nav-link__icon"></i>
                         <span>Départements</span>
                     </a>
+                    <a class="nav-link {% if 'imports' in request.path %}nav-link--active{% endif %}" href="{% url 'imports:hub' %}">
+                        <i class="bi bi-upload nav-link__icon"></i>
+                        <span>Imports & Exports</span>
+                    </a>
                     {% if request.user.is_admin or request.user.role == 'admin' or request.user.role == 'secretariat' %}
                     <a class="nav-link {% if 'accounts/users' in request.path %}nav-link--active{% endif %}" href="{% url 'accounts:user_list' %}">
                         <i class="bi bi-people nav-link__icon"></i>

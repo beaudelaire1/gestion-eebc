@@ -1,0 +1,290 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ title }} - EEBC{% endblock %}
+{% block page_title %}{{ title }}{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-lg-8 mx-auto">
+        <div class="card border-0 shadow-sm">
+            <div class="card-header bg-white border-bottom">
+                <div class="d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0 fw-bold">{{ title }}</h5>
+                    <a href="{% url 'members:list' %}" class="btn btn-outline-secondary btn-sm">
+                        <i class="bi bi-arrow-left me-1"></i>Retour à la liste
+                    </a>
+                </div>
+            </div>
+            
+            <form method="post" enctype="multipart/form-data" class="card-body">
+                {% csrf_token %}
+                
+                {% if form.non_field_errors %}
+                <div class="alert alert-danger">
+                    {{ form.non_field_errors }}
+                </div>
+                {% endif %}
+                
+                <!-- Informations personnelles -->
+                <div class="row mb-4">
+                    <div class="col-12">
+                        <h6 class="fw-bold text-primary mb-3">
+                            <i class="bi bi-person me-2"></i>Informations personnelles
+                        </h6>
+                    </div>
+                    
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label fw-semibold">Prénom *</label>
+                        {{ form.first_name }}
+                        {% if form.first_name.errors %}
+                        <div class="text-danger small">{{ form.first_name.errors }}</div>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label fw-semibold">Nom de famille *</label>
+                        {{ form.last_name }}
+                        {% if form.last_name.errors %}
+                        <div class="text-danger small">{{ form.last_name.errors }}</div>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="col-md-4 mb-3">
+                        <label class="form-label fw-semibold">Date de naissance</label>
+                        {{ form.date_of_birth }}
+                        {% if form.date_of_birth.errors %}
+                        <div class="text-danger small">{{ form.date_of_birth.errors }}</div>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="col-md-4 mb-3">
+                        <label class="form-label fw-semibold">Genre</label>
+                        {{ form.gender }}
+                        {% if form.gender.errors %}
+                        <div class="text-danger small">{{ form.gender.errors }}</div>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="col-md-4 mb-3">
+                        <label class="form-label fw-semibold">Statut matrimonial</label>
+                        {{ form.marital_status }}
+                        {% if form.marital_status.errors %}
+                        <div class="text-danger small">{{ form.marital_status.errors }}</div>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label fw-semibold">Profession</label>
+                        {{ form.profession }}
+                        {% if form.profession.errors %}
+                        <div class="text-danger small">{{ form.profession.errors }}</div>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label fw-semibold">Photo</label>
+                        {{ form.photo }}
+                        {% if form.photo.errors %}
+                        <div class="text-danger small">{{ form.photo.errors }}</div>
+                        {% endif %}
+                    </div>
+                </div>
+                
+                <!-- Contact -->
+                <div class="row mb-4">
+                    <div class="col-12">
+                        <h6 class="fw-bold text-primary mb-3">
+                            <i class="bi bi-telephone me-2"></i>Contact
+                        </h6>
+                    </div>
+                    
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label fw-semibold">Email</label>
+                        {{ form.email }}
+                        {% if form.email.errors %}
+                        <div class="text-danger small">{{ form.email.errors }}</div>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label fw-semibold">Téléphone</label>
+                        {{ form.phone }}
+                        {% if form.phone.errors %}
+                        <div class="text-danger small">{{ form.phone.errors }}</div>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="col-md-8 mb-3">
+                        <label class="form-label fw-semibold">Adresse</label>
+                        {{ form.address }}
+                        {% if form.address.errors %}
+                        <div class="text-danger small">{{ form.address.errors }}</div>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="col-md-4 mb-3">
+                        <label class="form-label fw-semibold">Code postal</label>
+                        {{ form.postal_code }}
+                        {% if form.postal_code.errors %}
+                        <div class="text-danger small">{{ form.postal_code.errors }}</div>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label fw-semibold">Ville</label>
+                        {{ form.city }}
+                        {% if form.city.errors %}
+                        <div class="text-danger small">{{ form.city.errors }}</div>
+                        {% endif %}
+                    </div>
+                </div>
+                
+                <!-- Famille et Église -->
+                <div class="row mb-4">
+                    <div class="col-12">
+                        <h6 class="fw-bold text-primary mb-3">
+                            <i class="bi bi-house me-2"></i>Famille et Église
+                        </h6>
+                    </div>
+                    
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label fw-semibold">Famille</label>
+                        {{ form.family }}
+                        {% if form.family.errors %}
+                        <div class="text-danger small">{{ form.family.errors }}</div>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label fw-semibold">Rôle dans la famille</label>
+                        {{ form.family_role }}
+                        {% if form.family_role.errors %}
+                        <div class="text-danger small">{{ form.family_role.errors }}</div>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label fw-semibold">Site d'église</label>
+                        {{ form.site }}
+                        {% if form.site.errors %}
+                        <div class="text-danger small">{{ form.site.errors }}</div>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label fw-semibold">Statut</label>
+                        {{ form.status }}
+                        {% if form.status.errors %}
+                        <div class="text-danger small">{{ form.status.errors }}</div>
+                        {% endif %}
+                    </div>
+                </div>
+                
+                <!-- Baptême et dates importantes -->
+                <div class="row mb-4">
+                    <div class="col-12">
+                        <h6 class="fw-bold text-primary mb-3">
+                            <i class="bi bi-droplet me-2"></i>Baptême et dates importantes
+                        </h6>
+                    </div>
+                    
+                    <div class="col-md-4 mb-3">
+                        <div class="form-check">
+                            {{ form.is_baptized }}
+                            <label class="form-check-label fw-semibold" for="{{ form.is_baptized.id_for_label }}">
+                                Baptisé(e)
+                            </label>
+                        </div>
+                        {% if form.is_baptized.errors %}
+                        <div class="text-danger small">{{ form.is_baptized.errors }}</div>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="col-md-4 mb-3">
+                        <label class="form-label fw-semibold">Date de baptême</label>
+                        {{ form.baptism_date }}
+                        {% if form.baptism_date.errors %}
+                        <div class="text-danger small">{{ form.baptism_date.errors }}</div>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="col-md-4 mb-3">
+                        <label class="form-label fw-semibold">Date de mariage</label>
+                        {{ form.wedding_date }}
+                        {% if form.wedding_date.errors %}
+                        <div class="text-danger small">{{ form.wedding_date.errors }}</div>
+                        {% endif %}
+                    </div>
+                </div>
+                
+                <!-- Notifications -->
+                <div class="row mb-4">
+                    <div class="col-12">
+                        <h6 class="fw-bold text-primary mb-3">
+                            <i class="bi bi-bell me-2"></i>Préférences de notification
+                        </h6>
+                    </div>
+                    
+                    <div class="col-md-4 mb-3">
+                        <div class="form-check">
+                            {{ form.notify_by_email }}
+                            <label class="form-check-label" for="{{ form.notify_by_email.id_for_label }}">
+                                Notifications par email
+                            </label>
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-4 mb-3">
+                        <div class="form-check">
+                            {{ form.notify_by_sms }}
+                            <label class="form-check-label" for="{{ form.notify_by_sms.id_for_label }}">
+                                Notifications par SMS
+                            </label>
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-4 mb-3">
+                        <div class="form-check">
+                            {{ form.notify_by_whatsapp }}
+                            <label class="form-check-label" for="{{ form.notify_by_whatsapp.id_for_label }}">
+                                Notifications WhatsApp
+                            </label>
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label fw-semibold">Numéro WhatsApp</label>
+                        {{ form.whatsapp_number }}
+                        {% if form.whatsapp_number.errors %}
+                        <div class="text-danger small">{{ form.whatsapp_number.errors }}</div>
+                        {% endif %}
+                    </div>
+                </div>
+                
+                <!-- Notes -->
+                <div class="row mb-4">
+                    <div class="col-12">
+                        <h6 class="fw-bold text-primary mb-3">
+                            <i class="bi bi-journal-text me-2"></i>Notes
+                        </h6>
+                        {{ form.notes }}
+                        {% if form.notes.errors %}
+                        <div class="text-danger small">{{ form.notes.errors }}</div>
+                        {% endif %}
+                    </div>
+                </div>
+                
+                <!-- Boutons d'action -->
+                <div class="d-flex justify-content-between">
+                    <a href="{% url 'members:list' %}" class="btn btn-outline-secondary">
+                        <i class="bi bi-x-lg me-1"></i>Annuler
+                    </a>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="bi bi-check-lg me-1"></i>{{ submit_text }}
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

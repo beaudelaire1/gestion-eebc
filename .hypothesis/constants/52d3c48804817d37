@@ -1,4 +1,0 @@
-# file: C:\Users\vilme\OneDrive\Bureau\eebc_project\apps\campaigns\urls.py
-# hypothesis_version: 6.148.7
-
-['<int:pk>/', '<int:pk>/donate/', '<int:pk>/edit/', '<int:pk>/progress/', 'campaigns', 'create', 'create/', 'detail', 'donate', 'donate/', 'donate_general', 'list', 'progress_api', 'update']

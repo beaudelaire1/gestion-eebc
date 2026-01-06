@@ -1,0 +1,563 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Document - EEBC{% endblock %}</title>
+    
+    <style>
+        /* ========================================
+           STYLES D'IMPRESSION - EEBC
+           ======================================== */
+        
+        /* Variables CSS */
+        :root {
+            --print-primary: #366092;
+            --print-primary-dark: #2c4f7c;
+            --print-success: #28a745;
+            --print-warning: #ffc107;
+            --print-danger: #dc3545;
+            --print-gray-100: #f8f9fa;
+            --print-gray-200: #e9ecef;
+            --print-gray-300: #dee2e6;
+            --print-gray-500: #6c757d;
+            --print-gray-700: #495057;
+            --print-gray-900: #212529;
+            --print-border: #ddd;
+        }
+        
+        /* Reset et base */
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+        
+        body {
+            font-family: Arial, Helvetica, sans-serif;
+            font-size: 11pt;
+            line-height: 1.4;
+            color: var(--print-gray-900);
+            background: white;
+            margin: 0;
+            padding: 15mm;
+        }
+        
+        /* ========================================
+           EN-TÊTE DU DOCUMENT
+           ======================================== */
+        .print-header {
+            text-align: center;
+            margin-bottom: 25px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid var(--print-primary);
+        }
+        
+        .print-header .logo {
+            max-height: 50px;
+            margin-bottom: 10px;
+        }
+        
+        .print-header h1 {
+            margin: 0;
+            color: var(--print-primary);
+            font-size: 20pt;
+            font-weight: bold;
+        }
+        
+        .print-header .subtitle {
+            margin: 5px 0 0;
+            color: var(--print-gray-500);
+            font-size: 12pt;
+        }
+        
+        .print-header .document-info {
+            margin-top: 8px;
+            font-size: 10pt;
+            color: var(--print-gray-700);
+        }
+        
+        /* ========================================
+           SECTIONS D'INFORMATION
+           ======================================== */
+        .info-section {
+            display: flex;
+            justify-content: space-between;
+            gap: 20px;
+            margin-bottom: 25px;
+        }
+        
+        .info-box {
+            flex: 1;
+        }
+        
+        .info-box h3 {
+            margin: 0 0 10px 0;
+            color: var(--print-primary);
+            font-size: 11pt;
+            border-bottom: 1px solid var(--print-border);
+            padding-bottom: 5px;
+        }
+        
+        .info-item {
+            margin-bottom: 4px;
+            font-size: 10pt;
+        }
+        
+        .info-label {
+            font-weight: bold;
+            display: inline-block;
+            min-width: 100px;
+        }
+        
+        /* ========================================
+           BOÎTES DE RÉSUMÉ
+           ======================================== */
+        .summary-box {
+            background-color: var(--print-gray-100);
+            border: 1px solid var(--print-border);
+            border-radius: 5px;
+            padding: 15px;
+            margin-bottom: 25px;
+        }
+        
+        .summary-box h3 {
+            margin: 0 0 12px 0;
+            color: var(--print-primary);
+            font-size: 12pt;
+        }
+        
+        .summary-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 10px;
+        }
+        
+        .summary-grid-3 {
+            grid-template-columns: repeat(3, 1fr);
+        }
+        
+        .summary-grid-4 {
+            grid-template-columns: repeat(4, 1fr);
+        }
+        
+        .summary-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 6px 0;
+            border-bottom: 1px solid var(--print-gray-200);
+        }
+        
+        .summary-item:last-child {
+            border-bottom: none;
+        }
+        
+        .summary-label {
+            font-weight: bold;
+            font-size: 10pt;
+        }
+        
+        .summary-value {
+            font-weight: bold;
+            font-size: 11pt;
+        }
+        
+        /* ========================================
+           TABLEAUX
+           ======================================== */
+        .table-container {
+            margin-bottom: 25px;
+        }
+        
+        .table-container h3 {
+            margin: 0 0 10px 0;
+            color: var(--print-primary);
+            font-size: 12pt;
+        }
+        
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 9pt;
+        }
+        
+        th, td {
+            border: 1px solid var(--print-border);
+            padding: 6px 8px;
+            text-align: left;
+        }
+        
+        th {
+            background-color: var(--print-primary);
+            color: white;
+            font-weight: bold;
+            text-align: center;
+            font-size: 9pt;
+        }
+        
+        tbody tr:nth-child(even) {
+            background-color: var(--print-gray-100);
+        }
+        
+        tfoot tr {
+            background-color: var(--print-gray-200);
+            font-weight: bold;
+        }
+        
+        .total-row {
+            background-color: var(--print-gray-200) !important;
+            font-weight: bold;
+        }
+        
+        /* ========================================
+           ALIGNEMENTS
+           ======================================== */
+        .text-left { text-align: left; }
+        .text-center { text-align: center; }
+        .text-right { text-align: right; }
+        
+        /* ========================================
+           COULEURS DE MONTANTS
+           ======================================== */
+        .amount-positive { color: var(--print-success); }
+        .amount-negative { color: var(--print-danger); }
+        .amount-warning { color: #b45309; }
+        .amount-neutral { color: var(--print-gray-500); }
+        
+        /* ========================================
+           BADGES ET STATUTS
+           ======================================== */
+        .badge {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 3px;
+            font-size: 8pt;
+            font-weight: bold;
+        }
+        
+        .badge-success {
+            background-color: #d4edda;
+            color: #155724;
+        }
+        
+        .badge-warning {
+            background-color: #fff3cd;
+            color: #856404;
+        }
+        
+        .badge-danger {
+            background-color: #f8d7da;
+            color: #721c24;
+        }
+        
+        .badge-info {
+            background-color: #d1ecf1;
+            color: #0c5460;
+        }
+        
+        .badge-primary {
+            background-color: #cce5ff;
+            color: #004085;
+        }
+        
+        /* ========================================
+           BARRES DE PROGRESSION
+           ======================================== */
+        .progress-bar-container {
+            width: 80px;
+            height: 8px;
+            background-color: var(--print-gray-200);
+            border-radius: 4px;
+            overflow: hidden;
+            display: inline-block;
+            vertical-align: middle;
+        }
+        
+        .progress-bar-fill {
+            height: 100%;
+            background-color: var(--print-success);
+        }
+        
+        .progress-bar-fill.warning { background-color: var(--print-warning); }
+        .progress-bar-fill.danger { background-color: var(--print-danger); }
+        
+        /* ========================================
+           NOTES ET DESCRIPTIONS
+           ======================================== */
+        .notes-section {
+            margin-bottom: 20px;
+        }
+        
+        .notes-section h4 {
+            margin: 0 0 8px 0;
+            color: var(--print-gray-700);
+            font-size: 10pt;
+        }
+        
+        .notes-content {
+            background-color: var(--print-gray-100);
+            padding: 12px;
+            border-radius: 4px;
+            border: 1px solid var(--print-border);
+            font-size: 10pt;
+        }
+        
+        .notes-content.success {
+            background-color: #d4edda;
+            border-color: #c3e6cb;
+        }
+        
+        .notes-content.warning {
+            background-color: #fff3cd;
+            border-color: #ffeeba;
+        }
+        
+        /* ========================================
+           LÉGENDES
+           ======================================== */
+        .legend {
+            margin-bottom: 20px;
+            font-size: 9pt;
+        }
+        
+        .legend h4 {
+            margin: 0 0 8px 0;
+            font-size: 10pt;
+            color: var(--print-gray-700);
+        }
+        
+        .legend-items {
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+        }
+        
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+        
+        .legend-color {
+            width: 16px;
+            height: 12px;
+            border: 1px solid var(--print-border);
+            border-radius: 2px;
+        }
+        
+        /* ========================================
+           PIED DE PAGE
+           ======================================== */
+        .print-footer {
+            margin-top: 30px;
+            padding-top: 15px;
+            border-top: 1px solid var(--print-border);
+            font-size: 8pt;
+            color: var(--print-gray-500);
+            text-align: center;
+        }
+        
+        .print-footer p {
+            margin: 3px 0;
+        }
+        
+        /* ========================================
+           SIGNATURES
+           ======================================== */
+        .signatures-section {
+            margin-top: 40px;
+            display: flex;
+            justify-content: space-between;
+            gap: 30px;
+        }
+        
+        .signature-box {
+            flex: 1;
+            text-align: center;
+        }
+        
+        .signature-line {
+            border-top: 1px solid var(--print-gray-900);
+            margin-top: 50px;
+            padding-top: 8px;
+            font-size: 10pt;
+        }
+        
+        .signature-label {
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+        
+        /* ========================================
+           CONTRÔLES D'IMPRESSION (écran uniquement)
+           ======================================== */
+        .print-controls {
+            margin-bottom: 20px;
+            padding: 15px;
+            background-color: var(--print-gray-100);
+            border-radius: 8px;
+            text-align: center;
+            border: 1px solid var(--print-border);
+        }
+        
+        .print-controls .btn {
+            display: inline-block;
+            padding: 8px 16px;
+            margin: 0 5px;
+            background-color: var(--print-primary);
+            color: white;
+            text-decoration: none;
+            border-radius: 4px;
+            border: none;
+            cursor: pointer;
+            font-size: 10pt;
+            font-weight: 500;
+        }
+        
+        .print-controls .btn:hover {
+            background-color: var(--print-primary-dark);
+        }
+        
+        .print-controls .btn-secondary {
+            background-color: var(--print-gray-500);
+        }
+        
+        .print-controls .btn-secondary:hover {
+            background-color: var(--print-gray-700);
+        }
+        
+        .print-controls .btn i {
+            margin-right: 5px;
+        }
+        
+        /* ========================================
+           STYLES D'IMPRESSION (@media print)
+           ======================================== */
+        @media print {
+            body {
+                padding: 0;
+                margin: 10mm;
+                font-size: 10pt;
+            }
+            
+            .no-print,
+            .print-controls {
+                display: none !important;
+            }
+            
+            .page-break {
+                page-break-before: always;
+            }
+            
+            .page-break-after {
+                page-break-after: always;
+            }
+            
+            .avoid-break {
+                page-break-inside: avoid;
+            }
+            
+            table {
+                page-break-inside: auto;
+            }
+            
+            tr {
+                page-break-inside: avoid;
+                page-break-after: auto;
+            }
+            
+            thead {
+                display: table-header-group;
+            }
+            
+            tfoot {
+                display: table-footer-group;
+            }
+            
+            .print-header {
+                margin-bottom: 15px;
+            }
+            
+            .print-footer {
+                position: fixed;
+                bottom: 0;
+                left: 0;
+                right: 0;
+                padding: 10px;
+                background: white;
+            }
+            
+            /* Couleurs pour l'impression */
+            th {
+                background-color: var(--print-primary) !important;
+                -webkit-print-color-adjust: exact;
+                print-color-adjust: exact;
+            }
+            
+            .badge,
+            .summary-box,
+            .notes-content,
+            tbody tr:nth-child(even) {
+                -webkit-print-color-adjust: exact;
+                print-color-adjust: exact;
+            }
+        }
+        
+        /* ========================================
+           STYLES PERSONNALISÉS (bloc extensible)
+           ======================================== */
+        {% block extra_print_styles %}{% endblock %}
+    </style>
+</head>
+<body>
+    <!-- Contrôles d'impression (masqués à l'impression) -->
+    {% block print_controls %}
+    <div class="print-controls no-print">
+        <button onclick="window.print()" class="btn">
+            <i class="bi bi-printer"></i> Imprimer
+        </button>
+        {% block extra_controls %}{% endblock %}
+    </div>
+    {% endblock %}
+
+    <!-- En-tête du document -->
+    {% block header %}
+    <div class="print-header">
+        {% block header_logo %}{% endblock %}
+        <h1>{% block header_title %}Document{% endblock %}</h1>
+        {% block header_subtitle %}{% endblock %}
+        {% block header_info %}{% endblock %}
+    </div>
+    {% endblock %}
+
+    <!-- Contenu principal -->
+    {% block content %}{% endblock %}
+
+    <!-- Pied de page -->
+    {% block footer %}
+    <div class="print-footer">
+        <p>
+            Document généré le {% now "d/m/Y à H:i" %} - 
+            EEBC - Église Évangélique Baptiste de Charleroi
+        </p>
+        {% block footer_extra %}{% endblock %}
+    </div>
+    {% endblock %}
+
+    <!-- Scripts -->
+    {% block scripts %}
+    <script>
+        // Auto-print si paramètre dans l'URL
+        if (window.location.search.includes('auto_print=1')) {
+            window.onload = function() {
+                setTimeout(function() {
+                    window.print();
+                }, 500);
+            };
+        }
+    </script>
+    {% endblock %}
+</body>
+</html>

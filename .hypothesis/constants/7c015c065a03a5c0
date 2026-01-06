@@ -1,4 +1,0 @@
-# file: C:\Users\vilme\OneDrive\Bureau\eebc_project\apps\members\kanban_views.py
-# hypothesis_version: 6.148.7
-
-[400, 9999, '-event_date', '-scheduled_date', '-visit_date', 'Effectué', 'Planifié', 'Reporté', 'a_faire', 'actif', 'bi-arrow-repeat', 'bi-calendar-event', 'bi-check-circle', 'color', 'columns', 'days', 'domicile', 'effectue', 'error', 'icon', 'id', 'info', 'last_visit', 'life_event', 'life_event_id', 'member', 'member_id', 'message', 'overdue', 'pending', 'pending_life_events', 'planifie', 'primary_member', 'reporte', 'scheduled_date', 'secondary', 'stats', 'status', 'success', 'title', 'total_this_month', 'visit_id', 'visit_type', 'visitor', 'visits', 'warning', 'À faire']

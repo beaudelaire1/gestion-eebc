@@ -1,4 +1,0 @@
-# file: C:\Users\vilme\OneDrive\Bureau\eebc_project\apps\accounts\admin.py
-# hypothesis_version: 6.148.7
-
-['Informations EEBC', 'date_joined', 'date_joined_church', 'email', 'fields', 'first_name', 'is_active', 'is_staff', 'last_name', 'phone', 'photo', 'role', 'username']

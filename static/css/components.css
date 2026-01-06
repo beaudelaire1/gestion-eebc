@@ -682,28 +682,45 @@ body {
    Stats Components
    ======================================== */
 .stats-bar {
-    display: flex;
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
     gap: 1rem;
     margin-bottom: 2rem;
-    flex-wrap: wrap;
+}
+
+@media (max-width: 1200px) {
+    .stats-bar { grid-template-columns: repeat(3, 1fr); }
+}
+
+@media (max-width: 768px) {
+    .stats-bar { grid-template-columns: repeat(2, 1fr); }
+}
+
+@media (max-width: 576px) {
+    .stats-bar { grid-template-columns: 1fr; }
 }
 
 .mini-stat {
     background: var(--eebc-white);
     border: 1px solid var(--eebc-gray-200);
-    border-radius: 12px;
-    padding: 1rem;
-    flex: 1;
-    min-width: 200px;
+    border-radius: 16px;
+    padding: 1.25rem;
     display: flex;
     align-items: center;
     gap: 1rem;
+    box-shadow: 0 4px 15px rgba(11, 15, 25, 0.04);
+    transition: all 0.3s ease;
+}
+
+.mini-stat:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 10px 30px rgba(10, 54, 255, 0.1);
 }
 
 .mini-stat__icon {
-    width: 48px;
-    height: 48px;
-    border-radius: 12px;
+    width: 50px;
+    height: 50px;
+    border-radius: 14px;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -736,15 +753,18 @@ body {
 }
 
 .mini-stat__value {
-    font-size: 1.5rem;
-    font-weight: 700;
+    font-size: 1.75rem;
+    font-weight: 800;
+    font-family: 'JetBrains Mono', monospace;
     color: var(--eebc-black);
+    line-height: 1;
     margin: 0;
 }
 
 .mini-stat__label {
+    font-size: 0.85rem;
     color: var(--eebc-gray-500);
-    font-size: 0.875rem;
+    font-weight: 500;
     margin: 0;
 }
 
@@ -789,12 +809,222 @@ body {
 /* ========================================
    View Toggle Components
    ======================================== */
-.table-view {
-    display: none;
+.view-toggle {
+    display: flex;
+    gap: 0.5rem;
 }
 
-.table-view--active {
-    display: block;
+.view-toggle .btn {
+    width: 42px;
+    height: 42px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 12px;
+    border: 1px solid var(--eebc-gray-200);
+    background: var(--eebc-white);
+    color: var(--eebc-gray-500);
+    transition: all 0.2s ease;
+}
+
+.view-toggle .btn.active,
+.view-toggle .btn:hover {
+    background: var(--eebc-primary);
+    border-color: var(--eebc-primary);
+    color: white;
+}
+
+/* Filter Card */
+.filter-card {
+    background: var(--eebc-white);
+    border-radius: 20px;
+    padding: 1.5rem;
+    margin-bottom: 2rem;
+    box-shadow: 0 10px 40px rgba(11, 15, 25, 0.06);
+    border: none;
+}
+
+/* Members Grid */
+.members-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 1.5rem;
+}
+
+/* Member Card */
+.member-card {
+    background: var(--eebc-white);
+    border-radius: 24px;
+    overflow: hidden;
+    box-shadow: 0 10px 40px rgba(11, 15, 25, 0.06);
+    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    border: 2px solid transparent;
+}
+
+.member-card:hover {
+    transform: translateY(-8px);
+    box-shadow: 0 25px 60px rgba(10, 54, 255, 0.15);
+    border-color: var(--eebc-primary);
+}
+
+/* Zone photo */
+.member-photo-zone {
+    position: relative;
+    height: 180px;
+    overflow: hidden;
+}
+
+.member-photo-zone.homme {
+    background: linear-gradient(135deg, #0A36FF 0%, #1d4ed8 100%);
+}
+
+.member-photo-zone.femme {
+    background: linear-gradient(135deg, #8b5cf6 0%, #6d28d9 100%);
+}
+
+.member-photo-zone img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.member-photo-zone .initials {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 4rem;
+    font-weight: 800;
+    color: rgba(255, 255, 255, 0.9);
+    text-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+}
+
+/* Badge statut */
+.status-badge-card {
+    position: absolute;
+    top: 12px;
+    right: 12px;
+    padding: 0.4rem 0.8rem;
+    border-radius: 20px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    backdrop-filter: blur(8px);
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+}
+
+.status-badge-card.actif {
+    background: rgba(34, 197, 94, 0.9);
+    color: white;
+}
+
+.status-badge-card.inactif {
+    background: rgba(107, 114, 128, 0.9);
+    color: white;
+}
+
+.status-badge-card.visiteur {
+    background: rgba(59, 130, 246, 0.9);
+    color: white;
+}
+
+.status-badge-card.en_attente {
+    background: rgba(245, 158, 11, 0.9);
+    color: white;
+}
+
+/* Badge baptême */
+.baptism-badge {
+    position: absolute;
+    top: 12px;
+    left: 12px;
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(8px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1rem;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+}
+
+.baptism-badge.baptized { color: #22c55e; }
+.baptism-badge.not-baptized { color: #9ca3af; }
+
+/* Corps de la carte */
+.member-card-body {
+    padding: 1.25rem;
+}
+
+.member-name {
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: var(--eebc-black);
+    margin-bottom: 0.25rem;
+}
+
+.member-age {
+    font-size: 0.85rem;
+    color: var(--eebc-gray-500);
+    margin-bottom: 0.75rem;
+}
+
+.member-info {
+    padding: 0.85rem;
+    background: var(--eebc-gray-50);
+    border-radius: 12px;
+    margin-bottom: 1rem;
+}
+
+.member-info-item {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.8rem;
+    color: var(--eebc-gray-600);
+}
+
+.member-info-item i {
+    color: var(--eebc-primary);
+    width: 14px;
+}
+
+.member-card-actions {
+    display: flex;
+    gap: 0.5rem;
+}
+
+.member-card-actions .btn {
+    flex: 1;
+    padding: 0.6rem;
+    border-radius: 10px;
+    font-weight: 600;
+    font-size: 0.8rem;
+}
+
+/* Empty State */
+.empty-state {
+    text-align: center;
+    padding: 4rem 2rem;
+}
+
+.empty-state-icon {
+    width: 100px;
+    height: 100px;
+    border-radius: 50%;
+    background: var(--eebc-gray-100);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 1.5rem;
+    font-size: 2.5rem;
+    color: var(--eebc-gray-400);
+}
+
+.table-view {
+    display: none;
 }
 
 /* ========================================
@@ -943,8 +1173,31 @@ body {
 /* ========================================
    HTMX Loading States
    ======================================== */
-.htmx-request {
-    opacity: 0.5;
+.htmx-indicator {
+    display: none;
+}
+
+.htmx-request .htmx-indicator {
+    display: block;
+}
+
+.htmx-request.htmx-indicator {
+    display: block;
+}
+
+/* Ne pas bloquer l'interface pendant les requêtes HTMX */
+.htmx-request:not(.htmx-indicator) {
+    opacity: 1;
+    pointer-events: auto;
+}
+
+/* Seulement l'élément en cours de chargement */
+.htmx-request.htmx-element {
+    opacity: 0.7;
+}
+
+/* Loading overlay pour les indicateurs spécifiques */
+#search-loading {
     pointer-events: none;
 }
 

@@ -1,4 +1,0 @@
-# file: C:\Users\vilme\OneDrive\Bureau\eebc_project\apps\communication\migrations\0002_emailtemplate_emaillog_template_type_and_more.py
-# hypothesis_version: 6.148.7
-
-[100, 200, '-created_at', '0001_initial', 'Actif', 'Anniversaire', 'Bienvenue', 'Contenu HTML', 'Contenu texte', 'EmailTemplate', 'ID', 'Nom du template', 'Personnalisé', "Rappel d'événement", 'Reçu de don', "Sujet de l'email", "Template d'email", 'Template par défaut', "Templates d'emails", 'Type de template', 'birthday', 'communication', 'created_at', 'custom', 'donation_receipt', 'emaillog', 'emailtemplate', 'event_cancelled', 'event_notification', 'event_reminder', 'html_content', 'id', 'is_active', 'is_default', 'name', 'ordering', 'password_reset', 'recipient_email', 'status', 'subject', 'template_type', 'text_content', 'updated_at', 'variables_help', 'verbose_name', 'verbose_name_plural', 'welcome', 'Événement annulé']

@@ -1,73 +1,108 @@
-<table class="table table-hover mb-0">
-    <thead>
-        <tr>
-            <th>Nom</th>
-            <th>Âge</th>
-            <th>Classe</th>
-            <th>Parent</th>
-            <th>Transport</th>
-            <th class="text-end">Actions</th>
-        </tr>
-    </thead>
-    <tbody>
-        {% for child in children %}
-        <tr>
-            <td>
-                <div class="d-flex align-items-center">
-                    {% if child.photo %}
-                    <img src="{{ child.photo.url }}" alt="{{ child.full_name }}" 
-                         class="me-3" style="width: 45px; height: 45px; border-radius: 50%; object-fit: cover; border: 2px solid {% if child.gender == 'M' %}#3b82f6{% else %}#ec4899{% endif %};">
+<div class="table-responsive">
+    <table class="table table-hover mb-0">
+        <thead>
+            <tr>
+                <th>Enfant</th>
+                <th>Âge</th>
+                <th>Classe</th>
+                <th>Parents</th>
+                <th>Transport</th>
+                <th class="text-end">Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for child in children %}
+            <tr>
+                <td>
+                    <div class="d-flex align-items-center">
+                        {% if child.photo %}
+                        <img src="{{ child.photo.url }}" alt="{{ child.full_name }}" 
+                             class="avatar avatar--md me-3" style="width: 40px; height: 40px; border-radius: 8px; object-fit: cover;">
+                        {% else %}
+                        <div class="avatar avatar--md me-3 {% if child.gender == 'M' %}avatar--primary{% else %}avatar--pink{% endif %}" 
+                             style="width: 40px; height: 40px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-weight: 700; color: white; font-size: 0.9rem;">
+                            {{ child.first_name|slice:":1"|upper }}{{ child.last_name|slice:":1"|upper }}
+                        </div>
+                        {% endif %}
+                        <div>
+                            <div class="fw-semibold">{{ child.last_name }} {{ child.first_name }}</div>
+                            <small class="text-muted">
+                                <i class="bi bi-{% if child.gender == 'M' %}gender-male text-primary{% else %}gender-female text-danger{% endif %} me-1"></i>
+                                {% if child.gender == 'M' %}Garçon{% else %}Fille{% endif %}
+                            </small>
+                        </div>
+                    </div>
+                </td>
+                <td>
+                    <span class="fw-semibold">{{ child.age }}</span> ans
+                    <br>
+                    <small class="text-muted">{{ child.date_of_birth|date:"d/m/Y" }}</small>
+                </td>
+                <td>
+                    {% if child.bible_class %}
+                    <span class="badge" style="background-color: {{ child.bible_class.age_group.color }}; color: white;">
+                        {{ child.bible_class }}
+                    </span>
                     {% else %}
-                    <div class="avatar me-3" style="width: 45px; height: 45px; font-size: 0.85rem; background: {% if child.gender == 'M' %}linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%){% else %}linear-gradient(135deg, #ec4899 0%, #be185d 100%){% endif %};">
-                        {{ child.first_name|slice:":1"|upper }}{{ child.last_name|slice:":1"|upper }}
+                    <span class="badge bg-secondary">Non assigné</span>
+                    {% endif %}
+                </td>
+                <td>
+                    <div>
+                        <strong>{{ child.father_name }}</strong>
+                        <br>
+                        <small class="text-muted">{{ child.father_phone }}</small>
+                    </div>
+                    {% if child.mother_name %}
+                    <div class="mt-1">
+                        {{ child.mother_name }}
+                        {% if child.mother_phone %}
+                        <br>
+                        <small class="text-muted">{{ child.mother_phone }}</small>
+                        {% endif %}
                     </div>
                     {% endif %}
-                    <div>
-                        <div class="fw-semibold">{{ child.first_name }} {{ child.last_name }}</div>
-                        <small class="text-muted">{% if child.gender == 'M' %}Garçon{% elif child.gender == 'F' %}Fille{% endif %}</small>
+                </td>
+                <td>
+                    {% if child.needs_transport %}
+                    <span class="badge bg-warning text-dark">
+                        <i class="bi bi-truck me-1"></i>Oui
+                    </span>
+                    {% if child.pickup_address %}
+                    <br>
+                    <small class="text-muted">{{ child.pickup_address|truncatechars:30 }}</small>
+                    {% endif %}
+                    {% else %}
+                    <span class="text-muted">Non</span>
+                    {% endif %}
+                </td>
+                <td class="text-end">
+                    <div class="btn-group btn-group-sm">
+                        <a href="{% url 'bibleclub:child_detail' child.pk %}" 
+                           class="btn btn-outline-secondary" title="Voir les détails">
+                            <i class="bi bi-eye"></i>
+                        </a>
+                        <a href="{% url 'bibleclub:child_edit' child.pk %}" 
+                           class="btn btn-outline-primary" title="Modifier">
+                            <i class="bi bi-pencil"></i>
+                        </a>
+                        <a href="{% url 'bibleclub:child_delete' child.pk %}" 
+                           class="btn btn-outline-danger" title="Désactiver">
+                            <i class="bi bi-person-dash"></i>
+                        </a>
                     </div>
-                </div>
-            </td>
-            <td>{{ child.age }} ans</td>
-            <td>
-                {% if child.bible_class %}
-                <span class="badge" style="background: {{ child.bible_class.age_group.color }};">
-                    {{ child.bible_class }}
-                </span>
-                {% else %}
-                <span class="text-muted">Non assigné</span>
-                {% endif %}
-            </td>
-            <td>
-                <div>{{ child.parent1_name }}</div>
-                <small class="text-muted">{{ child.parent1_phone }}</small>
-            </td>
-            <td>
-                {% if child.needs_transport %}
-                <span class="badge bg-warning">
-                    <i class="bi bi-truck me-1"></i>Oui
-                </span>
-                {% else %}
-                <span class="text-muted">-</span>
-                {% endif %}
-            </td>
-            <td class="text-end">
-                <a href="{% url 'bibleclub:child_detail' child.pk %}" class="btn btn-sm btn-outline-secondary" title="Voir">
-                    <i class="bi bi-eye"></i>
-                </a>
-                <a href="{% url 'admin:bibleclub_child_change' child.pk %}" class="btn btn-sm btn-outline-secondary" title="Modifier">
-                    <i class="bi bi-pencil"></i>
-                </a>
-            </td>
-        </tr>
-        {% empty %}
-        <tr>
-            <td colspan="6" class="text-center py-5 text-muted">
-                <i class="bi bi-people fs-1 d-block mb-3"></i>
-                Aucun enfant trouvé
-            </td>
-        </tr>
-        {% endfor %}
-    </tbody>
-</table>
-
+                </td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="6" class="text-center py-4">
+                    <div class="text-muted">
+                        <i class="bi bi-people fs-1 d-block mb-2"></i>
+                        Aucun enfant trouvé
+                    </div>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>

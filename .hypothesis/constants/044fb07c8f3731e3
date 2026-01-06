@@ -1,4 +1,0 @@
-# file: C:\Users\vilme\OneDrive\Bureau\eebc_project\apps\core\migrations\0007_databasebackup.py
-# hypothesis_version: 6.148.7
-
-[255, 500, '-created_at', 'Automatique', 'Chemin du fichier', 'Créé le', 'Créé par', 'DatabaseBackup', 'En cours', 'ID', 'ID de tâche Celery', 'Manuelle', "Message d'erreur", 'Nom du fichier', 'Réussie', 'Statut', 'Terminé le', 'Type de sauvegarde', 'automatic', 'backup_type', 'celery_task_id', 'completed_at', 'core', 'created_at', 'created_backups', 'created_by', 'database_engine', 'error_message', 'failed', 'file_path', 'file_size', 'filename', 'id', 'indexes', 'manual', 'ordering', 'pending', 'status', 'success', 'verbose_name', 'verbose_name_plural', 'Échouée']

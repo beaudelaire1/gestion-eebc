@@ -1,4 +1,0 @@
-# file: C:\Users\vilme\OneDrive\Bureau\eebc_project\apps\events\admin.py
-# hypothesis_version: 6.148.7
-
-['Date et Heure', 'Informations', 'Lieu', 'Organisateur', 'Paramètres', 'Récurrence', 'address', 'all_day', 'category', 'classes', 'collapse', 'color', 'department', 'description', 'end_date', 'end_time', 'event', 'event__title', 'fields', 'group', 'icon', 'image', 'is_cancelled', 'location', 'name', 'notify_before', 'organizers', 'recurrence', 'recurrence_end_date', 'registered_at', 'start_date', 'start_time', 'title', 'user', 'user__first_name', 'user__last_name', 'visibility']

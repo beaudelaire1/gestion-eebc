@@ -1,4 +1,0 @@
-# file: C:\Users\vilme\OneDrive\Bureau\eebc_project\apps\core\pdf_service.py
-# hypothesis_version: 6.148.7
-
-['%Y%m%d_%H%M%S', '/', 'Content-Disposition', 'EEBC', 'SITE_NAME', 'application/pdf', 'attachment', 'inline', 'print_date', 'site_name']

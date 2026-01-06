@@ -1,4 +1,0 @@
-# file: C:\Users\vilme\OneDrive\Bureau\eebc_project\apps\core\migrations\0008_alter_auditlog_action.py
-# hypothesis_version: 6.148.7
-
-['0007_databasebackup', 'Accès refusé', 'Action', 'Connexion', 'Consultation', 'Création', 'Déconnexion', 'Erreur serveur', 'Export', 'Modification', 'Suppression', 'access_denied', 'action', 'auditlog', 'core', 'create', 'delete', 'export', 'login', 'login_failed', 'logout', 'server_error', 'update', 'view', 'Échec connexion']

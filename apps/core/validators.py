@@ -1,149 +1,132 @@
 """
-Validateurs personnalisés avec messages d'erreur en français.
+Validators personnalisés pour la validation des données.
 """
-
 import re
 from django.core.exceptions import ValidationError
 from django.core.validators import RegexValidator
 from django.utils.translation import gettext_lazy as _
 
 
-class FrenchPhoneValidator(RegexValidator):
-    """Validateur pour les numéros de téléphone français."""
-    
-    regex = r'^(?:(?:\+33|0)[1-9](?:[0-9]{8}))$'
-    message = 'Veuillez saisir un numéro de téléphone français valide (ex: 0694123456 ou +33694123456).'
-    
-    def __call__(self, value):
-        # Nettoyer le numéro (supprimer espaces, tirets, etc.)
-        cleaned_value = re.sub(r'[\s\-\(\)\.]+', '', str(value))
-        super().__call__(cleaned_value)
+# Validator pour les numéros de téléphone français/Guyane
+phone_validator = RegexValidator(
+    regex=r'^\+?(?:33|594)?[0-9]{9,10}$',
+    message=_("Format de téléphone invalide. Utilisez le format : 0694123456 ou +594694123456")
+)
 
-
-class FrenchPostalCodeValidator(RegexValidator):
-    """Validateur pour les codes postaux français."""
+# Validator pour les emails avec domaines autorisés
+def validate_email_domain(value):
+    """
+    Valide que l'email provient d'un domaine autorisé.
+    Peut être configuré via les settings.
+    """
+    from django.conf import settings
     
-    regex = r'^[0-9]{5}$'
-    message = 'Veuillez saisir un code postal français valide (5 chiffres).'
-
-
-class PasswordStrengthValidator:
-    """Validateur de force de mot de passe."""
-    
-    def __init__(self, min_length=8):
-        self.min_length = min_length
-    
-    def validate(self, password, user=None):
-        errors = []
-        
-        if len(password) < self.min_length:
-            errors.append(f'Le mot de passe doit contenir au moins {self.min_length} caractères.')
-        
-        if not re.search(r'[A-Z]', password):
-            errors.append('Le mot de passe doit contenir au moins une majuscule.')
-        
-        if not re.search(r'[a-z]', password):
-            errors.append('Le mot de passe doit contenir au moins une minuscule.')
-        
-        if not re.search(r'\d', password):
-            errors.append('Le mot de passe doit contenir au moins un chiffre.')
-        
-        if errors:
-            raise ValidationError(errors)
-    
-    def get_help_text(self):
-        return f'Votre mot de passe doit contenir au moins {self.min_length} caractères, une majuscule, une minuscule et un chiffre.'
-
-
-class FileExtensionValidator:
-    """Validateur d'extension de fichier avec messages français."""
-    
-    def __init__(self, allowed_extensions):
-        self.allowed_extensions = [ext.lower() for ext in allowed_extensions]
-    
-    def __call__(self, value):
-        if hasattr(value, 'name'):
-            filename = value.name
-            extension = filename.split('.')[-1].lower() if '.' in filename else ''
-            
-            if extension not in self.allowed_extensions:
-                raise ValidationError(
-                    f'Extension de fichier non autorisée. '
-                    f'Extensions autorisées : {", ".join(self.allowed_extensions)}'
-                )
-
-
-class FileSizeValidator:
-    """Validateur de taille de fichier avec messages français."""
-    
-    def __init__(self, max_size_mb):
-        self.max_size_mb = max_size_mb
-        self.max_size_bytes = max_size_mb * 1024 * 1024
-    
-    def __call__(self, value):
-        if hasattr(value, 'size') and value.size > self.max_size_bytes:
+    allowed_domains = getattr(settings, 'ALLOWED_EMAIL_DOMAINS', None)
+    if allowed_domains:
+        domain = value.split('@')[1].lower()
+        if domain not in allowed_domains:
             raise ValidationError(
-                f'Le fichier est trop volumineux. '
-                f'Taille maximale autorisée : {self.max_size_mb} MB. '
-                f'Taille actuelle : {value.size / (1024 * 1024):.1f} MB.'
+                _("Le domaine email '%(domain)s' n'est pas autorisé."),
+                params={'domain': domain}
             )
 
-
-def validate_future_date(value):
-    """Valide qu'une date est dans le futur."""
-    from datetime import date
-    if value <= date.today():
-        raise ValidationError('Cette date doit être dans le futur.')
-
-
-def validate_past_date(value):
-    """Valide qu'une date est dans le passé."""
-    from datetime import date
-    if value >= date.today():
-        raise ValidationError('Cette date doit être dans le passé.')
-
-
-def validate_reasonable_birth_date(value):
-    """Valide qu'une date de naissance est raisonnable."""
-    from datetime import date, timedelta
+# Validator pour les mots de passe forts
+def validate_strong_password(password):
+    """
+    Valide qu'un mot de passe respecte les critères de sécurité.
+    """
+    if len(password) < 12:
+        raise ValidationError(_("Le mot de passe doit contenir au moins 12 caractères."))
     
-    today = date.today()
-    min_date = today - timedelta(days=365 * 120)  # 120 ans max
-    max_date = today - timedelta(days=365 * 5)    # 5 ans min
+    if not re.search(r'[A-Z]', password):
+        raise ValidationError(_("Le mot de passe doit contenir au moins une majuscule."))
     
-    if value < min_date:
-        raise ValidationError('Cette date de naissance semble trop ancienne.')
+    if not re.search(r'[a-z]', password):
+        raise ValidationError(_("Le mot de passe doit contenir au moins une minuscule."))
     
-    if value > max_date:
-        raise ValidationError('Cette date de naissance semble trop récente.')
+    if not re.search(r'[0-9]', password):
+        raise ValidationError(_("Le mot de passe doit contenir au moins un chiffre."))
+    
+    if not re.search(r'[!@#$%^&*(),.?":{}|<>]', password):
+        raise ValidationError(_("Le mot de passe doit contenir au moins un caractère spécial."))
 
+# Validator pour les codes postaux français/Guyane
+postal_code_validator = RegexValidator(
+    regex=r'^(?:97[3-6]|0[1-9]|[1-8][0-9]|9[0-5])[0-9]{2}$',
+    message=_("Code postal invalide. Format attendu : 97300 (Guyane) ou 75001 (France métropolitaine)")
+)
 
+# Validator pour les numéros SIRET/SIREN
+siret_validator = RegexValidator(
+    regex=r'^[0-9]{14}$',
+    message=_("Numéro SIRET invalide. 14 chiffres attendus.")
+)
+
+siren_validator = RegexValidator(
+    regex=r'^[0-9]{9}$',
+    message=_("Numéro SIREN invalide. 9 chiffres attendus.")
+)
+
+# Validator pour les montants financiers
 def validate_positive_amount(value):
     """Valide qu'un montant est positif."""
     if value <= 0:
-        raise ValidationError('Le montant doit être positif.')
+        raise ValidationError(_("Le montant doit être positif."))
 
+def validate_reasonable_amount(value):
+    """Valide qu'un montant est raisonnable (< 1M€)."""
+    if value > 1000000:
+        raise ValidationError(_("Le montant semble trop élevé. Vérifiez la saisie."))
 
-def validate_percentage(value):
-    """Valide qu'une valeur est un pourcentage valide (0-100)."""
-    if not (0 <= value <= 100):
-        raise ValidationError('La valeur doit être comprise entre 0 et 100.')
+# Validator pour les âges
+def validate_age_range(value):
+    """Valide qu'un âge est dans une plage raisonnable."""
+    if value < 0 or value > 120:
+        raise ValidationError(_("L'âge doit être compris entre 0 et 120 ans."))
 
-
-def validate_no_special_chars(value):
-    """Valide qu'une chaîne ne contient pas de caractères spéciaux dangereux."""
-    dangerous_chars = ['<', '>', '"', "'", '&', 'script', 'javascript']
-    value_lower = value.lower()
+# Validator pour les dates de naissance
+def validate_birth_date(value):
+    """Valide qu'une date de naissance est cohérente."""
+    from datetime import date
+    today = date.today()
     
-    for char in dangerous_chars:
-        if char in value_lower:
-            raise ValidationError('Ce champ ne peut pas contenir de caractères spéciaux dangereux.')
+    if value > today:
+        raise ValidationError(_("La date de naissance ne peut pas être dans le futur."))
+    
+    age = today.year - value.year - ((today.month, today.day) < (value.month, value.day))
+    if age > 120:
+        raise ValidationError(_("La date de naissance semble trop ancienne."))
 
+# Validator pour les URLs sécurisées
+def validate_secure_url(value):
+    """Valide qu'une URL utilise HTTPS."""
+    if not value.startswith('https://'):
+        raise ValidationError(_("Seules les URLs HTTPS sont autorisées."))
 
-# Validateurs prêts à l'emploi
-phone_validator = FrenchPhoneValidator()
-postal_code_validator = FrenchPostalCodeValidator()
-image_validator = FileExtensionValidator(['jpg', 'jpeg', 'png', 'gif', 'webp'])
-document_validator = FileExtensionValidator(['pdf', 'doc', 'docx', 'txt'])
-small_image_validator = FileSizeValidator(5)  # 5 MB max
-large_file_validator = FileSizeValidator(50)  # 50 MB max
+# Validator pour les noms de fichiers sécurisés
+def validate_safe_filename(value):
+    """Valide qu'un nom de fichier est sécurisé."""
+    import os
+    
+    # Caractères interdits
+    forbidden_chars = ['<', '>', ':', '"', '|', '?', '*', '\\', '/']
+    if any(char in value for char in forbidden_chars):
+        raise ValidationError(_("Le nom de fichier contient des caractères interdits."))
+    
+    # Extensions interdites
+    forbidden_extensions = ['.exe', '.bat', '.cmd', '.scr', '.pif', '.com']
+    _, ext = os.path.splitext(value.lower())
+    if ext in forbidden_extensions:
+        raise ValidationError(_("Type de fichier non autorisé."))
+
+# Validator pour les codes couleur hexadécimaux
+hex_color_validator = RegexValidator(
+    regex=r'^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$',
+    message=_("Code couleur invalide. Format attendu : #FF0000 ou #F00")
+)
+
+# Validator pour les identifiants membres EEBC
+member_id_validator = RegexValidator(
+    regex=r'^EEBC-(CAB|MAC)-[0-9]{4,6}$',
+    message=_("ID membre invalide. Format attendu : EEBC-CAB-1234 ou EEBC-MAC-5678")
+)

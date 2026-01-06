@@ -1,0 +1,325 @@
+{% extends 'base.html' %}
+
+{% block title %}Imports - EEBC{% endblock %}
+{% block page_title %}Imports de données{% endblock %}
+{% block page_subtitle %}Gestion des imports Excel{% endblock %}
+
+{% block extra_css %}
+<style>
+    .import-status-badge {
+        padding: 0.375rem 0.75rem;
+        border-radius: 0.5rem;
+        font-size: 0.75rem;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+    
+    .import-status-badge.pending {
+        background-color: #fef3c7;
+        color: #92400e;
+    }
+    
+    .import-status-badge.processing {
+        background-color: #dbeafe;
+        color: #1e40af;
+    }
+    
+    .import-status-badge.success {
+        background-color: #d1fae5;
+        color: #065f46;
+    }
+    
+    .import-status-badge.error {
+        background-color: #fee2e2;
+        color: #991b1b;
+    }
+    
+    .import-status-badge.partial {
+        background-color: #fed7aa;
+        color: #9a3412;
+    }
+    
+    .progress-mini {
+        height: 4px;
+        border-radius: 2px;
+        background-color: var(--eebc-gray-200);
+        overflow: hidden;
+    }
+    
+    .progress-mini .progress-bar {
+        height: 100%;
+        background-color: var(--eebc-primary);
+        transition: width 0.3s ease;
+    }
+    
+    .import-stats {
+        display: flex;
+        gap: 1rem;
+        font-size: 0.75rem;
+        color: var(--eebc-gray-500);
+    }
+    
+    .import-stat {
+        display: flex;
+        align-items: center;
+        gap: 0.25rem;
+    }
+    
+    .template-card {
+        background: linear-gradient(135deg, var(--eebc-primary) 0%, var(--eebc-primary-dark) 100%);
+        color: white;
+        border-radius: 16px;
+        padding: 1.5rem;
+        margin-bottom: 2rem;
+    }
+    
+    .template-card h5 {
+        color: white;
+        margin-bottom: 1rem;
+    }
+    
+    .template-links {
+        display: flex;
+        gap: 1rem;
+        flex-wrap: wrap;
+    }
+    
+    .template-link {
+        background: rgba(255, 255, 255, 0.2);
+        color: white;
+        padding: 0.5rem 1rem;
+        border-radius: 8px;
+        text-decoration: none;
+        font-weight: 500;
+        transition: all 0.2s ease;
+        backdrop-filter: blur(10px);
+    }
+    
+    .template-link:hover {
+        background: rgba(255, 255, 255, 0.3);
+        color: white;
+        transform: translateY(-2px);
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Templates de téléchargement -->
+<div class="template-card">
+    <h5><i class="bi bi-download me-2"></i>Templates Excel</h5>
+    <p class="mb-3">Téléchargez les modèles Excel avec des exemples de données et les instructions d'import.</p>
+    <div class="template-links">
+        <a href="{% url 'imports:template' 'members' %}" class="template-link">
+            <i class="bi bi-people-fill me-2"></i>Template Membres
+        </a>
+        <a href="{% url 'imports:template' 'children' %}" class="template-link">
+            <i class="bi bi-person-hearts me-2"></i>Template Enfants
+        </a>
+    </div>
+</div>
+
+<!-- Export de données -->
+<div class="row mb-4">
+    <div class="col-md-6">
+        <div class="card h-100">
+            <div class="card-body text-center">
+                <div class="mb-3">
+                    <i class="bi bi-file-earmark-excel text-success" style="font-size: 2.5rem;"></i>
+                </div>
+                <h6 class="card-title">Exporter les membres</h6>
+                <p class="card-text text-muted small">Téléchargez tous les membres actifs au format Excel</p>
+                <a href="{% url 'imports:export_members' %}" class="btn btn-success btn-sm">
+                    <i class="bi bi-download me-2"></i>Exporter les membres
+                </a>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="card h-100">
+            <div class="card-body text-center">
+                <div class="mb-3">
+                    <i class="bi bi-file-earmark-excel text-warning" style="font-size: 2.5rem;"></i>
+                </div>
+                <h6 class="card-title">Exporter les enfants</h6>
+                <p class="card-text text-muted small">Téléchargez tous les enfants actifs au format Excel</p>
+                <a href="{% url 'imports:export_children' %}" class="btn btn-warning btn-sm">
+                    <i class="bi bi-download me-2"></i>Exporter les enfants
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Actions -->
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h6 class="mb-0">Historique des imports</h6>
+        <small class="text-muted">{{ page_obj.paginator.count }} import(s) au total</small>
+    </div>
+    <a href="{% url 'imports:create' %}" class="btn btn-primary">
+        <i class="bi bi-upload me-2"></i>Nouvel import
+    </a>
+</div>
+
+<!-- Filtres -->
+<div class="card mb-4">
+    <div class="card__body">
+        <form method="get" class="row g-3">
+            <div class="col-md-3">
+                <label class="form-label">Type d'import</label>
+                <select name="type" class="form-select">
+                    <option value="">Tous les types</option>
+                    {% for value, label in import_types %}
+                    <option value="{{ value }}" {% if current_type == value %}selected{% endif %}>{{ label }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-3">
+                <label class="form-label">Statut</label>
+                <select name="status" class="form-select">
+                    <option value="">Tous les statuts</option>
+                    {% for value, label in statuses %}
+                    <option value="{{ value }}" {% if current_status == value %}selected{% endif %}>{{ label }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-md-4">
+                <label class="form-label">Recherche</label>
+                <input type="text" name="search" class="form-control" value="{{ search }}" placeholder="Nom de fichier ou utilisateur...">
+            </div>
+            <div class="col-md-2 d-flex align-items-end">
+                <button type="submit" class="btn btn-outline-secondary w-100">
+                    <i class="bi bi-search"></i>
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Liste des imports -->
+<div class="card">
+    <div class="card__body p-0">
+        {% if page_obj %}
+        <div class="table-responsive">
+            <table class="table table-hover mb-0">
+                <thead>
+                    <tr>
+                        <th class="table__header">Fichier</th>
+                        <th class="table__header">Type</th>
+                        <th class="table__header">Statut</th>
+                        <th class="table__header">Progression</th>
+                        <th class="table__header">Importé par</th>
+                        <th class="table__header">Date</th>
+                        <th class="table__header text-end">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for import_log in page_obj %}
+                    <tr class="table__row">
+                        <td class="table__cell">
+                            <div>
+                                <div class="fw-semibold">{{ import_log.file_name }}</div>
+                                {% if import_log.total_rows > 0 %}
+                                <small class="text-muted">{{ import_log.total_rows }} ligne(s)</small>
+                                {% endif %}
+                            </div>
+                        </td>
+                        <td class="table__cell">
+                            <span class="badge badge--primary">{{ import_log.get_import_type_display }}</span>
+                        </td>
+                        <td class="table__cell">
+                            <span class="import-status-badge {{ import_log.status }}">
+                                {{ import_log.get_status_display }}
+                            </span>
+                        </td>
+                        <td class="table__cell">
+                            {% if import_log.total_rows > 0 %}
+                            <div class="progress-mini mb-1">
+                                <div class="progress-bar" style="width: {{ import_log.processed_rows|floatformat:0 }}{{ import_log.total_rows|floatformat:0 }}%"></div>
+                            </div>
+                            <div class="import-stats">
+                                <span class="import-stat">
+                                    <i class="bi bi-check-circle text-success"></i>
+                                    {{ import_log.success_rows }}
+                                </span>
+                                {% if import_log.error_rows > 0 %}
+                                <span class="import-stat">
+                                    <i class="bi bi-x-circle text-danger"></i>
+                                    {{ import_log.error_rows }}
+                                </span>
+                                {% endif %}
+                            </div>
+                            {% else %}
+                            <span class="text-muted">En attente</span>
+                            {% endif %}
+                        </td>
+                        <td class="table__cell">
+                            <div class="d-flex align-items-center">
+                                <div class="avatar avatar--sm me-2">
+                                    {{ import_log.imported_by.first_name|slice:":1"|upper }}{{ import_log.imported_by.last_name|slice:":1"|upper }}
+                                </div>
+                                <span>{{ import_log.imported_by.get_full_name|default:import_log.imported_by.username }}</span>
+                            </div>
+                        </td>
+                        <td class="table__cell">
+                            <div>{{ import_log.started_at|date:"d/m/Y H:i" }}</div>
+                            {% if import_log.duration %}
+                            <small class="text-muted">{{ import_log.duration }}</small>
+                            {% endif %}
+                        </td>
+                        <td class="table__cell text-end">
+                            <a href="{% url 'imports:detail' import_log.pk %}" class="btn btn-sm btn-outline-secondary">
+                                <i class="bi bi-eye"></i>
+                            </a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        
+        <!-- Pagination -->
+        {% if page_obj.has_other_pages %}
+        <div class="d-flex justify-content-center p-3">
+            <nav>
+                <ul class="pagination mb-0">
+                    {% if page_obj.has_previous %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ page_obj.previous_page_number }}&type={{ current_type }}&status={{ current_status }}&search={{ search }}">
+                            <i class="bi bi-chevron-left"></i>
+                        </a>
+                    </li>
+                    {% endif %}
+                    
+                    <li class="page-item disabled">
+                        <span class="page-link">Page {{ page_obj.number }} sur {{ page_obj.paginator.num_pages }}</span>
+                    </li>
+                    
+                    {% if page_obj.has_next %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ page_obj.next_page_number }}&type={{ current_type }}&status={{ current_status }}&search={{ search }}">
+                            <i class="bi bi-chevron-right"></i>
+                        </a>
+                    </li>
+                    {% endif %}
+                </ul>
+            </nav>
+        </div>
+        {% endif %}
+        
+        {% else %}
+        <div class="empty-state">
+            <div class="empty-state-icon">
+                <i class="bi bi-upload"></i>
+            </div>
+            <h5 class="mb-2">Aucun import trouvé</h5>
+            <p class="text-muted mb-4">Commencez par importer des données depuis un fichier Excel</p>
+            <a href="{% url 'imports:create' %}" class="btn btn-primary">
+                <i class="bi bi-upload me-2"></i>Premier import
+            </a>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

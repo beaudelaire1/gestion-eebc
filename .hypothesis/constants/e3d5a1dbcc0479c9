@@ -1,4 +1,0 @@
-# file: C:\Users\vilme\OneDrive\Bureau\eebc_project\apps\bibleclub\permissions.py
-# hypothesis_version: 6.148.7
-
-['admin', 'bible_class', 'bibleclub:home', 'class_pk', 'dashboard:home', 'is_club_admin', 'is_club_staff', 'pk', 'responsable_club', 'user_class', 'user_monitor']

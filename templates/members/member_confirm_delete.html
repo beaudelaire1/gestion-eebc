@@ -1,0 +1,57 @@
+{% extends 'base.html' %}
+
+{% block title %}Supprimer {{ member.full_name }} - EEBC{% endblock %}
+{% block page_title %}Supprimer un membre{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-6 mx-auto">
+        <div class="card border-0 shadow-sm">
+            <div class="card-header bg-danger text-white">
+                <h5 class="mb-0">
+                    <i class="bi bi-exclamation-triangle me-2"></i>
+                    Confirmation de suppression
+                </h5>
+            </div>
+            
+            <div class="card-body text-center">
+                <div class="mb-4">
+                    {% if member.photo %}
+                    <img src="{{ member.photo.url }}" alt="{{ member.full_name }}" 
+                         class="rounded-circle mb-3" style="width: 80px; height: 80px; object-fit: cover;">
+                    {% else %}
+                    <div class="rounded-circle mx-auto mb-3 d-flex align-items-center justify-content-center"
+                         style="width: 80px; height: 80px; background: linear-gradient(135deg, #dc3545, #c82333); color: white; font-size: 2rem; font-weight: bold;">
+                        {{ member.first_name|slice:":1"|upper }}{{ member.last_name|slice:":1"|upper }}
+                    </div>
+                    {% endif %}
+                    
+                    <h4 class="fw-bold">{{ member.full_name }}</h4>
+                    <p class="text-muted">{{ member.get_status_display }} • {{ member.site|default:"Aucun site" }}</p>
+                </div>
+                
+                <div class="alert alert-warning">
+                    <i class="bi bi-exclamation-triangle me-2"></i>
+                    <strong>Attention !</strong> Cette action est irréversible. 
+                    Toutes les données associées à ce membre seront définitivement supprimées.
+                </div>
+                
+                <p class="mb-4">
+                    Êtes-vous sûr de vouloir supprimer <strong>{{ member.full_name }}</strong> ?
+                </p>
+                
+                <form method="post" class="d-inline">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-danger me-2">
+                        <i class="bi bi-trash me-1"></i>Oui, supprimer
+                    </button>
+                </form>
+                
+                <a href="{% url 'members:detail' member.pk %}" class="btn btn-outline-secondary">
+                    <i class="bi bi-x-lg me-1"></i>Annuler
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

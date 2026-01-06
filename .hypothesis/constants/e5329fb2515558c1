@@ -1,4 +1,0 @@
-# file: C:\Users\vilme\OneDrive\Bureau\eebc_project\apps\departments\migrations\0001_initial.py
-# hypothesis_version: 6.148.7
-
-[100, '0001_initial', 'Actif', 'Department', 'Description', 'Département', 'Départements', 'ID', 'Membres', 'Nom', 'Responsable', 'created_at', 'departments', 'description', 'id', 'is_active', 'leader', 'led_departments', 'members', 'members.member', 'name', 'ordering', 'updated_at', 'verbose_name', 'verbose_name_plural']

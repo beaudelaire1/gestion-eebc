@@ -1,0 +1,362 @@
+{% extends 'base.html' %}
+
+{% block title %}Nouvel Import - EEBC{% endblock %}
+{% block page_title %}Nouvel import de données{% endblock %}
+{% block page_subtitle %}Importer des membres ou enfants depuis Excel{% endblock %}
+
+{% block extra_css %}
+<style>
+    .import-instructions {
+        background: var(--eebc-gray-50);
+        border-radius: 12px;
+        padding: 1.5rem;
+        margin-bottom: 2rem;
+    }
+    
+    .instruction-step {
+        display: flex;
+        align-items: flex-start;
+        gap: 1rem;
+        margin-bottom: 1rem;
+    }
+    
+    .instruction-step:last-child {
+        margin-bottom: 0;
+    }
+    
+    .step-number {
+        width: 32px;
+        height: 32px;
+        background: var(--eebc-primary);
+        color: white;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 600;
+        font-size: 0.875rem;
+        flex-shrink: 0;
+    }
+    
+    .step-content h6 {
+        margin-bottom: 0.25rem;
+        color: var(--eebc-black);
+    }
+    
+    .step-content p {
+        margin: 0;
+        color: var(--eebc-gray-600);
+        font-size: 0.875rem;
+    }
+    
+    .template-download {
+        background: linear-gradient(135deg, var(--eebc-success) 0%, #16a34a 100%);
+        color: white;
+        border-radius: 12px;
+        padding: 1.25rem;
+        margin-bottom: 2rem;
+        text-align: center;
+    }
+    
+    .template-download h6 {
+        color: white;
+        margin-bottom: 0.75rem;
+    }
+    
+    .template-buttons {
+        display: flex;
+        gap: 1rem;
+        justify-content: center;
+        flex-wrap: wrap;
+    }
+    
+    .template-btn {
+        background: rgba(255, 255, 255, 0.2);
+        color: white;
+        border: 1px solid rgba(255, 255, 255, 0.3);
+        padding: 0.75rem 1.5rem;
+        border-radius: 8px;
+        text-decoration: none;
+        font-weight: 500;
+        transition: all 0.2s ease;
+        backdrop-filter: blur(10px);
+    }
+    
+    .template-btn:hover {
+        background: rgba(255, 255, 255, 0.3);
+        color: white;
+        transform: translateY(-2px);
+    }
+    
+    .upload-zone {
+        border: 2px dashed var(--eebc-gray-300);
+        border-radius: 12px;
+        padding: 2rem;
+        text-align: center;
+        transition: all 0.2s ease;
+        background: var(--eebc-white);
+    }
+    
+    .upload-zone:hover {
+        border-color: var(--eebc-primary);
+        background: var(--eebc-gray-50);
+    }
+    
+    .upload-zone.dragover {
+        border-color: var(--eebc-primary);
+        background: rgba(10, 54, 255, 0.05);
+    }
+    
+    .upload-icon {
+        width: 64px;
+        height: 64px;
+        background: var(--eebc-gray-100);
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin: 0 auto 1rem;
+        font-size: 1.5rem;
+        color: var(--eebc-gray-400);
+    }
+    
+    .file-requirements {
+        background: var(--eebc-white);
+        border: 1px solid var(--eebc-gray-200);
+        border-radius: 8px;
+        padding: 1rem;
+        margin-top: 1rem;
+    }
+    
+    .file-requirements h6 {
+        color: var(--eebc-black);
+        margin-bottom: 0.75rem;
+        font-size: 0.875rem;
+    }
+    
+    .file-requirements ul {
+        margin: 0;
+        padding-left: 1.25rem;
+        color: var(--eebc-gray-600);
+        font-size: 0.8rem;
+    }
+    
+    .file-requirements li {
+        margin-bottom: 0.25rem;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Instructions -->
+<div class="import-instructions">
+    <h5 class="mb-3"><i class="bi bi-info-circle me-2"></i>Comment importer vos données</h5>
+    
+    <div class="instruction-step">
+        <div class="step-number">1</div>
+        <div class="step-content">
+            <h6>Téléchargez le template</h6>
+            <p>Utilisez nos modèles Excel pré-formatés avec des exemples de données et les instructions détaillées.</p>
+        </div>
+    </div>
+    
+    <div class="instruction-step">
+        <div class="step-number">2</div>
+        <div class="step-content">
+            <h6>Remplissez vos données</h6>
+            <p>Remplacez les exemples par vos vraies données en respectant les formats indiqués dans l'onglet "Instructions".</p>
+        </div>
+    </div>
+    
+    <div class="instruction-step">
+        <div class="step-number">3</div>
+        <div class="step-content">
+            <h6>Uploadez le fichier</h6>
+            <p>Sélectionnez le type d'import et uploadez votre fichier Excel. L'import se lancera automatiquement.</p>
+        </div>
+    </div>
+</div>
+
+<!-- Templates de téléchargement -->
+<div class="template-download">
+    <h6><i class="bi bi-download me-2"></i>Télécharger les templates Excel</h6>
+    <p class="mb-3">Modèles avec exemples de données et instructions détaillées</p>
+    <div class="template-buttons">
+        <a href="{% url 'imports:template' 'members' %}" class="template-btn">
+            <i class="bi bi-people-fill me-2"></i>Template Membres
+        </a>
+        <a href="{% url 'imports:template' 'children' %}" class="template-btn">
+            <i class="bi bi-person-hearts me-2"></i>Template Enfants
+        </a>
+    </div>
+</div>
+
+<!-- Formulaire d'import -->
+<div class="card">
+    <div class="card__header">
+        <h5 class="card__title">
+            <i class="bi bi-upload me-2"></i>Importer un fichier Excel
+        </h5>
+    </div>
+    <div class="card__body">
+        <form method="post" enctype="multipart/form-data" id="import-form">
+            {% csrf_token %}
+            
+            <div class="mb-4">
+                <label class="form-label fw-bold">{{ form.import_type.label }}</label>
+                {{ form.import_type }}
+                {% if form.import_type.help_text %}
+                <div class="form-text">{{ form.import_type.help_text }}</div>
+                {% endif %}
+                {% if form.import_type.errors %}
+                <div class="invalid-feedback d-block">
+                    {% for error in form.import_type.errors %}
+                    <i class="bi bi-exclamation-circle me-1"></i>{{ error }}
+                    {% endfor %}
+                </div>
+                {% endif %}
+            </div>
+            
+            <div class="mb-4">
+                <label class="form-label fw-bold">{{ form.file_path.label }}</label>
+                
+                <div class="upload-zone" id="upload-zone">
+                    <div class="upload-icon">
+                        <i class="bi bi-cloud-upload"></i>
+                    </div>
+                    <h6>Glissez votre fichier Excel ici</h6>
+                    <p class="text-muted mb-3">ou cliquez pour sélectionner un fichier</p>
+                    {{ form.file_path }}
+                </div>
+                
+                {% if form.file_path.help_text %}
+                <div class="form-text mt-2">{{ form.file_path.help_text }}</div>
+                {% endif %}
+                {% if form.file_path.errors %}
+                <div class="invalid-feedback d-block">
+                    {% for error in form.file_path.errors %}
+                    <i class="bi bi-exclamation-circle me-1"></i>{{ error }}
+                    {% endfor %}
+                </div>
+                {% endif %}
+                
+                <div class="file-requirements">
+                    <h6>Exigences du fichier :</h6>
+                    <ul>
+                        <li>Formats acceptés : .xlsx, .xls</li>
+                        <li>Taille maximale : 10 MB</li>
+                        <li>Utilisez les templates fournis pour éviter les erreurs</li>
+                        <li>Les dates doivent être au format JJ/MM/AAAA</li>
+                        <li>Les champs obligatoires ne doivent pas être vides</li>
+                    </ul>
+                </div>
+            </div>
+            
+            <div class="d-flex gap-2">
+                <button type="submit" class="btn btn-primary">
+                    <i class="bi bi-upload me-2"></i>Lancer l'import
+                </button>
+                <a href="{% url 'imports:list' %}" class="btn btn-outline-secondary">
+                    <i class="bi bi-arrow-left me-2"></i>Retour
+                </a>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const uploadZone = document.getElementById('upload-zone');
+    const fileInput = document.getElementById('id_file_path');
+    
+    // Gestion du drag & drop
+    uploadZone.addEventListener('dragover', function(e) {
+        e.preventDefault();
+        uploadZone.classList.add('dragover');
+    });
+    
+    uploadZone.addEventListener('dragleave', function(e) {
+        e.preventDefault();
+        uploadZone.classList.remove('dragover');
+    });
+    
+    uploadZone.addEventListener('drop', function(e) {
+        e.preventDefault();
+        uploadZone.classList.remove('dragover');
+        
+        const files = e.dataTransfer.files;
+        if (files.length > 0) {
+            fileInput.files = files;
+            updateUploadZone(files[0]);
+        }
+    });
+    
+    // Clic sur la zone d'upload
+    uploadZone.addEventListener('click', function() {
+        fileInput.click();
+    });
+    
+    // Changement de fichier
+    fileInput.addEventListener('change', function() {
+        if (this.files.length > 0) {
+            updateUploadZone(this.files[0]);
+        }
+    });
+    
+    function updateUploadZone(file) {
+        const icon = uploadZone.querySelector('.upload-icon i');
+        const title = uploadZone.querySelector('h6');
+        const subtitle = uploadZone.querySelector('p');
+        
+        icon.className = 'bi bi-file-earmark-excel text-success';
+        title.textContent = file.name;
+        subtitle.textContent = `${(file.size / 1024 / 1024).toFixed(2)} MB`;
+        
+        uploadZone.style.borderColor = 'var(--eebc-success)';
+        uploadZone.style.backgroundColor = 'rgba(34, 197, 94, 0.05)';
+    }
+    
+    // Validation du formulaire
+    document.getElementById('import-form').addEventListener('submit', function(e) {
+        const importType = document.getElementById('id_import_type').value;
+        const file = fileInput.files[0];
+        
+        if (!importType) {
+            e.preventDefault();
+            alert('Veuillez sélectionner un type d\'import.');
+            return;
+        }
+        
+        if (!file) {
+            e.preventDefault();
+            alert('Veuillez sélectionner un fichier Excel.');
+            return;
+        }
+        
+        // Vérifier l'extension
+        const allowedExtensions = ['.xlsx', '.xls'];
+        const fileExtension = '.' + file.name.split('.').pop().toLowerCase();
+        
+        if (!allowedExtensions.includes(fileExtension)) {
+            e.preventDefault();
+            alert('Format de fichier non supporté. Utilisez .xlsx ou .xls');
+            return;
+        }
+        
+        // Vérifier la taille
+        if (file.size > 10 * 1024 * 1024) {
+            e.preventDefault();
+            alert('Le fichier ne doit pas dépasser 10 MB.');
+            return;
+        }
+        
+        // Désactiver le bouton pour éviter les doubles soumissions
+        const submitBtn = this.querySelector('button[type="submit"]');
+        submitBtn.disabled = true;
+        submitBtn.innerHTML = '<i class="bi bi-hourglass-split me-2"></i>Import en cours...';
+    });
+});
+</script>
+{% endblock %}

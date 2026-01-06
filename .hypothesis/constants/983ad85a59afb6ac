@@ -1,4 +1,0 @@
-# file: C:\Users\vilme\OneDrive\Bureau\eebc_project\apps\inventory\forms.py
-# hypothesis_version: 6.148.7
-
-['0', '0.01', 'Catégorie', "Date d'achat", 'Description', 'Emplacement', "Nom de l'équipement", 'Notes', 'Photo', "Prix d'achat (€)", 'Quantité *', 'Responsable', 'accept', 'category', 'class', 'condition', 'date', 'description', 'form-control', 'form-select', 'image/*', 'location', 'min', 'name', 'notes', 'photo', 'placeholder', 'purchase_date', 'purchase_price', 'quantity', 'responsible', 'rows', 'step', 'type', 'État *']

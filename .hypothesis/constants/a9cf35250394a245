@@ -1,4 +1,0 @@
-# file: C:\Users\vilme\OneDrive\Bureau\eebc_project\apps\accounts\migrations\0004_user_created_by_user_created_by_team.py
-# hypothesis_version: 6.148.7
-
-['Créé par', "Créé par l'équipe", 'accounts', 'created_by', 'created_by_team', 'created_users', 'user']

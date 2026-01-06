@@ -1,4 +1,0 @@
-# file: C:\Users\vilme\OneDrive\Bureau\eebc_project\apps\worship\urls.py
-# hypothesis_version: 6.148.7
-
-['apply_template', 'confirm_role', 'culte/<int:pk>/', 'culte/<int:pk>/edit/', 'culte_detail', 'culte_edit', 'decline_role', 'generate_sundays', 'plan_edit', 'plan_item_add', 'planning/', 'planning/<int:pk>/', 'planning/create/', 'publish_schedule', 'role_assign', 'role_assignments', 'role_confirm', 'role_decline', 'run_sheet_pdf', 'schedule_create', 'schedule_detail', 'schedule_edit', 'schedule_list', 'send_notifications', 'service_create', 'service_detail', 'service_edit', 'service_list', 'services/<int:pk>/', 'services/create/', 'worship']

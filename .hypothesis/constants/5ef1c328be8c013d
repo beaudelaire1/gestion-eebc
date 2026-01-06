@@ -1,4 +1,0 @@
-# file: C:\Users\vilme\OneDrive\Bureau\eebc_project\apps\transport\tests.py
-# hypothesis_version: 6.148.7
-
-[200, 302, 403, '0123456789', 'Centre-ville', 'Content-Type', 'Culte du dimanche', 'Dupont', 'Jean', 'Jean Dupont', 'Marie Martin', 'Peugeot 308', 'Voiture', 'admin', 'application/json', 'confirmed', 'driver', 'membre', 'regular', 'status', 'testpass123', 'transport:calendar', 'transport:drivers', 'transport:requests']

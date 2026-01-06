@@ -1,4 +1,0 @@
-# file: C:\Users\vilme\OneDrive\Bureau\eebc_project\apps\finance\services.py
-# hypothesis_version: 6.148.7
-
-[80.0, 100, '-created_at', '-transaction_date', '0', '0.00', 'active_budgets_count', 'amount', 'balance', 'budget', 'budget_stats', 'category', 'depense', 'description', 'dime', 'don', 'event', 'item', 'justification', 'member', 'month_balance', 'month_expenses', 'month_income', 'notes', 'offrande', 'payment_method', 'pending_count', 'pending_requests', 'priority', 'recent_transactions', 'recorded_by', 'remaining_budget', 'requested_amount', 'total', 'total_approved', 'total_expenses', 'total_income', 'total_requested', 'total_spent', 'transaction', 'transaction_date', 'transaction_type', 'year', 'year_balance', 'year_expenses', 'year_income']

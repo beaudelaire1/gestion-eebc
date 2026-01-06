@@ -1,0 +1,414 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ title }} - Club Biblique - EEBC{% endblock %}
+{% block page_title %}{{ title }}{% endblock %}
+{% block page_subtitle %}
+    {% if child %}
+        Modification de {{ child.full_name }}
+    {% else %}
+        Ajouter un nouvel enfant au Club Biblique
+    {% endif %}
+{% endblock %}
+
+{% block extra_css %}
+<style>
+    .form-card {
+        background: var(--eebc-white);
+        border-radius: 20px;
+        padding: 2rem;
+        box-shadow: 0 10px 40px rgba(11, 15, 25, 0.06);
+        border: none;
+    }
+    
+    .form-section {
+        margin-bottom: 2rem;
+        padding-bottom: 1.5rem;
+        border-bottom: 1px solid var(--eebc-gray-100);
+    }
+    
+    .form-section:last-child {
+        border-bottom: none;
+        margin-bottom: 0;
+    }
+    
+    .form-section-title {
+        font-size: 1.1rem;
+        font-weight: 700;
+        color: var(--eebc-black);
+        margin-bottom: 1rem;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+    
+    .form-section-title i {
+        color: var(--eebc-primary);
+    }
+    
+    .form-floating > label {
+        color: var(--eebc-gray-500);
+        font-weight: 500;
+    }
+    
+    .form-control:focus,
+    .form-select:focus {
+        border-color: var(--eebc-primary);
+        box-shadow: 0 0 0 0.2rem rgba(10, 54, 255, 0.1);
+    }
+    
+    .btn-primary {
+        background: var(--eebc-primary);
+        border-color: var(--eebc-primary);
+        padding: 0.75rem 2rem;
+        font-weight: 600;
+        border-radius: 12px;
+    }
+    
+    .btn-outline-secondary {
+        border-radius: 12px;
+        padding: 0.75rem 2rem;
+        font-weight: 600;
+    }
+    
+    .photo-preview {
+        width: 120px;
+        height: 120px;
+        border-radius: 16px;
+        object-fit: cover;
+        border: 3px solid var(--eebc-gray-200);
+    }
+    
+    .photo-placeholder {
+        width: 120px;
+        height: 120px;
+        border-radius: 16px;
+        background: var(--eebc-gray-100);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: var(--eebc-gray-400);
+        font-size: 2rem;
+        border: 3px dashed var(--eebc-gray-300);
+    }
+    
+    .transport-section {
+        background: var(--eebc-gray-50);
+        border-radius: 12px;
+        padding: 1rem;
+        margin-top: 1rem;
+    }
+    
+    .form-check-input:checked {
+        background-color: var(--eebc-primary);
+        border-color: var(--eebc-primary);
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-8">
+        <form method="post" enctype="multipart/form-data" class="form-card">
+            {% csrf_token %}
+            
+            <!-- Informations personnelles -->
+            <div class="form-section">
+                <h3 class="form-section-title">
+                    <i class="bi bi-person-circle"></i>
+                    Informations personnelles
+                </h3>
+                
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <div class="form-floating">
+                            {{ form.first_name }}
+                            <label for="{{ form.first_name.id_for_label }}">{{ form.first_name.label }}</label>
+                        </div>
+                        {% if form.first_name.errors %}
+                        <div class="text-danger small mt-1">{{ form.first_name.errors.0 }}</div>
+                        {% endif %}
+                    </div>
+                    <div class="col-md-6">
+                        <div class="form-floating">
+                            {{ form.last_name }}
+                            <label for="{{ form.last_name.id_for_label }}">{{ form.last_name.label }}</label>
+                        </div>
+                        {% if form.last_name.errors %}
+                        <div class="text-danger small mt-1">{{ form.last_name.errors.0 }}</div>
+                        {% endif %}
+                    </div>
+                    <div class="col-md-6">
+                        <div class="form-floating">
+                            {{ form.date_of_birth }}
+                            <label for="{{ form.date_of_birth.id_for_label }}">{{ form.date_of_birth.label }}</label>
+                        </div>
+                        {% if form.date_of_birth.errors %}
+                        <div class="text-danger small mt-1">{{ form.date_of_birth.errors.0 }}</div>
+                        {% endif %}
+                    </div>
+                    <div class="col-md-6">
+                        <div class="form-floating">
+                            {{ form.gender }}
+                            <label for="{{ form.gender.id_for_label }}">{{ form.gender.label }}</label>
+                        </div>
+                        {% if form.gender.errors %}
+                        <div class="text-danger small mt-1">{{ form.gender.errors.0 }}</div>
+                        {% endif %}
+                    </div>
+                    <div class="col-md-6">
+                        <div class="form-floating">
+                            {{ form.bible_class }}
+                            <label for="{{ form.bible_class.id_for_label }}">{{ form.bible_class.label }}</label>
+                        </div>
+                        {% if form.bible_class.errors %}
+                        <div class="text-danger small mt-1">{{ form.bible_class.errors.0 }}</div>
+                        {% endif %}
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">{{ form.photo.label }}</label>
+                        <div class="d-flex align-items-center gap-3">
+                            {% if child and child.photo %}
+                            <img src="{{ child.photo.url }}" alt="{{ child.full_name }}" class="photo-preview">
+                            {% else %}
+                            <div class="photo-placeholder">
+                                <i class="bi bi-camera"></i>
+                            </div>
+                            {% endif %}
+                            <div class="flex-grow-1">
+                                {{ form.photo }}
+                                {% if form.photo.errors %}
+                                <div class="text-danger small mt-1">{{ form.photo.errors.0 }}</div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Informations des parents -->
+            <div class="form-section">
+                <h3 class="form-section-title">
+                    <i class="bi bi-people-fill"></i>
+                    Informations des parents
+                </h3>
+                
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <div class="form-floating">
+                            {{ form.father_name }}
+                            <label for="{{ form.father_name.id_for_label }}">{{ form.father_name.label }}</label>
+                        </div>
+                        {% if form.father_name.errors %}
+                        <div class="text-danger small mt-1">{{ form.father_name.errors.0 }}</div>
+                        {% endif %}
+                    </div>
+                    <div class="col-md-6">
+                        <div class="form-floating">
+                            {{ form.father_phone }}
+                            <label for="{{ form.father_phone.id_for_label }}">{{ form.father_phone.label }}</label>
+                        </div>
+                        {% if form.father_phone.errors %}
+                        <div class="text-danger small mt-1">{{ form.father_phone.errors.0 }}</div>
+                        {% endif %}
+                    </div>
+                    <div class="col-md-6">
+                        <div class="form-floating">
+                            {{ form.father_email }}
+                            <label for="{{ form.father_email.id_for_label }}">{{ form.father_email.label }}</label>
+                        </div>
+                        {% if form.father_email.errors %}
+                        <div class="text-danger small mt-1">{{ form.father_email.errors.0 }}</div>
+                        {% endif %}
+                    </div>
+                    <div class="col-md-6">
+                        <div class="form-floating">
+                            {{ form.mother_name }}
+                            <label for="{{ form.mother_name.id_for_label }}">{{ form.mother_name.label }}</label>
+                        </div>
+                        {% if form.mother_name.errors %}
+                        <div class="text-danger small mt-1">{{ form.mother_name.errors.0 }}</div>
+                        {% endif %}
+                    </div>
+                    <div class="col-md-6">
+                        <div class="form-floating">
+                            {{ form.mother_phone }}
+                            <label for="{{ form.mother_phone.id_for_label }}">{{ form.mother_phone.label }}</label>
+                        </div>
+                        {% if form.mother_phone.errors %}
+                        <div class="text-danger small mt-1">{{ form.mother_phone.errors.0 }}</div>
+                        {% endif %}
+                    </div>
+                    <div class="col-md-6">
+                        <div class="form-floating">
+                            {{ form.mother_email }}
+                            <label for="{{ form.mother_email.id_for_label }}">{{ form.mother_email.label }}</label>
+                        </div>
+                        {% if form.mother_email.errors %}
+                        <div class="text-danger small mt-1">{{ form.mother_email.errors.0 }}</div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Contact d'urgence -->
+            <div class="form-section">
+                <h3 class="form-section-title">
+                    <i class="bi bi-telephone-fill"></i>
+                    Contact d'urgence
+                </h3>
+                
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <div class="form-floating">
+                            {{ form.emergency_contact }}
+                            <label for="{{ form.emergency_contact.id_for_label }}">{{ form.emergency_contact.label }}</label>
+                        </div>
+                        {% if form.emergency_contact.errors %}
+                        <div class="text-danger small mt-1">{{ form.emergency_contact.errors.0 }}</div>
+                        {% endif %}
+                    </div>
+                    <div class="col-md-6">
+                        <div class="form-floating">
+                            {{ form.emergency_phone }}
+                            <label for="{{ form.emergency_phone.id_for_label }}">{{ form.emergency_phone.label }}</label>
+                        </div>
+                        {% if form.emergency_phone.errors %}
+                        <div class="text-danger small mt-1">{{ form.emergency_phone.errors.0 }}</div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Informations médicales -->
+            <div class="form-section">
+                <h3 class="form-section-title">
+                    <i class="bi bi-heart-pulse-fill"></i>
+                    Informations médicales
+                </h3>
+                
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <label class="form-label">{{ form.allergies.label }}</label>
+                        {{ form.allergies }}
+                        {% if form.allergies.errors %}
+                        <div class="text-danger small mt-1">{{ form.allergies.errors.0 }}</div>
+                        {% endif %}
+                    </div>
+                    <div class="col-md-6">
+                        <label class="form-label">{{ form.medical_notes.label }}</label>
+                        {{ form.medical_notes }}
+                        {% if form.medical_notes.errors %}
+                        <div class="text-danger small mt-1">{{ form.medical_notes.errors.0 }}</div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Transport -->
+            <div class="form-section">
+                <h3 class="form-section-title">
+                    <i class="bi bi-truck"></i>
+                    Transport
+                </h3>
+                
+                <div class="form-check mb-3">
+                    {{ form.needs_transport }}
+                    <label class="form-check-label" for="{{ form.needs_transport.id_for_label }}">
+                        {{ form.needs_transport.label }}
+                    </label>
+                </div>
+                
+                <div class="transport-section" id="transport-details" style="display: none;">
+                    <div class="row g-3">
+                        <div class="col-md-8">
+                            <label class="form-label">{{ form.pickup_address.label }}</label>
+                            {{ form.pickup_address }}
+                            {% if form.pickup_address.errors %}
+                            <div class="text-danger small mt-1">{{ form.pickup_address.errors.0 }}</div>
+                            {% endif %}
+                        </div>
+                        <div class="col-md-4">
+                            <div class="form-floating">
+                                {{ form.assigned_driver }}
+                                <label for="{{ form.assigned_driver.id_for_label }}">{{ form.assigned_driver.label }}</label>
+                            </div>
+                            {% if form.assigned_driver.errors %}
+                            <div class="text-danger small mt-1">{{ form.assigned_driver.errors.0 }}</div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Notes -->
+            <div class="form-section">
+                <h3 class="form-section-title">
+                    <i class="bi bi-journal-text"></i>
+                    Notes
+                </h3>
+                
+                <label class="form-label">{{ form.notes.label }}</label>
+                {{ form.notes }}
+                {% if form.notes.errors %}
+                <div class="text-danger small mt-1">{{ form.notes.errors.0 }}</div>
+                {% endif %}
+            </div>
+            
+            <!-- Actions -->
+            <div class="d-flex gap-3 justify-content-end">
+                <a href="{% url 'bibleclub:children_list' %}" class="btn btn-outline-secondary">
+                    <i class="bi bi-x-lg me-2"></i>Annuler
+                </a>
+                <button type="submit" class="btn btn-primary">
+                    <i class="bi bi-check-lg me-2"></i>{{ submit_text }}
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const needsTransportCheckbox = document.getElementById('{{ form.needs_transport.id_for_label }}');
+    const transportDetails = document.getElementById('transport-details');
+    
+    function toggleTransportDetails() {
+        if (needsTransportCheckbox.checked) {
+            transportDetails.style.display = 'block';
+        } else {
+            transportDetails.style.display = 'none';
+        }
+    }
+    
+    // Initial state
+    toggleTransportDetails();
+    
+    // Listen for changes
+    needsTransportCheckbox.addEventListener('change', toggleTransportDetails);
+    
+    // Photo preview
+    const photoInput = document.getElementById('{{ form.photo.id_for_label }}');
+    if (photoInput) {
+        photoInput.addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    const preview = document.querySelector('.photo-preview, .photo-placeholder');
+                    if (preview) {
+                        if (preview.classList.contains('photo-placeholder')) {
+                            preview.outerHTML = `<img src="${e.target.result}" alt="Aperçu" class="photo-preview">`;
+                        } else {
+                            preview.src = e.target.result;
+                        }
+                    }
+                };
+                reader.readAsDataURL(file);
+            }
+        });
+    }
+});
+</script>
+{% endblock %}

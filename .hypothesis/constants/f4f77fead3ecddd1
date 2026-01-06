@@ -1,4 +1,0 @@
-# file: C:\Users\vilme\OneDrive\Bureau\eebc_project\apps\members\admin_views.py
-# hypothesis_version: 6.148.7
-
-[-89.9, 0.01, 89.9, 100, 111320, '/admin/', 'Carte des membres', 'Status', 'address', 'admin', 'cities', 'city', 'family', 'id', 'lat', 'lng', 'member', 'member_count', 'members', 'members_geocoded', 'members_with_address', 'name', 'neighborhood', 'neighborhoods', 'obfuscated', 'phone', 'role', 'secretariat', 'selected_site', 'selected_status', 'site', 'sites', 'stats', 'status', 'status_choices', 'title', 'total_members', 'type']

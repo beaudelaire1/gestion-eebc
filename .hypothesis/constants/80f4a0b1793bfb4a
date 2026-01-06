@@ -1,4 +1,0 @@
-# file: C:\Users\vilme\OneDrive\Bureau\eebc_project\apps\worship\forms.py
-# hypothesis_version: 6.148.7
-
-['bible_text', 'duration_minutes', 'event', 'expected_attendance', 'item_type', 'member', 'notes', 'resources_needed', 'responsible', 'role', 'rows', 'sermon_notes', 'sermon_title', 'service_type', 'start_time', 'theme', 'time', 'title', 'type', 'user']

@@ -1,4 +1,0 @@
-# file: C:\Users\vilme\OneDrive\Bureau\eebc_project\apps\accounts\migrations\0003_add_two_factor_fields.py
-# hypothesis_version: 6.148.7
-
-['0002_alter_user_role', '2FA activé', '2FA confirmé', 'Clé secrète 2FA', 'Codes de secours', 'accounts', 'two_factor_confirmed', 'two_factor_enabled', 'two_factor_secret', 'user']
