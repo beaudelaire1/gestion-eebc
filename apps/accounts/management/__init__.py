@@ -1,2 +1,1 @@
-# Management commands
-
+# Management commands for accounts app

@@ -1,0 +1,266 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Carte des membres - EEBC{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<style>
+    #map-container { display: flex; gap: 20px; flex-wrap: wrap; }
+    #map {
+        flex: 1;
+        min-width: 300px;
+        height: 550px;
+        border-radius: 10px;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+    }
+    .map-sidebar {
+        width: 280px;
+        background: white;
+        border-radius: 10px;
+        padding: 15px;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+    }
+    .filter-group { margin-bottom: 15px; }
+    .filter-group label {
+        display: block;
+        font-weight: 600;
+        margin-bottom: 5px;
+        color: #333;
+    }
+    .stats-card {
+        background: #f8f9fa;
+        border-radius: 8px;
+        padding: 15px;
+        margin-top: 15px;
+    }
+    .stats-card h5 { color: #0A36FF; margin-bottom: 10px; }
+    .stat-row {
+        display: flex;
+        justify-content: space-between;
+        padding: 5px 0;
+        border-bottom: 1px solid #eee;
+    }
+    .stat-value { font-weight: 700; color: #0A36FF; }
+    .legend { margin-top: 15px; }
+    .legend-item { display: flex; align-items: center; margin: 8px 0; }
+    .legend-icon {
+        width: 25px; height: 30px;
+        margin-right: 10px;
+    }
+    .marker-site { 
+        width: 20px; height: 20px;
+        border-radius: 50%; margin-right: 10px;
+        background: #0A36FF; 
+    }
+    .popup-title {
+        font-weight: bold; font-size: 14px;
+        color: #0A36FF; margin-bottom: 5px;
+    }
+    .popup-member { color: #8B4513; }
+    .member-status {
+        display: inline-block;
+        padding: 2px 8px;
+        border-radius: 10px;
+        font-size: 11px;
+        font-weight: 600;
+    }
+    .status-actif { background: #d4edda; color: #155724; }
+    .status-inactif { background: #f8d7da; color: #721c24; }
+    .status-visiteur { background: #fff3cd; color: #856404; }
+    
+    @media (max-width: 768px) {
+        #map-container { flex-direction: column-reverse; }
+        .map-sidebar { width: 100%; }
+        #map { height: 400px; }
+    }
+</style>
+{% endblock %}
+
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2>🗺️ Carte des membres</h2>
+    <a href="{% url 'members:list' %}" class="btn btn-outline-secondary">
+        ← Retour à la liste
+    </a>
+</div>
+
+<div id="map-container">
+    <div id="map"></div>
+    
+    <div class="map-sidebar">
+        <div class="filter-group">
+            <label>Site</label>
+            <select id="filter-site" class="form-select">
+                <option value="">Tous les sites</option>
+                {% for site in sites %}
+                <option value="{{ site.id }}">{{ site.name }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        
+        <div class="filter-group">
+            <label>Statut membre</label>
+            <select id="filter-status" class="form-select">
+                <option value="">Tous</option>
+                <option value="actif">Actif</option>
+                <option value="inactif">Inactif</option>
+                <option value="visiteur">Visiteur</option>
+            </select>
+        </div>
+        
+        <div class="filter-group">
+            <label>Ville</label>
+            <select id="filter-city" class="form-select">
+                <option value="">Toutes les villes</option>
+            </select>
+        </div>
+        
+        <button class="btn btn-primary w-100" onclick="loadMapData()">
+            🔄 Actualiser
+        </button>
+        
+        <div class="stats-card">
+            <h5>📊 Statistiques</h5>
+            <div class="stat-row">
+                <span>Total membres</span>
+                <span class="stat-value" id="stat-total">-</span>
+            </div>
+            <div class="stat-row">
+                <span>Avec adresse</span>
+                <span class="stat-value" id="stat-address">-</span>
+            </div>
+            <div class="stat-row">
+                <span>Membres localisés</span>
+                <span class="stat-value" id="stat-geocoded">-</span>
+            </div>
+        </div>
+        
+        <div class="legend">
+            <h6>Légende</h6>
+            <div class="legend-item">
+                <div class="marker-site"></div>
+                <span>Églises</span>
+            </div>
+            <div class="legend-item">
+                <img src="{% static 'images/markers/bible-marker.svg' %}" class="legend-icon" alt="Bible">
+                <span>Membres</span>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+    let map;
+    
+    // Icône Bible personnalisée pour les membres
+    const bibleIcon = L.icon({
+        iconUrl: '{% static "images/markers/bible-marker.svg" %}',
+        iconSize: [32, 40],
+        iconAnchor: [16, 40],
+        popupAnchor: [0, -40]
+    });
+    
+    // Icône église pour les sites
+    const churchIcon = L.divIcon({
+        html: '<div style="background:#0A36FF;color:white;width:30px;height:30px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:16px;border:2px solid white;box-shadow:0 2px 5px rgba(0,0,0,0.3);">⛪</div>',
+        iconSize: [30, 30],
+        iconAnchor: [15, 15],
+        popupAnchor: [0, -15],
+        className: ''
+    });
+    
+    document.addEventListener('DOMContentLoaded', function() {
+        // Centre sur Cayenne, Guyane française
+        map = L.map('map').setView([4.9225, -52.3058], 11);
+        
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '© OpenStreetMap'
+        }).addTo(map);
+        
+        loadMapData();
+    });
+    
+    function getStatusBadge(status) {
+        const statusClass = {
+            'actif': 'status-actif',
+            'inactif': 'status-inactif',
+            'visiteur': 'status-visiteur'
+        };
+        return `<span class="member-status ${statusClass[status] || ''}">${status}</span>`;
+    }
+    
+    function loadMapData() {
+        const site = document.getElementById('filter-site').value;
+        const status = document.getElementById('filter-status').value;
+        const city = document.getElementById('filter-city').value;
+        
+        let url = '{% url "members:map_data" %}?';
+        if (site) url += 'site=' + site + '&';
+        if (status) url += 'status=' + status + '&';
+        if (city) url += 'city=' + encodeURIComponent(city);
+        
+        fetch(url)
+            .then(r => r.json())
+            .then(data => {
+                // Clear existing markers
+                map.eachLayer(layer => {
+                    if (layer instanceof L.Marker) {
+                        map.removeLayer(layer);
+                    }
+                });
+                
+                // Add sites (églises)
+                data.sites.forEach(site => {
+                    L.marker([site.lat, site.lng], {icon: churchIcon})
+                        .bindPopup(`<div class="popup-title">⛪ ${site.name}</div>
+                            <p>${site.address}<br>${site.city}</p>
+                            <p><strong>${site.member_count} membres</strong></p>`)
+                        .addTo(map);
+                });
+                
+                // Add members avec icône Bible
+                data.members.forEach(m => {
+                    L.marker([m.lat, m.lng], {icon: bibleIcon})
+                        .bindPopup(`<div class="popup-title popup-member">📖 ${m.name}</div>
+                            <p>${m.address}<br>${m.city}</p>
+                            <p>${getStatusBadge(m.status)}</p>
+                            ${m.phone ? '<p>📞 ' + m.phone + '</p>' : ''}
+                            ${m.site ? '<p>⛪ ' + m.site + '</p>' : ''}
+                            ${m.family ? '<p>👨‍👩‍👧‍👦 ' + m.family + '</p>' : ''}
+                            <a href="/app/members/${m.id}/" class="btn btn-sm btn-primary mt-2">Voir profil</a>`)
+                        .addTo(map);
+                });
+                
+                // Update stats
+                document.getElementById('stat-total').textContent = data.stats.total_members;
+                document.getElementById('stat-address').textContent = data.stats.members_with_address;
+                document.getElementById('stat-geocoded').textContent = data.stats.members_geocoded;
+                
+                // Populate cities filter
+                const citySelect = document.getElementById('filter-city');
+                const currentCity = citySelect.value;
+                citySelect.innerHTML = '<option value="">Toutes les villes</option>';
+                data.cities.forEach(c => {
+                    const option = document.createElement('option');
+                    option.value = c;
+                    option.textContent = c;
+                    if (c === currentCity) option.selected = true;
+                    citySelect.appendChild(option);
+                });
+                
+                // Ajuster la vue si des membres sont présents
+                if (data.members.length > 0) {
+                    const bounds = L.latLngBounds(data.members.map(m => [m.lat, m.lng]));
+                    data.sites.forEach(s => bounds.extend([s.lat, s.lng]));
+                    map.fitBounds(bounds, {padding: [50, 50]});
+                }
+            })
+            .catch(err => console.error('Error:', err));
+    }
+</script>
+{% endblock %}

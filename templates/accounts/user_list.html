@@ -1,0 +1,292 @@
+{% extends 'base.html' %}
+
+{% block title %}Utilisateurs - {{ settings.site_name|default:'EEBC' }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <div>
+                    <h1 class="h3 mb-1">Gestion des utilisateurs</h1>
+                    <p class="text-muted">{{ users.count }} utilisateur{{ users.count|pluralize }}</p>
+                </div>
+                <a href="{% url 'accounts:create_user' %}" class="btn btn-primary">
+                    <i class="bi bi-person-plus me-2"></i>Créer un utilisateur
+                </a>
+            </div>
+        </div>
+    </div>
+    
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-hover mb-0">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Utilisateur</th>
+                                    <th>Email</th>
+                                    <th>Rôle</th>
+                                    <th>Statut</th>
+                                    <th>Dernière connexion</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for user in users %}
+                                <tr>
+                                    <td>
+                                        <div class="d-flex align-items-center">
+                                            <div class="avatar me-3" style="width: 40px; height: 40px;">
+                                                {{ user.first_name|slice:":1"|upper }}{{ user.last_name|slice:":1"|upper }}
+                                            </div>
+                                            <div>
+                                                <h6 class="mb-0">{{ user.get_full_name|default:user.username }}</h6>
+                                                <small class="text-muted">@{{ user.username }}</small>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <a href="mailto:{{ user.email }}" class="text-decoration-none">
+                                            {{ user.email }}
+                                        </a>
+                                    </td>
+                                    <td>
+                                        <span class="badge bg-primary">{{ user.get_role_display }}</span>
+                                    </td>
+                                    <td>
+                                        {% if user.must_change_password %}
+                                            <span class="badge bg-warning">
+                                                <i class="bi bi-clock me-1"></i>Doit changer le mot de passe
+                                            </span>
+                                        {% else %}
+                                            <span class="badge bg-success">
+                                                <i class="bi bi-check-circle me-1"></i>Actif
+                                            </span>
+                                        {% endif %}
+                                        
+                                        {% if user.is_superuser %}
+                                            <span class="badge bg-danger ms-1">
+                                                <i class="bi bi-shield me-1"></i>Super Admin
+                                            </span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if user.last_login %}
+                                            <span class="text-muted">{{ user.last_login|date:"d/m/Y H:i" }}</span>
+                                        {% else %}
+                                            <span class="text-muted">Jamais connecté</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <div class="btn-group btn-group-sm">
+                                            {% if user.must_change_password %}
+                                                <button type="button" 
+                                                        class="btn btn-outline-primary btn-resend-invitation"
+                                                        data-user-id="{{ user.id }}"
+                                                        data-user-name="{{ user.get_full_name }}"
+                                                        title="Renvoyer l'invitation">
+                                                    <i class="bi bi-envelope"></i>
+                                                </button>
+                                            {% else %}
+                                                <button type="button" 
+                                                        class="btn btn-outline-warning btn-reset-password"
+                                                        data-user-id="{{ user.id }}"
+                                                        data-user-name="{{ user.get_full_name }}"
+                                                        title="Réinitialiser le mot de passe">
+                                                    <i class="bi bi-key"></i>
+                                                </button>
+                                            {% endif %}
+                                            
+                                            <button type="button" 
+                                                    class="btn btn-outline-secondary"
+                                                    title="Voir le profil">
+                                                <i class="bi bi-eye"></i>
+                                            </button>
+                                            
+                                            {% if user != request.user %}
+                                                <button type="button" 
+                                                        class="btn btn-outline-danger"
+                                                        title="Désactiver">
+                                                    <i class="bi bi-person-x"></i>
+                                                </button>
+                                            {% endif %}
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% empty %}
+                                <tr>
+                                    <td colspan="6" class="text-center py-4">
+                                        <div class="text-muted">
+                                            <i class="bi bi-people display-4 d-block mb-3"></i>
+                                            Aucun utilisateur trouvé
+                                        </div>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal de confirmation pour renvoyer l'invitation -->
+<div class="modal fade" id="resendInvitationModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Renvoyer l'invitation</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p>Voulez-vous renvoyer l'email d'invitation à <strong id="modal-user-name"></strong> ?</p>
+                <div class="alert alert-info">
+                    <i class="bi bi-info-circle me-2"></i>
+                    Un nouveau mot de passe temporaire sera généré et envoyé par email.
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
+                <button type="button" class="btn btn-primary" id="confirm-resend">
+                    <i class="bi bi-envelope me-2"></i>Renvoyer
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal de confirmation pour réinitialiser le mot de passe -->
+<div class="modal fade" id="resetPasswordModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Réinitialiser le mot de passe</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p>Voulez-vous réinitialiser le mot de passe de <strong id="modal-reset-user-name"></strong> ?</p>
+                <div class="alert alert-warning">
+                    <i class="bi bi-exclamation-triangle me-2"></i>
+                    <strong>Attention :</strong> L'utilisateur devra changer son mot de passe à la prochaine connexion.
+                </div>
+                <div class="alert alert-info">
+                    <i class="bi bi-info-circle me-2"></i>
+                    Un nouveau mot de passe temporaire sera généré et envoyé par email.
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
+                <button type="button" class="btn btn-warning" id="confirm-reset">
+                    <i class="bi bi-key me-2"></i>Réinitialiser
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const resendModal = new bootstrap.Modal(document.getElementById('resendInvitationModal'));
+    const resetModal = new bootstrap.Modal(document.getElementById('resetPasswordModal'));
+    const modalUserName = document.getElementById('modal-user-name');
+    const modalResetUserName = document.getElementById('modal-reset-user-name');
+    const confirmResendBtn = document.getElementById('confirm-resend');
+    const confirmResetBtn = document.getElementById('confirm-reset');
+    let currentUserId = null;
+    
+    // Gérer les clics sur les boutons "Renvoyer invitation"
+    document.querySelectorAll('.btn-resend-invitation').forEach(btn => {
+        btn.addEventListener('click', function() {
+            currentUserId = this.dataset.userId;
+            modalUserName.textContent = this.dataset.userName;
+            resendModal.show();
+        });
+    });
+    
+    // Gérer les clics sur les boutons "Réinitialiser mot de passe"
+    document.querySelectorAll('.btn-reset-password').forEach(btn => {
+        btn.addEventListener('click', function() {
+            currentUserId = this.dataset.userId;
+            modalResetUserName.textContent = this.dataset.userName;
+            resetModal.show();
+        });
+    });
+    
+    // Confirmer le renvoi d'invitation
+    confirmResendBtn.addEventListener('click', function() {
+        if (!currentUserId) return;
+        
+        performAction('resend-invitation', confirmResendBtn, 'Envoi...', '<i class="bi bi-envelope me-2"></i>Renvoyer');
+    });
+    
+    // Confirmer la réinitialisation de mot de passe
+    confirmResetBtn.addEventListener('click', function() {
+        if (!currentUserId) return;
+        
+        performAction('reset-password', confirmResetBtn, 'Réinitialisation...', '<i class="bi bi-key me-2"></i>Réinitialiser');
+    });
+    
+    function performAction(action, button, loadingText, originalText) {
+        // Désactiver le bouton pendant la requête
+        button.disabled = true;
+        button.innerHTML = `<span class="spinner-border spinner-border-sm me-2"></span>${loadingText}`;
+        
+        fetch(`/app/accounts/${action}/${currentUserId}/`, {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+                'Content-Type': 'application/json'
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                // Afficher un message de succès
+                showAlert('success', data.message);
+                
+                // Fermer le modal
+                if (action === 'resend-invitation') {
+                    resendModal.hide();
+                } else {
+                    resetModal.hide();
+                }
+            } else {
+                showAlert('danger', 'Erreur: ' + data.error);
+            }
+        })
+        .catch(error => {
+            console.error('Erreur:', error);
+            showAlert('danger', 'Erreur lors de l\'opération');
+        })
+        .finally(() => {
+            // Réactiver le bouton
+            button.disabled = false;
+            button.innerHTML = originalText;
+        });
+    }
+    
+    function showAlert(type, message) {
+        const alert = document.createElement('div');
+        alert.className = `alert alert-${type} alert-dismissible fade show`;
+        alert.innerHTML = `
+            <i class="bi bi-${type === 'success' ? 'check-circle' : 'exclamation-triangle'} me-2"></i>
+            ${message}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        `;
+        document.querySelector('.container-fluid').insertBefore(alert, document.querySelector('.row'));
+        
+        // Auto-dismiss après 5 secondes
+        setTimeout(() => {
+            if (alert.parentNode) {
+                alert.remove();
+            }
+        }, 5000);
+    }
+});
+</script>
+{% endblock %}

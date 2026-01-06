@@ -1,0 +1,191 @@
+{% comment %}
+TinyMCE Editor Integration avec clé API
+Usage: {% include 'includes/tinymce.html' with selector='.tinymce-editor' %}
+{% endcomment %}
+
+<!-- TinyMCE Cloud avec clé API -->
+<script src="https://cdn.tiny.cloud/1/6qr0im1d33wizm1ytimh1kpwbugqeb8r4fq1gebb03rme6hv/tinymce/6/tinymce.min.js" referrerpolicy="origin"></script>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    tinymce.init({
+        selector: '{{ selector|default:".tinymce-editor" }}',
+        language: 'fr_FR',
+        
+        // Configuration de base
+        height: 400,
+        menubar: true,
+        branding: false,
+        promotion: false,
+        
+        // Plugins complets (avec clé API)
+        plugins: [
+            'advlist', 'autolink', 'lists', 'link', 'image', 'charmap',
+            'anchor', 'searchreplace', 'visualblocks', 'code', 'fullscreen',
+            'insertdatetime', 'media', 'table', 'preview', 'help', 'wordcount',
+            'emoticons', 'codesample', 'quickbars'
+        ],
+        
+        // Barre d'outils complète
+        toolbar: 'undo redo | blocks fontfamily fontsize | ' +
+                 'bold italic underline strikethrough forecolor backcolor | ' +
+                 'alignleft aligncenter alignright alignjustify | ' +
+                 'bullist numlist outdent indent | ' +
+                 'link image media emoticons charmap | ' +
+                 'table codesample | removeformat code fullscreen | help',
+        
+        // Menu complet
+        menu: {
+            file: { title: 'Fichier', items: 'newdocument restoredraft | preview | print' },
+            edit: { title: 'Édition', items: 'undo redo | cut copy paste pastetext | selectall | searchreplace' },
+            view: { title: 'Affichage', items: 'code | visualaid visualchars visualblocks | preview fullscreen' },
+            insert: { title: 'Insertion', items: 'image link media | charmap emoticons hr | insertdatetime' },
+            format: { title: 'Format', items: 'bold italic underline strikethrough superscript subscript | styles blocks fontfamily fontsize align lineheight | forecolor backcolor | removeformat' },
+            tools: { title: 'Outils', items: 'wordcount' },
+            table: { title: 'Tableau', items: 'inserttable | cell row column | tableprops deletetable' },
+            help: { title: 'Aide', items: 'help' }
+        },
+        
+        // Formats de blocs
+        block_formats: 'Paragraphe=p; Titre 1=h1; Titre 2=h2; Titre 3=h3; Titre 4=h4; Citation=blockquote; Code=pre',
+        
+        // Polices disponibles
+        font_family_formats: 'Poppins=Poppins,sans-serif; Arial=arial,helvetica,sans-serif; Georgia=georgia,palatino; Times=times new roman,times; Courier=courier new,courier',
+        
+        // Tailles de police
+        font_size_formats: '8pt 10pt 12pt 14pt 16pt 18pt 24pt 36pt 48pt',
+        
+        // Couleurs personnalisées EEBC
+        color_map: [
+            '0A36FF', 'Bleu EEBC',
+            '0829CC', 'Bleu foncé',
+            '3D5FFF', 'Bleu clair',
+            '10B981', 'Vert succès',
+            'F59E0B', 'Orange warning',
+            'EF4444', 'Rouge danger',
+            '06B6D4', 'Cyan info',
+            '8B5CF6', 'Violet',
+            'EC4899', 'Rose',
+            '0B0F19', 'Noir',
+            '334155', 'Gris foncé',
+            '64748B', 'Gris',
+            '94A3B8', 'Gris clair',
+            'F1F5F9', 'Gris très clair',
+            'FFFFFF', 'Blanc'
+        ],
+        
+        // Styles de contenu
+        content_style: `
+            @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap');
+            body { 
+                font-family: 'Poppins', sans-serif; 
+                font-size: 14px; 
+                line-height: 1.7;
+                color: #0B0F19;
+                padding: 15px;
+                max-width: 100%;
+            }
+            h1, h2, h3, h4 { 
+                color: #0A36FF; 
+                font-weight: 600;
+                margin-top: 1.2em;
+                margin-bottom: 0.5em;
+            }
+            h1 { font-size: 2em; }
+            h2 { font-size: 1.5em; }
+            h3 { font-size: 1.25em; }
+            h4 { font-size: 1.1em; }
+            a { color: #0A36FF; text-decoration: underline; }
+            a:hover { color: #0829CC; }
+            blockquote {
+                border-left: 4px solid #0A36FF;
+                padding: 0.5em 1em;
+                margin: 1em 0;
+                background: #F1F5F9;
+                color: #334155;
+                font-style: italic;
+            }
+            pre {
+                background: #1E293B;
+                color: #E2E8F0;
+                padding: 1em;
+                border-radius: 8px;
+                overflow-x: auto;
+            }
+            table {
+                border-collapse: collapse;
+                width: 100%;
+            }
+            table td, table th {
+                border: 1px solid #CBD5E1;
+                padding: 8px 12px;
+            }
+            table th {
+                background: #F1F5F9;
+                font-weight: 600;
+            }
+            img {
+                max-width: 100%;
+                height: auto;
+            }
+        `,
+        
+        // Encodage UTF-8 pour caractères spéciaux (é, è, ê, ç, œ, etc.)
+        entity_encoding: 'raw',
+        
+        // Éléments HTML valides
+        extended_valid_elements: 'span[*],i[*],em[*],strong[*],a[*],p[*],br,ul,ol,li,h1,h2,h3,h4,h5,h6,blockquote,pre,code,img[*],table[*],tr[*],td[*],th[*],thead,tbody,tfoot,figure,figcaption,video[*],audio[*],source[*]',
+        
+        // Configuration des images
+        image_advtab: true,
+        image_caption: true,
+        automatic_uploads: false,
+        file_picker_types: 'image',
+        
+        // Configuration des liens
+        link_default_target: '_blank',
+        link_assume_external_targets: true,
+        link_context_toolbar: true,
+        
+        // Quick toolbar pour les images
+        quickbars_selection_toolbar: 'bold italic | quicklink h2 h3 blockquote',
+        quickbars_insert_toolbar: false,
+        
+        // Accessibilité
+        a11y_advanced_options: true,
+        
+        // Callbacks
+        setup: function(editor) {
+            editor.on('change', function() {
+                editor.save(); // Sync avec le textarea
+            });
+        }
+    });
+});
+</script>
+
+<style>
+/* Style pour l'éditeur TinyMCE */
+.tox-tinymce {
+    border-radius: 10px !important;
+    border: 1px solid var(--eebc-gray-300) !important;
+}
+
+.tox-tinymce:focus-within {
+    border-color: var(--eebc-primary) !important;
+    box-shadow: 0 0 0 4px rgba(10, 54, 255, 0.12) !important;
+}
+
+.tox .tox-toolbar__primary {
+    background: var(--eebc-gray-50) !important;
+}
+
+.tox .tox-tbtn:hover {
+    background: var(--eebc-gray-200) !important;
+}
+
+.tox .tox-tbtn--enabled {
+    background: var(--eebc-primary) !important;
+    color: white !important;
+}
+</style>

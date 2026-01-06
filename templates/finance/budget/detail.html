@@ -1,0 +1,293 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ budget.name }} - {{ settings.site_name|default:'EEBC' }}{% endblock %}
+
+{% block page_title %}{{ budget.name }}{% endblock %}
+{% block page_subtitle %}{{ budget.entity }} - {{ budget.year }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- En-tête avec statut et actions -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <div>
+                            <h5 class="mb-2">{{ budget.name }}</h5>
+                            <p class="text-muted mb-2">{{ budget.description }}</p>
+                            <div class="d-flex align-items-center gap-3">
+                                <span class="badge bg-{% if budget.status == 'active' %}success{% elif budget.status == 'approved' %}primary{% elif budget.status == 'draft' %}secondary{% else %}warning{% endif %} fs-6">
+                                    {{ budget.get_status_display }}
+                                </span>
+                                <small class="text-muted">Créé par {{ budget.created_by.get_full_name }} le {{ budget.created_at|date:"d/m/Y" }}</small>
+                            </div>
+                        </div>
+                        
+                        <div class="text-end">
+                            <!-- Boutons d'export -->
+                            <div class="dropdown d-inline-block me-2">
+                                <button class="btn btn-outline-secondary dropdown-toggle" type="button" 
+                                        data-bs-toggle="dropdown" aria-expanded="false" title="Exporter">
+                                    <i class="bi bi-download me-1"></i>Exporter
+                                </button>
+                                <ul class="dropdown-menu dropdown-menu-end">
+                                    <li>
+                                        <a class="dropdown-item" href="{% url 'exports:budget_detail_excel' pk=budget.id %}">
+                                            <i class="bi bi-file-earmark-excel text-success me-2"></i>
+                                            Exporter Excel
+                                        </a>
+                                    </li>
+                                    <li>
+                                        <a class="dropdown-item" href="{% url 'finance:budget_print' budget_id=budget.id %}" target="_blank">
+                                            <i class="bi bi-printer text-primary me-2"></i>
+                                            Imprimer
+                                        </a>
+                                    </li>
+                                </ul>
+                            </div>
+                            {% if budget.status == 'draft' and user_can_edit %}
+                            <a href="{% url 'finance:budget_edit' budget_id=budget.id %}" class="btn btn-primary me-2">
+                                <i class="bi bi-pencil me-1"></i>Éditer
+                            </a>
+                            <a href="{% url 'finance:budget_submit' budget_id=budget.id %}" class="btn btn-warning">
+                                <i class="bi bi-send me-1"></i>Soumettre
+                            </a>
+                            {% elif budget.status == 'submitted' and user_can_edit %}
+                            <a href="{% url 'finance:budget_approve_detailed' budget_id=budget.id %}" class="btn btn-success">
+                                <i class="bi bi-check-circle me-1"></i>Approuver
+                            </a>
+                            {% endif %}
+                            <a href="{% url 'finance:budget_list' %}" class="btn btn-outline-secondary">
+                                <i class="bi bi-arrow-left me-1"></i>Retour
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Statistiques du budget -->
+    <div class="row mb-4">
+        <div class="col-lg-3 col-md-6 mb-3">
+            <div class="card bg-primary text-white">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <h6 class="card-title mb-1">Montant Demandé</h6>
+                            <h4 class="mb-0">{{ budget.total_requested|floatformat:2 }}€</h4>
+                        </div>
+                        <div class="align-self-center">
+                            <i class="bi bi-clipboard-data display-6"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-lg-3 col-md-6 mb-3">
+            <div class="card bg-success text-white">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <h6 class="card-title mb-1">Montant Approuvé</h6>
+                            <h4 class="mb-0">{{ budget.total_approved|floatformat:2 }}€</h4>
+                        </div>
+                        <div class="align-self-center">
+                            <i class="bi bi-check-circle display-6"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-lg-3 col-md-6 mb-3">
+            <div class="card bg-warning text-white">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <h6 class="card-title mb-1">Montant Dépensé</h6>
+                            <h4 class="mb-0">{{ budget.spent_amount|floatformat:2 }}€</h4>
+                        </div>
+                        <div class="align-self-center">
+                            <i class="bi bi-cash-coin display-6"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-lg-3 col-md-6 mb-3">
+            <div class="card bg-info text-white">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <h6 class="card-title mb-1">Budget Restant</h6>
+                            <h4 class="mb-0">{{ budget.remaining_amount|floatformat:2 }}€</h4>
+                        </div>
+                        <div class="align-self-center">
+                            <i class="bi bi-piggy-bank display-6"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Utilisation globale -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="bi bi-bar-chart me-2"></i>Utilisation du Budget
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <div class="d-flex justify-content-between mb-1">
+                            <span>Utilisation globale</span>
+                            <span>{{ budget.utilization_percentage|floatformat:1 }}%</span>
+                        </div>
+                        <div class="progress" style="height: 20px;">
+                            <div class="progress-bar 
+                                {% if budget.utilization_percentage < 50 %}bg-success
+                                {% elif budget.utilization_percentage < 80 %}bg-warning
+                                {% else %}bg-danger{% endif %}" 
+                                role="progressbar" 
+                                style="width: {{ budget.utilization_percentage }}%">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Détail par catégorie -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="bi bi-list-ul me-2"></i>Détail par Catégorie
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    <th>Catégorie</th>
+                                    <th>Demandé</th>
+                                    <th>Approuvé</th>
+                                    <th>Dépensé</th>
+                                    <th>Restant</th>
+                                    <th>Utilisation</th>
+                                    <th>Priorité</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for item_data in items_data %}
+                                {% with item=item_data.item %}
+                                <tr>
+                                    <td>
+                                        <div class="d-flex align-items-center">
+                                            <div class="badge me-2" style="background-color: {{ item.category.color }}; width: 12px; height: 12px;"></div>
+                                            <div>
+                                                <div class="fw-bold">{{ item.category.name }}</div>
+                                                {% if item.description %}
+                                                <small class="text-muted">{{ item.description|truncatechars:50 }}</small>
+                                                {% endif %}
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td>{{ item.requested_amount|floatformat:2 }}€</td>
+                                    <td>{{ item.approved_amount|floatformat:2 }}€</td>
+                                    <td>{{ item_data.spent_amount|floatformat:2 }}€</td>
+                                    <td>{{ item_data.remaining_amount|floatformat:2 }}€</td>
+                                    <td>
+                                        <div class="d-flex align-items-center">
+                                            <div class="progress me-2" style="height: 15px; width: 80px;">
+                                                <div class="progress-bar bg-{% if item_data.utilization_percentage > 90 %}danger{% elif item_data.utilization_percentage > 70 %}warning{% else %}success{% endif %}" 
+                                                     style="width: {{ item_data.utilization_percentage }}%">
+                                                </div>
+                                            </div>
+                                            <small>{{ item_data.utilization_percentage|floatformat:0 }}%</small>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <span class="badge bg-{% if item.priority <= 2 %}danger{% elif item.priority <= 3 %}warning{% else %}secondary{% endif %}">
+                                            {{ item.priority }}
+                                        </span>
+                                    </td>
+                                </tr>
+                                {% endwith %}
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Transactions récentes -->
+    {% if transactions %}
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="bi bi-clock-history me-2"></i>Transactions Récentes
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-sm">
+                            <thead>
+                                <tr>
+                                    <th>Date</th>
+                                    <th>Référence</th>
+                                    <th>Description</th>
+                                    <th>Catégorie</th>
+                                    <th>Montant</th>
+                                    <th>Statut</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for transaction in transactions %}
+                                <tr>
+                                    <td>{{ transaction.transaction_date|date:"d/m/Y" }}</td>
+                                    <td>
+                                        <a href="{% url 'finance:transaction_detail' pk=transaction.id %}">
+                                            {{ transaction.reference }}
+                                        </a>
+                                    </td>
+                                    <td>{{ transaction.description|truncatechars:40 }}</td>
+                                    <td>{{ transaction.budget_item.category.name }}</td>
+                                    <td>{{ transaction.amount|floatformat:2 }}€</td>
+                                    <td>
+                                        <span class="badge bg-{% if transaction.status == 'valide' %}success{% elif transaction.status == 'en_attente' %}warning{% else %}danger{% endif %}">
+                                            {{ transaction.get_status_display }}
+                                        </span>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    
+                    <div class="mt-3">
+                        <a href="{% url 'finance:transaction_list' %}?budget={{ budget.id }}" class="btn btn-outline-primary btn-sm">
+                            <i class="bi bi-list me-1"></i>Voir toutes les transactions
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

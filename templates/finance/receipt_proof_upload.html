@@ -1,0 +1,77 @@
+{% extends 'base.html' %}
+
+{% block title %}Uploader un justificatif - EEBC{% endblock %}
+{% block page_title %}Uploader un justificatif{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-8">
+        <div class="card border-0 shadow-sm">
+            <div class="card-body p-4">
+                <form method="post" enctype="multipart/form-data">
+                    {% csrf_token %}
+                    
+                    <div class="mb-4">
+                        <label class="form-label">Transaction associée *</label>
+                        <select name="transaction" class="form-select" required>
+                            <option value="">-- Sélectionner une transaction --</option>
+                            {% for t in transactions %}
+                            <option value="{{ t.pk }}">
+                                {{ t.reference }} - {{ t.get_transaction_type_display }} - {{ t.amount }}€ ({{ t.transaction_date|date:"d/m/Y" }})
+                            </option>
+                            {% endfor %}
+                        </select>
+                        <div class="form-text">Transactions en attente de validation</div>
+                    </div>
+                    
+                    <div class="mb-4">
+                        <label class="form-label">Type de document *</label>
+                        <select name="proof_type" class="form-select" required>
+                            <option value="recu">Reçu</option>
+                            <option value="facture">Facture</option>
+                            <option value="ticket">Ticket de caisse</option>
+                            <option value="releve">Relevé bancaire</option>
+                            <option value="autre">Autre document</option>
+                        </select>
+                    </div>
+                    
+                    <div class="mb-4">
+                        <label class="form-label">Image du justificatif *</label>
+                        <input type="file" name="image" class="form-control" accept="image/*" required>
+                        <div class="form-text">Formats acceptés : JPG, PNG, GIF. Max 5 Mo.</div>
+                    </div>
+                    
+                    <div class="mb-4">
+                        <label class="form-label">Notes</label>
+                        <textarea name="notes" class="form-control" rows="2" placeholder="Notes optionnelles..."></textarea>
+                    </div>
+                    
+                    <hr class="my-4">
+                    
+                    <div class="d-flex justify-content-between">
+                        <a href="{% url 'finance:receipt_proof_list' %}" class="btn btn-outline-secondary">
+                            <i class="bi bi-arrow-left me-1"></i> Annuler
+                        </a>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="bi bi-upload me-1"></i> Uploader
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+        
+        <!-- Info OCR -->
+        <div class="card border-0 shadow-sm mt-4 bg-light">
+            <div class="card-body">
+                <h6 class="fw-bold mb-2">
+                    <i class="bi bi-info-circle me-2 text-info"></i>Traitement OCR
+                </h6>
+                <p class="mb-0 small text-muted">
+                    Après l'upload, vous pourrez lancer un traitement OCR pour extraire automatiquement 
+                    le montant et la date du justificatif. Cette fonctionnalité utilise Tesseract OCR.
+                </p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

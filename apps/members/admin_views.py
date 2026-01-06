@@ -3,6 +3,7 @@ Vues admin personnalisées pour les membres.
 Inclut une carte interactive des membres par quartier/famille.
 """
 from django.contrib.admin.views.decorators import staff_member_required
+from django.contrib.auth.decorators import login_required
 from django.shortcuts import render
 from django.http import JsonResponse
 from django.db.models import Count, Q
@@ -12,9 +13,8 @@ from .geocoding import geocode_address
 from apps.core.models import Site, Neighborhood, Family
 
 
-@staff_member_required
 def members_map_view(request):
-    """Vue carte des membres dans l'admin."""
+    """Vue carte des membres (accessible aux utilisateurs connectés)."""
     
     # Filtres
     site_id = request.GET.get('site')
@@ -35,10 +35,13 @@ def members_map_view(request):
         'status_choices': Member.Status.choices if hasattr(Member, 'Status') else [],
     }
     
-    return render(request, 'admin/members/members_map.html', context)
+    # Utiliser le template admin ou app selon le chemin
+    if '/admin/' in request.path:
+        return render(request, 'admin/members/members_map.html', context)
+    return render(request, 'members/members_map.html', context)
 
 
-@staff_member_required
+@login_required
 def members_map_data(request):
     """API JSON pour les données de la carte avec géocodage."""
     

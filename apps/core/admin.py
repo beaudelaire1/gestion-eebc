@@ -1,10 +1,45 @@
 from django.contrib import admin
 from django.utils.html import format_html
+from django import forms
 from .models import (
     Site, City, Neighborhood, Family, FamilyRelationship, MissionCampaign,
     PageContent, NewsArticle, ContactMessage, VisitorRegistration,
     PublicEvent, Slider, SiteSettings
 )
+from .widgets import TinyMCEWidget
+
+
+# =============================================================================
+# FORMULAIRES AVEC TINYMCE
+# =============================================================================
+
+class PageContentAdminForm(forms.ModelForm):
+    """Formulaire admin avec TinyMCE pour le contenu des pages."""
+    class Meta:
+        model = PageContent
+        fields = '__all__'
+        widgets = {
+            'content': TinyMCEWidget(),
+        }
+
+
+class NewsArticleAdminForm(forms.ModelForm):
+    """Formulaire admin avec TinyMCE pour les articles."""
+    class Meta:
+        model = NewsArticle
+        fields = '__all__'
+        widgets = {
+            'content': TinyMCEWidget(),
+        }
+
+
+class AnnouncementAdminForm(forms.ModelForm):
+    """Formulaire admin avec TinyMCE pour les annonces."""
+    class Meta:
+        fields = '__all__'
+        widgets = {
+            'content': TinyMCEWidget(config={'height': 300}),
+        }
 
 
 # =============================================================================
@@ -241,6 +276,7 @@ class MissionCampaignAdmin(admin.ModelAdmin):
 
 @admin.register(PageContent)
 class PageContentAdmin(admin.ModelAdmin):
+    form = PageContentAdminForm
     list_display = ['title', 'page_type', 'is_published', 'show_in_menu', 'menu_order', 'updated_at']
     list_filter = ['page_type', 'is_published', 'show_in_menu']
     search_fields = ['title', 'content']
@@ -263,6 +299,9 @@ class PageContentAdmin(admin.ModelAdmin):
         }),
     )
     
+    class Media:
+        js = ('https://cdn.tiny.cloud/1/6qr0im1d33wizm1ytimh1kpwbugqeb8r4fq1gebb03rme6hv/tinymce/6/tinymce.min.js',)
+    
     def save_model(self, request, obj, form, change):
         if not change:
             obj.author = request.user
@@ -271,6 +310,7 @@ class PageContentAdmin(admin.ModelAdmin):
 
 @admin.register(NewsArticle)
 class NewsArticleAdmin(admin.ModelAdmin):
+    form = NewsArticleAdminForm
     list_display = ['title', 'category', 'display_author', 'site', 'is_published', 'is_featured', 'publish_date', 'visibility_status', 'views_count']
     list_filter = ['category', 'site', 'is_published', 'is_featured']
     search_fields = ['title', 'excerpt', 'content', 'author_name']

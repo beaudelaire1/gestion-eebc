@@ -64,6 +64,11 @@
             display: flex;
             flex-direction: column;
             box-shadow: 4px 0 20px rgba(11, 15, 25, 0.05);
+            transition: transform 0.3s ease;
+        }
+        
+        .sidebar.collapsed {
+            transform: translateX(-280px);
         }
         
         .sidebar-brand {
@@ -150,6 +155,11 @@
             margin-left: 280px;
             min-height: 100vh;
             background: var(--eebc-gray-50);
+            transition: margin-left 0.3s ease;
+        }
+        
+        .main-content.expanded {
+            margin-left: 0;
         }
         
         /* Top Bar */
@@ -161,6 +171,34 @@
             top: 0;
             z-index: 999;
             box-shadow: 0 2px 10px rgba(11, 15, 25, 0.03);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        
+        .sidebar-toggle {
+            background: var(--eebc-gray-100);
+            border: none;
+            width: 40px;
+            height: 40px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--eebc-gray-600);
+            transition: all 0.2s ease;
+            cursor: pointer;
+        }
+        
+        .sidebar-toggle:hover {
+            background: var(--eebc-primary);
+            color: var(--eebc-white);
+            transform: scale(1.05);
+        }
+        
+        .page-header {
+            flex: 1;
+            margin-left: 1rem;
         }
         
         /* Cards */
@@ -604,6 +642,10 @@
                         <i class="bi bi-calendar3"></i>
                         <span>Calendrier</span>
                     </a>
+                    <a class="nav-link" href="{% url 'public:home' %}" target="_blank">
+                        <i class="bi bi-globe"></i>
+                        <span>Site public <i class="bi bi-box-arrow-up-right ms-1" style="font-size: 0.8em;"></i></span>
+                    </a>
                 </nav>
             </div>
             
@@ -648,6 +690,10 @@
                         <i class="bi bi-receipt"></i>
                         <span>Reçus fiscaux</span>
                     </a>
+                    <a class="nav-link {% if 'budgets' in request.path %}active{% endif %}" href="{% url 'finance:budget_dashboard' %}">
+                        <i class="bi bi-pie-chart"></i>
+                        <span>Budgets</span>
+                    </a>
                     <a class="nav-link {% if 'campaigns' in request.path %}active{% endif %}" href="{% url 'campaigns:list' %}">
                         <i class="bi bi-graph-up-arrow"></i>
                         <span>Campagnes</span>
@@ -661,6 +707,10 @@
                     <a class="nav-link {% if request.path == '/app/members/' %}active{% endif %}" href="{% url 'members:list' %}">
                         <i class="bi bi-person-badge-fill"></i>
                         <span>Membres</span>
+                    </a>
+                    <a class="nav-link {% if 'members/map' in request.path %}active{% endif %}" href="{% url 'members:map' %}">
+                        <i class="bi bi-geo-alt-fill"></i>
+                        <span>Carte des membres</span>
                     </a>
                     <a class="nav-link {% if 'families' in request.path %}active{% endif %}" href="{% url 'members:family_list' %}">
                         <i class="bi bi-house-heart"></i>
@@ -682,6 +732,12 @@
                         <i class="bi bi-building"></i>
                         <span>Départements</span>
                     </a>
+                    {% if request.user.is_admin or request.user.role == 'admin' or request.user.role == 'secretariat' %}
+                    <a class="nav-link {% if 'accounts/users' in request.path %}active{% endif %}" href="{% url 'accounts:user_list' %}">
+                        <i class="bi bi-people"></i>
+                        <span>Utilisateurs</span>
+                    </a>
+                    {% endif %}
                 </nav>
             </div>
             
@@ -722,14 +778,14 @@
     <!-- Main Content -->
     <main class="main-content">
         <!-- Top Bar -->
-        <div class="top-bar d-flex justify-content-between align-items-center">
-            <div class="d-flex align-items-center gap-3">
-                <button class="btn btn-outline-secondary d-lg-none" type="button" onclick="document.getElementById('sidebar').classList.toggle('show')">
+        <div class="top-bar">
+            <div class="d-flex align-items-center">
+                <button class="sidebar-toggle" id="sidebarToggle" onclick="toggleSidebar()">
                     <i class="bi bi-list"></i>
                 </button>
-                <div>
-                    <h5 class="mb-0 fw-bold" style="color: var(--eebc-black);">{% block page_title %}Tableau de bord{% endblock %}</h5>
-                    <small class="text-muted">{% block page_subtitle %}{% endblock %}</small>
+                <div class="page-header">
+                    <h5 class="mb-0 fw-bold page-title">{% block page_title %}Tableau de bord{% endblock %}</h5>
+                    <small class="text-muted page-subtitle">{% block page_subtitle %}{% endblock %}</small>
                 </div>
             </div>
             
@@ -753,13 +809,21 @@
                         <li><a class="dropdown-item" href="{% url 'accounts:profile' %}">
                             <i class="bi bi-person me-2"></i>Mon profil
                         </a></li>
+                        <li><a class="dropdown-item" href="{% url 'public:home' %}" target="_blank">
+                            <i class="bi bi-globe me-2"></i>Site public
+                        </a></li>
                         <li><a class="dropdown-item" href="{% url 'admin:index' %}">
                             <i class="bi bi-gear me-2"></i>Administration
                         </a></li>
                         <li><hr class="dropdown-divider"></li>
-                        <li><a class="dropdown-item text-danger" href="{% url 'accounts:logout' %}">
-                            <i class="bi bi-box-arrow-right me-2"></i>Déconnexion
-                        </a></li>
+                        <li>
+                            <form method="post" action="{% url 'accounts:logout' %}" class="d-inline m-0">
+                                {% csrf_token %}
+                                <button type="submit" class="dropdown-item text-danger" style="border: none; background: none; width: 100%; text-align: left; padding: 0.375rem 1rem;">
+                                    <i class="bi bi-box-arrow-right me-2"></i>Déconnexion
+                                </button>
+                            </form>
+                        </li>
                     </ul>
                 </div>
             </div>
@@ -791,6 +855,46 @@
     <script>
         document.body.addEventListener('htmx:configRequest', (event) => {
             event.detail.headers['X-CSRFToken'] = '{{ csrf_token }}';
+        });
+        
+        // Gestion du toggle sidebar
+        function toggleSidebar() {
+            const sidebar = document.getElementById('sidebar');
+            const mainContent = document.querySelector('.main-content');
+            const toggleBtn = document.getElementById('sidebarToggle');
+            
+            sidebar.classList.toggle('collapsed');
+            mainContent.classList.toggle('expanded');
+            
+            // Changer l'icône du bouton
+            const icon = toggleBtn.querySelector('i');
+            if (sidebar.classList.contains('collapsed')) {
+                icon.className = 'bi bi-layout-sidebar-inset';
+                localStorage.setItem('sidebarCollapsed', 'true');
+            } else {
+                icon.className = 'bi bi-list';
+                localStorage.setItem('sidebarCollapsed', 'false');
+            }
+        }
+        
+        // Restaurer l'état du sidebar au chargement
+        document.addEventListener('DOMContentLoaded', function() {
+            const isCollapsed = localStorage.getItem('sidebarCollapsed') === 'true';
+            if (isCollapsed) {
+                toggleSidebar();
+            }
+            
+            // Gestion de la déconnexion
+            const logoutForm = document.querySelector('form[action*="logout"]');
+            if (logoutForm) {
+                const logoutButton = logoutForm.querySelector('button[type="submit"]');
+                if (logoutButton) {
+                    logoutButton.addEventListener('click', function(e) {
+                        console.log('Déconnexion demandée');
+                        // Le formulaire se soumettra normalement
+                    });
+                }
+            }
         });
     </script>
     

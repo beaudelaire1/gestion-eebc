@@ -1,0 +1,50 @@
+{% extends "pdf_base.html" %}
+
+{% block title %}Liste des Départements{% endblock %}
+{% block header_title %}{{ print_title }}{% endblock %}
+
+{% block summary %}
+<div class="summary-box">
+    <h3>Statistiques</h3>
+    <div class="summary-grid">
+        <div class="summary-item">
+            <div class="summary-label">Total départements</div>
+            <div class="summary-value">{{ total_departments }}</div>
+        </div>
+        <div class="summary-item">
+            <div class="summary-label">Total membres</div>
+            <div class="summary-value">{{ total_members }}</div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block content %}
+<h3>Liste des départements</h3>
+<table>
+    <thead>
+        <tr>
+            <th>Nom</th>
+            <th>Description</th>
+            <th>Responsable</th>
+            <th class="text-center">Membres</th>
+            <th class="text-center">Actif</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for dept in object_list %}
+        <tr>
+            <td><strong>{{ dept.name }}</strong></td>
+            <td>{{ dept.description|truncatewords:15|default:"-" }}</td>
+            <td>{% if dept.leader %}{{ dept.leader.get_full_name }}{% else %}-{% endif %}</td>
+            <td class="text-center">{{ dept.members.count }}</td>
+            <td class="text-center">
+                {% if dept.is_active %}<span class="badge badge-success">Oui</span>{% else %}<span class="badge badge-danger">Non</span>{% endif %}
+            </td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="5" class="text-center">Aucun département trouvé</td></tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% endblock %}

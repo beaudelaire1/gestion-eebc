@@ -1,0 +1,103 @@
+{% extends 'base.html' %}
+
+{% block title %}Soumettre {{ budget.name }} - {{ settings.site_name|default:'EEBC' }}{% endblock %}
+
+{% block page_title %}Soumettre le Budget{% endblock %}
+{% block page_subtitle %}{{ budget.name }} - {{ budget.entity }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="bi bi-send me-2"></i>Confirmation de Soumission
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="alert alert-info">
+                        <i class="bi bi-info-circle me-2"></i>
+                        <strong>Attention :</strong> Une fois soumis, vous ne pourrez plus modifier ce budget. 
+                        Il devra être approuvé par un administrateur.
+                    </div>
+                    
+                    <!-- Résumé du budget -->
+                    <div class="row mb-4">
+                        <div class="col-md-6">
+                            <h6>Informations du Budget</h6>
+                            <ul class="list-unstyled">
+                                <li><strong>Nom :</strong> {{ budget.name }}</li>
+                                <li><strong>Année :</strong> {{ budget.year }}</li>
+                                <li><strong>Entité :</strong> {{ budget.entity }}</li>
+                                <li><strong>Statut actuel :</strong> 
+                                    <span class="badge bg-secondary">{{ budget.get_status_display }}</span>
+                                </li>
+                            </ul>
+                        </div>
+                        <div class="col-md-6">
+                            <h6>Montants</h6>
+                            <ul class="list-unstyled">
+                                <li><strong>Montant total demandé :</strong> 
+                                    <span class="text-primary fw-bold">{{ budget.total_requested|floatformat:0 }}€</span>
+                                </li>
+                                <li><strong>Nombre de lignes :</strong> {{ budget.items.count }}</li>
+                                <li><strong>Créé le :</strong> {{ budget.created_at|date:"d/m/Y" }}</li>
+                            </ul>
+                        </div>
+                    </div>
+                    
+                    <!-- Liste des lignes -->
+                    <h6>Lignes du Budget</h6>
+                    <div class="table-responsive mb-4">
+                        <table class="table table-sm">
+                            <thead>
+                                <tr>
+                                    <th>Désignation</th>
+                                    <th>Description</th>
+                                    <th>Montant</th>
+                                    <th>Priorité</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for item in budget.items.all %}
+                                <tr>
+                                    <td>{{ item.category.name|slice:"8:" }}</td>
+                                    <td>{{ item.description|truncatechars:50 }}</td>
+                                    <td>{{ item.requested_amount|floatformat:0 }}€</td>
+                                    <td>
+                                        <span class="badge bg-{% if item.priority <= 2 %}danger{% elif item.priority <= 3 %}warning{% else %}secondary{% endif %}">
+                                            {{ item.priority }}
+                                        </span>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                            <tfoot>
+                                <tr class="table-light">
+                                    <th colspan="2">Total</th>
+                                    <th>{{ budget.total_requested|floatformat:0 }}€</th>
+                                    <th></th>
+                                </tr>
+                            </tfoot>
+                        </table>
+                    </div>
+                    
+                    <!-- Actions -->
+                    <form method="post">
+                        {% csrf_token %}
+                        <div class="d-flex justify-content-between">
+                            <a href="{% url 'finance:budget_detail' budget_id=budget.id %}" class="btn btn-outline-secondary">
+                                <i class="bi bi-arrow-left me-1"></i>Retour au détail
+                            </a>
+                            <button type="submit" class="btn btn-warning">
+                                <i class="bi bi-send me-1"></i>Confirmer la Soumission
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

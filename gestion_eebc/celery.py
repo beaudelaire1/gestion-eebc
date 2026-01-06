@@ -51,6 +51,16 @@ app.conf.beat_schedule = {
     },
     
     # =========================================================================
+    # WORSHIP - PLANIFICATION DES CULTES
+    # =========================================================================
+    
+    # Envoi des notifications de culte tous les jours à 9h
+    'send-worship-notifications': {
+        'task': 'apps.worship.tasks.send_scheduled_notifications',
+        'schedule': crontab(hour=9, minute=0),
+    },
+    
+    # =========================================================================
     # FINANCE
     # =========================================================================
     
@@ -58,6 +68,12 @@ app.conf.beat_schedule = {
     'generate-annual-tax-receipts': {
         'task': 'apps.communication.tasks.generate_annual_tax_receipts',
         'schedule': crontab(hour=10, minute=0, day_of_month=15, month_of_year=1),
+    },
+    
+    # Envoi des reçus fiscaux par email le 20 janvier à 10h
+    'send-tax-receipts-batch': {
+        'task': 'apps.communication.tasks.send_donation_receipts_batch',
+        'schedule': crontab(hour=10, minute=0, day_of_month=20, month_of_year=1),
     },
     
     # =========================================================================

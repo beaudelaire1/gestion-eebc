@@ -1,0 +1,123 @@
+{% extends 'base.html' %}
+
+{% block title %}Rapports financiers - EEBC{% endblock %}
+{% block page_title %}Rapports financiers{% endblock %}
+{% block page_subtitle %}Analyses et exports{% endblock %}
+
+{% block content %}
+<div class="row g-4">
+    <!-- Rapports disponibles -->
+    <div class="col-lg-8">
+        <div class="card border-0 shadow-sm">
+            <div class="card-header bg-transparent border-0">
+                <h6 class="mb-0 fw-bold">
+                    <i class="bi bi-file-earmark-bar-graph me-2"></i>Rapports disponibles
+                </h6>
+            </div>
+            <div class="card-body">
+                <div class="list-group list-group-flush">
+                    <a href="{% url 'finance:transaction_list' %}?type=don" class="list-group-item list-group-item-action d-flex align-items-center">
+                        <div class="rounded-circle p-2 bg-success bg-opacity-10 me-3">
+                            <i class="bi bi-heart text-success"></i>
+                        </div>
+                        <div class="flex-grow-1">
+                            <h6 class="mb-0">Rapport des dons</h6>
+                            <small class="text-muted">Liste de tous les dons reçus</small>
+                        </div>
+                        <i class="bi bi-chevron-right text-muted"></i>
+                    </a>
+                    
+                    <a href="{% url 'finance:transaction_list' %}?type=depense" class="list-group-item list-group-item-action d-flex align-items-center">
+                        <div class="rounded-circle p-2 bg-danger bg-opacity-10 me-3">
+                            <i class="bi bi-cart text-danger"></i>
+                        </div>
+                        <div class="flex-grow-1">
+                            <h6 class="mb-0">Rapport des dépenses</h6>
+                            <small class="text-muted">Liste de toutes les dépenses</small>
+                        </div>
+                        <i class="bi bi-chevron-right text-muted"></i>
+                    </a>
+                    
+                    <a href="{% url 'finance:tax_receipt_list' %}" class="list-group-item list-group-item-action d-flex align-items-center">
+                        <div class="rounded-circle p-2 bg-primary bg-opacity-10 me-3">
+                            <i class="bi bi-file-text text-primary"></i>
+                        </div>
+                        <div class="flex-grow-1">
+                            <h6 class="mb-0">Reçus fiscaux</h6>
+                            <small class="text-muted">Gestion des reçus fiscaux</small>
+                        </div>
+                        <i class="bi bi-chevron-right text-muted"></i>
+                    </a>
+                    
+                    <a href="{% url 'finance:budget_overview' %}" class="list-group-item list-group-item-action d-flex align-items-center">
+                        <div class="rounded-circle p-2 bg-warning bg-opacity-10 me-3">
+                            <i class="bi bi-pie-chart text-warning"></i>
+                        </div>
+                        <div class="flex-grow-1">
+                            <h6 class="mb-0">Suivi budgétaire</h6>
+                            <small class="text-muted">Comparaison prévu vs réalisé</small>
+                        </div>
+                        <i class="bi bi-chevron-right text-muted"></i>
+                    </a>
+                    
+                    <a href="{% url 'finance:receipt_proof_list' %}" class="list-group-item list-group-item-action d-flex align-items-center">
+                        <div class="rounded-circle p-2 bg-info bg-opacity-10 me-3">
+                            <i class="bi bi-receipt text-info"></i>
+                        </div>
+                        <div class="flex-grow-1">
+                            <h6 class="mb-0">Justificatifs</h6>
+                            <small class="text-muted">Gestion des preuves de paiement</small>
+                        </div>
+                        <i class="bi bi-chevron-right text-muted"></i>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Actions rapides -->
+    <div class="col-lg-4">
+        <div class="card border-0 shadow-sm mb-4">
+            <div class="card-header bg-transparent border-0">
+                <h6 class="mb-0 fw-bold">
+                    <i class="bi bi-lightning me-2"></i>Actions rapides
+                </h6>
+            </div>
+            <div class="card-body">
+                <div class="d-grid gap-2">
+                    <a href="{% url 'finance:transaction_create' %}" class="btn btn-primary">
+                        <i class="bi bi-plus-lg me-1"></i> Nouvelle transaction
+                    </a>
+                    <a href="{% url 'finance:tax_receipt_create' %}" class="btn btn-outline-primary">
+                        <i class="bi bi-file-earmark-plus me-1"></i> Créer un reçu fiscal
+                    </a>
+                    <a href="{% url 'finance:receipt_proof_upload' %}" class="btn btn-outline-secondary">
+                        <i class="bi bi-upload me-1"></i> Uploader un justificatif
+                    </a>
+                </div>
+            </div>
+        </div>
+        
+        <div class="card border-0 shadow-sm">
+            <div class="card-header bg-transparent border-0">
+                <h6 class="mb-0 fw-bold">
+                    <i class="bi bi-gear me-2"></i>Administration
+                </h6>
+            </div>
+            <div class="card-body">
+                <div class="d-grid gap-2">
+                    <a href="{% url 'admin:finance_financialtransaction_changelist' %}" class="btn btn-outline-secondary btn-sm">
+                        Transactions (admin)
+                    </a>
+                    <a href="{% url 'admin:finance_financecategory_changelist' %}" class="btn btn-outline-secondary btn-sm">
+                        Catégories (admin)
+                    </a>
+                    <a href="{% url 'admin:finance_budgetline_changelist' %}" class="btn btn-outline-secondary btn-sm">
+                        Budget (admin)
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

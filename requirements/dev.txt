@@ -1,0 +1,24 @@
+# =============================================================================
+# GESTION EEBC - Dépendances de développement
+# =============================================================================
+
+-r base.txt
+
+# Debug
+django-debug-toolbar>=4.2.0
+django-extensions>=3.2.0
+
+# Tests
+pytest>=7.4.0
+pytest-django>=4.5.0
+pytest-cov>=4.1.0
+factory-boy>=3.3.0
+
+# Linting & Formatting
+flake8>=6.1.0
+black>=23.0.0
+isort>=5.12.0
+
+# Type checking
+mypy>=1.5.0
+django-stubs>=4.2.0

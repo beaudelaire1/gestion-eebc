@@ -1,0 +1,53 @@
+{% comment %}
+Composant de boutons d'export et d'impression.
+
+Usage:
+{% include "components/export_buttons.html" with excel_url="exports:members_excel" print_url="exports:members_print" %}
+
+Paramètres optionnels:
+- excel_url: URL de l'export Excel (namespace:name)
+- print_url: URL de l'impression (namespace:name)
+- filters: Paramètres GET à passer (ex: "?status=actif")
+- btn_class: Classes CSS additionnelles pour les boutons
+- show_excel: Afficher le bouton Excel (défaut: True)
+- show_print: Afficher le bouton Imprimer (défaut: True)
+{% endcomment %}
+
+<div class="export-buttons d-flex gap-2 {% if btn_class %}{{ btn_class }}{% endif %}">
+    {% if show_excel != False and excel_url %}
+    <a href="{% url excel_url %}{{ filters|default:'' }}" 
+       class="btn btn-outline-success btn-sm"
+       title="Exporter en Excel">
+        <i class="bi bi-file-earmark-excel me-1"></i>
+        Excel
+    </a>
+    {% endif %}
+    
+    {% if show_print != False and print_url %}
+    <a href="{% url print_url %}{{ filters|default:'' }}" 
+       class="btn btn-outline-primary btn-sm"
+       target="_blank"
+       title="Imprimer">
+        <i class="bi bi-printer me-1"></i>
+        Imprimer
+    </a>
+    {% endif %}
+</div>
+
+<style>
+.export-buttons {
+    flex-wrap: wrap;
+}
+
+.export-buttons .btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+}
+
+@media print {
+    .export-buttons {
+        display: none !important;
+    }
+}
+</style>

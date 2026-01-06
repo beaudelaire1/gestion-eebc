@@ -1,0 +1,63 @@
+{% extends "pdf_base.html" %}
+
+{% block title %}Présences - Club Biblique{% endblock %}
+{% block header_title %}{{ print_title }}{% endblock %}
+{% block header_subtitle %}<p class="subtitle">Feuille de présence</p>{% endblock %}
+
+{% block summary %}
+<div class="summary-box">
+    <h3>Statistiques</h3>
+    <div class="summary-grid">
+        <div class="summary-item">
+            <div class="summary-label">Total enregistrements</div>
+            <div class="summary-value">{{ total_records }}</div>
+        </div>
+        <div class="summary-item">
+            <div class="summary-label">Présents</div>
+            <div class="summary-value">{{ present_count }}</div>
+        </div>
+        <div class="summary-item">
+            <div class="summary-label">Absents</div>
+            <div class="summary-value">{{ absent_count }}</div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block content %}
+<h3>Détail des présences</h3>
+<table>
+    <thead>
+        <tr>
+            <th>Date</th>
+            <th>Enfant</th>
+            <th>Classe</th>
+            <th class="text-center">Statut</th>
+            <th class="text-center">Arrivée</th>
+            <th class="text-center">Départ</th>
+            <th>Récupéré par</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for att in object_list %}
+        <tr>
+            <td>{{ att.session.date|date:"d/m/Y" }}</td>
+            <td>{{ att.child.full_name }}</td>
+            <td>{{ att.bible_class|default:"-" }}</td>
+            <td class="text-center">
+                <span class="badge badge-{% if att.status == 'present' %}success{% elif att.status == 'absent' %}danger{% else %}warning{% endif %}">
+                    {{ att.get_status_display }}
+                </span>
+            </td>
+            <td class="text-center">{{ att.check_in_time|time:"H:i"|default:"-" }}</td>
+            <td class="text-center">{{ att.check_out_time|time:"H:i"|default:"-" }}</td>
+            <td>{{ att.picked_up_by|default:"-" }}</td>
+        </tr>
+        {% empty %}
+        <tr>
+            <td colspan="7" class="text-center">Aucune présence enregistrée</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% endblock %}

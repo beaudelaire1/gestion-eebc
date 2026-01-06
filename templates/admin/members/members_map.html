@@ -1,3 +1,4 @@
+{% load static %}
 <!DOCTYPE html>
 <html lang="fr">
 <head>
@@ -60,12 +61,27 @@
             width: 20px; height: 20px;
             border-radius: 50%; margin-right: 10px;
         }
+        .legend-icon {
+            width: 25px; height: 30px;
+            margin-right: 10px;
+        }
         .marker-site { background: #0A36FF; }
-        .marker-family { background: #28a745; }
+        .marker-member { background: #8B4513; }
         .popup-title {
             font-weight: bold; font-size: 14px;
             color: #0A36FF; margin-bottom: 5px;
         }
+        .popup-member { color: #8B4513; }
+        .member-status {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 10px;
+            font-size: 11px;
+            font-weight: 600;
+        }
+        .status-actif { background: #d4edda; color: #155724; }
+        .status-inactif { background: #f8d7da; color: #721c24; }
+        .status-visiteur { background: #fff3cd; color: #856404; }
     </style>
 </head>
 <body>
@@ -99,6 +115,13 @@
                     </select>
                 </div>
                 
+                <div class="filter-group">
+                    <label>Ville</label>
+                    <select id="filter-city" class="form-select">
+                        <option value="">Toutes les villes</option>
+                    </select>
+                </div>
+                
                 <button class="btn btn-primary w-100" onclick="loadMapData()">
                     🔄 Actualiser
                 </button>
@@ -110,12 +133,12 @@
                         <span class="stat-value" id="stat-total">-</span>
                     </div>
                     <div class="stat-row">
-                        <span>Avec famille</span>
-                        <span class="stat-value" id="stat-family">-</span>
+                        <span>Avec adresse</span>
+                        <span class="stat-value" id="stat-address">-</span>
                     </div>
                     <div class="stat-row">
-                        <span>Familles localisées</span>
-                        <span class="stat-value" id="stat-coords">-</span>
+                        <span>Membres localisés</span>
+                        <span class="stat-value" id="stat-geocoded">-</span>
                     </div>
                 </div>
                 
@@ -126,8 +149,8 @@
                         <span>Églises</span>
                     </div>
                     <div class="legend-item">
-                        <div class="legend-marker marker-family"></div>
-                        <span>Familles</span>
+                        <img src="{% static 'images/markers/bible-marker.svg' %}" class="legend-icon" alt="Bible">
+                        <span>Membres</span>
                     </div>
                 </div>
             </div>
@@ -138,9 +161,27 @@
     <script>
         let map;
         
+        // Icône Bible personnalisée pour les membres
+        const bibleIcon = L.icon({
+            iconUrl: '{% static "images/markers/bible-marker.svg" %}',
+            iconSize: [32, 40],
+            iconAnchor: [16, 40],
+            popupAnchor: [0, -40]
+        });
+        
+        // Icône église pour les sites
+        const churchIcon = L.divIcon({
+            html: '<div style="background:#0A36FF;color:white;width:30px;height:30px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:16px;border:2px solid white;box-shadow:0 2px 5px rgba(0,0,0,0.3);">⛪</div>',
+            iconSize: [30, 30],
+            iconAnchor: [15, 15],
+            popupAnchor: [0, -15],
+            className: ''
+        });
+        
         document.addEventListener('DOMContentLoaded', function() {
-            console.log('Init carte...');
+            console.log('Init carte des membres...');
             
+            // Centre sur Cayenne, Guyane française
             map = L.map('map').setView([4.9225, -52.3058], 11);
             
             L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
@@ -150,13 +191,24 @@
             loadMapData();
         });
         
+        function getStatusBadge(status) {
+            const statusClass = {
+                'actif': 'status-actif',
+                'inactif': 'status-inactif',
+                'visiteur': 'status-visiteur'
+            };
+            return `<span class="member-status ${statusClass[status] || ''}">${status}</span>`;
+        }
+        
         function loadMapData() {
             const site = document.getElementById('filter-site').value;
             const status = document.getElementById('filter-status').value;
+            const city = document.getElementById('filter-city').value;
             
             let url = '/admin/members/map/data/?';
             if (site) url += 'site=' + site + '&';
-            if (status) url += 'status=' + status;
+            if (status) url += 'status=' + status + '&';
+            if (city) url += 'city=' + encodeURIComponent(city);
             
             console.log('Fetching:', url);
             
@@ -172,40 +224,52 @@
                         }
                     });
                     
-                    // Add sites
+                    // Add sites (églises)
                     data.sites.forEach(site => {
                         console.log('Adding site:', site.name);
-                        L.marker([site.lat, site.lng])
+                        L.marker([site.lat, site.lng], {icon: churchIcon})
                             .bindPopup(`<div class="popup-title">⛪ ${site.name}</div>
                                 <p>${site.address}<br>${site.city}</p>
                                 <p><strong>${site.member_count} membres</strong></p>`)
                             .addTo(map);
                     });
                     
-                    // Add families
-                    data.families.forEach(f => {
-                        const greenIcon = L.icon({
-                            iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-green.png',
-                            shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-shadow.png',
-                            iconSize: [25, 41],
-                            iconAnchor: [12, 41],
-                            popupAnchor: [1, -34]
-                        });
-                        
-                        let members = f.members.map(m => `• ${m.name}`).join('<br>');
-                        L.marker([f.lat, f.lng], {icon: greenIcon})
-                            .bindPopup(`<div class="popup-title">🏠 ${f.name}</div>
-                                <p>${f.address}<br>${f.neighborhood}</p>
-                                <p><strong>${f.member_count} membres</strong></p>
-                                <small>${members}</small>`)
+                    // Add members avec icône Bible
+                    data.members.forEach(m => {
+                        L.marker([m.lat, m.lng], {icon: bibleIcon})
+                            .bindPopup(`<div class="popup-title popup-member">📖 ${m.name}</div>
+                                <p>${m.address}<br>${m.city}</p>
+                                <p>${getStatusBadge(m.status)}</p>
+                                ${m.phone ? '<p>📞 ' + m.phone + '</p>' : ''}
+                                ${m.site ? '<p>⛪ ' + m.site + '</p>' : ''}
+                                ${m.family ? '<p>👨‍👩‍👧‍👦 ' + m.family + '</p>' : ''}`)
                             .addTo(map);
                     });
                     
                     // Update stats
                     document.getElementById('stat-total').textContent = data.stats.total_members;
-                    document.getElementById('stat-family').textContent = data.stats.members_with_family;
-                    document.getElementById('stat-coords').textContent = 
-                        data.stats.families_with_coords + '/' + data.stats.families_total;
+                    document.getElementById('stat-address').textContent = data.stats.members_with_address;
+                    document.getElementById('stat-geocoded').textContent = data.stats.members_geocoded;
+                    
+                    // Populate cities filter
+                    const citySelect = document.getElementById('filter-city');
+                    const currentCity = citySelect.value;
+                    citySelect.innerHTML = '<option value="">Toutes les villes</option>';
+                    data.cities.forEach(c => {
+                        const option = document.createElement('option');
+                        option.value = c;
+                        option.textContent = c;
+                        if (c === currentCity) option.selected = true;
+                        citySelect.appendChild(option);
+                    });
+                    
+                    // Ajuster la vue si des membres sont présents
+                    if (data.members.length > 0) {
+                        const bounds = L.latLngBounds(data.members.map(m => [m.lat, m.lng]));
+                        // Ajouter les sites aux bounds
+                        data.sites.forEach(s => bounds.extend([s.lat, s.lng]));
+                        map.fitBounds(bounds, {padding: [50, 50]});
+                    }
                 })
                 .catch(err => console.error('Error:', err));
         }

@@ -2,6 +2,7 @@ from django.urls import path
 from . import views
 from . import kanban_views
 from . import family_views
+from . import admin_views
 
 app_name = 'members'
 
@@ -9,6 +10,10 @@ urlpatterns = [
     # Membres
     path('', views.member_list, name='list'),
     path('<int:pk>/', views.member_detail, name='detail'),
+    
+    # Carte des membres
+    path('map/', admin_views.members_map_view, name='map'),
+    path('map/data/', admin_views.members_map_data, name='map_data'),
     
     # Familles
     path('families/', family_views.family_list, name='family_list'),

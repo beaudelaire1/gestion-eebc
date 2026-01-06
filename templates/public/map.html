@@ -1,4 +1,5 @@
 {% extends 'public/base.html' %}
+{% load l10n %}
 
 {% block title %}Carte des églises - {{ settings.site_name|default:'EEBC' }}{% endblock %}
 
@@ -96,7 +97,7 @@
                     <div class="list-group list-group-flush">
                         {% for site in sites %}
                         <a href="#" class="list-group-item list-group-item-action site-link" 
-                           data-lat="{{ site.latitude }}" data-lng="{{ site.longitude }}"
+                           data-lat="{{ site.latitude|unlocalize }}" data-lng="{{ site.longitude|unlocalize }}"
                            data-name="{{ site.name }}">
                             <i class="bi bi-geo-alt me-2 text-primary"></i>
                             {{ site.name }}
@@ -128,7 +129,7 @@ document.addEventListener('DOMContentLoaded', function() {
     // Ajouter les marqueurs des sites directement
     {% for site in sites %}
     console.log('Ajout site: {{ site.name }}');
-    L.marker([{{ site.latitude }}, {{ site.longitude }}])
+    L.marker([{{ site.latitude|unlocalize }}, {{ site.longitude|unlocalize }}])
         .bindPopup('<strong>{{ site.name|escapejs }}</strong><br>{{ site.address|escapejs }}<br>{{ site.city|escapejs }}')
         .addTo(map);
     {% empty %}

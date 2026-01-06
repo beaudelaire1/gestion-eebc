@@ -19,6 +19,8 @@ class Command(BaseCommand):
                 'address': '5 rue Calimbés 2, Route de Cabassou',
                 'city': 'Cayenne',
                 'postal_code': '97300',
+                'phone': '',
+                'email': 'contact@eebc-guyane.org',
                 'worship_schedule': '''Culte: Dimanche 9h30-12h00
 Étude biblique: Mercredi 19h00
 Réunion de prière: Vendredi 19h00
@@ -26,8 +28,9 @@ Groupe de jeunes: Samedi 16h00-18h00
 Club biblique: Dimanche 15h00-16h30''',
                 'is_main_site': True,
                 'is_active': True,
-                'latitude': 4.9225,
-                'longitude': -52.3058,
+                # Coordonnées GPS exactes: 4°55'08.2"N 52°18'49.3"W
+                'latitude': 4.918944,
+                'longitude': -52.313694,
             }
         )
         if created:

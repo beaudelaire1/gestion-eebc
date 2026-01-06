@@ -1,0 +1,53 @@
+{% extends "pdf_base.html" %}
+
+{% block title %}Liste des Chauffeurs{% endblock %}
+{% block header_title %}{{ print_title }}{% endblock %}
+{% block header_subtitle %}<p class="subtitle">Service Transport</p>{% endblock %}
+
+{% block summary %}
+<div class="summary-box">
+    <h3>Statistiques</h3>
+    <div class="summary-grid">
+        <div class="summary-item">
+            <div class="summary-label">Total chauffeurs</div>
+            <div class="summary-value">{{ total_drivers }}</div>
+        </div>
+        <div class="summary-item">
+            <div class="summary-label">Chauffeurs actifs</div>
+            <div class="summary-value">{{ active_drivers }}</div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block content %}
+<h3>Liste des chauffeurs</h3>
+<table>
+    <thead>
+        <tr>
+            <th>Nom</th>
+            <th>Téléphone</th>
+            <th>Véhicule</th>
+            <th class="text-center">Places</th>
+            <th>N° Permis</th>
+            <th class="text-center">Actif</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for driver in object_list %}
+        <tr>
+            <td><strong>{{ driver.user.get_full_name }}</strong></td>
+            <td>{{ driver.phone|default:"-" }}</td>
+            <td>{{ driver.vehicle_type|default:"-" }}</td>
+            <td class="text-center">{{ driver.vehicle_capacity|default:"-" }}</td>
+            <td>{{ driver.license_number|default:"-" }}</td>
+            <td class="text-center">
+                {% if driver.is_active %}<span class="badge badge-success">Oui</span>{% else %}<span class="badge badge-danger">Non</span>{% endif %}
+            </td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="6" class="text-center">Aucun chauffeur trouvé</td></tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% endblock %}

@@ -19,9 +19,32 @@
             {% endfor %}
         </div>
     </div>
-    <a href="{% url 'admin:events_event_add' %}" class="btn btn-primary">
-        <i class="bi bi-plus-lg me-2"></i>Nouvel événement
-    </a>
+    <div class="d-flex gap-2">
+        <!-- Boutons d'export -->
+        <div class="dropdown">
+            <button class="btn btn-outline-secondary dropdown-toggle" type="button" 
+                    data-bs-toggle="dropdown" aria-expanded="false" title="Exporter">
+                <i class="bi bi-download"></i>
+            </button>
+            <ul class="dropdown-menu dropdown-menu-end">
+                <li>
+                    <a class="dropdown-item" href="{% url 'exports:events_excel' %}?upcoming=1{% if request.GET.category %}&category_id={{ request.GET.category }}{% endif %}">
+                        <i class="bi bi-file-earmark-excel text-success me-2"></i>
+                        Exporter Excel
+                    </a>
+                </li>
+                <li>
+                    <a class="dropdown-item" href="{% url 'exports:events_print' %}?upcoming=1{% if request.GET.category %}&category_id={{ request.GET.category }}{% endif %}" target="_blank">
+                        <i class="bi bi-file-earmark-pdf text-danger me-2"></i>
+                        Exporter PDF
+                    </a>
+                </li>
+            </ul>
+        </div>
+        <a href="{% url 'admin:events_event_add' %}" class="btn btn-primary">
+            <i class="bi bi-plus-lg me-2"></i>Nouvel événement
+        </a>
+    </div>
 </div>
 
 <div class="row g-4">

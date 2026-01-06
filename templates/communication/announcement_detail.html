@@ -1,0 +1,46 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ announcement.title }} - EEBC{% endblock %}
+{% block page_title %}Annonce{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-8">
+        <div class="card border-0 shadow-sm">
+            <div class="card-body p-4">
+                {% if announcement.is_pinned %}
+                <span class="badge bg-warning text-dark mb-2">
+                    <i class="bi bi-pin-angle me-1"></i> Épinglée
+                </span>
+                {% endif %}
+                
+                <h3 class="mb-3">{{ announcement.title }}</h3>
+                
+                <div class="text-muted small mb-4">
+                    <i class="bi bi-person me-1"></i> 
+                    {{ announcement.author.get_full_name|default:announcement.author.username }}
+                    <span class="mx-2">·</span>
+                    <i class="bi bi-calendar me-1"></i>
+                    {{ announcement.created_at|date:"d/m/Y H:i" }}
+                    {% if announcement.start_date or announcement.end_date %}
+                    <span class="mx-2">·</span>
+                    <i class="bi bi-clock me-1"></i>
+                    {% if announcement.start_date %}Du {{ announcement.start_date|date:"d/m/Y" }}{% endif %}
+                    {% if announcement.end_date %}au {{ announcement.end_date|date:"d/m/Y" }}{% endif %}
+                    {% endif %}
+                </div>
+                
+                <div class="announcement-content">
+                    {{ announcement.content|linebreaks }}
+                </div>
+            </div>
+        </div>
+        
+        <div class="mt-3">
+            <a href="{% url 'communication:announcements' %}" class="btn btn-outline-secondary">
+                <i class="bi bi-arrow-left me-1"></i> Retour aux annonces
+            </a>
+        </div>
+    </div>
+</div>
+{% endblock %}

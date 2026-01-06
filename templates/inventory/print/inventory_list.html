@@ -1,0 +1,49 @@
+{% extends "pdf_base.html" %}
+
+{% block title %}Inventaire{% endblock %}
+{% block header_title %}{{ print_title }}{% endblock %}
+{% block header_subtitle %}<p class="subtitle">Gestion du matériel</p>{% endblock %}
+
+{% block summary %}
+<div class="summary-box">
+    <h3>Statistiques</h3>
+    <div class="summary-grid">
+        <div class="summary-item">
+            <div class="summary-label">Total articles</div>
+            <div class="summary-value">{{ total_items }}</div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block content %}
+<h3>Liste du matériel</h3>
+<table>
+    <thead>
+        <tr>
+            <th>Nom</th>
+            <th>Catégorie</th>
+            <th class="text-center">Quantité</th>
+            <th class="text-center">Qté Min</th>
+            <th>Emplacement</th>
+            <th class="text-center">État</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for item in object_list %}
+        <tr>
+            <td><strong>{{ item.name }}</strong></td>
+            <td>{{ item.category|default:"-" }}</td>
+            <td class="text-center">{{ item.quantity }}</td>
+            <td class="text-center">{{ item.min_quantity|default:"-" }}</td>
+            <td>{{ item.location|default:"-" }}</td>
+            <td class="text-center">
+                {% if item.condition %}{{ item.get_condition_display }}{% else %}-{% endif %}
+            </td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="6" class="text-center">Aucun article trouvé</td></tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% endblock %}

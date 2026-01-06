@@ -5,7 +5,28 @@
 {% block page_subtitle %}Équipe de transport bénévole{% endblock %}
 
 {% block content %}
-<div class="d-flex justify-content-end mb-4">
+<div class="d-flex justify-content-end mb-4 gap-2">
+    <!-- Boutons d'export -->
+    <div class="dropdown">
+        <button class="btn btn-outline-secondary dropdown-toggle" type="button" 
+                data-bs-toggle="dropdown" aria-expanded="false" title="Exporter">
+            <i class="bi bi-download"></i>
+        </button>
+        <ul class="dropdown-menu dropdown-menu-end">
+            <li>
+                <a class="dropdown-item" href="{% url 'exports:drivers_excel' %}?active_only=1">
+                    <i class="bi bi-file-earmark-excel text-success me-2"></i>
+                    Exporter Excel
+                </a>
+            </li>
+            <li>
+                <a class="dropdown-item" href="{% url 'exports:drivers_print' %}?active_only=1" target="_blank">
+                    <i class="bi bi-file-earmark-pdf text-danger me-2"></i>
+                    Exporter PDF
+                </a>
+            </li>
+        </ul>
+    </div>
     <a href="{% url 'admin:transport_driverprofile_add' %}" class="btn btn-primary">
         <i class="bi bi-plus-lg me-2"></i>Nouveau chauffeur
     </a>

@@ -1,0 +1,53 @@
+{% extends "pdf_base.html" %}
+
+{% block title %}Liste des Utilisateurs{% endblock %}
+{% block header_title %}{{ print_title }}{% endblock %}
+{% block header_subtitle %}<p class="subtitle">Gestion des accès</p>{% endblock %}
+
+{% block summary %}
+<div class="summary-box">
+    <h3>Statistiques</h3>
+    <div class="summary-grid">
+        <div class="summary-item">
+            <div class="summary-label">Total utilisateurs</div>
+            <div class="summary-value">{{ total_users }}</div>
+        </div>
+        <div class="summary-item">
+            <div class="summary-label">Utilisateurs actifs</div>
+            <div class="summary-value">{{ active_users }}</div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block content %}
+<h3>Liste des utilisateurs</h3>
+<table>
+    <thead>
+        <tr>
+            <th>Nom</th>
+            <th>Prénom</th>
+            <th>Email</th>
+            <th>Rôle</th>
+            <th class="text-center">Actif</th>
+            <th>Dernière connexion</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for user in object_list %}
+        <tr>
+            <td>{{ user.last_name }}</td>
+            <td>{{ user.first_name }}</td>
+            <td>{{ user.email }}</td>
+            <td>{% if user.get_role_display %}{{ user.get_role_display }}{% else %}{{ user.role|default:"-" }}{% endif %}</td>
+            <td class="text-center">
+                {% if user.is_active %}<span class="badge badge-success">Oui</span>{% else %}<span class="badge badge-danger">Non</span>{% endif %}
+            </td>
+            <td>{% if user.last_login %}{{ user.last_login|date:"d/m/Y H:i" }}{% else %}Jamais{% endif %}</td>
+        </tr>
+        {% empty %}
+        <tr><td colspan="6" class="text-center">Aucun utilisateur trouvé</td></tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% endblock %}

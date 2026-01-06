@@ -5,8 +5,8 @@
     <title>{{ title }} - EEBC</title>
     <style>
         /* =============================================================================
-           BROCHURE CALENDRIER PROFESSIONNEL v3.0
-           Design épuré, grille uniforme, événements adaptatifs
+           BROCHURE CALENDRIER PROFESSIONNELLE v4.0
+           Format imprimable haute qualité - Événement remplit la cellule
            ============================================================================= */
         
         @page {
@@ -23,295 +23,256 @@
         :root {
             --primary: #0A36FF;
             --primary-dark: #0829CC;
-            --primary-light: #e8edff;
-            --black: #0f172a;
-            --gray-900: #1e293b;
-            --gray-700: #334155;
-            --gray-500: #64748b;
-            --gray-400: #94a3b8;
-            --gray-300: #cbd5e1;
-            --gray-200: #e2e8f0;
-            --gray-100: #f1f5f9;
-            --gray-50: #f8fafc;
+            --black: #1a1a2e;
+            --gray-800: #2d2d44;
+            --gray-600: #4a4a68;
+            --gray-400: #8888a4;
+            --gray-200: #e0e0e8;
+            --gray-100: #f4f4f8;
             --white: #ffffff;
-            --success: #10b981;
-            --warning: #f59e0b;
-            --danger: #ef4444;
         }
         
         body {
-            font-family: 'Segoe UI', 'Helvetica Neue', Arial, sans-serif;
-            font-size: 9pt;
+            font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, sans-serif;
+            font-size: 10pt;
             color: var(--black);
-            line-height: 1.35;
+            line-height: 1.3;
             background: var(--white);
         }
         
         /* =============================================================================
-           PAGE COUVERTURE
+           COUVERTURE
            ============================================================================= */
-        .cover-page {
+        .cover {
             width: 297mm;
             height: 210mm;
-            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+            background: linear-gradient(135deg, #1a1a2e 0%, #0A36FF 50%, #16213e 100%);
             display: flex;
             flex-direction: column;
             justify-content: center;
             align-items: center;
-            position: relative;
             page-break-after: always;
+            position: relative;
             overflow: hidden;
         }
         
-        .cover-page::before {
+        .cover::before {
             content: '';
             position: absolute;
-            top: -50%;
-            right: -20%;
-            width: 80%;
-            height: 200%;
-            background: rgba(255,255,255,0.03);
-            transform: rotate(-15deg);
-        }
-        
-        .cover-page::after {
-            content: '';
-            position: absolute;
-            bottom: 0;
-            left: 0;
-            right: 0;
-            height: 6px;
-            background: linear-gradient(90deg, var(--warning), var(--success), var(--primary));
+            width: 600px;
+            height: 600px;
+            background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 70%);
+            top: -100px;
+            right: -100px;
         }
         
         .cover-content {
             text-align: center;
-            color: var(--white);
+            color: white;
             z-index: 1;
         }
         
-        .cover-church {
-            font-size: 11pt;
-            font-weight: 500;
-            letter-spacing: 6px;
+        .cover-subtitle {
+            font-size: 12pt;
+            letter-spacing: 8px;
             text-transform: uppercase;
-            opacity: 0.9;
-            margin-bottom: 15mm;
-        }
-        
-        .cover-icon {
-            font-size: 48pt;
-            margin-bottom: 10mm;
-            opacity: 0.9;
+            opacity: 0.8;
+            margin-bottom: 20mm;
         }
         
         .cover-title {
-            font-size: 56pt;
+            font-size: 72pt;
             font-weight: 800;
-            letter-spacing: -1px;
-            margin-bottom: 8mm;
-            text-shadow: 0 4px 20px rgba(0,0,0,0.2);
+            letter-spacing: -2px;
+            margin-bottom: 10mm;
         }
         
         .cover-period {
-            font-size: 20pt;
+            font-size: 24pt;
             font-weight: 300;
-            opacity: 0.95;
-            letter-spacing: 3px;
+            letter-spacing: 4px;
         }
         
         .cover-year {
             position: absolute;
-            bottom: 20mm;
-            font-size: 12pt;
-            font-weight: 600;
-            letter-spacing: 10px;
-            opacity: 0.7;
+            bottom: 25mm;
+            font-size: 14pt;
+            letter-spacing: 12px;
+            opacity: 0.5;
         }
         
         /* =============================================================================
-           PAGES CALENDRIER - GRILLE UNIFORME
+           PAGE CALENDRIER
            ============================================================================= */
         .calendar-page {
             width: 297mm;
             height: 210mm;
-            padding: 8mm;
+            padding: 8mm 10mm;
             page-break-after: always;
             display: flex;
             flex-direction: column;
-            background: var(--white);
         }
         
         .month-header {
             display: flex;
             justify-content: space-between;
-            align-items: center;
-            padding: 4mm 2mm;
-            margin-bottom: 4mm;
-            border-bottom: 3px solid var(--primary);
+            align-items: baseline;
+            padding-bottom: 5mm;
+            border-bottom: 4px solid var(--primary);
+            margin-bottom: 5mm;
         }
         
         .month-name {
-            font-size: 32pt;
+            font-size: 36pt;
             font-weight: 800;
             color: var(--black);
-            letter-spacing: -1px;
         }
         
         .month-year {
-            font-size: 18pt;
+            font-size: 20pt;
             font-weight: 300;
-            color: var(--gray-500);
+            color: var(--gray-400);
         }
         
-        /* Grille calendrier - hauteur uniforme */
-        .calendar-grid {
-            display: grid;
-            grid-template-columns: repeat(7, 1fr);
-            grid-template-rows: auto repeat(6, 1fr);
-            gap: 0;
-            flex: 1;
-            border: 1px solid var(--gray-300);
-            border-radius: 8px;
-            overflow: hidden;
+        /* =============================================================================
+           GRILLE CALENDRIER - TABLE POUR HAUTEUR UNIFORME
+           ============================================================================= */
+        .cal-table {
+            width: 100%;
+            height: calc(100% - 25mm);
+            border-collapse: collapse;
+            table-layout: fixed;
         }
         
-        .day-header {
-            background: var(--gray-900);
-            color: var(--white);
-            font-size: 8pt;
+        .cal-table th {
+            background: var(--gray-800);
+            color: white;
+            font-size: 9pt;
             font-weight: 700;
             text-transform: uppercase;
-            letter-spacing: 1.5px;
+            letter-spacing: 2px;
             padding: 4mm 2mm;
             text-align: center;
-            border-right: 1px solid var(--gray-700);
+            border: 1px solid var(--gray-600);
         }
         
-        .day-header:last-child {
-            border-right: none;
-        }
-        
-        .day-header.weekend {
+        .cal-table th.weekend {
             background: var(--primary);
         }
         
-        /* Cellule jour - HAUTEUR UNIFORME */
-        .day-cell {
-            background: var(--white);
-            border-right: 1px solid var(--gray-200);
-            border-bottom: 1px solid var(--gray-200);
-            padding: 2mm;
+        .cal-table td {
+            border: 1px solid var(--gray-200);
+            vertical-align: top;
+            padding: 0;
+            height: 16.67%; /* 6 lignes = 100%/6 */
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .cal-table td.empty {
+            background: var(--gray-100);
+        }
+        
+        .cal-table td.weekend {
+            background: #fef7f7;
+        }
+        
+        /* =============================================================================
+           CELLULE JOUR - STRUCTURE INTERNE
+           ============================================================================= */
+        .day-wrapper {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
             display: flex;
             flex-direction: column;
-            min-height: 0;
-            overflow: hidden;
-            position: relative;
+            padding: 2mm;
         }
         
-        .day-cell:nth-child(7n) {
-            border-right: none;
-        }
-        
-        .day-cell.empty {
-            background: var(--gray-50);
-        }
-        
-        .day-cell.weekend {
-            background: linear-gradient(135deg, #fef3f2 0%, #fef9f8 100%);
-        }
-        
-        .day-cell.has-events {
-            background: linear-gradient(135deg, var(--primary-light) 0%, var(--white) 100%);
-        }
-        
-        .day-number {
-            font-size: 12pt;
+        .day-num {
+            font-size: 13pt;
             font-weight: 700;
-            color: var(--gray-700);
-            margin-bottom: 1.5mm;
+            color: var(--gray-600);
+            margin-bottom: 1mm;
             flex-shrink: 0;
         }
         
-        .day-cell.weekend .day-number {
+        td.weekend .day-num {
             color: var(--primary);
         }
         
-        /* Container événements - REMPLIT L'ESPACE */
-        .events-container {
+        /* =============================================================================
+           ÉVÉNEMENTS - REMPLISSENT L'ESPACE DISPONIBLE
+           ============================================================================= */
+        .events-area {
             flex: 1;
             display: flex;
             flex-direction: column;
             gap: 1mm;
             min-height: 0;
-            overflow: hidden;
         }
         
-        /* ÉVÉNEMENT UNIQUE = REMPLIT TOUTE LA CELLULE */
-        .events-container.single-event {
-            gap: 0;
-        }
-        
-        .events-container.single-event .event {
+        /* UN SEUL ÉVÉNEMENT = REMPLIT TOUT */
+        .events-area.single .evt {
             flex: 1;
             display: flex;
             flex-direction: column;
             justify-content: center;
+            align-items: center;
+            text-align: center;
+            border-radius: 6px;
+            padding: 3mm;
         }
         
-        /* Style événement */
-        .event {
-            padding: 1.5mm 2.5mm;
+        .events-area.single .evt-title {
+            font-size: 10pt;
+            font-weight: 700;
+            line-height: 1.2;
+            margin-bottom: 2mm;
+        }
+        
+        .events-area.single .evt-time {
+            font-size: 9pt;
+            opacity: 0.9;
+        }
+        
+        /* PLUSIEURS ÉVÉNEMENTS = COMPACT */
+        .events-area.multi .evt {
+            padding: 1.5mm 2mm;
             border-radius: 4px;
-            font-size: 7.5pt;
-            line-height: 1.25;
-            overflow: hidden;
             flex-shrink: 0;
-            position: relative;
         }
         
-        .event.primary {
-            background: var(--primary);
-            color: var(--white);
-        }
-        
-        .event.secondary {
-            background: var(--gray-100);
-            color: var(--gray-700);
-            border-left: 3px solid var(--primary);
-        }
-        
-        .event.colored {
-            color: var(--white);
-        }
-        
-        .event-title {
+        .events-area.multi .evt-title {
+            font-size: 8pt;
             font-weight: 600;
             white-space: nowrap;
             overflow: hidden;
             text-overflow: ellipsis;
         }
         
-        /* Événement unique - titre plus grand */
-        .single-event .event-title {
-            font-size: 8.5pt;
-            white-space: normal;
-            text-align: center;
-        }
-        
-        .event-time {
-            font-size: 6.5pt;
+        .events-area.multi .evt-time {
+            font-size: 7pt;
             opacity: 0.85;
-            margin-top: 0.5mm;
         }
         
-        .single-event .event-time {
-            text-align: center;
+        /* Styles événements */
+        .evt {
+            color: white;
+            overflow: hidden;
         }
         
-        .more-events {
-            font-size: 6pt;
-            color: var(--gray-500);
+        .evt.style-0 { background: #0A36FF; }
+        .evt.style-1 { background: #10b981; }
+        .evt.style-2 { background: #f59e0b; }
+        .evt.style-3 { background: #ec4899; }
+        .evt.style-4 { background: #8b5cf6; }
+        
+        .more-badge {
+            font-size: 7pt;
+            color: var(--gray-400);
             text-align: center;
             padding: 1mm;
             background: var(--gray-100);
@@ -319,192 +280,181 @@
             margin-top: auto;
         }
         
-        .calendar-footer {
+        /* =============================================================================
+           PIED DE PAGE CALENDRIER
+           ============================================================================= */
+        .cal-footer {
             margin-top: 3mm;
             display: flex;
             justify-content: space-between;
-            align-items: center;
-            font-size: 7pt;
+            font-size: 8pt;
             color: var(--gray-400);
-            padding: 0 2mm;
         }
         
         .legend {
             display: flex;
-            gap: 4mm;
+            gap: 5mm;
         }
         
         .legend-item {
             display: flex;
             align-items: center;
-            gap: 1.5mm;
+            gap: 2mm;
         }
         
         .legend-dot {
-            width: 8px;
-            height: 8px;
-            border-radius: 2px;
+            width: 10px;
+            height: 10px;
+            border-radius: 3px;
         }
         
         /* =============================================================================
            PAGE RÉCAPITULATIF
            ============================================================================= */
-        .summary-page {
+        .summary {
             width: 297mm;
             height: 210mm;
-            padding: 10mm;
+            padding: 10mm 12mm;
             display: flex;
             flex-direction: column;
-            background: var(--white);
         }
         
         .summary-header {
             display: flex;
             justify-content: space-between;
-            align-items: flex-end;
-            padding-bottom: 5mm;
+            align-items: center;
+            padding-bottom: 6mm;
+            border-bottom: 4px solid var(--primary);
             margin-bottom: 6mm;
-            border-bottom: 3px solid var(--primary);
         }
         
         .summary-title {
-            font-size: 28pt;
+            font-size: 32pt;
             font-weight: 800;
-            color: var(--black);
         }
         
         .summary-stats {
             display: flex;
-            gap: 6mm;
+            gap: 8mm;
         }
         
-        .stat-box {
+        .stat {
             text-align: center;
-            padding: 3mm 5mm;
-            background: var(--gray-50);
-            border-radius: 6px;
+            padding: 4mm 8mm;
+            background: var(--gray-100);
+            border-radius: 8px;
         }
         
-        .stat-number {
-            font-size: 18pt;
+        .stat-num {
+            font-size: 24pt;
             font-weight: 800;
             color: var(--primary);
         }
         
         .stat-label {
-            font-size: 7pt;
-            color: var(--gray-500);
+            font-size: 8pt;
+            color: var(--gray-400);
             text-transform: uppercase;
-            letter-spacing: 0.5px;
+            letter-spacing: 1px;
         }
         
-        .summary-content {
+        .summary-grid {
             flex: 1;
             display: grid;
             grid-template-columns: repeat(2, 1fr);
             gap: 6mm;
+        }
+        
+        .cat-block {
+            background: var(--gray-100);
+            border-radius: 10px;
+            padding: 5mm;
             overflow: hidden;
         }
         
-        .category-section {
-            background: var(--gray-50);
-            border-radius: 8px;
-            padding: 4mm;
-            overflow: hidden;
-        }
-        
-        .category-header {
+        .cat-header {
             display: flex;
             align-items: center;
             gap: 3mm;
-            margin-bottom: 3mm;
-            padding-bottom: 2mm;
+            margin-bottom: 4mm;
+            padding-bottom: 3mm;
             border-bottom: 2px solid var(--gray-200);
         }
         
-        .category-badge {
-            padding: 2mm 4mm;
-            border-radius: 4px;
-            font-size: 8pt;
+        .cat-badge {
+            padding: 2mm 5mm;
+            border-radius: 5px;
+            font-size: 9pt;
             font-weight: 700;
-            color: var(--white);
+            color: white;
         }
         
-        .category-count {
-            font-size: 8pt;
-            color: var(--gray-500);
+        .cat-count {
+            font-size: 9pt;
+            color: var(--gray-400);
         }
         
-        .event-list {
+        .evt-list {
             display: flex;
             flex-direction: column;
             gap: 2mm;
         }
         
-        .event-row {
+        .evt-row {
             display: flex;
-            align-items: flex-start;
-            gap: 3mm;
-            padding: 2mm;
-            background: var(--white);
-            border-radius: 4px;
-            font-size: 8pt;
+            gap: 4mm;
+            padding: 2mm 3mm;
+            background: white;
+            border-radius: 5px;
+            font-size: 9pt;
         }
         
-        .event-date {
+        .evt-row-date {
             font-weight: 700;
             color: var(--primary);
-            white-space: nowrap;
-            min-width: 12mm;
+            min-width: 14mm;
         }
         
-        .event-info {
+        .evt-row-info {
             flex: 1;
-            min-width: 0;
         }
         
-        .event-name {
+        .evt-row-title {
             font-weight: 600;
-            color: var(--gray-900);
         }
         
-        .event-details {
-            font-size: 7pt;
-            color: var(--gray-500);
-            margin-top: 0.5mm;
-        }
-        
-        .summary-footer {
-            margin-top: 4mm;
-            padding-top: 3mm;
-            border-top: 1px solid var(--gray-200);
-            text-align: center;
+        .evt-row-meta {
             font-size: 8pt;
             color: var(--gray-400);
         }
         
-        /* Print */
+        .summary-footer {
+            margin-top: 4mm;
+            text-align: center;
+            font-size: 9pt;
+            color: var(--gray-400);
+            padding-top: 3mm;
+            border-top: 1px solid var(--gray-200);
+        }
+        
         @media print {
-            .calendar-page, .summary-page {
-                page-break-inside: avoid;
-            }
+            .calendar-page, .summary { page-break-inside: avoid; }
         }
     </style>
 </head>
 <body>
 
-    <!-- ========== COUVERTURE ========== -->
-    <div class="cover-page">
+    <!-- COUVERTURE -->
+    <div class="cover">
         <div class="cover-content">
-            <div class="cover-church">Église Évangélique Baptiste de Cabassou</div>
-            <div class="cover-icon">📅</div>
+            <div class="cover-subtitle">Église Évangélique Baptiste de Cabassou</div>
             <div class="cover-title">CALENDRIER</div>
             <div class="cover-period">{{ title }}</div>
         </div>
         <div class="cover-year">{{ year }}</div>
     </div>
     
-    <!-- ========== PAGES CALENDRIER ========== -->
+    <!-- PAGES CALENDRIER -->
     {% for cal in calendars %}
     <div class="calendar-page">
         <div class="month-header">
@@ -512,52 +462,61 @@
             <span class="month-year">{{ cal.year }}</span>
         </div>
         
-        <div class="calendar-grid">
-            <!-- En-têtes jours -->
-            {% for jour in jours_semaine %}
-            <div class="day-header {% if forloop.counter > 5 %}weekend{% endif %}">{{ jour }}</div>
-            {% endfor %}
-            
-            <!-- Cellules -->
-            {% for week in cal.weeks %}
-                {% for day_data in week %}
-                <div class="day-cell {% if not day_data.day %}empty{% elif day_data.events %}has-events{% endif %}{% if forloop.counter > 5 %} weekend{% endif %}">
-                    {% if day_data.day %}
-                    <div class="day-number">{{ day_data.day }}</div>
-                    
-                    {% with event_count=day_data.events|length %}
-                    <div class="events-container {% if event_count == 1 %}single-event{% endif %}">
-                        {% if event_count == 1 %}
-                            {% with event=day_data.events.0 %}
-                            <div class="event primary colored" {% if event.category and event.category.color %}style="background: {{ event.category.color }}"{% endif %}>
-                                <div class="event-title">{{ event.title }}</div>
-                                {% if event.start_time %}<div class="event-time">{{ event.start_time|time:"H:i" }}</div>{% endif %}
+        <table class="cal-table">
+            <thead>
+                <tr>
+                    {% for jour in jours_semaine %}
+                    <th {% if forloop.counter > 5 %}class="weekend"{% endif %}>{{ jour }}</th>
+                    {% endfor %}
+                </tr>
+            </thead>
+            <tbody>
+                {% for week in cal.weeks %}
+                <tr>
+                    {% for day_data in week %}
+                    <td class="{% if not day_data.day %}empty{% endif %}{% if forloop.counter > 5 %} weekend{% endif %}">
+                        {% if day_data.day %}
+                        <div class="day-wrapper">
+                            <div class="day-num">{{ day_data.day }}</div>
+                            
+                            {% with evt_count=day_data.events|length %}
+                            {% if evt_count > 0 %}
+                            <div class="events-area {% if evt_count == 1 %}single{% else %}multi{% endif %}">
+                                {% if evt_count == 1 %}
+                                    {% with e=day_data.events.0 %}
+                                    <div class="evt style-0" {% if e.category and e.category.color %}style="background:{{ e.category.color }}"{% endif %}>
+                                        <div class="evt-title">{{ e.title }}</div>
+                                        {% if e.start_time %}<div class="evt-time">{{ e.start_time|time:"H:i" }}</div>{% endif %}
+                                    </div>
+                                    {% endwith %}
+                                {% else %}
+                                    {% for e in day_data.events|slice:":2" %}
+                                    <div class="evt style-{{ forloop.counter0 }}" {% if e.category and e.category.color %}style="background:{{ e.category.color }}"{% endif %}>
+                                        <div class="evt-title">{{ e.title|truncatechars:16 }}</div>
+                                        {% if e.start_time %}<div class="evt-time">{{ e.start_time|time:"H:i" }}</div>{% endif %}
+                                    </div>
+                                    {% endfor %}
+                                    {% if evt_count > 2 %}
+                                    <div class="more-badge">+{{ evt_count|add:"-2" }}</div>
+                                    {% endif %}
+                                {% endif %}
                             </div>
-                            {% endwith %}
-                        {% elif event_count > 1 %}
-                            {% for event in day_data.events|slice:":2" %}
-                            <div class="event {% if forloop.first %}primary colored{% else %}secondary{% endif %}" {% if forloop.first and event.category and event.category.color %}style="background: {{ event.category.color }}"{% endif %}>
-                                <div class="event-title">{{ event.title|truncatechars:18 }}</div>
-                                {% if event.start_time %}<div class="event-time">{{ event.start_time|time:"H:i" }}</div>{% endif %}
-                            </div>
-                            {% endfor %}
-                            {% if event_count > 2 %}
-                            <div class="more-events">+{{ event_count|add:"-2" }} autre{{ event_count|add:"-2"|pluralize }}</div>
                             {% endif %}
+                            {% endwith %}
+                        </div>
                         {% endif %}
-                    </div>
-                    {% endwith %}
-                    {% endif %}
-                </div>
+                    </td>
+                    {% endfor %}
+                </tr>
                 {% endfor %}
-            {% endfor %}
-        </div>
+            </tbody>
+        </table>
         
-        <div class="calendar-footer">
+        <div class="cal-footer">
             <div class="legend">
                 {% for cat in categories|slice:":5" %}
                 <div class="legend-item">
-                    <div class="legend-dot" style="background: {{ cat.color|default:'#0A36FF' }}"></div>
+                    <div class="legend-dot" style="background:{{ cat.color|default:'#0A36FF' }}"></div>
                     <span>{{ cat.name }}</span>
                 </div>
                 {% endfor %}
@@ -567,54 +526,52 @@
     </div>
     {% endfor %}
     
-    <!-- ========== RÉCAPITULATIF ========== -->
-    <div class="summary-page">
+    <!-- RÉCAPITULATIF -->
+    <div class="summary">
         <div class="summary-header">
             <div class="summary-title">Récapitulatif</div>
             <div class="summary-stats">
-                <div class="stat-box">
-                    <div class="stat-number">{{ total_events }}</div>
+                <div class="stat">
+                    <div class="stat-num">{{ total_events }}</div>
                     <div class="stat-label">Événements</div>
                 </div>
-                <div class="stat-box">
-                    <div class="stat-number">{{ events_by_category|length }}</div>
+                <div class="stat">
+                    <div class="stat-num">{{ events_by_category|length }}</div>
                     <div class="stat-label">Catégories</div>
                 </div>
             </div>
         </div>
         
-        <div class="summary-content">
+        <div class="summary-grid">
             {% for cat_data in events_by_category %}
-            <div class="category-section">
-                <div class="category-header">
-                    <span class="category-badge" style="background: {{ cat_data.color|default:'#0A36FF' }}">
-                        {{ cat_data.name }}
-                    </span>
-                    <span class="category-count">{{ cat_data.events|length }} événement{{ cat_data.events|length|pluralize }}</span>
+            <div class="cat-block">
+                <div class="cat-header">
+                    <span class="cat-badge" style="background:{{ cat_data.color|default:'#0A36FF' }}">{{ cat_data.name }}</span>
+                    <span class="cat-count">{{ cat_data.events|length }} événement{{ cat_data.events|length|pluralize }}</span>
                 </div>
-                <div class="event-list">
-                    {% for event in cat_data.events|slice:":6" %}
-                    <div class="event-row">
-                        <div class="event-date">{{ event.start_date|date:"d/m" }}</div>
-                        <div class="event-info">
-                            <div class="event-name">{{ event.title }}</div>
-                            <div class="event-details">
+                <div class="evt-list">
+                    {% for event in cat_data.events|slice:":5" %}
+                    <div class="evt-row">
+                        <div class="evt-row-date">{{ event.start_date|date:"d/m" }}</div>
+                        <div class="evt-row-info">
+                            <div class="evt-row-title">{{ event.title }}</div>
+                            <div class="evt-row-meta">
                                 {% if event.start_time %}{{ event.start_time|time:"H:i" }}{% endif %}
                                 {% if event.location %} · {{ event.location }}{% endif %}
                             </div>
                         </div>
                     </div>
                     {% endfor %}
-                    {% if cat_data.events|length > 6 %}
-                    <div class="event-row" style="justify-content: center; color: var(--gray-400);">
-                        +{{ cat_data.events|length|add:"-6" }} autre{{ cat_data.events|length|add:"-6"|pluralize }}
+                    {% if cat_data.events|length > 5 %}
+                    <div class="evt-row" style="justify-content:center;color:var(--gray-400);">
+                        +{{ cat_data.events|length|add:"-5" }} autre{{ cat_data.events|length|add:"-5"|pluralize }}
                     </div>
                     {% endif %}
                 </div>
             </div>
             {% empty %}
-            <div class="category-section" style="grid-column: span 2; text-align: center; padding: 20mm;">
-                <p style="color: var(--gray-400);">Aucun événement pour cette période</p>
+            <div class="cat-block" style="grid-column:span 2;text-align:center;padding:30mm;">
+                <p style="color:var(--gray-400);">Aucun événement pour cette période</p>
             </div>
             {% endfor %}
         </div>

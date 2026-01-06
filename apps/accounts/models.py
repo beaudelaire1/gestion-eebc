@@ -42,6 +42,28 @@ class User(AbstractUser):
         verbose_name="Date d'arrivée à l'église"
     )
     
+    # Compte créé par l'équipe
+    created_by_team = models.BooleanField(
+        default=False,
+        verbose_name="Créé par l'équipe",
+        help_text="Indique si ce compte a été créé par un membre de l'équipe"
+    )
+    
+    created_by = models.ForeignKey(
+        'self',
+        on_delete=models.SET_NULL,
+        null=True, blank=True,
+        related_name='created_users',
+        verbose_name="Créé par"
+    )
+    
+    # Forcer le changement de mot de passe
+    must_change_password = models.BooleanField(
+        default=False,
+        verbose_name="Doit changer le mot de passe",
+        help_text="Force l'utilisateur à changer son mot de passe à la prochaine connexion"
+    )
+    
     # =========================================================================
     # DOUBLE AUTHENTIFICATION (2FA)
     # =========================================================================

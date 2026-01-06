@@ -1,0 +1,63 @@
+{% extends "pdf_base.html" %}
+
+{% block title %}Liste des Événements{% endblock %}
+{% block header_title %}{{ print_title }}{% endblock %}
+{% block header_subtitle %}<p class="subtitle">Calendrier des activités</p>{% endblock %}
+
+{% block summary %}
+<div class="summary-box">
+    <h3>Statistiques</h3>
+    <div class="summary-grid">
+        <div class="summary-item">
+            <div class="summary-label">Total événements</div>
+            <div class="summary-value">{{ total_events }}</div>
+        </div>
+        <div class="summary-item">
+            <div class="summary-label">À venir</div>
+            <div class="summary-value">{{ upcoming_events }}</div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block content %}
+<h3>Liste des événements</h3>
+<table>
+    <thead>
+        <tr>
+            <th>Date</th>
+            <th class="text-center">Heure</th>
+            <th>Titre</th>
+            <th>Lieu</th>
+            <th>Catégorie</th>
+            <th>Département/Groupe</th>
+            <th class="text-center">Statut</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for event in object_list %}
+        <tr>
+            <td>{{ event.start_date|date:"d/m/Y" }}</td>
+            <td class="text-center">
+                {% if event.all_day %}Journée{% elif event.start_time %}{{ event.start_time|time:"H:i" }}{% else %}-{% endif %}
+            </td>
+            <td><strong>{{ event.title }}</strong></td>
+            <td>{{ event.location|default:"-" }}</td>
+            <td>{{ event.category|default:"-" }}</td>
+            <td>{% if event.department %}{{ event.department }}{% elif event.group %}{{ event.group }}{% else %}-{% endif %}</td>
+            <td class="text-center">
+                {% if event.is_cancelled %}
+                <span class="badge badge-danger">Annulé</span>
+                {% else %}
+                <span class="badge badge-success">Actif</span>
+                {% endif %}
+            </td>
+        </tr>
+        {% empty %}
+        <tr>
+            <td colspan="7" class="text-center">Aucun événement trouvé</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% endblock %}

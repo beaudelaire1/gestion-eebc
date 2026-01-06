@@ -1,0 +1,469 @@
+{% extends 'base.html' %}
+
+{% block title %}Créer un Budget - {{ settings.site_name|default:'EEBC' }}{% endblock %}
+
+{% block page_title %}Nouveau Budget{% endblock %}
+{% block page_subtitle %}Créer un budget pour un groupe ou département{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <form method="post" id="budget-form">
+        {% csrf_token %}
+        
+        <div class="row">
+            <!-- Barre d'outils avec bouton de basculement -->
+            <div class="col-12 mb-4">
+                <div class="alert alert-info d-flex justify-content-between align-items-center" role="alert">
+                    <div class="d-flex align-items-center gap-3">
+                        <button type="button" class="btn btn-primary btn-lg" onclick="toggleSidebar()" title="Cliquez pour masquer/afficher le panneau latéral">
+                            <i class="bi bi-layout-sidebar-inset me-2" id="sidebar-icon"></i>
+                            <span id="sidebar-text">Masquer le panneau latéral</span>
+                        </button>
+                        <div class="d-none d-lg-block">
+                            <small><i class="bi bi-info-circle me-1"></i>Cliquez sur ce bouton pour avoir plus d'espace de saisie</small>
+                        </div>
+                    </div>
+                    <div class="d-flex align-items-center gap-2">
+                        <span class="fw-bold">Total:</span>
+                        <span class="badge bg-dark fs-5" id="total-amount-header">0 €</span>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Informations générales -->
+            <div class="col-lg-4 mb-4" id="sidebar-panel">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="card-title mb-0">
+                            <i class="bi bi-info-circle me-2"></i>Informations Générales
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="mb-3">
+                            <label class="form-label">Nom du Budget <span class="text-danger">*</span></label>
+                            <input type="text" name="name" class="form-control" required 
+                                   placeholder="Ex: Budget Jeunes 2026">
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label class="form-label">Année <span class="text-danger">*</span></label>
+                            <select name="year" class="form-select" required>
+                                <option value="{{ current_year }}">{{ current_year }}</option>
+                                <option value="{{ current_year|add:1 }}">{{ current_year|add:1 }}</option>
+                            </select>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label class="form-label">Groupe</label>
+                            <select name="group" class="form-select" id="group-select">
+                                <option value="">Sélectionner un groupe</option>
+                                {% for group in groups %}
+                                <option value="{{ group.id }}">{{ group.name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label class="form-label">Département</label>
+                            <select name="department" class="form-select" id="department-select">
+                                <option value="">Sélectionner un département</option>
+                                {% for department in departments %}
+                                <option value="{{ department.id }}">{{ department.name }}</option>
+                                {% endfor %}
+                            </select>
+                            <div class="form-text">Sélectionnez soit un groupe, soit un département</div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label class="form-label">Description</label>
+                            <textarea name="description" class="form-control" rows="3" 
+                                      placeholder="Description du budget et objectifs..."></textarea>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Lignes de budget -->
+            <div class="col-lg-8 mb-4" id="main-content">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="card-title mb-0">
+                            <i class="bi bi-list-ul me-2"></i>Détail du Budget par Catégorie
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="table-responsive">
+                            <table class="table">
+                                <thead>
+                                    <tr>
+                                        <th>Catégorie</th>
+                                        <th>Montant Demandé</th>
+                                        <th>Description</th>
+                                        <th>Priorité</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for category in categories %}
+                                    <tr>
+                                        <td>
+                                            <div class="d-flex align-items-center">
+                                                <div class="badge me-2" style="background-color: {{ category.color }}; width: 12px; height: 12px;"></div>
+                                                <div>
+                                                    <div class="fw-bold">{{ category.name }}</div>
+                                                    <small class="text-muted">{{ category.description }}</small>
+                                                </div>
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <div class="input-group">
+                                                <input type="number" 
+                                                       name="category_{{ category.id }}" 
+                                                       class="form-control amount-input" 
+                                                       step="0.01" 
+                                                       min="0"
+                                                       placeholder="0.00">
+                                                <span class="input-group-text">€</span>
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <textarea name="description_{{ category.id }}" 
+                                                      class="form-control" 
+                                                      rows="2" 
+                                                      placeholder="Description de l'utilisation..."></textarea>
+                                        </td>
+                                        <td>
+                                            <select name="priority_{{ category.id }}" class="form-select">
+                                                <option value="1">1 - Très important</option>
+                                                <option value="2">2 - Important</option>
+                                                <option value="3" selected>3 - Moyen</option>
+                                                <option value="4">4 - Peu important</option>
+                                                <option value="5">5 - Optionnel</option>
+                                            </select>
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                                <tfoot>
+                                    <tr class="table-light">
+                                        <th>Total Demandé</th>
+                                        <th>
+                                            <div class="fw-bold text-primary" id="total-amount">0.00 €</div>
+                                        </th>
+                                        <th colspan="2"></th>
+                                    </tr>
+                                </tfoot>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Actions -->
+        <div class="row">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between">
+                            <a href="{% url 'finance:budget_list' %}" class="btn btn-outline-secondary">
+                                <i class="bi bi-arrow-left me-1"></i>Retour à la liste
+                            </a>
+                            <div>
+                                <button type="submit" class="btn btn-primary">
+                                    <i class="bi bi-check-circle me-1"></i>Créer le Budget
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </form>
+</div>
+
+<script>
+let customLineCounter = 0;
+
+document.addEventListener('DOMContentLoaded', function() {
+    // Gestion exclusive groupe/département
+    const groupSelect = document.getElementById('group-select');
+    const departmentSelect = document.getElementById('department-select');
+    
+    groupSelect.addEventListener('change', function() {
+        if (this.value) {
+            departmentSelect.value = '';
+        }
+    });
+    
+    departmentSelect.addEventListener('change', function() {
+        if (this.value) {
+            groupSelect.value = '';
+        }
+    });
+    
+    // Calcul du total
+    updateTotal();
+    
+    // Validation du formulaire
+    document.getElementById('budget-form').addEventListener('submit', function(e) {
+        const groupValue = groupSelect.value;
+        const departmentValue = departmentSelect.value;
+        
+        if (!groupValue && !departmentValue) {
+            e.preventDefault();
+            alert('Veuillez sélectionner soit un groupe, soit un département.');
+            return false;
+        }
+        
+        // Vérifier qu'au moins une ligne a un montant
+        const allAmountInputs = document.querySelectorAll('.amount-input, .custom-amount');
+        let hasAmount = false;
+        allAmountInputs.forEach(input => {
+            if (parseFloat(input.value) > 0) {
+                hasAmount = true;
+            }
+        });
+        
+        if (!hasAmount) {
+            e.preventDefault();
+            alert('Veuillez saisir au moins un montant.');
+            return false;
+        }
+    });
+    
+    // Ajouter une ligne personnalisée par défaut
+    addCustomLine();
+    
+    // Ajouter les événements pour les inputs existants
+    const amountInputs = document.querySelectorAll('.amount-input');
+    amountInputs.forEach(input => {
+        input.addEventListener('input', updateTotal);
+    });
+});
+
+function updateTotal() {
+    let total = 0;
+    
+    // Montants des catégories prédéfinies
+    const categoryInputs = document.querySelectorAll('.amount-input');
+    categoryInputs.forEach(input => {
+        const value = parseFloat(input.value) || 0;
+        total += value;
+    });
+    
+    // Montants des lignes personnalisées
+    const customInputs = document.querySelectorAll('.custom-amount');
+    customInputs.forEach(input => {
+        const value = parseFloat(input.value) || 0;
+        total += value;
+    });
+    
+    const totalText = total.toFixed(0) + ' €';
+    document.getElementById('total-amount').textContent = totalText;
+    
+    // Mettre à jour aussi le total dans l'en-tête
+    const headerTotal = document.getElementById('total-amount-header');
+    if (headerTotal) {
+        headerTotal.textContent = totalText;
+    }
+}
+
+function addCustomLine() {
+    customLineCounter++;
+    const container = document.getElementById('custom-lines-container');
+    
+    const lineHtml = `
+        <div class="card mb-3 custom-line" id="custom-line-${customLineCounter}">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-start mb-3">
+                    <h6 class="card-title mb-0">Ligne personnalisée #${customLineCounter}</h6>
+                    <button type="button" class="btn btn-outline-danger btn-sm" onclick="removeCustomLine(${customLineCounter})">
+                        <i class="bi bi-trash"></i>
+                    </button>
+                </div>
+                
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label">Nom de la ligne <span class="text-danger">*</span></label>
+                        <input type="text" name="custom_name_${customLineCounter}" class="form-control" 
+                               placeholder="Ex: Matériel informatique" required>
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <label class="form-label">Montant <span class="text-danger">*</span></label>
+                        <div class="input-group">
+                            <input type="number" name="custom_amount_${customLineCounter}" 
+                                   class="form-control custom-amount" 
+                                   step="1" min="0" placeholder="0" required>
+                            <span class="input-group-text">€</span>
+                        </div>
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <label class="form-label">Priorité</label>
+                        <select name="custom_priority_${customLineCounter}" class="form-select">
+                            <option value="1">1 - Très important</option>
+                            <option value="2">2 - Important</option>
+                            <option value="3" selected>3 - Moyen</option>
+                            <option value="4">4 - Peu important</option>
+                            <option value="5">5 - Optionnel</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <div class="mb-3">
+                    <label class="form-label">Description détaillée</label>
+                    <textarea name="custom_description_${customLineCounter}" class="form-control" rows="3"
+                              placeholder="Décrivez précisément l'utilisation prévue de ce budget..."></textarea>
+                </div>
+                
+                <div class="mb-3">
+                    <label class="form-label">Justification</label>
+                    <textarea name="custom_justification_${customLineCounter}" class="form-control" rows="2"
+                              placeholder="Pourquoi cette dépense est-elle nécessaire ?"></textarea>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    container.insertAdjacentHTML('beforeend', lineHtml);
+    
+    // Ajouter l'événement de calcul du total
+    const newAmountInput = document.querySelector(`input[name="custom_amount_${customLineCounter}"]`);
+    newAmountInput.addEventListener('input', updateTotal);
+}
+
+function removeCustomLine(lineId) {
+    if (confirm('Êtes-vous sûr de vouloir supprimer cette ligne ?')) {
+        const line = document.getElementById(`custom-line-${lineId}`);
+        line.remove();
+        updateTotal();
+    }
+}
+
+function toggleSidebar() {
+    const sidebar = document.getElementById('sidebar-panel');
+    const mainContent = document.getElementById('main-content');
+    const icon = document.getElementById('sidebar-icon');
+    const text = document.getElementById('sidebar-text');
+    const button = icon.closest('button');
+    
+    if (sidebar.style.display === 'none') {
+        // Afficher le panneau - Vue normale (2 colonnes)
+        sidebar.style.display = 'block';
+        mainContent.className = 'col-lg-8 mb-4';
+        icon.className = 'bi bi-layout-sidebar-inset me-2';
+        text.textContent = 'Masquer le panneau latéral';
+        button.className = 'btn btn-primary btn-lg';
+        button.title = 'Cliquez pour masquer le panneau latéral';
+    } else {
+        // Masquer le panneau - Vue étendue (1 colonne pleine largeur)
+        sidebar.style.display = 'none';
+        mainContent.className = 'col-12 mb-4';
+        icon.className = 'bi bi-layout-sidebar-inset-reverse me-2';
+        text.textContent = 'Afficher le panneau latéral';
+        button.className = 'btn btn-success btn-lg';
+        button.title = 'Cliquez pour afficher le panneau latéral';
+    }
+    
+    // Forcer le recalcul du layout
+    setTimeout(() => {
+        window.dispatchEvent(new Event('resize'));
+    }, 300);
+}
+
+function toggleCategoryLines() {
+    const categories = document.getElementById('predefined-categories');
+    const toggleText = document.getElementById('category-toggle-text');
+    
+    if (categories.style.display === 'none') {
+        categories.style.display = 'block';
+        toggleText.textContent = 'Masquer catégories prédéfinies';
+    } else {
+        categories.style.display = 'none';
+        toggleText.textContent = 'Afficher catégories prédéfinies';
+    }
+}
+</script>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+.custom-line {
+    border-left: 4px solid #0d6efd;
+    transition: all 0.3s ease;
+}
+
+.custom-line:hover {
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+}
+
+.sidebar-toggle {
+    position: sticky;
+    top: 20px;
+    z-index: 100;
+}
+
+#predefined-categories {
+    transition: all 0.3s ease;
+}
+
+.card-title {
+    color: #0d6efd;
+}
+
+.custom-amount:focus, .amount-input:focus {
+    border-color: #0d6efd;
+    box-shadow: 0 0 0 0.2rem rgba(13, 110, 253, 0.25);
+}
+
+/* Mise en évidence du bouton de basculement */
+.btn:hover {
+    transform: translateY(-1px);
+    transition: all 0.2s ease;
+}
+
+/* Animation pour le panneau latéral et le contenu principal */
+#sidebar-panel {
+    transition: all 0.3s ease;
+}
+
+#main-content {
+    transition: all 0.3s ease;
+}
+
+/* Assurer que le contenu s'étend bien */
+.col-12 {
+    width: 100% !important;
+    flex: 0 0 100% !important;
+    max-width: 100% !important;
+}
+
+.col-lg-8 {
+    width: 66.666667% !important;
+    flex: 0 0 66.666667% !important;
+    max-width: 66.666667% !important;
+}
+
+/* Badge du total */
+.badge {
+    font-size: 0.9em;
+    padding: 0.5em 0.8em;
+}
+
+@media (max-width: 768px) {
+    #sidebar-panel {
+        order: 2;
+    }
+    
+    #main-content {
+        order: 1;
+    }
+    
+    /* Sur mobile, toujours pleine largeur */
+    #main-content {
+        width: 100% !important;
+        flex: 0 0 100% !important;
+        max-width: 100% !important;
+    }
+}
+</style>
+{% endblock %}

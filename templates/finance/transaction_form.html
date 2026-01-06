@@ -1,0 +1,75 @@
+{% extends 'base.html' %}
+{% load crispy_forms_tags %}
+
+{% block title %}{% if form.instance.pk %}Modifier{% else %}Nouvelle{% endif %} transaction - EEBC{% endblock %}
+{% block page_title %}{% if form.instance.pk %}Modifier la transaction{% else %}Nouvelle transaction{% endif %}{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-8">
+        <div class="card border-0 shadow-sm">
+            <div class="card-body p-4">
+                <form method="post">
+                    {% csrf_token %}
+                    
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label class="form-label">Type de transaction *</label>
+                            {{ form.transaction_type }}
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Montant (€) *</label>
+                            <input type="number" name="amount" step="0.01" min="0.01" 
+                                   class="form-control" value="{{ form.amount.value|default:'' }}" required>
+                        </div>
+                        
+                        <div class="col-md-6">
+                            <label class="form-label">Date *</label>
+                            {{ form.transaction_date }}
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Méthode de paiement</label>
+                            {{ form.payment_method }}
+                        </div>
+                        
+                        <div class="col-md-6">
+                            <label class="form-label">Catégorie</label>
+                            {{ form.category }}
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Membre concerné</label>
+                            {{ form.member }}
+                        </div>
+                        
+                        <div class="col-12">
+                            <label class="form-label">Description</label>
+                            {{ form.description }}
+                        </div>
+                        
+                        <div class="col-12">
+                            <label class="form-label">Événement lié</label>
+                            {{ form.event }}
+                        </div>
+                        
+                        <div class="col-12">
+                            <label class="form-label">Notes internes</label>
+                            {{ form.notes }}
+                        </div>
+                    </div>
+                    
+                    <hr class="my-4">
+                    
+                    <div class="d-flex justify-content-between">
+                        <a href="{% url 'finance:transaction_list' %}" class="btn btn-outline-secondary">
+                            <i class="bi bi-arrow-left me-1"></i> Annuler
+                        </a>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="bi bi-check-lg me-1"></i> Enregistrer
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

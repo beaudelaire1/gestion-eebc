@@ -1,0 +1,71 @@
+{% extends "pdf_base.html" %}
+
+{% block title %}Liste des Budgets{% endblock %}
+{% block header_title %}{{ print_title }}{% endblock %}
+{% block header_subtitle %}<p class="subtitle">Gestion Financière</p>{% endblock %}
+
+{% block summary %}
+<div class="summary-box">
+    <h3>Résumé financier</h3>
+    <div class="summary-grid">
+        <div class="summary-item">
+            <div class="summary-label">Montant demandé</div>
+            <div class="summary-value">{{ total_requested|floatformat:2 }} €</div>
+        </div>
+        <div class="summary-item">
+            <div class="summary-label">Montant approuvé</div>
+            <div class="summary-value amount-positive">{{ total_approved|floatformat:2 }} €</div>
+        </div>
+        <div class="summary-item">
+            <div class="summary-label">Montant dépensé</div>
+            <div class="summary-value">{{ total_spent|floatformat:2 }} €</div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block content %}
+<h3>Liste des budgets</h3>
+<table>
+    <thead>
+        <tr>
+            <th>Nom</th>
+            <th class="text-center">Année</th>
+            <th>Entité</th>
+            <th class="text-right">Demandé</th>
+            <th class="text-right">Approuvé</th>
+            <th class="text-right">Dépensé</th>
+            <th class="text-right">Restant</th>
+            <th class="text-center">Statut</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for budget in object_list %}
+        <tr>
+            <td>{{ budget.name }}</td>
+            <td class="text-center">{{ budget.year }}</td>
+            <td>{{ budget.entity|default:"-" }}</td>
+            <td class="text-right">{{ budget.total_requested|floatformat:2 }} €</td>
+            <td class="text-right">{{ budget.total_approved|floatformat:2 }} €</td>
+            <td class="text-right">{{ budget.spent_amount|floatformat:2 }} €</td>
+            <td class="text-right">
+                {% if budget.remaining_amount >= 0 %}
+                <span class="amount-positive">{{ budget.remaining_amount|floatformat:2 }} €</span>
+                {% else %}
+                <span class="amount-negative">{{ budget.remaining_amount|floatformat:2 }} €</span>
+                {% endif %}
+            </td>
+            <td class="text-center">
+                <span class="badge badge-{% if budget.status == 'approved' or budget.status == 'active' %}success{% elif budget.status == 'submitted' %}warning{% elif budget.status == 'rejected' %}danger{% else %}info{% endif %}">
+                    {{ budget.get_status_display }}
+                </span>
+            </td>
+        </tr>
+        {% empty %}
+        <tr>
+            <td colspan="8" class="text-center">Aucun budget trouvé</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% endblock %}

@@ -1,0 +1,153 @@
+{% extends 'base.html' %}
+
+{% block title %}Créer un utilisateur - {{ settings.site_name|default:'EEBC' }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <div>
+                    <h1 class="h3 mb-1">Créer un utilisateur</h1>
+                    <p class="text-muted">Ajouter un nouveau membre à l'équipe</p>
+                </div>
+                <a href="{% url 'accounts:user_list' %}" class="btn btn-outline-primary">
+                    <i class="bi bi-people me-2"></i>Liste des utilisateurs
+                </a>
+            </div>
+        </div>
+    </div>
+    
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="bi bi-person-plus me-2"></i>Informations du nouvel utilisateur
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="alert alert-info">
+                        <i class="bi bi-info-circle me-2"></i>
+                        <strong>Fonctionnement automatique :</strong>
+                        <ul class="mb-0 mt-2">
+                            <li>L'identifiant sera généré automatiquement (ex: Paul Kapel → pa_kapel)</li>
+                            <li>Un mot de passe sécurisé sera généré automatiquement</li>
+                            <li>L'utilisateur recevra un email avec ses identifiants</li>
+                            <li>Il devra changer son mot de passe à la première connexion</li>
+                        </ul>
+                    </div>
+                    
+                    <form method="post" class="needs-validation" novalidate>
+                        {% csrf_token %}
+                        
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">{{ form.first_name.label }} <span class="text-danger">*</span></label>
+                                {{ form.first_name }}
+                                {% if form.first_name.errors %}
+                                    <div class="invalid-feedback d-block">
+                                        {{ form.first_name.errors.0 }}
+                                    </div>
+                                {% endif %}
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">{{ form.last_name.label }} <span class="text-danger">*</span></label>
+                                {{ form.last_name }}
+                                {% if form.last_name.errors %}
+                                    <div class="invalid-feedback d-block">
+                                        {{ form.last_name.errors.0 }}
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">{{ form.email.label }} <span class="text-danger">*</span></label>
+                                {{ form.email }}
+                                {% if form.email.errors %}
+                                    <div class="invalid-feedback d-block">
+                                        {{ form.email.errors.0 }}
+                                    </div>
+                                {% endif %}
+                                <div class="form-text">L'utilisateur recevra ses identifiants à cette adresse</div>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">{{ form.phone.label }}</label>
+                                {{ form.phone }}
+                                {% if form.phone.errors %}
+                                    <div class="invalid-feedback d-block">
+                                        {{ form.phone.errors.0 }}
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        
+                        <div class="mb-4">
+                            <label class="form-label">{{ form.role.label }} <span class="text-danger">*</span></label>
+                            {{ form.role }}
+                            {% if form.role.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {{ form.role.errors.0 }}
+                                </div>
+                            {% endif %}
+                            <div class="form-text">Définit les permissions de l'utilisateur dans l'application</div>
+                        </div>
+                        
+                        <div class="d-flex gap-2">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="bi bi-person-plus me-2"></i>Créer l'utilisateur
+                            </button>
+                            <a href="{% url 'accounts:user_list' %}" class="btn btn-outline-secondary">
+                                Annuler
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+            
+            <!-- Aperçu de l'identifiant généré -->
+            <div class="card mt-4">
+                <div class="card-header">
+                    <h6 class="card-title mb-0">
+                        <i class="bi bi-eye me-2"></i>Aperçu de l'identifiant
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <p class="text-muted mb-2">L'identifiant sera généré automatiquement :</p>
+                    <div class="bg-light p-3 rounded">
+                        <code id="username-preview">Saisissez le prénom et nom pour voir l'aperçu</code>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const firstNameInput = document.getElementById('id_first_name');
+    const lastNameInput = document.getElementById('id_last_name');
+    const usernamePreview = document.getElementById('username-preview');
+    
+    function updateUsernamePreview() {
+        const firstName = firstNameInput.value.trim();
+        const lastName = lastNameInput.value.trim();
+        
+        if (firstName && lastName) {
+            // Simuler la génération d'identifiant
+            const firstPart = firstName.toLowerCase().slice(0, 2);
+            const lastPart = lastName.toLowerCase().replace(/[^a-z]/g, '');
+            const username = `${firstPart}_${lastPart}`;
+            usernamePreview.textContent = username;
+        } else {
+            usernamePreview.textContent = 'Saisissez le prénom et nom pour voir l\'aperçu';
+        }
+    }
+    
+    firstNameInput.addEventListener('input', updateUsernamePreview);
+    lastNameInput.addEventListener('input', updateUsernamePreview);
+});
+</script>
+{% endblock %}

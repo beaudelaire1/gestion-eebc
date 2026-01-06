@@ -1,0 +1,36 @@
+# =============================================================================
+# GESTION EEBC - Dépendances de production
+# =============================================================================
+
+-r base.txt
+
+# Serveur WSGI
+gunicorn>=21.0.0
+
+# Base de données PostgreSQL
+psycopg2-binary>=2.9.0
+
+# Cache et sessions
+redis>=5.0.0
+
+# Tâches asynchrones
+celery>=5.3.0
+
+# Notifications multicanales
+twilio>=8.10.0
+
+# Paiements en ligne
+stripe>=7.0.0
+
+# OCR pour les reçus
+pytesseract>=0.3.10
+
+# Stockage cloud (optionnel)
+boto3>=1.28.0
+django-storages>=1.14.0
+
+# Monitoring
+sentry-sdk>=1.29.0
+
+# Sécurité
+django-cors-headers>=4.2.0

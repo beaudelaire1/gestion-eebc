@@ -2,6 +2,7 @@
 
 from django.urls import path
 from . import views
+from . import budget_views
 
 app_name = 'finance'
 
@@ -21,6 +22,28 @@ urlpatterns = [
     path('tax-receipts/<int:pk>/', views.tax_receipt_detail, name='tax_receipt_detail'),
     path('tax-receipts/<int:pk>/pdf/', views.tax_receipt_pdf, name='tax_receipt_pdf'),
     path('tax-receipts/<int:pk>/send/', views.tax_receipt_send, name='tax_receipt_send'),
+    
+    # Système de budget
+    path('budgets/', budget_views.budget_dashboard, name='budget_dashboard'),
+    path('budgets/list/', budget_views.budget_list, name='budget_list'),
+    path('budgets/create/', budget_views.budget_create, name='budget_create'),
+    path('budgets/<int:budget_id>/', budget_views.budget_detail, name='budget_detail'),
+    path('budgets/<int:budget_id>/approve-detailed/', budget_views.budget_approve_detailed, name='budget_approve_detailed'),
+    path('budgets/<int:budget_id>/submit/', budget_views.budget_submit, name='budget_submit'),
+    path('budgets/<int:budget_id>/edit/', budget_views.budget_edit, name='budget_edit'),
+    
+    # Export et impression des budgets
+    path('budgets/<int:budget_id>/export-excel/', budget_views.budget_export_excel, name='budget_export_excel'),
+    path('budgets/<int:budget_id>/print/', budget_views.budget_print_view, name='budget_print'),
+    path('budgets/export-list/', budget_views.budget_list_export_excel, name='budget_list_export_excel'),
+    
+    # Export des transactions
+    path('transactions/export-excel/', budget_views.transactions_export_excel, name='transactions_export_excel'),
+    
+    # Demandes de budget
+    path('budget-requests/', budget_views.budget_request_list, name='budget_request_list'),
+    path('budget-requests/create/', budget_views.budget_request_create, name='budget_request_create'),
+    path('budget-requests/<int:request_id>/', budget_views.budget_request_detail, name='budget_request_detail'),
     
     # Justificatifs avec OCR
     path('receipts/', views.receipt_proof_list, name='receipt_proof_list'),

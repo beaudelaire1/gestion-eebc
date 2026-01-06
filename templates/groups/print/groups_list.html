@@ -1,0 +1,63 @@
+{% extends "pdf_base.html" %}
+
+{% block title %}Liste des Groupes{% endblock %}
+{% block header_title %}{{ print_title }}{% endblock %}
+{% block header_subtitle %}<p class="subtitle">Groupes et ministères</p>{% endblock %}
+
+{% block summary %}
+<div class="summary-box">
+    <h3>Statistiques</h3>
+    <div class="summary-grid">
+        <div class="summary-item">
+            <div class="summary-label">Nombre de groupes</div>
+            <div class="summary-value">{{ total_groups }}</div>
+        </div>
+        <div class="summary-item">
+            <div class="summary-label">Total des membres</div>
+            <div class="summary-value">{{ total_members }}</div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block content %}
+<h3>Liste des groupes</h3>
+<table>
+    <thead>
+        <tr>
+            <th>Nom</th>
+            <th>Type</th>
+            <th>Responsable</th>
+            <th class="text-center">Membres</th>
+            <th>Jour</th>
+            <th class="text-center">Heure</th>
+            <th>Lieu</th>
+            <th class="text-center">Actif</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for group in object_list %}
+        <tr>
+            <td><strong>{{ group.name }}</strong></td>
+            <td>{{ group.get_group_type_display }}</td>
+            <td>{% if group.leader %}{{ group.leader.get_full_name }}{% else %}-{% endif %}</td>
+            <td class="text-center">{{ group.member_count }}</td>
+            <td>{% if group.meeting_day %}{{ group.get_meeting_day_display }}{% else %}-{% endif %}</td>
+            <td class="text-center">{% if group.meeting_time %}{{ group.meeting_time|time:"H:i" }}{% else %}-{% endif %}</td>
+            <td>{{ group.meeting_location|default:"-" }}</td>
+            <td class="text-center">
+                {% if group.is_active %}
+                <span class="badge badge-success">Oui</span>
+                {% else %}
+                <span class="badge badge-danger">Non</span>
+                {% endif %}
+            </td>
+        </tr>
+        {% empty %}
+        <tr>
+            <td colspan="8" class="text-center">Aucun groupe trouvé</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% endblock %}

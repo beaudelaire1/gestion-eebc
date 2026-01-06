@@ -1,0 +1,81 @@
+{% comment %}
+Dropdown d'export avec options multiples.
+
+Usage:
+{% include "components/export_dropdown.html" with excel_url="exports:members_excel" print_url="exports:members_print" %}
+
+Paramètres:
+- excel_url: URL de l'export Excel
+- print_url: URL de l'impression
+- filters: Paramètres GET à passer
+- label: Texte du bouton (défaut: "Exporter")
+- btn_class: Classe du bouton (défaut: "btn-primary")
+- dropdown_id: ID unique pour le dropdown
+{% endcomment %}
+
+{% load static %}
+
+<div class="dropdown export-dropdown">
+    <button class="btn {{ btn_class|default:'btn-primary' }} btn-sm dropdown-toggle" 
+            type="button" 
+            id="{{ dropdown_id|default:'exportDropdown' }}" 
+            data-bs-toggle="dropdown" 
+            aria-expanded="false">
+        <i class="bi bi-download me-1"></i>
+        {{ label|default:"Exporter" }}
+    </button>
+    <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="{{ dropdown_id|default:'exportDropdown' }}">
+        {% if excel_url %}
+        <li>
+            <a class="dropdown-item" href="{% url excel_url %}{{ filters|default:'' }}">
+                <i class="bi bi-file-earmark-excel text-success me-2"></i>
+                Exporter en Excel
+            </a>
+        </li>
+        {% endif %}
+        
+        {% if print_url %}
+        <li>
+            <a class="dropdown-item" href="{% url print_url %}{{ filters|default:'' }}" target="_blank">
+                <i class="bi bi-printer text-primary me-2"></i>
+                Imprimer
+            </a>
+        </li>
+        {% endif %}
+        
+        {% if excel_url or print_url %}
+        <li><hr class="dropdown-divider"></li>
+        {% endif %}
+        
+        {% block extra_options %}{% endblock %}
+        
+        <li>
+            <a class="dropdown-item" href="#" onclick="window.print(); return false;">
+                <i class="bi bi-printer-fill text-secondary me-2"></i>
+                Imprimer cette page
+            </a>
+        </li>
+    </ul>
+</div>
+
+<style>
+.export-dropdown .dropdown-item {
+    display: flex;
+    align-items: center;
+    padding: 0.5rem 1rem;
+}
+
+.export-dropdown .dropdown-item:hover {
+    background-color: #f8f9fa;
+}
+
+.export-dropdown .dropdown-item i {
+    width: 20px;
+}
+
+@media print {
+    .export-dropdown {
+        display: none !important;
+    }
+}
+</style>

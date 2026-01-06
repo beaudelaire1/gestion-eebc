@@ -1,0 +1,384 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ budget_request.title }} - {{ settings.site_name|default:'EEBC' }}{% endblock %}
+
+{% block page_title %}Demande de Budget{% endblock %}
+{% block page_subtitle %}{{ budget_request.title }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- En-tête avec statut et actions -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <div>
+                            <h5 class="mb-2">{{ budget_request.title }}</h5>
+                            <div class="d-flex align-items-center gap-3 mb-2">
+                                <span class="badge bg-{% if budget_request.status == 'approved' %}success{% elif budget_request.status == 'rejected' %}danger{% elif budget_request.status == 'completed' %}primary{% else %}warning{% endif %} fs-6">
+                                    {{ budget_request.get_status_display }}
+                                </span>
+                                <span class="badge bg-{% if budget_request.urgency == 'urgent' %}danger{% elif budget_request.urgency == 'high' %}warning{% elif budget_request.urgency == 'medium' %}info{% else %}secondary{% endif %}">
+                                    {{ budget_request.get_urgency_display }}
+                                </span>
+                                {% if budget_request.is_overdue %}
+                                <span class="badge bg-danger">
+                                    <i class="bi bi-exclamation-triangle me-1"></i>En retard
+                                </span>
+                                {% endif %}
+                            </div>
+                            <small class="text-muted">
+                                Demandé par {{ budget_request.requested_by.get_full_name }} 
+                                le {{ budget_request.created_at|date:"d/m/Y à H:i" }}
+                            </small>
+                        </div>
+                        
+                        <div class="text-end">
+                            {% if user_can_review and budget_request.status == 'pending' %}
+                            <div class="btn-group me-2">
+                                <button class="btn btn-success" onclick="approveRequest()">
+                                    <i class="bi bi-check-circle me-1"></i>Approuver
+                                </button>
+                                <button class="btn btn-outline-danger" onclick="rejectRequest()">
+                                    <i class="bi bi-x-circle me-1"></i>Rejeter
+                                </button>
+                            </div>
+                            {% endif %}
+                            <a href="{% url 'finance:budget_request_list' %}" class="btn btn-outline-secondary">
+                                <i class="bi bi-arrow-left me-1"></i>Retour
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="row">
+        <!-- Informations principales -->
+        <div class="col-lg-8 mb-4">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="bi bi-info-circle me-2"></i>Détails de la Demande
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row mb-4">
+                        <div class="col-md-6">
+                            <h6>Description</h6>
+                            <p class="text-muted">{{ budget_request.description }}</p>
+                        </div>
+                        <div class="col-md-6">
+                            <h6>Justification</h6>
+                            <p class="text-muted">{{ budget_request.justification }}</p>
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-4">
+                            <h6>Catégorie</h6>
+                            <div class="d-flex align-items-center">
+                                <div class="badge me-2" style="background-color: {{ budget_request.category.color }}; width: 12px; height: 12px;"></div>
+                                <span>{{ budget_request.category.name }}</span>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <h6>Entité concernée</h6>
+                            <p class="mb-0">{{ budget_request.entity|default:"Non spécifiée" }}</p>
+                        </div>
+                        <div class="col-md-4">
+                            <h6>Échéance</h6>
+                            <p class="mb-0 {% if budget_request.is_overdue %}text-danger fw-bold{% endif %}">
+                                {% if budget_request.needed_by %}
+                                    {{ budget_request.needed_by|date:"d/m/Y" }}
+                                    {% if budget_request.is_overdue %}
+                                    <i class="bi bi-exclamation-triangle ms-1"></i>
+                                    {% endif %}
+                                {% else %}
+                                    <span class="text-muted">Non spécifiée</span>
+                                {% endif %}
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Historique des actions -->
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="bi bi-clock-history me-2"></i>Historique
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="timeline">
+                        <div class="timeline-item">
+                            <div class="timeline-marker bg-primary"></div>
+                            <div class="timeline-content">
+                                <h6 class="mb-1">Demande créée</h6>
+                                <p class="text-muted mb-1">
+                                    Par {{ budget_request.requested_by.get_full_name }}
+                                </p>
+                                <small class="text-muted">{{ budget_request.created_at|date:"d/m/Y à H:i" }}</small>
+                            </div>
+                        </div>
+                        
+                        {% if budget_request.reviewed_at %}
+                        <div class="timeline-item">
+                            <div class="timeline-marker bg-{% if budget_request.status == 'approved' %}success{% else %}danger{% endif %}"></div>
+                            <div class="timeline-content">
+                                <h6 class="mb-1">Demande {{ budget_request.get_status_display|lower }}</h6>
+                                <p class="text-muted mb-1">
+                                    Par {{ budget_request.reviewed_by.get_full_name }}
+                                </p>
+                                {% if budget_request.review_notes %}
+                                <p class="mb-1">{{ budget_request.review_notes }}</p>
+                                {% endif %}
+                                <small class="text-muted">{{ budget_request.reviewed_at|date:"d/m/Y à H:i" }}</small>
+                            </div>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Panneau latéral -->
+        <div class="col-lg-4 mb-4">
+            <!-- Montants -->
+            <div class="card mb-3">
+                <div class="card-header">
+                    <h6 class="card-title mb-0">
+                        <i class="bi bi-currency-euro me-2"></i>Montants
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <span>Montant demandé</span>
+                        <span class="fw-bold text-primary">{{ budget_request.requested_amount|floatformat:2 }}€</span>
+                    </div>
+                    
+                    {% if budget_request.approved_amount > 0 %}
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <span>Montant approuvé</span>
+                        <span class="fw-bold text-success">{{ budget_request.approved_amount|floatformat:2 }}€</span>
+                    </div>
+                    
+                    {% if budget_request.approved_amount != budget_request.requested_amount %}
+                    <div class="d-flex justify-content-between align-items-center">
+                        <span>Différence</span>
+                        <span class="fw-bold text-{% if budget_request.approved_amount < budget_request.requested_amount %}danger{% else %}success{% endif %}">
+                            {% with diff=budget_request.approved_amount|floatformat:2|add:0 %}
+                            {% with req=budget_request.requested_amount|floatformat:2|add:0 %}
+                            {{ diff|sub:req|floatformat:2 }}€
+                            {% endwith %}
+                            {% endwith %}
+                        </span>
+                    </div>
+                    {% endif %}
+                    {% endif %}
+                </div>
+            </div>
+            
+            <!-- Informations de contact -->
+            <div class="card mb-3">
+                <div class="card-header">
+                    <h6 class="card-title mb-0">
+                        <i class="bi bi-person me-2"></i>Contact
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div class="d-flex align-items-center">
+                        <div class="me-3">
+                            <div class="bg-primary rounded-circle d-flex align-items-center justify-content-center" 
+                                 style="width: 40px; height: 40px;">
+                                <i class="bi bi-person text-white"></i>
+                            </div>
+                        </div>
+                        <div>
+                            <div class="fw-bold">{{ budget_request.requested_by.get_full_name }}</div>
+                            <small class="text-muted">{{ budget_request.requested_by.email }}</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Actions rapides -->
+            {% if user_can_review and budget_request.status == 'pending' %}
+            <div class="card">
+                <div class="card-header">
+                    <h6 class="card-title mb-0">
+                        <i class="bi bi-lightning me-2"></i>Actions Rapides
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div class="d-grid gap-2">
+                        <button class="btn btn-success" onclick="approveRequest()">
+                            <i class="bi bi-check-circle me-1"></i>Approuver
+                        </button>
+                        <button class="btn btn-outline-warning" onclick="requestMoreInfo()">
+                            <i class="bi bi-question-circle me-1"></i>Demander plus d'infos
+                        </button>
+                        <button class="btn btn-outline-danger" onclick="rejectRequest()">
+                            <i class="bi bi-x-circle me-1"></i>Rejeter
+                        </button>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- Modal d'approbation -->
+<div class="modal fade" id="approveModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Approuver la Demande</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="approve-form">
+                    <div class="mb-3">
+                        <label class="form-label">Montant approuvé</label>
+                        <div class="input-group">
+                            <input type="number" class="form-control" id="approved-amount" 
+                                   step="0.01" min="0" max="{{ budget_request.requested_amount }}"
+                                   value="{{ budget_request.requested_amount }}">
+                            <span class="input-group-text">€</span>
+                        </div>
+                        <div class="form-text">Maximum: {{ budget_request.requested_amount }}€</div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Notes d'approbation</label>
+                        <textarea class="form-control" id="approval-notes" rows="3" 
+                                  placeholder="Commentaires sur l'approbation..."></textarea>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
+                <button type="button" class="btn btn-success" onclick="confirmApproval()">
+                    <i class="bi bi-check-circle me-1"></i>Approuver
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal de rejet -->
+<div class="modal fade" id="rejectModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Rejeter la Demande</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="reject-form">
+                    <div class="mb-3">
+                        <label class="form-label">Motif du rejet <span class="text-danger">*</span></label>
+                        <textarea class="form-control" id="rejection-reason" rows="4" required
+                                  placeholder="Expliquez pourquoi cette demande est rejetée..."></textarea>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
+                <button type="button" class="btn btn-danger" onclick="confirmRejection()">
+                    <i class="bi bi-x-circle me-1"></i>Rejeter
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.timeline {
+    position: relative;
+    padding-left: 30px;
+}
+
+.timeline::before {
+    content: '';
+    position: absolute;
+    left: 15px;
+    top: 0;
+    bottom: 0;
+    width: 2px;
+    background: #dee2e6;
+}
+
+.timeline-item {
+    position: relative;
+    margin-bottom: 20px;
+}
+
+.timeline-marker {
+    position: absolute;
+    left: -22px;
+    top: 5px;
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    border: 2px solid #fff;
+    box-shadow: 0 0 0 2px #dee2e6;
+}
+
+.timeline-content {
+    background: #f8f9fa;
+    padding: 15px;
+    border-radius: 8px;
+    border-left: 3px solid #0d6efd;
+}
+</style>
+
+<script>
+function approveRequest() {
+    const modal = new bootstrap.Modal(document.getElementById('approveModal'));
+    modal.show();
+}
+
+function rejectRequest() {
+    const modal = new bootstrap.Modal(document.getElementById('rejectModal'));
+    modal.show();
+}
+
+function requestMoreInfo() {
+    alert('Fonctionnalité de demande d\'informations à implémenter');
+}
+
+function confirmApproval() {
+    const amount = document.getElementById('approved-amount').value;
+    const notes = document.getElementById('approval-notes').value;
+    
+    if (!amount || parseFloat(amount) <= 0) {
+        alert('Veuillez saisir un montant valide.');
+        return;
+    }
+    
+    if (confirm(`Approuver cette demande pour un montant de ${amount}€ ?`)) {
+        // TODO: Implémenter l'approbation via AJAX
+        alert('Fonctionnalité d\'approbation à implémenter');
+    }
+}
+
+function confirmRejection() {
+    const reason = document.getElementById('rejection-reason').value;
+    
+    if (!reason.trim()) {
+        alert('Veuillez saisir un motif de rejet.');
+        return;
+    }
+    
+    if (confirm('Êtes-vous sûr de vouloir rejeter cette demande ?')) {
+        // TODO: Implémenter le rejet via AJAX
+        alert('Fonctionnalité de rejet à implémenter');
+    }
+}
+</script>
+{% endblock %}

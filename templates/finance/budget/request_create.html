@@ -1,0 +1,292 @@
+{% extends 'base.html' %}
+
+{% block title %}Nouvelle Demande de Budget - {{ settings.site_name|default:'EEBC' }}{% endblock %}
+
+{% block page_title %}Nouvelle Demande de Budget{% endblock %}
+{% block page_subtitle %}Demande ponctuelle hors budget annuel{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <form method="post" id="request-form">
+        {% csrf_token %}
+        
+        <div class="row">
+            <!-- Informations principales -->
+            <div class="col-lg-6 mb-4">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="card-title mb-0">
+                            <i class="bi bi-info-circle me-2"></i>Informations Principales
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="mb-3">
+                            <label class="form-label">Titre de la demande <span class="text-danger">*</span></label>
+                            <input type="text" name="title" class="form-control" required 
+                                   placeholder="Ex: Achat matériel sonorisation">
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label class="form-label">Description <span class="text-danger">*</span></label>
+                            <textarea name="description" class="form-control" rows="4" required
+                                      placeholder="Décrivez précisément ce qui est demandé..."></textarea>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label class="form-label">Justification <span class="text-danger">*</span></label>
+                            <textarea name="justification" class="form-control" rows="3" required
+                                      placeholder="Expliquez pourquoi cette dépense est nécessaire..."></textarea>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label class="form-label">Montant demandé <span class="text-danger">*</span></label>
+                                    <div class="input-group">
+                                        <input type="number" name="requested_amount" class="form-control" 
+                                               step="1" min="1" required placeholder="0">
+                                        <span class="input-group-text">€</span>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label class="form-label">Catégorie <span class="text-danger">*</span></label>
+                                    <select name="category" class="form-select" required>
+                                        <option value="">Sélectionner une catégorie</option>
+                                        {% for category in categories %}
+                                        <option value="{{ category.id }}">{{ category.name }}</option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Urgence et échéance -->
+            <div class="col-lg-6 mb-4">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="card-title mb-0">
+                            <i class="bi bi-clock me-2"></i>Urgence et Échéance
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="mb-3">
+                            <label class="form-label">Niveau d'urgence <span class="text-danger">*</span></label>
+                            <select name="urgency" class="form-select" required>
+                                {% for value, label in urgency_choices %}
+                                <option value="{{ value }}" {% if value == 'medium' %}selected{% endif %}>
+                                    {{ label }}
+                                </option>
+                                {% endfor %}
+                            </select>
+                            <div class="form-text">
+                                <small>
+                                    <strong>Urgent:</strong> Nécessaire immédiatement<br>
+                                    <strong>Élevée:</strong> Nécessaire dans la semaine<br>
+                                    <strong>Moyenne:</strong> Nécessaire dans le mois<br>
+                                    <strong>Faible:</strong> Peut attendre
+                                </small>
+                            </div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label class="form-label">Nécessaire avant le</label>
+                            <input type="date" name="needed_by" class="form-control">
+                            <div class="form-text">Date limite pour cette dépense (optionnel)</div>
+                        </div>
+                        
+                        <div class="alert alert-info">
+                            <i class="bi bi-info-circle me-2"></i>
+                            <strong>Important :</strong> Les demandes urgentes seront traitées en priorité. 
+                            Assurez-vous que le niveau d'urgence correspond réellement au besoin.
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Entité concernée -->
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="card-title mb-0">
+                            <i class="bi bi-people me-2"></i>Entité Concernée
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label class="form-label">Groupe</label>
+                                    <select name="group" class="form-select" id="group-select">
+                                        <option value="">Sélectionner un groupe</option>
+                                        {% for group in groups %}
+                                        <option value="{{ group.id }}">{{ group.name }}</option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label class="form-label">Département</label>
+                                    <select name="department" class="form-select" id="department-select">
+                                        <option value="">Sélectionner un département</option>
+                                        {% for department in departments %}
+                                        <option value="{{ department.id }}">{{ department.name }}</option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="form-text">
+                            Sélectionnez le groupe ou le département qui bénéficiera de cette dépense (optionnel)
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Récapitulatif -->
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="card-title mb-0">
+                            <i class="bi bi-clipboard-check me-2"></i>Récapitulatif
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="alert alert-light">
+                            <h6>Avant de soumettre votre demande, vérifiez :</h6>
+                            <ul class="mb-0">
+                                <li>La description est claire et précise</li>
+                                <li>La justification explique bien le besoin</li>
+                                <li>Le montant est réaliste et justifié</li>
+                                <li>Le niveau d'urgence est approprié</li>
+                                <li>La catégorie est correcte</li>
+                            </ul>
+                        </div>
+                        
+                        <div class="row text-center">
+                            <div class="col-md-4">
+                                <div class="border-end">
+                                    <h5 class="text-primary mb-1" id="summary-amount">0.00€</h5>
+                                    <small class="text-muted">Montant demandé</small>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="border-end">
+                                    <h5 class="text-warning mb-1" id="summary-urgency">Moyenne</h5>
+                                    <small class="text-muted">Urgence</small>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <h5 class="text-info mb-1" id="summary-category">Non sélectionnée</h5>
+                                <small class="text-muted">Catégorie</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Actions -->
+        <div class="row">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between">
+                            <a href="{% url 'finance:budget_request_list' %}" class="btn btn-outline-secondary">
+                                <i class="bi bi-arrow-left me-1"></i>Retour à la liste
+                            </a>
+                            <div>
+                                <button type="button" class="btn btn-outline-primary me-2" onclick="saveDraft()">
+                                    <i class="bi bi-save me-1"></i>Sauvegarder en brouillon
+                                </button>
+                                <button type="submit" class="btn btn-primary">
+                                    <i class="bi bi-send me-1"></i>Soumettre la Demande
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </form>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Gestion exclusive groupe/département
+    const groupSelect = document.getElementById('group-select');
+    const departmentSelect = document.getElementById('department-select');
+    
+    groupSelect.addEventListener('change', function() {
+        if (this.value) {
+            departmentSelect.value = '';
+        }
+    });
+    
+    departmentSelect.addEventListener('change', function() {
+        if (this.value) {
+            groupSelect.value = '';
+        }
+    });
+    
+    // Mise à jour du récapitulatif
+    const amountInput = document.querySelector('input[name="requested_amount"]');
+    const urgencySelect = document.querySelector('select[name="urgency"]');
+    const categorySelect = document.querySelector('select[name="category"]');
+    
+    const summaryAmount = document.getElementById('summary-amount');
+    const summaryUrgency = document.getElementById('summary-urgency');
+    const summaryCategory = document.getElementById('summary-category');
+    
+    function updateSummary() {
+        // Montant
+        const amount = parseFloat(amountInput.value) || 0;
+        summaryAmount.textContent = amount.toFixed(2) + '€';
+        
+        // Urgence
+        const urgencyText = urgencySelect.options[urgencySelect.selectedIndex].text;
+        summaryUrgency.textContent = urgencyText;
+        
+        // Catégorie
+        const categoryText = categorySelect.options[categorySelect.selectedIndex].text;
+        summaryCategory.textContent = categoryText === 'Sélectionner une catégorie' ? 'Non sélectionnée' : categoryText;
+    }
+    
+    amountInput.addEventListener('input', updateSummary);
+    urgencySelect.addEventListener('change', updateSummary);
+    categorySelect.addEventListener('change', updateSummary);
+    
+    // Validation du formulaire
+    document.getElementById('request-form').addEventListener('submit', function(e) {
+        const amount = parseFloat(amountInput.value);
+        
+        if (amount <= 0) {
+            e.preventDefault();
+            alert('Le montant demandé doit être supérieur à 0.');
+            return false;
+        }
+        
+        if (!confirm('Êtes-vous sûr de vouloir soumettre cette demande de budget ?')) {
+            e.preventDefault();
+            return false;
+        }
+    });
+    
+    // Initialiser le récapitulatif
+    updateSummary();
+});
+
+function saveDraft() {
+    alert('Fonctionnalité de sauvegarde en brouillon à implémenter');
+}
+</script>
+{% endblock %}

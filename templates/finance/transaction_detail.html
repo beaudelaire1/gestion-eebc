@@ -1,0 +1,176 @@
+{% extends 'base.html' %}
+
+{% block title %}Transaction {{ transaction.reference }} - EEBC{% endblock %}
+{% block page_title %}Transaction {{ transaction.reference }}{% endblock %}
+
+{% block page_actions %}
+{% if transaction.status == 'en_attente' and perms.finance.change_financialtransaction %}
+<a href="{% url 'finance:transaction_validate' transaction.pk %}" class="btn btn-success">
+    <i class="bi bi-check-lg me-1"></i> Valider
+</a>
+{% endif %}
+{% endblock %}
+
+{% block content %}
+<div class="row g-4">
+    <!-- Détails principaux -->
+    <div class="col-lg-8">
+        <div class="card border-0 shadow-sm">
+            <div class="card-header bg-transparent border-0">
+                <h6 class="mb-0 fw-bold">
+                    <i class="bi bi-receipt me-2"></i>Détails de la transaction
+                </h6>
+            </div>
+            <div class="card-body">
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <label class="text-muted small">Référence</label>
+                        <div class="fw-bold">{{ transaction.reference }}</div>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="text-muted small">Date</label>
+                        <div>{{ transaction.transaction_date|date:"d/m/Y" }}</div>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="text-muted small">Type</label>
+                        <div>
+                            <span class="badge bg-{% if transaction.is_income %}success{% else %}danger{% endif %}">
+                                {{ transaction.get_transaction_type_display }}
+                            </span>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="text-muted small">Montant</label>
+                        <div class="fs-4 fw-bold {% if transaction.is_income %}text-success{% else %}text-danger{% endif %}">
+                            {% if transaction.is_income %}+{% else %}-{% endif %}{{ transaction.amount }}€
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="text-muted small">Méthode de paiement</label>
+                        <div>{{ transaction.get_payment_method_display }}</div>
+                    </div>
+                    <div class="col-md-6">
+                        <label class="text-muted small">Catégorie</label>
+                        <div>{{ transaction.category.name|default:"-" }}</div>
+                    </div>
+                    {% if transaction.member %}
+                    <div class="col-md-6">
+                        <label class="text-muted small">Membre</label>
+                        <div>{{ transaction.member.full_name }}</div>
+                    </div>
+                    {% endif %}
+                    {% if transaction.description %}
+                    <div class="col-12">
+                        <label class="text-muted small">Description</label>
+                        <div>{{ transaction.description }}</div>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        
+        <!-- Justificatifs -->
+        <div class="card border-0 shadow-sm mt-4">
+            <div class="card-header bg-transparent border-0 d-flex justify-content-between align-items-center">
+                <h6 class="mb-0 fw-bold">
+                    <i class="bi bi-paperclip me-2"></i>Justificatifs ({{ proofs|length }})
+                </h6>
+            </div>
+            <div class="card-body">
+                {% if proofs %}
+                <div class="row g-3">
+                    {% for proof in proofs %}
+                    <div class="col-md-4">
+                        <div class="card h-100">
+                            <img src="{{ proof.image.url }}" class="card-img-top" alt="Justificatif" 
+                                 style="height: 150px; object-fit: cover;">
+                            <div class="card-body p-2">
+                                <small class="text-muted">{{ proof.get_proof_type_display }}</small>
+                                {% if proof.ocr_extracted_amount %}
+                                <div class="small text-success">OCR: {{ proof.ocr_extracted_amount }}€</div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <p class="text-muted mb-0">Aucun justificatif attaché.</p>
+                {% endif %}
+                
+                <!-- Upload form -->
+                <hr class="my-3">
+                <form method="post" action="{% url 'finance:proof_upload' transaction.pk %}" enctype="multipart/form-data">
+                    {% csrf_token %}
+                    <div class="row g-2 align-items-end">
+                        <div class="col-md-4">
+                            <select name="proof_type" class="form-select form-select-sm">
+                                <option value="recu">Reçu</option>
+                                <option value="facture">Facture</option>
+                                <option value="ticket">Ticket</option>
+                                <option value="autre">Autre</option>
+                            </select>
+                        </div>
+                        <div class="col-md-5">
+                            <input type="file" name="image" class="form-control form-control-sm" accept="image/*" required>
+                        </div>
+                        <div class="col-md-3">
+                            <button type="submit" class="btn btn-sm btn-outline-primary w-100">
+                                <i class="bi bi-upload me-1"></i> Ajouter
+                            </button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Sidebar -->
+    <div class="col-lg-4">
+        <!-- Statut -->
+        <div class="card border-0 shadow-sm mb-4">
+            <div class="card-body text-center">
+                <div class="mb-2">
+                    {% if transaction.status == 'valide' %}
+                    <i class="bi bi-check-circle-fill text-success display-4"></i>
+                    {% elif transaction.status == 'en_attente' %}
+                    <i class="bi bi-clock-fill text-warning display-4"></i>
+                    {% else %}
+                    <i class="bi bi-x-circle-fill text-danger display-4"></i>
+                    {% endif %}
+                </div>
+                <h5 class="mb-1">{{ transaction.get_status_display }}</h5>
+                {% if transaction.validated_by %}
+                <small class="text-muted">
+                    Validé par {{ transaction.validated_by.get_full_name|default:transaction.validated_by.username }}
+                    <br>le {{ transaction.validated_at|date:"d/m/Y H:i" }}
+                </small>
+                {% endif %}
+            </div>
+        </div>
+        
+        <!-- Métadonnées -->
+        <div class="card border-0 shadow-sm">
+            <div class="card-header bg-transparent border-0">
+                <h6 class="mb-0 fw-bold">Informations</h6>
+            </div>
+            <div class="card-body">
+                <div class="mb-2">
+                    <small class="text-muted">Enregistré par</small>
+                    <div>{{ transaction.recorded_by.get_full_name|default:transaction.recorded_by.username|default:"-" }}</div>
+                </div>
+                <div class="mb-2">
+                    <small class="text-muted">Créé le</small>
+                    <div>{{ transaction.created_at|date:"d/m/Y H:i" }}</div>
+                </div>
+                {% if transaction.notes %}
+                <div>
+                    <small class="text-muted">Notes</small>
+                    <div class="small">{{ transaction.notes }}</div>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

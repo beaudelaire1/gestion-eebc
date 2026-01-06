@@ -1,0 +1,234 @@
+{% extends 'base.html' %}
+
+{% block title %}Approuver {{ budget.name }} - {{ settings.site_name|default:'EEBC' }}{% endblock %}
+
+{% block page_title %}Approbation du Budget{% endblock %}
+{% block page_subtitle %}{{ budget.name }} - {{ budget.entity }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <form method="post" id="approval-form">
+        {% csrf_token %}
+        
+        <!-- Informations du budget -->
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="card-title mb-0">
+                            <i class="bi bi-info-circle me-2"></i>Informations du Budget
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <p><strong>Nom :</strong> {{ budget.name }}</p>
+                                <p><strong>Année :</strong> {{ budget.year }}</p>
+                                <p><strong>Entité :</strong> {{ budget.entity }}</p>
+                                <p><strong>Créé par :</strong> {{ budget.created_by.get_full_name }}</p>
+                            </div>
+                            <div class="col-md-6">
+                                <p><strong>Date de création :</strong> {{ budget.created_at|date:"d/m/Y à H:i" }}</p>
+                                <p><strong>Montant total demandé :</strong> <span class="fw-bold text-primary">{{ budget.total_requested|floatformat:2 }}€</span></p>
+                                {% if budget.description %}
+                                <p><strong>Description :</strong></p>
+                                <p class="text-muted">{{ budget.description }}</p>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Lignes de budget à approuver -->
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="card-title mb-0">
+                            <i class="bi bi-check-square me-2"></i>Approbation par Catégorie
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="alert alert-info">
+                            <i class="bi bi-info-circle me-2"></i>
+                            Vous pouvez modifier les montants approuvés pour chaque catégorie. 
+                            Les montants peuvent être inférieurs ou égaux aux montants demandés.
+                        </div>
+                        
+                        <div class="table-responsive">
+                            <table class="table">
+                                <thead>
+                                    <tr>
+                                        <th>Catégorie</th>
+                                        <th>Description</th>
+                                        <th>Montant Demandé</th>
+                                        <th>Montant Approuvé</th>
+                                        <th>Priorité</th>
+                                        <th>Justification</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for item in budget.items.all %}
+                                    <tr>
+                                        <td>
+                                            <div class="d-flex align-items-center">
+                                                <div class="badge me-2" style="background-color: {{ item.category.color }}; width: 12px; height: 12px;"></div>
+                                                <div>
+                                                    <div class="fw-bold">{{ item.category.name }}</div>
+                                                </div>
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <small>{{ item.description|default:"Aucune description" }}</small>
+                                        </td>
+                                        <td>
+                                            <span class="fw-bold">{{ item.requested_amount|floatformat:2 }}€</span>
+                                        </td>
+                                        <td>
+                                            <div class="input-group" style="width: 150px;">
+                                                <input type="number" 
+                                                       name="approved_amount_{{ item.id }}" 
+                                                       class="form-control approved-amount" 
+                                                       step="1" 
+                                                       min="0"
+                                                       max="{{ item.requested_amount }}"
+                                                       value="{{ item.requested_amount }}"
+                                                       data-requested="{{ item.requested_amount }}">
+                                                <span class="input-group-text">€</span>
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <span class="badge bg-{% if item.priority <= 2 %}danger{% elif item.priority <= 3 %}warning{% else %}secondary{% endif %}">
+                                                Priorité {{ item.priority }}
+                                            </span>
+                                        </td>
+                                        <td>
+                                            <small class="text-muted">{{ item.justification|default:"Aucune justification" }}</small>
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                                <tfoot>
+                                    <tr class="table-light">
+                                        <th colspan="2">Total</th>
+                                        <th>
+                                            <span class="fw-bold text-primary">{{ budget.total_requested|floatformat:2 }}€</span>
+                                        </th>
+                                        <th>
+                                            <span class="fw-bold text-success" id="total-approved">{{ budget.total_requested|floatformat:2 }}€</span>
+                                        </th>
+                                        <th colspan="2"></th>
+                                    </tr>
+                                </tfoot>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Notes d'approbation -->
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="card-title mb-0">
+                            <i class="bi bi-chat-text me-2"></i>Notes d'Approbation
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="mb-3">
+                            <label class="form-label">Notes et commentaires</label>
+                            <textarea name="approval_notes" class="form-control" rows="4" 
+                                      placeholder="Ajoutez des commentaires sur l'approbation, les modifications apportées, etc."></textarea>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Actions -->
+        <div class="row">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between">
+                            <a href="{% url 'finance:budget_detail' budget_id=budget.id %}" class="btn btn-outline-secondary">
+                                <i class="bi bi-arrow-left me-1"></i>Retour au détail
+                            </a>
+                            <div>
+                                <button type="button" class="btn btn-outline-danger me-2" onclick="rejectBudget()">
+                                    <i class="bi bi-x-circle me-1"></i>Rejeter
+                                </button>
+                                <button type="submit" class="btn btn-success">
+                                    <i class="bi bi-check-circle me-1"></i>Approuver le Budget
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </form>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Calcul du total approuvé
+    const approvedInputs = document.querySelectorAll('.approved-amount');
+    const totalElement = document.getElementById('total-approved');
+    
+    function updateTotal() {
+        let total = 0;
+        approvedInputs.forEach(input => {
+            const value = parseFloat(input.value) || 0;
+            total += value;
+        });
+        totalElement.textContent = total.toFixed(2) + '€';
+    }
+    
+    approvedInputs.forEach(input => {
+        input.addEventListener('input', function() {
+            // Vérifier que le montant approuvé ne dépasse pas le montant demandé
+            const requested = parseFloat(this.dataset.requested);
+            const approved = parseFloat(this.value);
+            
+            if (approved > requested) {
+                this.value = requested;
+                alert('Le montant approuvé ne peut pas dépasser le montant demandé.');
+            }
+            
+            updateTotal();
+        });
+    });
+    
+    // Validation du formulaire
+    document.getElementById('approval-form').addEventListener('submit', function(e) {
+        let totalApproved = 0;
+        approvedInputs.forEach(input => {
+            totalApproved += parseFloat(input.value) || 0;
+        });
+        
+        if (totalApproved === 0) {
+            e.preventDefault();
+            alert('Vous devez approuver au moins un montant pour valider le budget.');
+            return false;
+        }
+        
+        if (!confirm('Êtes-vous sûr de vouloir approuver ce budget avec les montants spécifiés ?')) {
+            e.preventDefault();
+            return false;
+        }
+    });
+});
+
+function rejectBudget() {
+    if (confirm('Êtes-vous sûr de vouloir rejeter ce budget ? Cette action ne peut pas être annulée.')) {
+        // TODO: Implémenter la logique de rejet
+        alert('Fonctionnalité de rejet à implémenter');
+    }
+}
+</script>
+{% endblock %}

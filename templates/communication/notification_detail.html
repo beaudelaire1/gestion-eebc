@@ -1,0 +1,57 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ notification.title }} - EEBC{% endblock %}
+{% block page_title %}Notification{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-8">
+        <div class="card border-0 shadow-sm">
+            <div class="card-body p-4">
+                <div class="d-flex align-items-start mb-4">
+                    <div class="me-3">
+                        {% if notification.notification_type == 'info' %}
+                        <i class="bi bi-info-circle display-4 text-info"></i>
+                        {% elif notification.notification_type == 'warning' %}
+                        <i class="bi bi-exclamation-triangle display-4 text-warning"></i>
+                        {% elif notification.notification_type == 'success' %}
+                        <i class="bi bi-check-circle display-4 text-success"></i>
+                        {% elif notification.notification_type == 'error' %}
+                        <i class="bi bi-x-circle display-4 text-danger"></i>
+                        {% elif notification.notification_type == 'event' %}
+                        <i class="bi bi-calendar-event display-4 text-primary"></i>
+                        {% else %}
+                        <i class="bi bi-bell display-4 text-secondary"></i>
+                        {% endif %}
+                    </div>
+                    <div class="flex-grow-1">
+                        <h4 class="mb-1">{{ notification.title }}</h4>
+                        <small class="text-muted">
+                            {{ notification.created_at|date:"d/m/Y H:i" }}
+                            {% if notification.is_read %}
+                            · Lu le {{ notification.read_at|date:"d/m/Y H:i" }}
+                            {% endif %}
+                        </small>
+                    </div>
+                </div>
+                
+                <div class="mb-4">
+                    {{ notification.message|linebreaks }}
+                </div>
+                
+                {% if notification.link %}
+                <a href="{{ notification.link }}" class="btn btn-primary">
+                    <i class="bi bi-arrow-right me-1"></i> Voir plus
+                </a>
+                {% endif %}
+            </div>
+        </div>
+        
+        <div class="mt-3">
+            <a href="{% url 'communication:notifications' %}" class="btn btn-outline-secondary">
+                <i class="bi bi-arrow-left me-1"></i> Retour aux notifications
+            </a>
+        </div>
+    </div>
+</div>
+{% endblock %}

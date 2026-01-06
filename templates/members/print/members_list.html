@@ -1,0 +1,64 @@
+{% extends "pdf_base.html" %}
+
+{% block title %}Liste des Membres{% endblock %}
+{% block header_title %}{{ print_title }}{% endblock %}
+
+{% block summary %}
+<div class="summary-box">
+    <h3>Statistiques</h3>
+    <div class="summary-grid">
+        <div class="summary-item">
+            <div class="summary-label">Total membres</div>
+            <div class="summary-value">{{ total_members }}</div>
+        </div>
+        <div class="summary-item">
+            <div class="summary-label">Membres actifs</div>
+            <div class="summary-value">{{ active_members }}</div>
+        </div>
+        <div class="summary-item">
+            <div class="summary-label">Membres baptisés</div>
+            <div class="summary-value">{{ baptized_members }}</div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block content %}
+<h3>Liste des membres</h3>
+<table>
+    <thead>
+        <tr>
+            <th>ID</th>
+            <th>Nom</th>
+            <th>Prénom</th>
+            <th>Email</th>
+            <th>Téléphone</th>
+            <th>Ville</th>
+            <th class="text-center">Statut</th>
+            <th class="text-center">Baptisé</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for member in object_list %}
+        <tr>
+            <td>{{ member.member_id }}</td>
+            <td>{{ member.last_name }}</td>
+            <td>{{ member.first_name }}</td>
+            <td>{{ member.email|default:"-" }}</td>
+            <td>{{ member.phone|default:"-" }}</td>
+            <td>{{ member.city|default:"-" }}</td>
+            <td class="text-center">
+                <span class="badge badge-{% if member.status == 'actif' %}success{% elif member.status == 'inactif' %}danger{% else %}info{% endif %}">
+                    {{ member.get_status_display }}
+                </span>
+            </td>
+            <td class="text-center">{% if member.is_baptized %}✓{% else %}-{% endif %}</td>
+        </tr>
+        {% empty %}
+        <tr>
+            <td colspan="8" class="text-center">Aucun membre trouvé</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% endblock %}

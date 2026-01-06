@@ -1,0 +1,443 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Budget {{ budget.year }} - {{ budget.entity }}</title>
+    <style>
+        @media print {
+            body { margin: 0; }
+            .no-print { display: none !important; }
+            .page-break { page-break-before: always; }
+        }
+        
+        body {
+            font-family: Arial, sans-serif;
+            font-size: 12px;
+            line-height: 1.4;
+            color: #333;
+            margin: 20px;
+        }
+        
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+            border-bottom: 2px solid #366092;
+            padding-bottom: 15px;
+        }
+        
+        .header h1 {
+            margin: 0;
+            color: #366092;
+            font-size: 24px;
+        }
+        
+        .header .subtitle {
+            margin: 5px 0;
+            color: #666;
+            font-size: 14px;
+        }
+        
+        .info-section {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 30px;
+        }
+        
+        .info-box {
+            flex: 1;
+            margin-right: 20px;
+        }
+        
+        .info-box:last-child {
+            margin-right: 0;
+        }
+        
+        .info-box h3 {
+            margin: 0 0 10px 0;
+            color: #366092;
+            font-size: 14px;
+            border-bottom: 1px solid #ddd;
+            padding-bottom: 5px;
+        }
+        
+        .info-item {
+            margin-bottom: 5px;
+        }
+        
+        .info-label {
+            font-weight: bold;
+            display: inline-block;
+            width: 120px;
+        }
+        
+        .summary-box {
+            background-color: #f8f9fa;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            padding: 15px;
+            margin-bottom: 30px;
+        }
+        
+        .summary-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+        }
+        
+        .summary-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px 0;
+            border-bottom: 1px solid #eee;
+        }
+        
+        .summary-item:last-child {
+            border-bottom: none;
+        }
+        
+        .summary-label {
+            font-weight: bold;
+        }
+        
+        .summary-value {
+            font-weight: bold;
+            font-size: 14px;
+        }
+        
+        .amount-positive { color: #28a745; }
+        .amount-negative { color: #dc3545; }
+        .amount-neutral { color: #6c757d; }
+        
+        .table-container {
+            margin-bottom: 30px;
+        }
+        
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 20px;
+        }
+        
+        th, td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: left;
+        }
+        
+        th {
+            background-color: #366092;
+            color: white;
+            font-weight: bold;
+            text-align: center;
+        }
+        
+        .text-right { text-align: right; }
+        .text-center { text-align: center; }
+        
+        .priority-1 { background-color: #ffebee; }
+        .priority-2 { background-color: #fff3e0; }
+        .priority-3 { background-color: #f3e5f5; }
+        .priority-4 { background-color: #e8f5e8; }
+        .priority-5 { background-color: #f5f5f5; }
+        
+        .total-row {
+            background-color: #f8f9fa;
+            font-weight: bold;
+        }
+        
+        .footer {
+            margin-top: 40px;
+            padding-top: 20px;
+            border-top: 1px solid #ddd;
+            font-size: 10px;
+            color: #666;
+            text-align: center;
+        }
+        
+        .utilization-bar {
+            width: 100px;
+            height: 10px;
+            background-color: #e9ecef;
+            border-radius: 5px;
+            overflow: hidden;
+            display: inline-block;
+            vertical-align: middle;
+        }
+        
+        .utilization-fill {
+            height: 100%;
+            background-color: #28a745;
+            transition: width 0.3s ease;
+        }
+        
+        .utilization-fill.warning { background-color: #ffc107; }
+        .utilization-fill.danger { background-color: #dc3545; }
+        
+        .print-controls {
+            margin-bottom: 20px;
+            text-align: center;
+        }
+        
+        .btn {
+            display: inline-block;
+            padding: 8px 16px;
+            margin: 0 5px;
+            background-color: #366092;
+            color: white;
+            text-decoration: none;
+            border-radius: 4px;
+            border: none;
+            cursor: pointer;
+        }
+        
+        .btn:hover {
+            background-color: #2c4f7c;
+        }
+        
+        .btn-secondary {
+            background-color: #6c757d;
+        }
+        
+        .btn-secondary:hover {
+            background-color: #545b62;
+        }
+    </style>
+</head>
+<body>
+    <!-- Contrôles d'impression (masqués à l'impression) -->
+    <div class="print-controls no-print">
+        <button onclick="window.print()" class="btn">
+            <i class="bi bi-printer"></i> Imprimer
+        </button>
+        <a href="{% url 'finance:budget_detail' budget_id=budget.id %}" class="btn btn-secondary">
+            <i class="bi bi-arrow-left"></i> Retour
+        </a>
+        <a href="{% url 'finance:budget_export_excel' budget_id=budget.id %}" class="btn btn-secondary">
+            <i class="bi bi-file-earmark-excel"></i> Exporter Excel
+        </a>
+    </div>
+
+    <!-- En-tête du document -->
+    <div class="header">
+        <h1>BUDGET {{ budget.year }}</h1>
+        <div class="subtitle">{{ budget.entity }}</div>
+        <div class="subtitle">{{ budget.name }}</div>
+    </div>
+
+    <!-- Informations générales -->
+    <div class="info-section">
+        <div class="info-box">
+            <h3>Informations Générales</h3>
+            <div class="info-item">
+                <span class="info-label">Nom :</span>
+                {{ budget.name }}
+            </div>
+            <div class="info-item">
+                <span class="info-label">Année :</span>
+                {{ budget.year }}
+            </div>
+            <div class="info-item">
+                <span class="info-label">Entité :</span>
+                {{ budget.entity }}
+            </div>
+            <div class="info-item">
+                <span class="info-label">Statut :</span>
+                {{ budget.get_status_display }}
+            </div>
+        </div>
+        
+        <div class="info-box">
+            <h3>Suivi</h3>
+            <div class="info-item">
+                <span class="info-label">Créé par :</span>
+                {{ budget.created_by }}
+            </div>
+            <div class="info-item">
+                <span class="info-label">Créé le :</span>
+                {{ budget.created_at|date:"d/m/Y" }}
+            </div>
+            {% if budget.approved_by %}
+            <div class="info-item">
+                <span class="info-label">Approuvé par :</span>
+                {{ budget.approved_by }}
+            </div>
+            <div class="info-item">
+                <span class="info-label">Approuvé le :</span>
+                {{ budget.approved_at|date:"d/m/Y" }}
+            </div>
+            {% endif %}
+        </div>
+        
+        <div class="info-box">
+            <h3>Document</h3>
+            <div class="info-item">
+                <span class="info-label">Imprimé le :</span>
+                {{ print_date|date:"d/m/Y à H:i" }}
+            </div>
+            <div class="info-item">
+                <span class="info-label">Lignes :</span>
+                {{ budget.items.count }}
+            </div>
+        </div>
+    </div>
+
+    <!-- Résumé financier -->
+    <div class="summary-box">
+        <h3 style="margin-top: 0;">Résumé Financier</h3>
+        <div class="summary-grid">
+            <div class="summary-item">
+                <span class="summary-label">Montant Demandé :</span>
+                <span class="summary-value">{{ budget.total_requested|floatformat:0 }} €</span>
+            </div>
+            <div class="summary-item">
+                <span class="summary-label">Montant Approuvé :</span>
+                <span class="summary-value amount-positive">{{ budget.total_approved|floatformat:0 }} €</span>
+            </div>
+            <div class="summary-item">
+                <span class="summary-label">Montant Dépensé :</span>
+                <span class="summary-value amount-negative">{{ total_spent|floatformat:0 }} €</span>
+            </div>
+            <div class="summary-item">
+                <span class="summary-label">Montant Restant :</span>
+                <span class="summary-value {% if total_remaining >= 0 %}amount-positive{% else %}amount-negative{% endif %}">
+                    {{ total_remaining|floatformat:0 }} €
+                </span>
+            </div>
+        </div>
+        
+        <div style="margin-top: 15px; text-align: center;">
+            <strong>Taux d'Utilisation : {{ utilization_percentage|floatformat:1 }}%</strong>
+            <div class="utilization-bar" style="margin-left: 10px;">
+                <div class="utilization-fill {% if utilization_percentage > 90 %}danger{% elif utilization_percentage > 75 %}warning{% endif %}" 
+                     style="width: {{ utilization_percentage }}%;"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tableau détaillé des lignes -->
+    <div class="table-container">
+        <h3>Détail des Lignes de Budget</h3>
+        <table>
+            <thead>
+                <tr>
+                    <th style="width: 5%;">#</th>
+                    <th style="width: 20%;">Catégorie</th>
+                    <th style="width: 25%;">Description</th>
+                    <th style="width: 8%;">Priorité</th>
+                    <th style="width: 12%;">Demandé</th>
+                    <th style="width: 12%;">Approuvé</th>
+                    <th style="width: 12%;">Dépensé</th>
+                    <th style="width: 12%;">Restant</th>
+                    <th style="width: 8%;">Util. %</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for item_data in items_data %}
+                <tr class="priority-{{ item_data.item.priority }}">
+                    <td class="text-center">{{ forloop.counter }}</td>
+                    <td>{{ item_data.item.category.name }}</td>
+                    <td>{{ item_data.item.description|default:"-" }}</td>
+                    <td class="text-center">{{ item_data.item.priority }}</td>
+                    <td class="text-right">{{ item_data.item.requested_amount|floatformat:0 }} €</td>
+                    <td class="text-right">{{ item_data.item.approved_amount|floatformat:0 }} €</td>
+                    <td class="text-right">{{ item_data.spent_amount|floatformat:0 }} €</td>
+                    <td class="text-right {% if item_data.remaining_amount >= 0 %}amount-positive{% else %}amount-negative{% endif %}">
+                        {{ item_data.remaining_amount|floatformat:0 }} €
+                    </td>
+                    <td class="text-center">
+                        {% if item_data.item.approved_amount > 0 %}
+                            {{ item_data.utilization_percentage|floatformat:0 }}%
+                        {% else %}
+                            -
+                        {% endif %}
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="9" class="text-center">Aucune ligne de budget</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+            <tfoot>
+                <tr class="total-row">
+                    <th colspan="4" class="text-right">TOTAL :</th>
+                    <th class="text-right">{{ budget.total_requested|floatformat:0 }} €</th>
+                    <th class="text-right">{{ budget.total_approved|floatformat:0 }} €</th>
+                    <th class="text-right">{{ total_spent|floatformat:0 }} €</th>
+                    <th class="text-right">{{ total_remaining|floatformat:0 }} €</th>
+                    <th class="text-center">{{ utilization_percentage|floatformat:0 }}%</th>
+                </tr>
+            </tfoot>
+        </table>
+    </div>
+
+    <!-- Légende des priorités -->
+    <div style="margin-bottom: 30px;">
+        <h4>Légende des Priorités :</h4>
+        <div style="display: flex; gap: 15px; flex-wrap: wrap;">
+            <div style="display: flex; align-items: center;">
+                <div style="width: 20px; height: 15px; background-color: #ffebee; border: 1px solid #ddd; margin-right: 5px;"></div>
+                <span>1 - Urgent</span>
+            </div>
+            <div style="display: flex; align-items: center;">
+                <div style="width: 20px; height: 15px; background-color: #fff3e0; border: 1px solid #ddd; margin-right: 5px;"></div>
+                <span>2 - Important</span>
+            </div>
+            <div style="display: flex; align-items: center;">
+                <div style="width: 20px; height: 15px; background-color: #f3e5f5; border: 1px solid #ddd; margin-right: 5px;"></div>
+                <span>3 - Normal</span>
+            </div>
+            <div style="display: flex; align-items: center;">
+                <div style="width: 20px; height: 15px; background-color: #e8f5e8; border: 1px solid #ddd; margin-right: 5px;"></div>
+                <span>4 - Faible</span>
+            </div>
+            <div style="display: flex; align-items: center;">
+                <div style="width: 20px; height: 15px; background-color: #f5f5f5; border: 1px solid #ddd; margin-right: 5px;"></div>
+                <span>5 - Optionnel</span>
+            </div>
+        </div>
+    </div>
+
+    {% if budget.description %}
+    <!-- Description -->
+    <div style="margin-bottom: 30px;">
+        <h4>Description :</h4>
+        <p style="background-color: #f8f9fa; padding: 15px; border-radius: 5px; border: 1px solid #ddd;">
+            {{ budget.description|linebreaks }}
+        </p>
+    </div>
+    {% endif %}
+
+    {% if budget.approval_notes %}
+    <!-- Notes d'approbation -->
+    <div style="margin-bottom: 30px;">
+        <h4>Notes d'Approbation :</h4>
+        <p style="background-color: #e8f5e8; padding: 15px; border-radius: 5px; border: 1px solid #c3e6cb;">
+            {{ budget.approval_notes|linebreaks }}
+        </p>
+    </div>
+    {% endif %}
+
+    <!-- Pied de page -->
+    <div class="footer">
+        <p>
+            Document généré le {{ print_date|date:"d/m/Y à H:i" }} - 
+            EEBC - Église Évangélique Baptiste de Charleroi - 
+            Système de Gestion Financière
+        </p>
+    </div>
+
+    <script>
+        // Auto-print si paramètre dans l'URL
+        if (window.location.search.includes('auto_print=1')) {
+            window.onload = function() {
+                setTimeout(function() {
+                    window.print();
+                }, 500);
+            };
+        }
+    </script>
+</body>
+</html>

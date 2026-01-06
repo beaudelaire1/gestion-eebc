@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <title>{% block title %}Document{% endblock %}</title>
+</head>
+<body>
+    <div class="header">
+        <h1>{% block header_title %}{{ print_title }}{% endblock %}</h1>
+        {% block header_subtitle %}<p class="subtitle">EEBC - Église Évangélique Baptiste</p>{% endblock %}
+        <p class="meta">Généré le {{ print_date|date:"d/m/Y à H:i" }} par {{ user.get_full_name|default:user.username }}</p>
+    </div>
+    
+    {% block summary %}{% endblock %}
+    
+    {% block content %}{% endblock %}
+    
+    <div class="footer">
+        <p>EEBC - Document confidentiel</p>
+    </div>
+</body>
+</html>

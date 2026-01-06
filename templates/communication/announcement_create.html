@@ -5,7 +5,7 @@
 
 {% block content %}
 <div class="row justify-content-center">
-    <div class="col-lg-8">
+    <div class="col-lg-10">
         <div class="card border-0 shadow-sm">
             <div class="card-body p-4">
                 <form method="post">
@@ -19,7 +19,7 @@
                     
                     <div class="mb-4">
                         <label class="form-label fw-bold">Contenu</label>
-                        <textarea name="content" class="form-control" rows="6" required
+                        <textarea name="content" id="announcement-content" class="tinymce-editor" required
                                   placeholder="Contenu de l'annonce..."></textarea>
                     </div>
                     
@@ -56,4 +56,8 @@
         </div>
     </div>
 </div>
+{% endblock %}
+
+{% block extra_js %}
+{% include 'includes/tinymce.html' %}
 {% endblock %}

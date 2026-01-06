@@ -40,6 +40,9 @@ urlpatterns = [
     path('app/communication/', include('apps.communication.urls')),
     path('app/finance/', include('apps.finance.urls')),
     path('app/worship/', include('apps.worship.urls')),
+    
+    # Exports et impressions
+    path('app/exports/', include('apps.core.export_urls')),
 ]
 
 if settings.DEBUG:

@@ -1,0 +1,408 @@
+{% extends 'base.html' %}
+
+{% block title %}Tableau de bord Budget - {{ settings.site_name|default:'EEBC' }}{% endblock %}
+
+{% block page_title %}Gestion des Budgets{% endblock %}
+{% block page_subtitle %}Tableau de bord {{ current_year }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Barre d'outils du dashboard -->
+    <div class="row mb-3">
+        <div class="col-12">
+            <div class="alert alert-light d-flex justify-content-between align-items-center" role="alert">
+                <div class="d-flex align-items-center gap-3">
+                    <div class="btn-group" role="group">
+                        <button type="button" class="btn btn-outline-primary" onclick="setLayoutMode('normal')" id="btn-normal">
+                            <i class="bi bi-layout-three-columns"></i>
+                            <span class="d-none d-md-inline">Vue normale</span>
+                        </button>
+                        <button type="button" class="btn btn-outline-success" onclick="setLayoutMode('extended')" id="btn-extended">
+                            <i class="bi bi-layout-sidebar"></i>
+                            <span class="d-none d-md-inline">Vue étendue</span>
+                        </button>
+                        <button type="button" class="btn btn-outline-warning" onclick="setLayoutMode('minimal')" id="btn-minimal">
+                            <i class="bi bi-layout-text-window"></i>
+                            <span class="d-none d-md-inline">Vue minimale</span>
+                        </button>
+                    </div>
+                    <small class="text-muted d-none d-lg-inline">
+                        <i class="bi bi-info-circle me-1"></i>Choisissez votre mode d'affichage
+                    </small>
+                </div>
+                <div class="d-flex align-items-center gap-2">
+                    <span class="text-muted">Année:</span>
+                    <span class="badge bg-primary">{{ current_year }}</span>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Statistiques principales -->
+    <div class="row mb-4">
+        <div class="col-lg-3 col-md-6 mb-3">
+            <div class="card bg-primary text-white">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <h6 class="card-title mb-1">Budget Total Approuvé</h6>
+                            <h4 class="mb-0">{{ total_approved|floatformat:2 }}€</h4>
+                        </div>
+                        <div class="align-self-center">
+                            <i class="bi bi-wallet2 display-6"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-lg-3 col-md-6 mb-3">
+            <div class="card bg-success text-white">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <h6 class="card-title mb-1">Montant Dépensé</h6>
+                            <h4 class="mb-0">{{ total_spent|floatformat:2 }}€</h4>
+                        </div>
+                        <div class="align-self-center">
+                            <i class="bi bi-cash-coin display-6"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-lg-3 col-md-6 mb-3">
+            <div class="card bg-info text-white">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <h6 class="card-title mb-1">Budget Restant</h6>
+                            <h4 class="mb-0">{{ remaining_budget|floatformat:2 }}€</h4>
+                        </div>
+                        <div class="align-self-center">
+                            <i class="bi bi-piggy-bank display-6"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-lg-3 col-md-6 mb-3">
+            <div class="card bg-warning text-white">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <h6 class="card-title mb-1">Demandes en Attente</h6>
+                            <h4 class="mb-0">{{ pending_requests }}</h4>
+                        </div>
+                        <div class="align-self-center">
+                            <i class="bi bi-clock-history display-6"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Utilisation globale du budget -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="bi bi-bar-chart me-2"></i>Utilisation du Budget {{ current_year }}
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <div class="d-flex justify-content-between mb-1">
+                            <span>Utilisation globale</span>
+                            <span>{{ utilization_percentage|floatformat:1 }}%</span>
+                        </div>
+                        <div class="progress" style="height: 20px;">
+                            <div class="progress-bar 
+                                {% if utilization_percentage < 50 %}bg-success
+                                {% elif utilization_percentage < 80 %}bg-warning
+                                {% else %}bg-danger{% endif %}" 
+                                role="progressbar" 
+                                style="width: {{ utilization_percentage }}%">
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="row text-center">
+                        <div class="col-4">
+                            <small class="text-muted">Approuvé</small>
+                            <div class="fw-bold">{{ total_approved|floatformat:2 }}€</div>
+                        </div>
+                        <div class="col-4">
+                            <small class="text-muted">Dépensé</small>
+                            <div class="fw-bold text-success">{{ total_spent|floatformat:2 }}€</div>
+                        </div>
+                        <div class="col-4">
+                            <small class="text-muted">Restant</small>
+                            <div class="fw-bold text-primary">{{ remaining_budget|floatformat:2 }}€</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="row">
+        <!-- Répartition des budgets par statut -->
+        <div class="col-lg-6 mb-4" id="left-panel">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="bi bi-pie-chart me-2"></i>Budgets par Statut
+                    </h5>
+                </div>
+                <div class="card-body">
+                    {% for status, count in budget_stats.items %}
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <span>{{ status }}</span>
+                        <span class="badge bg-primary">{{ count }}</span>
+                    </div>
+                    {% endfor %}
+                    
+                    <div class="mt-3">
+                        <a href="{% url 'finance:budget_list' %}" class="btn btn-outline-primary btn-sm">
+                            <i class="bi bi-list me-1"></i>Voir tous les budgets
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Demandes urgentes -->
+        <div class="col-lg-6 mb-4" id="right-panel">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="bi bi-exclamation-triangle me-2"></i>Demandes Urgentes
+                    </h5>
+                </div>
+                <div class="card-body">
+                    {% for request in urgent_requests %}
+                    <div class="d-flex justify-content-between align-items-start mb-3">
+                        <div class="flex-grow-1">
+                            <h6 class="mb-1">{{ request.title }}</h6>
+                            <small class="text-muted">{{ request.entity }} - {{ request.requested_amount }}€</small>
+                            <div>
+                                <span class="badge bg-{% if request.urgency == 'urgent' %}danger{% else %}warning{% endif %}">
+                                    {{ request.get_urgency_display }}
+                                </span>
+                            </div>
+                        </div>
+                        <small class="text-muted">{{ request.created_at|date:"d/m" }}</small>
+                    </div>
+                    {% empty %}
+                    <p class="text-muted mb-0">Aucune demande urgente</p>
+                    {% endfor %}
+                    
+                    {% if urgent_requests %}
+                    <div class="mt-3">
+                        <a href="{% url 'finance:budget_request_list' %}?urgency=high" class="btn btn-outline-warning btn-sm">
+                            <i class="bi bi-list me-1"></i>Voir toutes les demandes urgentes
+                        </a>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Lignes de budget avec faible reste -->
+    {% if low_budget_items %}
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="bi bi-exclamation-circle me-2"></i>Budgets Bientôt Épuisés
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-sm">
+                            <thead>
+                                <tr>
+                                    <th>Budget</th>
+                                    <th>Catégorie</th>
+                                    <th>Approuvé</th>
+                                    <th>Dépensé</th>
+                                    <th>Restant</th>
+                                    <th>Utilisation</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for item in low_budget_items %}
+                                <tr>
+                                    <td>
+                                        <a href="{% url 'finance:budget_detail' budget_id=item.budget.id %}">
+                                            {{ item.budget.entity }}
+                                        </a>
+                                    </td>
+                                    <td>{{ item.category.name }}</td>
+                                    <td>{{ item.approved_amount|floatformat:2 }}€</td>
+                                    <td>{{ item.spent_amount|floatformat:2 }}€</td>
+                                    <td>{{ item.remaining_amount|floatformat:2 }}€</td>
+                                    <td>
+                                        <div class="progress" style="height: 15px; width: 80px;">
+                                            <div class="progress-bar bg-{% if item.utilization_percentage > 90 %}danger{% else %}warning{% endif %}" 
+                                                 style="width: {{ item.utilization_percentage }}%">
+                                            </div>
+                                        </div>
+                                        <small>{{ item.utilization_percentage|floatformat:0 }}%</small>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+    
+    <!-- Actions rapides -->
+    <div class="row mt-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="bi bi-lightning me-2"></i>Actions Rapides
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-3 mb-2">
+                            <a href="{% url 'finance:budget_create' %}" class="btn btn-primary w-100">
+                                <i class="bi bi-plus-circle me-2"></i>Nouveau Budget
+                            </a>
+                        </div>
+                        <div class="col-md-3 mb-2">
+                            <a href="{% url 'finance:budget_request_create' %}" class="btn btn-outline-primary w-100">
+                                <i class="bi bi-plus-circle me-2"></i>Demande de Budget
+                            </a>
+                        </div>
+                        <div class="col-md-3 mb-2">
+                            <a href="{% url 'finance:budget_list' %}" class="btn btn-outline-secondary w-100">
+                                <i class="bi bi-list me-2"></i>Tous les Budgets
+                            </a>
+                        </div>
+                        <div class="col-md-3 mb-2">
+                            <a href="{% url 'finance:budget_request_list' %}" class="btn btn-outline-secondary w-100">
+                                <i class="bi bi-clock-history me-2"></i>Demandes en Attente
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+<script>
+let currentLayoutMode = 'normal';
+
+function setLayoutMode(mode) {
+    const leftPanel = document.getElementById('left-panel');
+    const rightPanel = document.getElementById('right-panel');
+    
+    // Réinitialiser tous les boutons
+    document.getElementById('btn-normal').className = 'btn btn-outline-primary';
+    document.getElementById('btn-extended').className = 'btn btn-outline-success';
+    document.getElementById('btn-minimal').className = 'btn btn-outline-warning';
+    
+    switch(mode) {
+        case 'normal':
+            // Vue normale - 2 colonnes
+            leftPanel.style.display = 'block';
+            rightPanel.style.display = 'block';
+            leftPanel.className = 'col-lg-6 mb-4';
+            rightPanel.className = 'col-lg-6 mb-4';
+            document.getElementById('btn-normal').className = 'btn btn-primary';
+            break;
+            
+        case 'extended':
+            // Vue étendue - panneau gauche étendu
+            leftPanel.style.display = 'block';
+            rightPanel.style.display = 'none';
+            leftPanel.className = 'col-12 mb-4';
+            document.getElementById('btn-extended').className = 'btn btn-success';
+            break;
+            
+        case 'minimal':
+            // Vue minimale - pas de panneaux latéraux
+            leftPanel.style.display = 'none';
+            rightPanel.style.display = 'none';
+            document.getElementById('btn-minimal').className = 'btn btn-warning';
+            break;
+    }
+    
+    currentLayoutMode = mode;
+    
+    // Forcer le recalcul du layout
+    setTimeout(() => {
+        window.dispatchEvent(new Event('resize'));
+    }, 300);
+}
+
+// Ajouter des styles pour les transitions et initialiser le mode normal
+document.addEventListener('DOMContentLoaded', function() {
+    const style = document.createElement('style');
+    style.textContent = `
+        #left-panel, #right-panel {
+            transition: all 0.3s ease;
+        }
+        
+        .btn:hover {
+            transform: translateY(-1px);
+            transition: all 0.2s ease;
+        }
+        
+        .col-12 {
+            width: 100% !important;
+            flex: 0 0 100% !important;
+            max-width: 100% !important;
+        }
+        
+        .col-lg-6 {
+            width: 50% !important;
+            flex: 0 0 50% !important;
+            max-width: 50% !important;
+        }
+    `;
+    document.head.appendChild(style);
+    
+    // Initialiser en mode normal
+    setLayoutMode('normal');
+});
+</script>
+
+{% block extra_css %}
+<style>
+.alert-light {
+    border-left: 4px solid #0d6efd;
+}
+
+.card {
+    transition: all 0.3s ease;
+}
+
+.card:hover {
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+}
+
+@media (max-width: 768px) {
+    #left-panel, #right-panel {
+        order: 1;
+    }
+}
+</style>
+{% endblock %}

@@ -1,0 +1,300 @@
+{% extends 'base.html' %}
+
+{% block title %}Approbation Détaillée - {{ budget.name }} - {{ settings.site_name|default:'EEBC' }}{% endblock %}
+
+{% block page_title %}Approbation Ligne par Ligne{% endblock %}
+{% block page_subtitle %}{{ budget.name }} - {{ budget.entity }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- En-tête avec informations du budget -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="bi bi-clipboard-check me-2"></i>Informations du Budget
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <p><strong>Nom :</strong> {{ budget.name }}</p>
+                            <p><strong>Année :</strong> {{ budget.year }}</p>
+                            <p><strong>Entité :</strong> {{ budget.entity }}</p>
+                            <p><strong>Créé par :</strong> {{ budget.created_by.get_full_name }}</p>
+                        </div>
+                        <div class="col-md-6">
+                            <p><strong>Statut :</strong> 
+                                <span class="badge bg-{% if budget.status == 'submitted' %}warning{% else %}secondary{% endif %}">
+                                    {{ budget.get_status_display }}
+                                </span>
+                            </p>
+                            <p><strong>Montant total demandé :</strong> <span class="fw-bold text-primary">{{ budget.total_requested|floatformat:0 }}€</span></p>
+                            <p><strong>Date de soumission :</strong> {{ budget.submitted_at|date:"d/m/Y à H:i"|default:"Non soumis" }}</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Statistiques d'approbation -->
+    <div class="row mb-4">
+        <div class="col-lg-3 col-md-6 mb-3">
+            <div class="card bg-secondary text-white">
+                <div class="card-body text-center">
+                    <h4>{{ items_stats.total }}</h4>
+                    <small>Total lignes</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-3 col-md-6 mb-3">
+            <div class="card bg-warning text-white">
+                <div class="card-body text-center">
+                    <h4>{{ items_stats.pending }}</h4>
+                    <small>En attente</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-3 col-md-6 mb-3">
+            <div class="card bg-success text-white">
+                <div class="card-body text-center">
+                    <h4>{{ items_stats.approved }}</h4>
+                    <small>Approuvées</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-3 col-md-6 mb-3">
+            <div class="card bg-danger text-white">
+                <div class="card-body text-center">
+                    <h4>{{ items_stats.rejected }}</h4>
+                    <small>Rejetées</small>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Lignes de budget à approuver -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="bi bi-list-check me-2"></i>Approbation par Ligne
+                    </h5>
+                </div>
+                <div class="card-body">
+                    {% for item in budget.items.all %}
+                    <div class="card mb-3 border-{% if item.approval_status == 'approved' %}success{% elif item.approval_status == 'rejected' %}danger{% else %}warning{% endif %}">
+                        <div class="card-header d-flex justify-content-between align-items-center">
+                            <div>
+                                <h6 class="mb-0">{{ item.category.name }}</h6>
+                                <small class="text-muted">Priorité {{ item.priority }}</small>
+                            </div>
+                            <span class="badge bg-{% if item.approval_status == 'approved' %}success{% elif item.approval_status == 'rejected' %}danger{% else %}warning{% endif %}">
+                                {{ item.get_approval_status_display }}
+                            </span>
+                        </div>
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <p><strong>Description :</strong> {{ item.description|default:"Aucune description" }}</p>
+                                    <p><strong>Justification :</strong> {{ item.justification|default:"Aucune justification" }}</p>
+                                    <p><strong>Montant demandé :</strong> <span class="fw-bold text-primary">{{ item.requested_amount|floatformat:0 }}€</span></p>
+                                </div>
+                                <div class="col-md-6">
+                                    {% if item.approval_status == 'pending' %}
+                                    <!-- Formulaire d'approbation -->
+                                    <form method="post" class="approval-form">
+                                        {% csrf_token %}
+                                        <input type="hidden" name="action" value="approve_item">
+                                        <input type="hidden" name="item_id" value="{{ item.id }}">
+                                        
+                                        <div class="mb-3">
+                                            <label class="form-label">Montant approuvé</label>
+                                            <div class="input-group">
+                                                <input type="number" name="approved_amount" class="form-control" 
+                                                       step="1" min="0" max="{{ item.requested_amount }}"
+                                                       value="{{ item.requested_amount }}" required>
+                                                <span class="input-group-text">€</span>
+                                            </div>
+                                            <small class="form-text text-muted">Maximum: {{ item.requested_amount }}€</small>
+                                        </div>
+                                        
+                                        <div class="mb-3">
+                                            <label class="form-label">Commentaires</label>
+                                            <textarea name="comments" class="form-control" rows="2" 
+                                                      placeholder="Commentaires sur l'approbation..."></textarea>
+                                        </div>
+                                        
+                                        <div class="btn-group w-100">
+                                            <button type="submit" class="btn btn-success">
+                                                <i class="bi bi-check-circle me-1"></i>Approuver
+                                            </button>
+                                            <button type="button" class="btn btn-danger" onclick="showRejectForm({{ item.id }})">
+                                                <i class="bi bi-x-circle me-1"></i>Rejeter
+                                            </button>
+                                        </div>
+                                    </form>
+                                    
+                                    <!-- Formulaire de rejet (masqué par défaut) -->
+                                    <form method="post" class="reject-form mt-3" id="reject-form-{{ item.id }}" style="display: none;">
+                                        {% csrf_token %}
+                                        <input type="hidden" name="action" value="reject_item">
+                                        <input type="hidden" name="item_id" value="{{ item.id }}">
+                                        
+                                        <div class="mb-3">
+                                            <label class="form-label">Motif de refus <span class="text-danger">*</span></label>
+                                            <textarea name="rejection_reason" class="form-control" rows="3" 
+                                                      placeholder="Expliquez pourquoi cette ligne est rejetée..." required></textarea>
+                                        </div>
+                                        
+                                        <div class="btn-group w-100">
+                                            <button type="submit" class="btn btn-danger">
+                                                <i class="bi bi-x-circle me-1"></i>Confirmer le rejet
+                                            </button>
+                                            <button type="button" class="btn btn-secondary" onclick="hideRejectForm({{ item.id }})">
+                                                Annuler
+                                            </button>
+                                        </div>
+                                    </form>
+                                    {% else %}
+                                    <!-- Résultat de l'approbation -->
+                                    <div class="alert alert-{% if item.approval_status == 'approved' %}success{% else %}danger{% endif %}">
+                                        <h6>
+                                            {% if item.approval_status == 'approved' %}
+                                            <i class="bi bi-check-circle me-1"></i>Ligne approuvée
+                                            {% else %}
+                                            <i class="bi bi-x-circle me-1"></i>Ligne rejetée
+                                            {% endif %}
+                                        </h6>
+                                        
+                                        {% if item.approval_status == 'approved' %}
+                                        <p><strong>Montant approuvé :</strong> {{ item.approved_amount|floatformat:0 }}€</p>
+                                        {% if item.approval_comments %}
+                                        <p><strong>Commentaires :</strong> {{ item.approval_comments }}</p>
+                                        {% endif %}
+                                        {% else %}
+                                        {% if item.rejection_reason %}
+                                        <p><strong>Motif :</strong> {{ item.rejection_reason }}</p>
+                                        {% endif %}
+                                        {% endif %}
+                                        
+                                        <small class="text-muted">
+                                            Par {{ item.approved_by.get_full_name }} le {{ item.approved_at|date:"d/m/Y à H:i" }}
+                                        </small>
+                                    </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Finalisation du budget -->
+    {% if items_stats.pending == 0 and items_stats.total > 0 %}
+    <div class="row">
+        <div class="col-12">
+            <div class="card border-success">
+                <div class="card-header bg-success text-white">
+                    <h5 class="card-title mb-0">
+                        <i class="bi bi-check-circle me-2"></i>Finaliser l'Approbation
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="alert alert-info">
+                        <i class="bi bi-info-circle me-2"></i>
+                        Toutes les lignes ont été traitées. Vous pouvez maintenant finaliser l'approbation du budget.
+                    </div>
+                    
+                    <form method="post">
+                        {% csrf_token %}
+                        <input type="hidden" name="action" value="finalize_budget">
+                        
+                        <div class="mb-3">
+                            <label class="form-label">Commentaires généraux sur le budget</label>
+                            <textarea name="budget_comments" class="form-control" rows="4" 
+                                      placeholder="Commentaires généraux sur l'approbation du budget..."></textarea>
+                        </div>
+                        
+                        <div class="d-flex justify-content-between">
+                            <a href="{% url 'finance:budget_detail' budget_id=budget.id %}" class="btn btn-outline-secondary">
+                                <i class="bi bi-arrow-left me-1"></i>Retour au détail
+                            </a>
+                            <button type="submit" class="btn btn-success btn-lg">
+                                <i class="bi bi-check-circle me-1"></i>Finaliser et Approuver le Budget
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% else %}
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between">
+                <a href="{% url 'finance:budget_detail' budget_id=budget.id %}" class="btn btn-outline-secondary">
+                    <i class="bi bi-arrow-left me-1"></i>Retour au détail
+                </a>
+                <div>
+                    <span class="text-muted">{{ items_stats.pending }} ligne(s) en attente d'approbation</span>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+<script>
+function showRejectForm(itemId) {
+    document.getElementById(`reject-form-${itemId}`).style.display = 'block';
+}
+
+function hideRejectForm(itemId) {
+    document.getElementById(`reject-form-${itemId}`).style.display = 'none';
+}
+
+// Validation des formulaires
+document.addEventListener('DOMContentLoaded', function() {
+    const approvalForms = document.querySelectorAll('.approval-form');
+    approvalForms.forEach(form => {
+        form.addEventListener('submit', function(e) {
+            const amount = parseFloat(this.querySelector('input[name="approved_amount"]').value);
+            if (amount < 0) {
+                e.preventDefault();
+                alert('Le montant approuvé ne peut pas être négatif.');
+                return false;
+            }
+            
+            if (!confirm('Êtes-vous sûr de vouloir approuver cette ligne ?')) {
+                e.preventDefault();
+                return false;
+            }
+        });
+    });
+    
+    const rejectForms = document.querySelectorAll('.reject-form');
+    rejectForms.forEach(form => {
+        form.addEventListener('submit', function(e) {
+            const reason = this.querySelector('textarea[name="rejection_reason"]').value.trim();
+            if (!reason) {
+                e.preventDefault();
+                alert('Veuillez saisir un motif de refus.');
+                return false;
+            }
+            
+            if (!confirm('Êtes-vous sûr de vouloir rejeter cette ligne ?')) {
+                e.preventDefault();
+                return false;
+            }
+        });
+    });
+});
+</script>
+{% endblock %}

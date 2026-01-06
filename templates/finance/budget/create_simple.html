@@ -1,0 +1,425 @@
+{% extends 'base.html' %}
+
+{% block title %}Créer un Budget - {{ settings.site_name|default:'EEBC' }}{% endblock %}
+
+{% block page_title %}Nouveau Budget{% endblock %}
+{% block page_subtitle %}Saisie libre et flexible{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <form method="post" id="budget-form">
+        {% csrf_token %}
+        
+        <!-- Barre d'outils avec bouton de basculement -->
+        <div class="row">
+            <div class="col-12 mb-4">
+                <div class="alert alert-info d-flex justify-content-between align-items-center" role="alert">
+                    <div class="d-flex align-items-center gap-3">
+                        <button type="button" class="btn btn-primary btn-lg" onclick="toggleSidebar()" title="Cliquez pour masquer/afficher le panneau latéral">
+                            <i class="bi bi-layout-sidebar-inset me-2" id="sidebar-icon"></i>
+                            <span id="sidebar-text">Masquer le panneau latéral</span>
+                        </button>
+                        <div class="d-none d-lg-block">
+                            <small><i class="bi bi-info-circle me-1"></i>Cliquez sur ce bouton pour avoir plus d'espace de saisie</small>
+                        </div>
+                    </div>
+                    <div class="d-flex align-items-center gap-2">
+                        <span class="fw-bold">Total:</span>
+                        <span class="badge bg-dark fs-5" id="total-amount-header">0 €</span>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Informations générales -->
+            <div class="col-lg-4 mb-4" id="sidebar-panel">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="card-title mb-0">
+                            <i class="bi bi-info-circle me-2"></i>Informations Générales
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="mb-3">
+                            <label class="form-label">Nom du Budget <span class="text-danger">*</span></label>
+                            <input type="text" name="name" class="form-control" required 
+                                   placeholder="Ex: Budget Jeunes 2026">
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label class="form-label">Année <span class="text-danger">*</span></label>
+                            <select name="year" class="form-select" required>
+                                <option value="{{ current_year }}">{{ current_year }}</option>
+                                <option value="{{ current_year|add:1 }}">{{ current_year|add:1 }}</option>
+                            </select>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label class="form-label">Groupe</label>
+                            <select name="group" class="form-select" id="group-select">
+                                <option value="">Sélectionner un groupe</option>
+                                {% for group in groups %}
+                                <option value="{{ group.id }}">{{ group.name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label class="form-label">Département</label>
+                            <select name="department" class="form-select" id="department-select">
+                                <option value="">Sélectionner un département</option>
+                                {% for department in departments %}
+                                <option value="{{ department.id }}">{{ department.name }}</option>
+                                {% endfor %}
+                            </select>
+                            <div class="form-text">Sélectionnez soit un groupe, soit un département</div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label class="form-label">Description</label>
+                            <textarea name="description" class="form-control" rows="3" 
+                                      placeholder="Description du budget et objectifs..."></textarea>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Tableau de saisie libre -->
+            <div class="col-lg-8 mb-4" id="main-content">
+                <div class="card">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <h5 class="card-title mb-0">
+                            <i class="bi bi-table me-2"></i>Saisie Libre du Budget
+                        </h5>
+                        <button type="button" class="btn btn-success btn-sm" onclick="addBudgetLine()">
+                            <i class="bi bi-plus-circle me-1"></i>Ajouter une ligne
+                        </button>
+                    </div>
+                    <div class="card-body">
+                        <div class="alert alert-info">
+                            <i class="bi bi-info-circle me-2"></i>
+                            <strong>Saisie libre :</strong> Ajoutez vos lignes de budget personnalisées. 
+                            Les calculs se font automatiquement.
+                        </div>
+                        
+                        <!-- Tableau de saisie libre -->
+                        <div class="table-responsive">
+                            <table class="table table-hover" id="budget-table">
+                                <thead class="table-primary">
+                                    <tr>
+                                        <th style="width: 5%">#</th>
+                                        <th style="width: 25%">Désignation <span class="text-danger">*</span></th>
+                                        <th style="width: 35%">Description</th>
+                                        <th style="width: 15%">Montant (€) <span class="text-danger">*</span></th>
+                                        <th style="width: 10%">Priorité</th>
+                                        <th style="width: 10%">Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="budget-lines">
+                                    <!-- Les lignes seront ajoutées ici dynamiquement -->
+                                </tbody>
+                                <tfoot class="table-light">
+                                    <tr>
+                                        <th colspan="3" class="text-end">Total du Budget :</th>
+                                        <th>
+                                            <span class="badge bg-primary fs-6" id="total-budget">0 €</span>
+                                        </th>
+                                        <th colspan="2"></th>
+                                    </tr>
+                                </tfoot>
+                            </table>
+                        </div>
+                        
+                        <!-- Actions du tableau -->
+                        <div class="d-flex justify-content-between align-items-center mt-3">
+                            <div>
+                                <button type="button" class="btn btn-outline-success" onclick="addBudgetLine()">
+                                    <i class="bi bi-plus-circle me-1"></i>Ajouter une ligne
+                                </button>
+                                <button type="button" class="btn btn-outline-secondary ms-2" onclick="clearAllLines()">
+                                    <i class="bi bi-trash me-1"></i>Vider le tableau
+                                </button>
+                            </div>
+                            <div>
+                                <small class="text-muted">
+                                    <i class="bi bi-calculator me-1"></i>
+                                    <span id="line-count">0</span> ligne(s) - 
+                                    Total: <strong id="total-display">0 €</strong>
+                                </small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Actions -->
+        <div class="row">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between">
+                            <a href="{% url 'finance:budget_list' %}" class="btn btn-outline-secondary">
+                                <i class="bi bi-arrow-left me-1"></i>Retour à la liste
+                            </a>
+                            <div>
+                                <button type="submit" class="btn btn-primary">
+                                    <i class="bi bi-check-circle me-1"></i>Créer le Budget
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </form>
+</div>
+
+<script>
+let lineCounter = 0;
+
+document.addEventListener('DOMContentLoaded', function() {
+    // Gestion exclusive groupe/département
+    const groupSelect = document.getElementById('group-select');
+    const departmentSelect = document.getElementById('department-select');
+    
+    groupSelect.addEventListener('change', function() {
+        if (this.value) {
+            departmentSelect.value = '';
+        }
+    });
+    
+    departmentSelect.addEventListener('change', function() {
+        if (this.value) {
+            groupSelect.value = '';
+        }
+    });
+    
+    // Ajouter une ligne par défaut
+    addBudgetLine();
+    
+    // Validation du formulaire
+    document.getElementById('budget-form').addEventListener('submit', function(e) {
+        const groupValue = groupSelect.value;
+        const departmentValue = departmentSelect.value;
+        
+        if (!groupValue && !departmentValue) {
+            e.preventDefault();
+            alert('Veuillez sélectionner soit un groupe, soit un département.');
+            return false;
+        }
+        
+        // Vérifier qu'au moins une ligne a un montant
+        const amountInputs = document.querySelectorAll('.line-amount');
+        let hasAmount = false;
+        amountInputs.forEach(input => {
+            if (parseFloat(input.value) > 0) {
+                hasAmount = true;
+            }
+        });
+        
+        if (!hasAmount) {
+            e.preventDefault();
+            alert('Veuillez saisir au moins un montant.');
+            return false;
+        }
+    });
+});
+
+function addBudgetLine() {
+    lineCounter++;
+    const tbody = document.getElementById('budget-lines');
+    
+    const row = document.createElement('tr');
+    row.id = `line-${lineCounter}`;
+    row.className = 'budget-line';
+    
+    row.innerHTML = `
+        <td class="text-center">
+            <span class="badge bg-secondary">${lineCounter}</span>
+        </td>
+        <td>
+            <input type="text" name="line_name_${lineCounter}" class="form-control line-name" 
+                   placeholder="Ex: Matériel informatique" required>
+        </td>
+        <td>
+            <textarea name="line_description_${lineCounter}" class="form-control line-description" 
+                      rows="2" placeholder="Description détaillée..."></textarea>
+        </td>
+        <td>
+            <div class="input-group">
+                <input type="number" name="line_amount_${lineCounter}" class="form-control line-amount" 
+                       step="1" min="0" placeholder="0" required>
+                <span class="input-group-text">€</span>
+            </div>
+        </td>
+        <td>
+            <select name="line_priority_${lineCounter}" class="form-select line-priority">
+                <option value="1">1 - Urgent</option>
+                <option value="2">2 - Important</option>
+                <option value="3" selected>3 - Normal</option>
+                <option value="4">4 - Faible</option>
+                <option value="5">5 - Optionnel</option>
+            </select>
+        </td>
+        <td class="text-center">
+            <button type="button" class="btn btn-outline-danger btn-sm" onclick="removeBudgetLine(${lineCounter})" title="Supprimer cette ligne">
+                <i class="bi bi-trash"></i>
+            </button>
+        </td>
+    `;
+    
+    tbody.appendChild(row);
+    
+    // Ajouter l'événement de calcul
+    const amountInput = row.querySelector('.line-amount');
+    amountInput.addEventListener('input', calculateTotal);
+    
+    // Mettre à jour les compteurs
+    updateCounters();
+    
+    // Focus sur le champ nom
+    row.querySelector('.line-name').focus();
+}
+
+function removeBudgetLine(lineId) {
+    if (confirm('Êtes-vous sûr de vouloir supprimer cette ligne ?')) {
+        const row = document.getElementById(`line-${lineId}`);
+        row.remove();
+        calculateTotal();
+        updateCounters();
+        renumberLines();
+    }
+}
+
+function clearAllLines() {
+    if (confirm('Êtes-vous sûr de vouloir vider tout le tableau ?')) {
+        document.getElementById('budget-lines').innerHTML = '';
+        lineCounter = 0;
+        calculateTotal();
+        updateCounters();
+        addBudgetLine(); // Ajouter une ligne vide
+    }
+}
+
+function calculateTotal() {
+    let total = 0;
+    const amountInputs = document.querySelectorAll('.line-amount');
+    
+    amountInputs.forEach(input => {
+        const value = parseFloat(input.value) || 0;
+        total += value;
+    });
+    
+    const totalText = total.toFixed(0) + ' €';
+    document.getElementById('total-budget').textContent = totalText;
+    document.getElementById('total-display').textContent = totalText;
+    document.getElementById('total-amount-header').textContent = totalText;
+}
+
+function updateCounters() {
+    const lineCount = document.querySelectorAll('.budget-line').length;
+    document.getElementById('line-count').textContent = lineCount;
+}
+
+function renumberLines() {
+    const lines = document.querySelectorAll('.budget-line');
+    lines.forEach((line, index) => {
+        const badge = line.querySelector('.badge');
+        badge.textContent = index + 1;
+    });
+}
+
+function toggleSidebar() {
+    const sidebar = document.getElementById('sidebar-panel');
+    const mainContent = document.getElementById('main-content');
+    const icon = document.getElementById('sidebar-icon');
+    const text = document.getElementById('sidebar-text');
+    const button = icon.closest('button');
+    
+    if (sidebar.style.display === 'none') {
+        // Afficher le panneau - Vue normale (2 colonnes)
+        sidebar.style.display = 'block';
+        mainContent.className = 'col-lg-8 mb-4';
+        icon.className = 'bi bi-layout-sidebar-inset me-2';
+        text.textContent = 'Masquer le panneau latéral';
+        button.className = 'btn btn-primary btn-lg';
+        button.title = 'Cliquez pour masquer le panneau latéral';
+    } else {
+        // Masquer le panneau - Vue étendue (1 colonne pleine largeur)
+        sidebar.style.display = 'none';
+        mainContent.className = 'col-12 mb-4';
+        icon.className = 'bi bi-layout-sidebar-inset-reverse me-2';
+        text.textContent = 'Afficher le panneau latéral';
+        button.className = 'btn btn-success btn-lg';
+        button.title = 'Cliquez pour afficher le panneau latéral';
+    }
+    
+    // Forcer le recalcul du layout
+    setTimeout(() => {
+        window.dispatchEvent(new Event('resize'));
+    }, 300);
+}
+</script>
+
+{% block extra_css %}
+<style>
+.budget-line {
+    transition: all 0.3s ease;
+}
+
+.budget-line:hover {
+    background-color: #f8f9fa;
+}
+
+.table th {
+    border-top: none;
+    font-weight: 600;
+}
+
+.line-name:focus, .line-amount:focus {
+    border-color: #0d6efd;
+    box-shadow: 0 0 0 0.2rem rgba(13, 110, 253, 0.25);
+}
+
+/* Animation pour le panneau latéral et le contenu principal */
+#sidebar-panel {
+    transition: all 0.3s ease;
+}
+
+#main-content {
+    transition: all 0.3s ease;
+}
+
+/* Assurer que le contenu s'étend bien */
+.col-12 {
+    width: 100% !important;
+    flex: 0 0 100% !important;
+    max-width: 100% !important;
+}
+
+.col-lg-8 {
+    width: 66.666667% !important;
+    flex: 0 0 66.666667% !important;
+    max-width: 66.666667% !important;
+}
+
+.btn:hover {
+    transform: translateY(-1px);
+    transition: all 0.2s ease;
+}
+
+@media (max-width: 768px) {
+    #sidebar-panel {
+        order: 2;
+    }
+    
+    #main-content {
+        order: 1;
+        width: 100% !important;
+        flex: 0 0 100% !important;
+        max-width: 100% !important;
+    }
+}
+</style>
+{% endblock %}
+{% endblock %}

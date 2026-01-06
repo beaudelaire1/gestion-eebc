@@ -1,0 +1,59 @@
+{% extends "pdf_base.html" %}
+
+{% block title %}Liste des Enfants - Club Biblique{% endblock %}
+{% block header_title %}{{ print_title }}{% endblock %}
+{% block header_subtitle %}<p class="subtitle">Club Biblique EEBC</p>{% endblock %}
+
+{% block summary %}
+<div class="summary-box">
+    <h3>Résumé</h3>
+    <div class="summary-grid">
+        <div class="summary-item">
+            <div class="summary-label">Total enfants</div>
+            <div class="summary-value">{{ total_children }}</div>
+        </div>
+        <div class="summary-item">
+            <div class="summary-label">Enfants actifs</div>
+            <div class="summary-value">{{ active_children }}</div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block content %}
+<h3>Liste des enfants</h3>
+<table>
+    <thead>
+        <tr>
+            <th>Nom</th>
+            <th>Prénom</th>
+            <th class="text-center">Âge</th>
+            <th>Classe</th>
+            <th>Père</th>
+            <th>Tél. Père</th>
+            <th>Mère</th>
+            <th>Tél. Mère</th>
+            <th class="text-center">Transport</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for child in object_list %}
+        <tr>
+            <td>{{ child.last_name }}</td>
+            <td>{{ child.first_name }}</td>
+            <td class="text-center">{{ child.age }} ans</td>
+            <td>{{ child.bible_class|default:"-" }}</td>
+            <td>{{ child.father_name }}</td>
+            <td>{{ child.father_phone }}</td>
+            <td>{{ child.mother_name|default:"-" }}</td>
+            <td>{{ child.mother_phone|default:"-" }}</td>
+            <td class="text-center">{% if child.needs_transport %}Oui{% else %}-{% endif %}</td>
+        </tr>
+        {% empty %}
+        <tr>
+            <td colspan="9" class="text-center">Aucun enfant trouvé</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% endblock %}
