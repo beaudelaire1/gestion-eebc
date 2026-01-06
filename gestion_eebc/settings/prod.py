@@ -73,9 +73,10 @@ CELERY_TASK_TIME_LIMIT = 30 * 60
 
 
 # =============================================================================
-# EMAIL - SMTP en production
+# EMAIL - Hostinger en production
 # =============================================================================
-EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+# Le backend email est configuré dans base.py via EMAIL_BACKEND dans .env
+# Pour utiliser Hostinger, définir EMAIL_BACKEND=hostinger dans .env
 
 
 # =============================================================================

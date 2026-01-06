@@ -32,3 +32,10 @@ qrcode[pil]>=7.4.0
 
 # Sécurité
 django-cryptography>=1.1
+
+# API et HTTP (pour Hostinger)
+requests>=2.31.0
+urllib3>=2.0.0
+
+# Hostinger API (optionnel - si SDK officiel disponible)
+# hostinger-api>=1.0.0

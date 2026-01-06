@@ -290,6 +290,8 @@ SITE_NAME = os.environ.get('SITE_NAME', 'EEBC')
 _email_backend = os.environ.get('EMAIL_BACKEND', 'console')
 if _email_backend == 'smtp':
     EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+elif _email_backend == 'hostinger':
+    EMAIL_BACKEND = 'apps.core.infrastructure.hostinger_email_backend.HostingerEmailBackend'
 elif _email_backend == 'console':
     EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
 elif _email_backend == 'file':
@@ -299,11 +301,27 @@ else:
     EMAIL_BACKEND = _email_backend
 
 DEFAULT_FROM_EMAIL = os.environ.get('DEFAULT_FROM_EMAIL', 'noreply@eebc-guyane.org')
+
+# Configuration SMTP standard (Gmail, Outlook, etc.)
 EMAIL_HOST = os.environ.get('EMAIL_HOST', 'smtp.gmail.com')
 EMAIL_PORT = int(os.environ.get('EMAIL_PORT', 587))
 EMAIL_USE_TLS = os.environ.get('EMAIL_USE_TLS', 'True').lower() in ('true', '1', 'yes')
 EMAIL_HOST_USER = os.environ.get('EMAIL_HOST_USER', '')
 EMAIL_HOST_PASSWORD = os.environ.get('EMAIL_HOST_PASSWORD', '')
+
+# Configuration Hostinger Email
+HOSTINGER_API_KEY = os.environ.get('HOSTINGER_API_KEY', '')
+HOSTINGER_EMAIL_HOST = os.environ.get('HOSTINGER_EMAIL_HOST', 'smtp.hostinger.com')
+HOSTINGER_EMAIL_PORT = int(os.environ.get('HOSTINGER_EMAIL_PORT', 587))
+HOSTINGER_EMAIL_USE_TLS = os.environ.get('HOSTINGER_EMAIL_USE_TLS', 'True').lower() in ('true', '1', 'yes')
+HOSTINGER_EMAIL_USE_SSL = os.environ.get('HOSTINGER_EMAIL_USE_SSL', 'False').lower() in ('true', '1', 'yes')
+HOSTINGER_EMAIL_HOST_USER = os.environ.get('HOSTINGER_EMAIL_HOST_USER', '')
+HOSTINGER_EMAIL_HOST_PASSWORD = os.environ.get('HOSTINGER_EMAIL_HOST_PASSWORD', '')
+
+# Configuration avancée Hostinger
+HOSTINGER_EMAIL_TIMEOUT = int(os.environ.get('HOSTINGER_EMAIL_TIMEOUT', 30))
+HOSTINGER_EMAIL_MAX_RETRIES = int(os.environ.get('HOSTINGER_EMAIL_MAX_RETRIES', 3))
+HOSTINGER_API_BASE_URL = os.environ.get('HOSTINGER_API_BASE_URL', 'https://developers.hostinger.com')
 
 
 # =============================================================================
