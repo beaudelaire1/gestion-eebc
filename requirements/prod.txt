@@ -9,6 +9,10 @@ gunicorn>=21.0.0
 
 # Base de données PostgreSQL
 psycopg2-binary>=2.9.0
+dj-database-url>=2.1.0
+
+# Static files
+whitenoise>=6.6.0
 
 # Cache et sessions
 redis>=5.0.0

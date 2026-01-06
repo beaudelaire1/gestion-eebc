@@ -1,7 +1,9 @@
 """
-Django settings - Production
+Django settings - Production (Render)
 """
 
+import os
+import dj_database_url
 from .base import *
 
 # =============================================================================
@@ -9,6 +11,11 @@ from .base import *
 # =============================================================================
 DEBUG = False
 ALLOWED_HOSTS = os.environ.get('ALLOWED_HOSTS', '').split(',')
+
+# Render specific
+RENDER_EXTERNAL_HOSTNAME = os.environ.get('RENDER_EXTERNAL_HOSTNAME')
+if RENDER_EXTERNAL_HOSTNAME:
+    ALLOWED_HOSTS.append(RENDER_EXTERNAL_HOSTNAME)
 
 # HTTPS
 SECURE_SSL_REDIRECT = True
@@ -28,19 +35,29 @@ X_FRAME_OPTIONS = 'DENY'
 
 
 # =============================================================================
-# DATABASE - PostgreSQL en production
+# DATABASE - PostgreSQL via DATABASE_URL (Render)
 # =============================================================================
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.postgresql',
-        'NAME': os.environ.get('DB_NAME', 'eebc'),
-        'USER': os.environ.get('DB_USER', 'eebc'),
-        'PASSWORD': os.environ.get('DB_PASSWORD', ''),
-        'HOST': os.environ.get('DB_HOST', 'localhost'),
-        'PORT': os.environ.get('DB_PORT', '5432'),
-        'CONN_MAX_AGE': 60,
+DATABASE_URL = os.environ.get('DATABASE_URL')
+if DATABASE_URL:
+    DATABASES = {
+        'default': dj_database_url.config(
+            default=DATABASE_URL,
+            conn_max_age=600,
+            conn_health_checks=True,
+        )
     }
-}
+else:
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.postgresql',
+            'NAME': os.environ.get('DB_NAME', 'eebc'),
+            'USER': os.environ.get('DB_USER', 'eebc'),
+            'PASSWORD': os.environ.get('DB_PASSWORD', ''),
+            'HOST': os.environ.get('DB_HOST', 'localhost'),
+            'PORT': os.environ.get('DB_PORT', '5432'),
+            'CONN_MAX_AGE': 60,
+        }
+    }
 
 
 # =============================================================================
@@ -99,9 +116,12 @@ TWILIO_WHATSAPP_NUMBER = os.environ.get('TWILIO_WHATSAPP_NUMBER', '')
 
 
 # =============================================================================
-# STATIC FILES - WhiteNoise ou S3
+# STATIC FILES - WhiteNoise pour Render
 # =============================================================================
-STATICFILES_STORAGE = 'django.contrib.staticfiles.storage.ManifestStaticFilesStorage'
+STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
+
+# WhiteNoise middleware (doit être après SecurityMiddleware)
+MIDDLEWARE.insert(2, 'whitenoise.middleware.WhiteNoiseMiddleware')
 
 # Optionnel: AWS S3 pour les médias
 # AWS_ACCESS_KEY_ID = os.environ.get('AWS_ACCESS_KEY_ID', '')

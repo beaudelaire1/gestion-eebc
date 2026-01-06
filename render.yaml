@@ -1,0 +1,72 @@
+# =============================================================================
+# RENDER BLUEPRINT - Gestion EEBC v1.0.0
+# =============================================================================
+
+services:
+  # Application Web Django
+  - type: web
+    name: gestion-eebc
+    runtime: python
+    region: frankfurt
+    plan: starter
+    buildCommand: |
+      pip install -r requirements/prod.txt
+      python manage.py collectstatic --noinput
+    startCommand: gunicorn gestion_eebc.wsgi:application --bind 0.0.0.0:$PORT
+    envVars:
+      - key: PYTHON_VERSION
+        value: "3.11.4"
+      - key: DJANGO_SETTINGS_MODULE
+        value: gestion_eebc.settings.prod
+      - key: DEBUG
+        value: "False"
+      - key: SECRET_KEY
+        generateValue: true
+      - key: ALLOWED_HOSTS
+        value: ".onrender.com"
+      - key: DATABASE_URL
+        fromDatabase:
+          name: eebc-db
+          property: connectionString
+      - key: REDIS_URL
+        fromService:
+          name: eebc-redis
+          type: redis
+          property: connectionString
+      # Email Hostinger
+      - key: EMAIL_BACKEND
+        value: hostinger
+      - key: HOSTINGER_API_KEY
+        sync: false
+      - key: HOSTINGER_EMAIL_HOST
+        value: smtp.hostinger.com
+      - key: HOSTINGER_EMAIL_PORT
+        value: "587"
+      - key: HOSTINGER_EMAIL_USE_TLS
+        value: "True"
+      - key: HOSTINGER_EMAIL_HOST_USER
+        sync: false
+      - key: HOSTINGER_EMAIL_HOST_PASSWORD
+        sync: false
+      - key: DEFAULT_FROM_EMAIL
+        value: "EEBC <communication@eglise-ebc.org>"
+      # Site
+      - key: SITE_URL
+        sync: false
+      - key: SITE_NAME
+        value: "EEBC"
+
+  # Redis pour cache et Celery
+  - type: redis
+    name: eebc-redis
+    region: frankfurt
+    plan: starter
+    maxmemoryPolicy: allkeys-lru
+
+# Base de données PostgreSQL
+databases:
+  - name: eebc-db
+    region: frankfurt
+    plan: starter
+    databaseName: eebc
+    user: eebc_user
