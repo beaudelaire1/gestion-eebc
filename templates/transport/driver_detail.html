@@ -1,0 +1,111 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ driver.user.get_full_name }} - Chauffeur - EEBC{% endblock %}
+{% block page_title %}{{ driver.user.get_full_name }}{% endblock %}
+{% block page_subtitle %}Profil chauffeur{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-lg-8">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">Informations du chauffeur</h5>
+                <a href="{% url 'transport:driver_update' driver.pk %}" class="btn btn-outline-primary btn-sm">
+                    <i class="bi bi-pencil me-1"></i>Modifier
+                </a>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <h6 class="text-muted">Informations personnelles</h6>
+                        <p><strong>Nom complet:</strong> {{ driver.user.get_full_name }}</p>
+                        <p><strong>Email:</strong> {{ driver.user.email|default:"-" }}</p>
+                        <p><strong>Téléphone:</strong> {{ driver.user.phone|default:"-" }}</p>
+                    </div>
+                    <div class="col-md-6">
+                        <h6 class="text-muted">Véhicule</h6>
+                        <p><strong>Type:</strong> {{ driver.vehicle_type }}</p>
+                        {% if driver.vehicle_model %}
+                        <p><strong>Modèle:</strong> {{ driver.vehicle_model }}</p>
+                        {% endif %}
+                        {% if driver.license_plate %}
+                        <p><strong>Immatriculation:</strong> {{ driver.license_plate }}</p>
+                        {% endif %}
+                        <p><strong>Capacité:</strong> {{ driver.capacity }} passagers</p>
+                    </div>
+                </div>
+                
+                <hr>
+                
+                <div class="row">
+                    <div class="col-md-6">
+                        <h6 class="text-muted">Zone et disponibilités</h6>
+                        {% if driver.zone %}
+                        <p><strong>Zone desservie:</strong> {{ driver.zone }}</p>
+                        {% endif %}
+                        <p><strong>Statut:</strong> 
+                            <span class="badge bg-{% if driver.is_available %}success{% else %}danger{% endif %}">
+                                {% if driver.is_available %}Disponible{% else %}Indisponible{% endif %}
+                            </span>
+                        </p>
+                        <p><strong>Disponibilités:</strong></p>
+                        <ul class="list-unstyled ms-3">
+                            {% if driver.available_sunday %}
+                            <li><i class="bi bi-check-circle text-success me-2"></i>Dimanche</li>
+                            {% endif %}
+                            {% if driver.available_week %}
+                            <li><i class="bi bi-check-circle text-success me-2"></i>Semaine</li>
+                            {% endif %}
+                            {% if not driver.available_sunday and not driver.available_week %}
+                            <li class="text-muted">Aucune disponibilité définie</li>
+                            {% endif %}
+                        </ul>
+                    </div>
+                    <div class="col-md-6">
+                        {% if driver.notes %}
+                        <h6 class="text-muted">Notes</h6>
+                        <p>{{ driver.notes|linebreaks }}</p>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-lg-4">
+        <div class="card">
+            <div class="card-header">
+                <h6 class="mb-0">Demandes récentes</h6>
+            </div>
+            <div class="card-body">
+                {% if recent_requests %}
+                    {% for request in recent_requests %}
+                    <div class="d-flex justify-content-between align-items-center mb-2 pb-2 {% if not forloop.last %}border-bottom{% endif %}">
+                        <div>
+                            <div class="fw-semibold">{{ request.requester_name }}</div>
+                            <small class="text-muted">{{ request.event_date|date:"d/m/Y" }} à {{ request.event_time|time:"H:i" }}</small>
+                        </div>
+                        <span class="badge bg-{% if request.status == 'confirmed' %}success{% elif request.status == 'pending' %}warning{% elif request.status == 'completed' %}info{% else %}danger{% endif %}">
+                            {{ request.get_status_display }}
+                        </span>
+                    </div>
+                    {% endfor %}
+                    <div class="text-center mt-3">
+                        <a href="{% url 'transport:requests' %}?driver={{ driver.pk }}" class="btn btn-outline-primary btn-sm">
+                            Voir toutes les demandes
+                        </a>
+                    </div>
+                {% else %}
+                    <p class="text-muted text-center">Aucune demande récente</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="mt-4">
+    <a href="{% url 'transport:drivers' %}" class="btn btn-outline-secondary">
+        <i class="bi bi-arrow-left me-2"></i>Retour à la liste
+    </a>
+</div>
+{% endblock %}

@@ -74,8 +74,8 @@ class ChildTests(TestCase):
             last_name='Martin',
             date_of_birth=birth_date,
             gender='M',
-            parent1_name='M. Martin',
-            parent1_phone='0612345678',
+            father_name='M. Martin',
+            father_phone='0612345678',
             bible_class=self.bible_class
         )
         self.assertEqual(str(child), 'Lucas Martin')
@@ -89,8 +89,8 @@ class ChildTests(TestCase):
             last_name='Bernard',
             date_of_birth=date.today() - timedelta(days=9*365),
             gender='F',
-            parent1_name='Mme Bernard',
-            parent1_phone='0698765432',
+            father_name='Mme Bernard',
+            father_phone='0698765432',
             bible_class=self.bible_class
         )
         self.assertEqual(self.bible_class.children_count, 1)
@@ -113,8 +113,8 @@ class SessionAttendanceTests(TestCase):
             last_name='Dubois',
             date_of_birth=date.today() - timedelta(days=4*365),
             gender='M',
-            parent1_name='M. Dubois',
-            parent1_phone='0611111111',
+            father_name='M. Dubois',
+            father_phone='0611111111',
             bible_class=self.bible_class
         )
         self.session = Session.objects.create(
@@ -246,8 +246,8 @@ class PermissionsTests(TestCase):
             last_name='Martin',
             date_of_birth=date.today() - timedelta(days=4*365),
             gender='M',
-            parent1_name='M. Martin',
-            parent1_phone='0612345678',
+            father_name='M. Martin',
+            father_phone='0612345678',
             bible_class=self.classe1
         )
         self.enfant_classe2 = Child.objects.create(
@@ -255,8 +255,8 @@ class PermissionsTests(TestCase):
             last_name='Bernard',
             date_of_birth=date.today() - timedelta(days=10*365),
             gender='F',
-            parent1_name='Mme Bernard',
-            parent1_phone='0698765432',
+            father_name='Mme Bernard',
+            father_phone='0698765432',
             bible_class=self.classe2
         )
     
@@ -361,8 +361,8 @@ class PermissionsViewsTests(TestCase):
             last_name='Martin',
             date_of_birth=date.today() - timedelta(days=4*365),
             gender='M',
-            parent1_name='M. Martin',
-            parent1_phone='0612345678',
+            father_name='M. Martin',
+            father_phone='0612345678',
             bible_class=self.classe1
         )
         

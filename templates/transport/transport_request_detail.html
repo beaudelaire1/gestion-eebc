@@ -1,0 +1,134 @@
+{% extends 'base.html' %}
+
+{% block title %}Demande de {{ transport_request.requester_name }} - EEBC{% endblock %}
+{% block page_title %}Demande de transport{% endblock %}
+{% block page_subtitle %}{{ transport_request.requester_name }} - {{ transport_request.event_date|date:"d/m/Y" }}{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-lg-8">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">Détails de la demande</h5>
+                <div class="d-flex gap-2">
+                    <a href="{% url 'transport:request_update' transport_request.pk %}" class="btn btn-outline-primary btn-sm">
+                        <i class="bi bi-pencil me-1"></i>Modifier
+                    </a>
+                    {% if user.role in 'admin,secretariat,responsable_groupe' %}
+                    <a href="{% url 'transport:assign_driver' transport_request.pk %}" class="btn btn-outline-success btn-sm">
+                        <i class="bi bi-person-plus me-1"></i>Assigner chauffeur
+                    </a>
+                    {% endif %}
+                </div>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <h6 class="text-muted">Informations du demandeur</h6>
+                        <p><strong>Nom:</strong> {{ transport_request.requester_name }}</p>
+                        <p><strong>Téléphone:</strong> {{ transport_request.requester_phone }}</p>
+                        {% if transport_request.requester_email %}
+                        <p><strong>Email:</strong> {{ transport_request.requester_email }}</p>
+                        {% endif %}
+                        <p><strong>Adresse de prise en charge:</strong></p>
+                        <p class="ms-3">{{ transport_request.pickup_address|linebreaks }}</p>
+                    </div>
+                    <div class="col-md-6">
+                        <h6 class="text-muted">Détails du transport</h6>
+                        <p><strong>Date:</strong> {{ transport_request.event_date|date:"l d F Y" }}</p>
+                        <p><strong>Heure:</strong> {{ transport_request.event_time|time:"H:i" }}</p>
+                        {% if transport_request.event_name %}
+                        <p><strong>Événement:</strong> {{ transport_request.event_name }}</p>
+                        {% endif %}
+                        <p><strong>Nombre de passagers:</strong> {{ transport_request.passengers_count }}</p>
+                        <p><strong>Statut:</strong> 
+                            <span class="badge bg-{% if transport_request.status == 'confirmed' %}success{% elif transport_request.status == 'pending' %}warning{% elif transport_request.status == 'completed' %}info{% else %}danger{% endif %}">
+                                {{ transport_request.get_status_display }}
+                            </span>
+                        </p>
+                    </div>
+                </div>
+                
+                {% if transport_request.driver %}
+                <hr>
+                <div class="row">
+                    <div class="col-12">
+                        <h6 class="text-muted">Chauffeur assigné</h6>
+                        <div class="d-flex align-items-center">
+                            <div class="avatar avatar--md me-3">
+                                {{ transport_request.driver.user.first_name|slice:":1"|upper }}{{ transport_request.driver.user.last_name|slice:":1"|upper }}
+                            </div>
+                            <div>
+                                <div class="fw-semibold">{{ transport_request.driver.user.get_full_name }}</div>
+                                <small class="text-muted">{{ transport_request.driver.vehicle_type }} - {{ transport_request.driver.capacity }} places</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+                
+                {% if transport_request.notes %}
+                <hr>
+                <div class="row">
+                    <div class="col-12">
+                        <h6 class="text-muted">Notes</h6>
+                        <p>{{ transport_request.notes|linebreaks }}</p>
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+            <div class="card-footer text-muted">
+                <small>
+                    Créé le {{ transport_request.created_at|date:"d/m/Y à H:i" }}
+                    {% if transport_request.updated_at != transport_request.created_at %}
+                    - Modifié le {{ transport_request.updated_at|date:"d/m/Y à H:i" }}
+                    {% endif %}
+                </small>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-lg-4">
+        <div class="card">
+            <div class="card-header">
+                <h6 class="mb-0">Actions rapides</h6>
+            </div>
+            <div class="card-body">
+                {% if transport_request.status == 'pending' %}
+                <div class="d-grid gap-2">
+                    {% if user.role in 'admin,secretariat,responsable_groupe' %}
+                    <a href="{% url 'transport:assign_driver' transport_request.pk %}" class="btn btn-success btn-sm">
+                        <i class="bi bi-person-plus me-2"></i>Assigner un chauffeur
+                    </a>
+                    {% endif %}
+                    <a href="{% url 'transport:request_update' transport_request.pk %}" class="btn btn-outline-primary btn-sm">
+                        <i class="bi bi-pencil me-2"></i>Modifier la demande
+                    </a>
+                </div>
+                {% elif transport_request.status == 'confirmed' %}
+                <div class="alert alert-success">
+                    <i class="bi bi-check-circle me-2"></i>
+                    Transport confirmé avec {{ transport_request.driver.user.get_full_name }}
+                </div>
+                {% elif transport_request.status == 'completed' %}
+                <div class="alert alert-info">
+                    <i class="bi bi-check-circle-fill me-2"></i>
+                    Transport effectué
+                </div>
+                {% elif transport_request.status == 'cancelled' %}
+                <div class="alert alert-danger">
+                    <i class="bi bi-x-circle me-2"></i>
+                    Transport annulé
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="mt-4">
+    <a href="{% url 'transport:requests' %}" class="btn btn-outline-secondary">
+        <i class="bi bi-arrow-left me-2"></i>Retour à la liste
+    </a>
+</div>
+{% endblock %}

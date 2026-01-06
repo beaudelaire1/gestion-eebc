@@ -1,0 +1,99 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Accès refusé - Gestion EEBC{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row justify-content-center">
+        <div class="col-md-8 col-lg-6">
+            <div class="card shadow-sm border-0 mt-5">
+                <div class="card-body text-center p-5">
+                    <!-- Icône d'erreur -->
+                    <div class="mb-4">
+                        <i class="fas fa-lock text-warning" style="font-size: 4rem;"></i>
+                    </div>
+                    
+                    <!-- Titre principal -->
+                    <h1 class="display-4 text-dark mb-3">403</h1>
+                    <h2 class="h4 text-muted mb-4">Accès refusé</h2>
+                    
+                    <!-- Message explicatif -->
+                    <div class="alert alert-warning border-0 mb-4">
+                        <p class="mb-2">
+                            <strong>Vous n'avez pas les permissions nécessaires pour accéder à cette page.</strong>
+                        </p>
+                        <p class="mb-0 text-muted">
+                            Cette ressource nécessite des droits d'accès spécifiques que votre compte ne possède pas actuellement.
+                        </p>
+                    </div>
+                    
+                    <!-- Suggestions d'actions -->
+                    <div class="mb-4">
+                        <p class="text-muted">Que pouvez-vous faire ?</p>
+                        <ul class="list-unstyled text-start">
+                            <li class="mb-2">
+                                <i class="fas fa-arrow-left text-primary me-2"></i>
+                                Retourner à la page précédente
+                            </li>
+                            <li class="mb-2">
+                                <i class="fas fa-home text-primary me-2"></i>
+                                Aller au tableau de bord principal
+                            </li>
+                            <li class="mb-2">
+                                <i class="fas fa-envelope text-primary me-2"></i>
+                                Contacter l'administrateur si vous pensez qu'il s'agit d'une erreur
+                            </li>
+                        </ul>
+                    </div>
+                    
+                    <!-- Boutons d'action -->
+                    <div class="d-flex flex-column flex-sm-row gap-3 justify-content-center">
+                        <button onclick="history.back()" class="btn btn-outline-primary">
+                            <i class="fas fa-arrow-left me-2"></i>
+                            Retour
+                        </button>
+                        <a href="/app/" class="btn btn-primary">
+                            <i class="fas fa-home me-2"></i>
+                            Tableau de bord
+                        </a>
+                    </div>
+                    
+                    <!-- Informations de contact -->
+                    <div class="mt-4 pt-3 border-top">
+                        <small class="text-muted">
+                            Besoin d'aide ? Contactez l'administrateur système à 
+                            <a href="mailto:admin@eebc.org" class="text-decoration-none">admin@eebc.org</a>
+                        </small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.card {
+    border-radius: 15px;
+}
+
+.btn {
+    border-radius: 8px;
+    padding: 10px 20px;
+}
+
+.alert {
+    border-radius: 10px;
+}
+
+@media (max-width: 576px) {
+    .display-4 {
+        font-size: 2.5rem;
+    }
+    
+    .card-body {
+        padding: 2rem 1.5rem !important;
+    }
+}
+</style>
+{% endblock %}

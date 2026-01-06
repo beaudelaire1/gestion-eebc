@@ -66,3 +66,12 @@ STRIPE_PUBLIC_KEY = ''
 STRIPE_SECRET_KEY = ''
 TWILIO_ACCOUNT_SID = ''
 TWILIO_AUTH_TOKEN = ''
+
+
+# =============================================================================
+# RATE LIMITING POUR LES TESTS
+# =============================================================================
+# Enable rate limiting for tests but with very high limits to avoid interference
+RATE_LIMIT_ENABLED = True
+RATE_LIMIT_REQUESTS = 1000  # Very high limit to avoid blocking other tests
+RATE_LIMIT_WINDOW = 60  # 1 minute window

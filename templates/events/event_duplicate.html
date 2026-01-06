@@ -1,0 +1,155 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}{{ title }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h1 class="h3 mb-0">{{ title }}</h1>
+                <a href="{% url 'events:detail' original_event.pk %}" class="btn btn-outline-secondary">
+                    <i class="bi bi-arrow-left"></i> Retour
+                </a>
+            </div>
+
+            <div class="row justify-content-center">
+                <div class="col-lg-8">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5 class="card-title mb-0">
+                                <i class="bi bi-copy"></i>
+                                Dupliquer un événement
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="alert alert-info">
+                                <i class="bi bi-info-circle"></i>
+                                <strong>Duplication :</strong> Toutes les informations de l'événement original seront copiées, 
+                                à l'exception des inscriptions et du statut d'annulation.
+                            </div>
+
+                            <!-- Informations de l'événement original -->
+                            <div class="card mb-4">
+                                <div class="card-header">
+                                    <h6 class="mb-0">Événement original</h6>
+                                </div>
+                                <div class="card-body">
+                                    <h6 class="card-title">{{ original_event.title }}</h6>
+                                    <p class="card-text">
+                                        <i class="bi bi-calendar"></i> {{ original_event.start_date|date:"l j F Y" }}
+                                        {% if original_event.start_time %}
+                                            à {{ original_event.start_time|time:"H:i" }}
+                                        {% endif %}
+                                    </p>
+                                    {% if original_event.location %}
+                                        <p class="card-text">
+                                            <i class="bi bi-geo-alt"></i> {{ original_event.location }}
+                                        </p>
+                                    {% endif %}
+                                    {% if original_event.category %}
+                                        <span class="badge" style="background-color: {{ original_event.category.color }};">
+                                            {{ original_event.category.name }}
+                                        </span>
+                                    {% endif %}
+                                </div>
+                            </div>
+
+                            <!-- Formulaire de duplication -->
+                            <form method="post">
+                                {% csrf_token %}
+                                
+                                {% if form.non_field_errors %}
+                                    <div class="alert alert-danger">
+                                        {{ form.non_field_errors }}
+                                    </div>
+                                {% endif %}
+
+                                <div class="row mb-3">
+                                    <div class="col-md-6">
+                                        <label for="{{ form.new_start_date.id_for_label }}" class="form-label">{{ form.new_start_date.label }} *</label>
+                                        {{ form.new_start_date }}
+                                        {% if form.new_start_date.errors %}
+                                            <div class="text-danger small">{{ form.new_start_date.errors.0 }}</div>
+                                        {% endif %}
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label for="{{ form.new_start_time.id_for_label }}" class="form-label">{{ form.new_start_time.label }}</label>
+                                        {{ form.new_start_time }}
+                                        {% if form.new_start_time.errors %}
+                                            <div class="text-danger small">{{ form.new_start_time.errors.0 }}</div>
+                                        {% endif %}
+                                        <div class="form-text">
+                                            Laissez vide pour conserver l'heure originale
+                                            {% if original_event.start_time %}
+                                                ({{ original_event.start_time|time:"H:i" }})
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="mb-3">
+                                    <label for="{{ form.duplicate_title_suffix.id_for_label }}" class="form-label">{{ form.duplicate_title_suffix.label }}</label>
+                                    {{ form.duplicate_title_suffix }}
+                                    {% if form.duplicate_title_suffix.errors %}
+                                        <div class="text-danger small">{{ form.duplicate_title_suffix.errors.0 }}</div>
+                                    {% endif %}
+                                    <div class="form-text">
+                                        Le nouveau titre sera : <strong>"{{ original_event.title }}<span id="title-preview"> (Copie)</span>"</strong>
+                                    </div>
+                                </div>
+
+                                <div class="alert alert-secondary">
+                                    <h6>Éléments qui seront copiés :</h6>
+                                    <ul class="mb-0">
+                                        <li>Description et catégorie</li>
+                                        <li>Lieu et adresse</li>
+                                        <li>Organisateurs</li>
+                                        <li>Paramètres de visibilité et notifications</li>
+                                        <li>Département et groupe associés</li>
+                                        <li>Image (si présente)</li>
+                                    </ul>
+                                </div>
+
+                                <div class="alert alert-warning">
+                                    <h6>Éléments qui ne seront PAS copiés :</h6>
+                                    <ul class="mb-0">
+                                        <li>Inscriptions des participants</li>
+                                        <li>Statut d'annulation</li>
+                                        <li>Notifications déjà envoyées</li>
+                                    </ul>
+                                </div>
+
+                                <div class="d-flex justify-content-between">
+                                    <a href="{% url 'events:detail' original_event.pk %}" class="btn btn-outline-secondary">
+                                        <i class="bi bi-x-lg"></i> Annuler
+                                    </a>
+                                    <button type="submit" class="btn btn-primary">
+                                        <i class="bi bi-copy"></i> Créer la copie
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Mettre à jour l'aperçu du titre en temps réel
+    const suffixField = document.getElementById('{{ form.duplicate_title_suffix.id_for_label }}');
+    const titlePreview = document.getElementById('title-preview');
+    
+    function updateTitlePreview() {
+        titlePreview.textContent = suffixField.value || ' (Copie)';
+    }
+    
+    suffixField.addEventListener('input', updateTitlePreview);
+    updateTitlePreview(); // Initialiser
+});
+</script>
+{% endblock %}

@@ -1,0 +1,120 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}{{ title }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h1 class="h3 mb-0">{{ title }}</h1>
+                <a href="{% url 'events:detail' event.pk %}" class="btn btn-outline-secondary">
+                    <i class="bi bi-arrow-left"></i> Retour
+                </a>
+            </div>
+
+            <div class="row justify-content-center">
+                <div class="col-lg-8">
+                    <div class="card border-warning">
+                        <div class="card-header bg-warning text-dark">
+                            <h5 class="card-title mb-0">
+                                <i class="bi bi-exclamation-triangle"></i>
+                                Confirmation d'annulation
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="alert alert-warning">
+                                <strong>Attention !</strong> Vous êtes sur le point d'annuler l'événement suivant :
+                            </div>
+
+                            <!-- Informations de l'événement -->
+                            <div class="card mb-4">
+                                <div class="card-body">
+                                    <h6 class="card-title">{{ event.title }}</h6>
+                                    <p class="card-text">
+                                        <i class="bi bi-calendar"></i> {{ event.start_date|date:"l j F Y" }}
+                                        {% if event.start_time %}
+                                            à {{ event.start_time|time:"H:i" }}
+                                        {% endif %}
+                                    </p>
+                                    {% if event.location %}
+                                        <p class="card-text">
+                                            <i class="bi bi-geo-alt"></i> {{ event.location }}
+                                        </p>
+                                    {% endif %}
+                                    {% if event.description %}
+                                        <p class="card-text text-muted">{{ event.description|truncatewords:20 }}</p>
+                                    {% endif %}
+                                </div>
+                            </div>
+
+                            <!-- Informations sur les participants -->
+                            {% if participants_count > 0 %}
+                                <div class="alert alert-info">
+                                    <i class="bi bi-people"></i>
+                                    <strong>{{ participants_count }}</strong> personne{{ participants_count|pluralize }} 
+                                    {{ participants_count|pluralize:"est inscrite,sont inscrites" }} à cet événement.
+                                </div>
+                            {% else %}
+                                <div class="alert alert-secondary">
+                                    <i class="bi bi-info-circle"></i>
+                                    Aucune inscription pour cet événement.
+                                </div>
+                            {% endif %}
+
+                            <!-- Formulaire d'annulation -->
+                            <form method="post">
+                                {% csrf_token %}
+                                
+                                {% if form.non_field_errors %}
+                                    <div class="alert alert-danger">
+                                        {{ form.non_field_errors }}
+                                    </div>
+                                {% endif %}
+
+                                <div class="mb-3">
+                                    <label for="{{ form.reason.id_for_label }}" class="form-label">{{ form.reason.label }}</label>
+                                    {{ form.reason }}
+                                    {% if form.reason.errors %}
+                                        <div class="text-danger small">{{ form.reason.errors.0 }}</div>
+                                    {% endif %}
+                                    <div class="form-text">
+                                        Cette raison sera incluse dans les notifications d'annulation.
+                                    </div>
+                                </div>
+
+                                {% if participants_count > 0 %}
+                                    <div class="mb-3">
+                                        <div class="form-check">
+                                            {{ form.notify_participants }}
+                                            <label class="form-check-label" for="{{ form.notify_participants.id_for_label }}">
+                                                {{ form.notify_participants.label }}
+                                            </label>
+                                            {% if form.notify_participants.errors %}
+                                                <div class="text-danger small">{{ form.notify_participants.errors.0 }}</div>
+                                            {% endif %}
+                                        </div>
+                                        <div class="form-text">
+                                            Un email d'annulation sera envoyé à toutes les personnes inscrites.
+                                        </div>
+                                    </div>
+                                {% endif %}
+
+                                <div class="d-flex justify-content-between">
+                                    <a href="{% url 'events:detail' event.pk %}" class="btn btn-outline-secondary">
+                                        <i class="bi bi-x-lg"></i> Annuler
+                                    </a>
+                                    <button type="submit" class="btn btn-warning">
+                                        <i class="bi bi-exclamation-triangle"></i> Confirmer l'annulation
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -68,10 +68,44 @@ MIDDLEWARE = [
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
+    'django.contrib.messages.middleware.MessageMiddleware',  # Must be before SessionTimeoutMiddleware
     'apps.accounts.middleware.ForcePasswordChangeMiddleware',
-    'django.contrib.messages.middleware.MessageMiddleware',
+    'apps.core.middleware.SessionTimeoutMiddleware',  # Session timeout middleware
+    'apps.core.middleware.RateLimitMiddleware',  # Rate limiting middleware
+    'apps.core.signals.AuditMiddleware',  # Audit logging middleware
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     'django_htmx.middleware.HtmxMiddleware',
+]
+
+
+# =============================================================================
+# SESSION TIMEOUT CONFIGURATION
+# =============================================================================
+# Duration of inactivity before session expires (in minutes)
+SESSION_TIMEOUT_MINUTES = int(os.environ.get('SESSION_TIMEOUT_MINUTES', 30))
+
+# Paths excluded from session timeout tracking (e.g., API heartbeat endpoints)
+SESSION_TIMEOUT_EXCLUDED_PATHS = [
+    '/api/heartbeat/',
+    '/static/',
+    '/media/',
+]
+
+
+# =============================================================================
+# RATE LIMITING CONFIGURATION
+# =============================================================================
+# Maximum number of requests allowed per window
+RATE_LIMIT_REQUESTS = int(os.environ.get('RATE_LIMIT_REQUESTS', 100))
+
+# Time window in seconds for rate limiting
+RATE_LIMIT_WINDOW = int(os.environ.get('RATE_LIMIT_WINDOW', 60))
+
+# Paths excluded from rate limiting
+RATE_LIMIT_EXCLUDED_PATHS = [
+    '/static/',
+    '/media/',
+    '/admin/jsi18n/',
 ]
 
 
@@ -235,3 +269,113 @@ JAZZMIN_UI_TWEAKS = {
     "theme": "default",
     "actions_sticky_top": True,
 }
+
+
+# =============================================================================
+# LOGGING CONFIGURATION
+# =============================================================================
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'formatters': {
+        'verbose': {
+            'format': '{levelname} {asctime} {module} {process:d} {thread:d} {message}',
+            'style': '{',
+        },
+        'simple': {
+            'format': '{levelname} {message}',
+            'style': '{',
+        },
+        'error_detailed': {
+            'format': '{levelname} {asctime} {module} {funcName} {lineno} {message}',
+            'style': '{',
+        },
+    },
+    'filters': {
+        'require_debug_false': {
+            '()': 'django.utils.log.RequireDebugFalse',
+        },
+        'require_debug_true': {
+            '()': 'django.utils.log.RequireDebugTrue',
+        },
+    },
+    'handlers': {
+        'console': {
+            'level': 'INFO',
+            'filters': ['require_debug_true'],
+            'class': 'logging.StreamHandler',
+            'formatter': 'simple'
+        },
+        'file_error': {
+            'level': 'ERROR',
+            'class': 'logging.handlers.RotatingFileHandler',
+            'filename': BASE_DIR / 'logs' / 'error.log',
+            'maxBytes': 1024*1024*10,  # 10 MB
+            'backupCount': 5,
+            'formatter': 'error_detailed',
+        },
+        'file_django': {
+            'level': 'INFO',
+            'class': 'logging.handlers.RotatingFileHandler',
+            'filename': BASE_DIR / 'logs' / 'django.log',
+            'maxBytes': 1024*1024*10,  # 10 MB
+            'backupCount': 5,
+            'formatter': 'verbose',
+        },
+        'file_security': {
+            'level': 'WARNING',
+            'class': 'logging.handlers.RotatingFileHandler',
+            'filename': BASE_DIR / 'logs' / 'security.log',
+            'maxBytes': 1024*1024*5,  # 5 MB
+            'backupCount': 10,
+            'formatter': 'error_detailed',
+        },
+        'mail_admins': {
+            'level': 'ERROR',
+            'filters': ['require_debug_false'],
+            'class': 'django.utils.log.AdminEmailHandler',
+            'formatter': 'verbose',
+            'include_html': True,
+        },
+    },
+    'root': {
+        'handlers': ['console', 'file_django'],
+        'level': 'INFO',
+    },
+    'loggers': {
+        'django': {
+            'handlers': ['console', 'file_django'],
+            'level': 'INFO',
+            'propagate': False,
+        },
+        'django.request': {
+            'handlers': ['file_error', 'file_security', 'mail_admins'],
+            'level': 'ERROR',
+            'propagate': False,
+        },
+        'django.security': {
+            'handlers': ['file_security', 'mail_admins'],
+            'level': 'WARNING',
+            'propagate': False,
+        },
+        'apps.core.permissions': {
+            'handlers': ['file_security'],
+            'level': 'WARNING',
+            'propagate': True,
+        },
+        'apps.accounts.services': {
+            'handlers': ['file_security'],
+            'level': 'WARNING',
+            'propagate': True,
+        },
+        'gestion_eebc.error_views': {
+            'handlers': ['file_error', 'mail_admins'],
+            'level': 'ERROR',
+            'propagate': True,
+        },
+    },
+}
+
+# Créer le répertoire logs s'il n'existe pas
+import os
+os.makedirs(BASE_DIR / 'logs', exist_ok=True)

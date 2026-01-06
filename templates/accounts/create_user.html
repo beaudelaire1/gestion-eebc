@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% load form_tags %}
 
 {% block title %}Créer un utilisateur - {{ settings.site_name|default:'EEBC' }}{% endblock %}
 
@@ -41,61 +42,24 @@
                     <form method="post" class="needs-validation" novalidate>
                         {% csrf_token %}
                         
-                        <div class="row">
-                            <div class="col-md-6 mb-3">
-                                <label class="form-label">{{ form.first_name.label }} <span class="text-danger">*</span></label>
-                                {{ form.first_name }}
-                                {% if form.first_name.errors %}
-                                    <div class="invalid-feedback d-block">
-                                        {{ form.first_name.errors.0 }}
-                                    </div>
-                                {% endif %}
-                            </div>
-                            <div class="col-md-6 mb-3">
-                                <label class="form-label">{{ form.last_name.label }} <span class="text-danger">*</span></label>
-                                {{ form.last_name }}
-                                {% if form.last_name.errors %}
-                                    <div class="invalid-feedback d-block">
-                                        {{ form.last_name.errors.0 }}
-                                    </div>
-                                {% endif %}
-                            </div>
-                        </div>
+                        {% render_form_errors form %}
+                        
+                        {% include 'components/form_row.html' with fields="first_name,last_name" form=form %}
                         
                         <div class="row">
-                            <div class="col-md-6 mb-3">
-                                <label class="form-label">{{ form.email.label }} <span class="text-danger">*</span></label>
-                                {{ form.email }}
-                                {% if form.email.errors %}
-                                    <div class="invalid-feedback d-block">
-                                        {{ form.email.errors.0 }}
-                                    </div>
-                                {% endif %}
+                            <div class="col-md-6">
+                                {% include 'components/form_field.html' with field=form.email %}
                                 <div class="form-text">L'utilisateur recevra ses identifiants à cette adresse</div>
                             </div>
-                            <div class="col-md-6 mb-3">
-                                <label class="form-label">{{ form.phone.label }}</label>
-                                {{ form.phone }}
-                                {% if form.phone.errors %}
-                                    <div class="invalid-feedback d-block">
-                                        {{ form.phone.errors.0 }}
-                                    </div>
-                                {% endif %}
+                            <div class="col-md-6">
+                                {% include 'components/form_field.html' with field=form.phone %}
                             </div>
                         </div>
                         
-                        <div class="mb-4">
-                            <label class="form-label">{{ form.role.label }} <span class="text-danger">*</span></label>
-                            {{ form.role }}
-                            {% if form.role.errors %}
-                                <div class="invalid-feedback d-block">
-                                    {{ form.role.errors.0 }}
-                                </div>
-                            {% endif %}
-                            <div class="form-text">Définit les permissions de l'utilisateur dans l'application</div>
-                        </div>
+                        {% include 'components/form_field.html' with field=form.role %}
+                        <div class="form-text">Définit les permissions de l'utilisateur dans l'application</div>
                         
-                        <div class="d-flex gap-2">
+                        <div class="d-flex gap-2 mt-4">
                             <button type="submit" class="btn btn-primary">
                                 <i class="bi bi-person-plus me-2"></i>Créer l'utilisateur
                             </button>

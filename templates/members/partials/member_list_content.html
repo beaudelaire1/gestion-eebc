@@ -1,0 +1,174 @@
+<!-- Members Content Partial for HTMX -->
+{% if members %}
+<!-- Grid View -->
+<div class="members-grid" id="grid-view">
+    {% for member in members %}
+    <div class="member-card">
+        <!-- Zone photo -->
+        <div class="member-photo-zone {% if member.gender == 'M' %}homme{% else %}femme{% endif %}">
+            {% if member.photo %}
+            <img src="{{ member.photo.url }}" alt="{{ member.full_name }}">
+            {% else %}
+            <div class="initials">
+                {{ member.first_name|slice:":1"|upper }}{{ member.last_name|slice:":1"|upper }}
+            </div>
+            {% endif %}
+            
+            <!-- Badge baptême -->
+            <div class="baptism-badge {% if member.is_baptized %}baptized{% else %}not-baptized{% endif %}">
+                <i class="bi bi-{% if member.is_baptized %}droplet-fill{% else %}droplet{% endif %}"></i>
+            </div>
+            
+            <!-- Badge statut -->
+            <div class="status-badge-card {{ member.status }}">
+                {{ member.get_status_display }}
+            </div>
+        </div>
+        
+        <!-- Infos -->
+        <div class="member-card-body">
+            <h5 class="member-name">{{ member.first_name }} {{ member.last_name }}</h5>
+            <p class="member-age">
+                {% if member.age %}{{ member.age }} ans • {% endif %}
+                {% if member.gender == 'M' %}Homme{% else %}Femme{% endif %}
+                {% if member.city %} • {{ member.city }}{% endif %}
+            </p>
+            
+            <div class="member-info">
+                {% if member.phone %}
+                <div class="member-info-item">
+                    <i class="bi bi-telephone"></i>
+                    <span>{{ member.phone }}</span>
+                </div>
+                {% endif %}
+                {% if member.email %}
+                <div class="member-info-item mt-1">
+                    <i class="bi bi-envelope"></i>
+                    <span>{{ member.email|truncatechars:25 }}</span>
+                </div>
+                {% endif %}
+                {% if member.profession %}
+                <div class="member-info-item mt-1">
+                    <i class="bi bi-briefcase"></i>
+                    <span>{{ member.profession|truncatechars:25 }}</span>
+                </div>
+                {% endif %}
+            </div>
+            
+            <div class="member-card-actions">
+                <a href="{% url 'members:detail' member.pk %}" class="btn btn-outline-secondary">
+                    <i class="bi bi-eye me-1"></i> Voir
+                </a>
+                <a href="{% url 'admin:members_member_change' member.pk %}" class="btn btn-primary">
+                    <i class="bi bi-pencil me-1"></i> Modifier
+                </a>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+
+<!-- Table View (hidden by default) -->
+<div class="card table-view" id="table-view" style="display: none;">
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover mb-0">
+                <thead>
+                    <tr>
+                        {% with field='last_name' label='Membre' target_id='members-content' %}
+                            {% include 'components/sortable_header.html' %}
+                        {% endwith %}
+                        {% with field='email' label='Contact' target_id='members-content' %}
+                            {% include 'components/sortable_header.html' %}
+                        {% endwith %}
+                        {% with field='city' label='Ville' target_id='members-content' %}
+                            {% include 'components/sortable_header.html' %}
+                        {% endwith %}
+                        {% with field='status' label='Statut' target_id='members-content' %}
+                            {% include 'components/sortable_header.html' %}
+                        {% endwith %}
+                        <th>Baptisé</th>
+                        <th class="text-end">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for member in members %}
+                    <tr>
+                        <td>
+                            <div class="d-flex align-items-center">
+                                {% if member.photo %}
+                                <img src="{{ member.photo.url }}" alt="{{ member.full_name }}" 
+                                     class="me-3" style="width: 45px; height: 45px; border-radius: 12px; object-fit: cover;">
+                                {% else %}
+                                <div class="me-3" style="width: 45px; height: 45px; border-radius: 12px; 
+                                     background: {% if member.gender == 'M' %}linear-gradient(135deg, #0A36FF, #1d4ed8){% else %}linear-gradient(135deg, #8b5cf6, #6d28d9){% endif %};
+                                     display: flex; align-items: center; justify-content: center; color: white; font-weight: 700; font-size: 0.85rem;">
+                                    {{ member.first_name|slice:":1"|upper }}{{ member.last_name|slice:":1"|upper }}
+                                </div>
+                                {% endif %}
+                                <div>
+                                    <div class="fw-semibold">{{ member.last_name }} {{ member.first_name }}</div>
+                                    {% if member.age %}<small class="text-muted">{{ member.age }} ans</small>{% endif %}
+                                </div>
+                            </div>
+                        </td>
+                        <td>
+                            <div>{{ member.phone|default:"-" }}</div>
+                            <small class="text-muted">{{ member.email|default:"" }}</small>
+                        </td>
+                        <td>{{ member.city|default:"-" }}</td>
+                        <td>
+                            <span class="badge bg-{% if member.status == 'actif' %}success{% elif member.status == 'inactif' %}secondary{% elif member.status == 'visiteur' %}info{% else %}warning{% endif %}">
+                                {{ member.get_status_display }}
+                            </span>
+                        </td>
+                        <td>
+                            {% if member.is_baptized %}
+                            <i class="bi bi-check-circle-fill text-success"></i>
+                            {% else %}
+                            <i class="bi bi-x-circle text-muted"></i>
+                            {% endif %}
+                        </td>
+                        <td class="text-end">
+                            <a href="{% url 'members:detail' member.pk %}" class="btn btn-sm btn-outline-secondary">
+                                <i class="bi bi-eye"></i>
+                            </a>
+                            <a href="{% url 'admin:members_member_change' member.pk %}" class="btn btn-sm btn-outline-secondary">
+                                <i class="bi bi-pencil"></i>
+                            </a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Pagination -->
+{% with page_obj=members target_id='members-content' skeleton_template='components/skeleton_member_list.html' %}
+    {% include 'components/simple_htmx_pagination.html' %}
+{% endwith %}
+
+{% else %}
+<div class="card">
+    <div class="empty-state">
+        <div class="empty-state-icon">
+            <i class="bi bi-people"></i>
+        </div>
+        <h5 class="fw-bold mb-2">Aucun membre trouvé</h5>
+        <p class="text-muted mb-4">
+            {% if search or status %}
+            Aucun membre ne correspond à vos critères de recherche.
+            {% else %}
+            Il n'y a pas encore de membres enregistrés.
+            {% endif %}
+        </p>
+        {% if search or status %}
+        <a href="{% url 'members:list' %}" class="btn btn-outline-secondary">
+            <i class="bi bi-arrow-clockwise me-2"></i>Réinitialiser les filtres
+        </a>
+        {% endif %}
+    </div>
+</div>
+{% endif %}

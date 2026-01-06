@@ -390,13 +390,19 @@
             <div class="section-title">
                 <i class="bi bi-lightning-charge"></i> Actions rapides
             </div>
-            <a href="{% url 'admin:events_event_add' %}" class="action-btn">
-                <i class="bi bi-calendar-plus"></i>
-                Nouvel événement
-            </a>
+            {% if user.role == 'admin' or user.role == 'secretariat' %}
+                <a href="{% url 'events:create' %}" class="action-btn">
+                    <i class="bi bi-calendar-plus"></i>
+                    Nouvel événement
+                </a>
+            {% endif %}
             <a href="{% url 'events:list' %}" class="action-btn">
                 <i class="bi bi-list-ul"></i>
                 Tous les événements
+            </a>
+            <a href="{% url 'events:list_advanced' %}" class="action-btn">
+                <i class="bi bi-funnel"></i>
+                Recherche avancée
             </a>
         </div>
         
@@ -481,38 +487,295 @@ document.addEventListener('DOMContentLoaded', function() {
         headerToolbar: {
             left: 'prev,next today',
             center: 'title',
-            right: 'dayGridMonth,timeGridWeek,timeGridDay'
+            right: 'dayGridMonth,timeGridWeek,timeGridDay,listWeek'
         },
         buttonText: {
             today: "Aujourd'hui",
             month: 'Mois',
             week: 'Semaine',
-            day: 'Jour'
+            day: 'Jour',
+            list: 'Liste'
         },
         events: '{% url "events:events_json" %}',
+        
+        // Interaction avec les événements
         eventClick: function(info) {
             info.jsEvent.preventDefault();
             if (info.event.url) {
-                window.location.href = info.event.url;
+                // Ouvrir dans une nouvelle fenêtre ou modal selon la préférence
+                if (info.jsEvent.ctrlKey || info.jsEvent.metaKey) {
+                    window.open(info.event.url, '_blank');
+                } else {
+                    window.location.href = info.event.url;
+                }
             }
         },
-        eventDidMount: function(info) {
-            // Ajouter tooltip avec détails
-            info.el.setAttribute('title', 
-                info.event.title + 
-                (info.event.start ? ' - ' + info.event.start.toLocaleTimeString('fr-FR', {hour: '2-digit', minute:'2-digit'}) : '')
-            );
+        
+        // Clic sur une date pour créer un événement
+        {% if user.role == 'admin' or user.role == 'secretariat' %}
+        dateClick: function(info) {
+            // Créer un nouvel événement à cette date
+            var createUrl = '{% url "events:create" %}' + '?date=' + info.dateStr;
+            window.location.href = createUrl;
         },
+        
+        // Sélection de plage de dates
+        selectable: true,
+        selectMirror: true,
+        select: function(info) {
+            var title = prompt('Titre de l\'événement:');
+            if (title) {
+                // Créer un événement avec les dates sélectionnées
+                var createUrl = '{% url "events:create" %}' + 
+                    '?start_date=' + info.startStr + 
+                    '&end_date=' + info.endStr + 
+                    '&title=' + encodeURIComponent(title);
+                window.location.href = createUrl;
+            }
+            calendar.unselect();
+        },
+        {% endif %}
+        
+        // Amélioration des tooltips
+        eventDidMount: function(info) {
+            var event = info.event;
+            var tooltipContent = event.title;
+            
+            if (event.start) {
+                var startTime = event.start.toLocaleTimeString('fr-FR', {
+                    hour: '2-digit', 
+                    minute: '2-digit'
+                });
+                if (startTime !== '00:00') {
+                    tooltipContent += ' - ' + startTime;
+                }
+            }
+            
+            // Ajouter des informations supplémentaires si disponibles
+            if (event.extendedProps.location) {
+                tooltipContent += '\n📍 ' + event.extendedProps.location;
+            }
+            
+            info.el.setAttribute('title', tooltipContent);
+            
+            // Ajouter des classes CSS pour le style
+            if (event.extendedProps.is_cancelled) {
+                info.el.classList.add('event-cancelled');
+                info.el.style.opacity = '0.6';
+                info.el.style.textDecoration = 'line-through';
+            }
+            
+            // Ajouter un indicateur pour les événements d'aujourd'hui
+            var today = new Date();
+            var eventDate = event.start;
+            if (eventDate && 
+                eventDate.getDate() === today.getDate() &&
+                eventDate.getMonth() === today.getMonth() &&
+                eventDate.getFullYear() === today.getFullYear()) {
+                info.el.classList.add('event-today');
+                info.el.style.boxShadow = '0 0 10px rgba(10, 54, 255, 0.5)';
+            }
+        },
+        
+        // Configuration d'affichage
         height: 'auto',
         navLinks: true,
         editable: false,
         dayMaxEvents: 3,
-        moreLinkText: 'plus',
+        moreLinkText: function(num) {
+            return '+ ' + num + ' autre' + (num > 1 ? 's' : '');
+        },
         weekNumbers: true,
         weekNumberFormat: { week: 'numeric' },
         firstDay: 1, // Lundi
+        
+        // Amélioration de l'affichage des événements
+        eventDisplay: 'block',
+        displayEventTime: true,
+        
+        // Gestion des vues
+        viewDidMount: function(info) {
+            // Sauvegarder la vue actuelle dans localStorage
+            localStorage.setItem('calendar_view', info.view.type);
+        },
+        
+        // Charger la vue sauvegardée
+        initialView: localStorage.getItem('calendar_view') || 'dayGridMonth',
+        
+        // Gestion du loading
+        loading: function(isLoading) {
+            if (isLoading) {
+                document.body.style.cursor = 'wait';
+            } else {
+                document.body.style.cursor = 'default';
+            }
+        },
+        
+        // Gestion des erreurs
+        eventSourceFailure: function(errorObj) {
+            console.error('Erreur lors du chargement des événements:', errorObj);
+            alert('Erreur lors du chargement des événements. Veuillez actualiser la page.');
+        }
     });
+    
     calendar.render();
+    
+    // Raccourcis clavier
+    document.addEventListener('keydown', function(e) {
+        // Ctrl/Cmd + N pour nouvel événement
+        {% if user.role == 'admin' or user.role == 'secretariat' %}
+        if ((e.ctrlKey || e.metaKey) && e.key === 'n') {
+            e.preventDefault();
+            window.location.href = '{% url "events:create" %}';
+        }
+        {% endif %}
+        
+        // Flèches pour navigation
+        if (e.key === 'ArrowLeft' && e.altKey) {
+            e.preventDefault();
+            calendar.prev();
+        } else if (e.key === 'ArrowRight' && e.altKey) {
+            e.preventDefault();
+            calendar.next();
+        } else if (e.key === 'Home' && e.altKey) {
+            e.preventDefault();
+            calendar.today();
+        }
+        
+        // Changement de vue avec les chiffres
+        if (e.altKey) {
+            switch(e.key) {
+                case '1':
+                    e.preventDefault();
+                    calendar.changeView('dayGridMonth');
+                    break;
+                case '2':
+                    e.preventDefault();
+                    calendar.changeView('timeGridWeek');
+                    break;
+                case '3':
+                    e.preventDefault();
+                    calendar.changeView('timeGridDay');
+                    break;
+                case '4':
+                    e.preventDefault();
+                    calendar.changeView('listWeek');
+                    break;
+            }
+        }
+    });
+    
+    // Actualisation automatique toutes les 5 minutes
+    setInterval(function() {
+        calendar.refetchEvents();
+    }, 5 * 60 * 1000);
+    
+    // Gestion du redimensionnement de la fenêtre
+    window.addEventListener('resize', function() {
+        calendar.updateSize();
+    });
+});
+
+// Fonction pour afficher les raccourcis clavier
+function showKeyboardShortcuts() {
+    var shortcuts = `
+Raccourcis clavier disponibles:
+
+Navigation:
+• Alt + ← : Mois précédent
+• Alt + → : Mois suivant  
+• Alt + Home : Aujourd'hui
+
+Vues:
+• Alt + 1 : Vue mois
+• Alt + 2 : Vue semaine
+• Alt + 3 : Vue jour
+• Alt + 4 : Vue liste
+
+{% if user.role == 'admin' or user.role == 'secretariat' %}
+Actions:
+• Ctrl/Cmd + N : Nouvel événement
+• Clic sur une date : Créer un événement
+• Sélection de dates : Créer un événement sur plusieurs jours
+{% endif %}
+
+Événements:
+• Clic : Voir les détails
+• Ctrl/Cmd + Clic : Ouvrir dans un nouvel onglet
+    `;
+    alert(shortcuts);
+}
+
+// Ajouter un bouton d'aide pour les raccourcis
+document.addEventListener('DOMContentLoaded', function() {
+    // Ajouter un bouton d'aide dans la toolbar
+    setTimeout(function() {
+        var toolbar = document.querySelector('.fc-toolbar-chunk:last-child');
+        if (toolbar) {
+            var helpBtn = document.createElement('button');
+            helpBtn.className = 'fc-button fc-button-primary';
+            helpBtn.innerHTML = '<i class="bi bi-question-circle"></i>';
+            helpBtn.title = 'Raccourcis clavier';
+            helpBtn.onclick = showKeyboardShortcuts;
+            toolbar.appendChild(helpBtn);
+        }
+    }, 100);
 });
 </script>
+
+<style>
+/* Styles supplémentaires pour l'interactivité */
+.fc-daygrid-day:hover {
+    background-color: rgba(10, 54, 255, 0.05) !important;
+    cursor: pointer;
+}
+
+.fc-daygrid-day.fc-day-today:hover {
+    background: linear-gradient(135deg, rgba(10, 54, 255, 0.15) 0%, rgba(59, 130, 246, 0.15) 100%) !important;
+}
+
+.event-cancelled {
+    opacity: 0.6 !important;
+    filter: grayscale(50%);
+}
+
+.event-today {
+    animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.02); }
+    100% { transform: scale(1); }
+}
+
+/* Amélioration de la sélection */
+.fc-highlight {
+    background: rgba(10, 54, 255, 0.1) !important;
+    border: 2px dashed var(--eebc-primary) !important;
+}
+
+/* Style pour les événements en cours */
+.fc-event.event-ongoing {
+    border-left: 4px solid #28a745 !important;
+    background: linear-gradient(90deg, rgba(40, 167, 69, 0.1) 0%, transparent 100%) !important;
+}
+
+/* Responsive amélioré */
+@media (max-width: 768px) {
+    .fc-toolbar {
+        flex-direction: column;
+        gap: 10px;
+    }
+    
+    .fc-toolbar-chunk {
+        display: flex;
+        justify-content: center;
+    }
+    
+    .fc-button-group {
+        flex-wrap: wrap;
+    }
+}
+</style>
 {% endblock %}

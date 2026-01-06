@@ -1,0 +1,68 @@
+{% extends 'base.html' %}
+
+{% block title %}Supprimer {{ equipment.name }} - Inventaire - EEBC{% endblock %}
+{% block page_title %}Supprimer l'équipement{% endblock %}
+{% block page_subtitle %}Confirmation de suppression{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-6">
+        <div class="card">
+            <div class="card-header bg-danger text-white">
+                <h5 class="card-title mb-0">
+                    <i class="bi bi-exclamation-triangle me-2"></i>Confirmation de suppression
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="alert alert-warning">
+                    <i class="bi bi-info-circle me-2"></i>
+                    <strong>Attention:</strong> Cette action supprimera l'équipement de la liste active. 
+                    L'équipement ne sera pas définitivement supprimé et pourra être restauré si nécessaire.
+                </div>
+                
+                <p>Êtes-vous sûr de vouloir supprimer cet équipement ?</p>
+                
+                <div class="card bg-light">
+                    <div class="card-body">
+                        <h6 class="card-title">{{ equipment.name }}</h6>
+                        {% if equipment.description %}
+                        <p class="card-text">{{ equipment.description|truncatewords:20 }}</p>
+                        {% endif %}
+                        <div class="row">
+                            <div class="col-6">
+                                <small class="text-muted">
+                                    <strong>Catégorie:</strong> {{ equipment.category|default:"Non définie" }}
+                                </small>
+                            </div>
+                            <div class="col-6">
+                                <small class="text-muted">
+                                    <strong>État:</strong> {{ equipment.get_condition_display }}
+                                </small>
+                            </div>
+                        </div>
+                        {% if equipment.location %}
+                        <div class="mt-2">
+                            <small class="text-muted">
+                                <strong>Emplacement:</strong> {{ equipment.location }}
+                            </small>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+                
+                <form method="post" class="mt-4">
+                    {% csrf_token %}
+                    <div class="d-flex justify-content-between">
+                        <a href="{% url 'inventory:detail' equipment.pk %}" class="btn btn-secondary">
+                            <i class="bi bi-arrow-left me-1"></i>Annuler
+                        </a>
+                        <button type="submit" class="btn btn-danger">
+                            <i class="bi bi-trash me-1"></i>Confirmer la suppression
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

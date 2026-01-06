@@ -1,0 +1,4 @@
+# file: C:\Users\vilme\OneDrive\Bureau\eebc_project\apps\inventory\views.py
+# hypothesis_version: 6.148.7
+
+['-timestamp', '1', "Créer l'équipement", 'Equipment', 'Nouvel équipement', 'POST', 'admin', 'audit_logs', 'categories', 'category', 'condition', 'conditions', 'current_filters', 'equipment', 'equipment_name', 'fields_changed', 'form', 'inventory:detail', 'inventory:list', 'needs_attention', 'new', 'old', 'pk', 'responsible', 'secretariat', 'soft_delete', 'submit_text', 'title', 'total_equipment', 'user']

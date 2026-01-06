@@ -1,0 +1,57 @@
+<!-- Modal pour aperçu rapide d'événement -->
+<div class="modal fade" id="eventModal" tabindex="-1" aria-labelledby="eventModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="eventModalLabel">Aperçu de l'événement</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fermer"></button>
+            </div>
+            <div class="modal-body" id="eventModalBody">
+                <!-- Contenu chargé dynamiquement -->
+                <div class="text-center">
+                    <div class="spinner-border" role="status">
+                        <span class="visually-hidden">Chargement...</span>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fermer</button>
+                <a href="#" class="btn btn-primary" id="eventModalViewBtn">Voir les détails</a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Fonction pour charger l'aperçu d'un événement dans le modal
+function showEventModal(eventId, eventUrl) {
+    const modal = new bootstrap.Modal(document.getElementById('eventModal'));
+    const modalBody = document.getElementById('eventModalBody');
+    const viewBtn = document.getElementById('eventModalViewBtn');
+    
+    // Mettre à jour le lien "Voir les détails"
+    viewBtn.href = eventUrl;
+    
+    // Réinitialiser le contenu
+    modalBody.innerHTML = `
+        <div class="text-center">
+            <div class="spinner-border" role="status">
+                <span class="visually-hidden">Chargement...</span>
+            </div>
+        </div>
+    `;
+    
+    // Afficher le modal
+    modal.show();
+    
+    // Charger le contenu (simulation - à implémenter avec une vraie API)
+    setTimeout(() => {
+        modalBody.innerHTML = `
+            <div class="alert alert-info">
+                <i class="bi bi-info-circle"></i>
+                Aperçu rapide non encore implémenté. Cliquez sur "Voir les détails" pour accéder à la page complète.
+            </div>
+        `;
+    }, 500);
+}
+</script>

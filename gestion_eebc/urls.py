@@ -54,3 +54,11 @@ admin.site.site_header = "Gestion EEBC"
 admin.site.site_title = "EEBC Admin"
 admin.site.index_title = "Tableau de bord administrateur"
 
+# Configuration des handlers d'erreurs personnalisés
+from .error_views import handler403, handler404, handler500
+
+# Handlers d'erreurs (actifs uniquement en production, DEBUG=False)
+handler403 = 'gestion_eebc.error_views.handler403'
+handler404 = 'gestion_eebc.error_views.handler404'
+handler500 = 'gestion_eebc.error_views.handler500'
+

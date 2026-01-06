@@ -1,0 +1,4 @@
+# file: C:\Users\vilme\OneDrive\Bureau\eebc_project\apps\campaigns\models.py
+# hypothesis_version: 6.148.7
+
+[100, 200, '-donation_date', '-start_date', '0', 'Active', 'Anonyme', 'Campagne', 'Campagnes', 'Date de début', 'Date de fin', 'Date du don', 'Description', 'Don', 'Don anonyme', 'Dons', 'Inconnu', 'Montant (€)', 'Montant collecté (€)', 'Nom de la campagne', 'Nom du donateur', 'Notes', 'Objectif (€)', 'Responsable', 'Site', 'campaigns', 'collected_amount', 'core.Site', 'danger', 'donations', 'info', 'primary', 'secondary', 'success', 'warning']

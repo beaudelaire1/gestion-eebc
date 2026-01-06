@@ -1,0 +1,169 @@
+{% extends 'base.html' %}
+
+{% block title %}Générer des réunions - {{ group.name }} - EEBC{% endblock %}
+{% block page_title %}Générer des réunions récurrentes{% endblock %}
+{% block page_subtitle %}{{ group.name }}{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-8">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">
+                    <i class="bi bi-calendar-plus me-2"></i>Générer des réunions récurrentes
+                </h5>
+            </div>
+            <div class="card-body">
+                {% if not group.meeting_day or not group.meeting_frequency %}
+                <div class="alert alert-warning">
+                    <i class="bi bi-exclamation-triangle me-2"></i>
+                    <strong>Configuration incomplète</strong><br>
+                    Pour générer des réunions récurrentes, le groupe doit avoir un jour et une fréquence de réunion configurés.
+                    <br><br>
+                    <a href="{% url 'groups:update' group.pk %}" class="btn btn-warning btn-sm">
+                        <i class="bi bi-gear me-2"></i>Configurer le groupe
+                    </a>
+                </div>
+                {% else %}
+                <div class="alert alert-info">
+                    <i class="bi bi-info-circle me-2"></i>
+                    <strong>Configuration actuelle:</strong><br>
+                    Jour: {{ group.get_meeting_day_display }}<br>
+                    Fréquence: {{ group.get_meeting_frequency_display }}<br>
+                    {% if group.meeting_time %}Heure: {{ group.meeting_time|time:"H:i" }}<br>{% endif %}
+                    {% if group.meeting_location %}Lieu: {{ group.meeting_location }}{% endif %}
+                </div>
+                
+                <form method="post">
+                    {% csrf_token %}
+                    
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <label for="start_date" class="form-label">
+                                Date de début <span class="text-danger">*</span>
+                            </label>
+                            <input type="date" class="form-control" id="start_date" name="start_date" 
+                                   value="{{ today|date:'Y-m-d' }}" min="{{ today|date:'Y-m-d' }}" required>
+                            <div class="form-text">
+                                Première date à partir de laquelle générer les réunions
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-6">
+                            <label for="end_date" class="form-label">
+                                Date de fin <span class="text-danger">*</span>
+                            </label>
+                            <input type="date" class="form-control" id="end_date" name="end_date" 
+                                   value="{{ three_months_later|date:'Y-m-d' }}" min="{{ today|date:'Y-m-d' }}" required>
+                            <div class="form-text">
+                                Dernière date jusqu'à laquelle générer les réunions
+                            </div>
+                        </div>
+                        
+                        <div class="col-12">
+                            <div class="alert alert-light">
+                                <h6><i class="bi bi-lightbulb me-2"></i>Aperçu</h6>
+                                <p class="mb-2">
+                                    Les réunions seront créées chaque <strong>{{ group.get_meeting_day_display }}</strong>
+                                    de manière <strong>{{ group.get_meeting_frequency_display|lower }}</strong>
+                                    {% if group.meeting_time %}à <strong>{{ group.meeting_time|time:"H:i" }}</strong>{% endif %}
+                                    {% if group.meeting_location %}au <strong>{{ group.meeting_location }}</strong>{% endif %}.
+                                </p>
+                                <p class="mb-0 text-muted">
+                                    <small>
+                                        <i class="bi bi-info-circle me-1"></i>
+                                        Les réunions déjà existantes ne seront pas dupliquées.
+                                    </small>
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="d-flex justify-content-between mt-4">
+                        <a href="{% url 'groups:detail' group.pk %}" class="btn btn-outline-secondary">
+                            <i class="bi bi-arrow-left me-2"></i>Annuler
+                        </a>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="bi bi-calendar-plus me-2"></i>Générer les réunions
+                        </button>
+                    </div>
+                </form>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-lg-4">
+        <div class="card">
+            <div class="card-header">
+                <h6 class="card-title mb-0">
+                    <i class="bi bi-info-circle me-2"></i>Informations du groupe
+                </h6>
+            </div>
+            <div class="card-body">
+                <div class="d-flex align-items-center mb-3">
+                    <div class="avatar me-3" style="width: 48px; height: 48px; background-color: {{ group.color }};">
+                        {{ group.name|slice:":1"|upper }}
+                    </div>
+                    <div>
+                        <h6 class="mb-1">{{ group.name }}</h6>
+                        <small class="text-muted">{{ group.get_group_type_display }}</small>
+                    </div>
+                </div>
+                
+                {% if group.leader %}
+                <p class="mb-2">
+                    <i class="bi bi-person-badge me-2 text-muted"></i>
+                    <strong>Responsable:</strong> {{ group.leader.get_full_name }}
+                </p>
+                {% endif %}
+                
+                <p class="mb-0">
+                    <i class="bi bi-people me-2 text-muted"></i>
+                    <strong>Membres:</strong> {{ group.member_count }}
+                </p>
+            </div>
+        </div>
+        
+        <div class="card mt-3">
+            <div class="card-header">
+                <h6 class="card-title mb-0">
+                    <i class="bi bi-question-circle me-2"></i>Aide
+                </h6>
+            </div>
+            <div class="card-body">
+                <h6>Comment ça marche ?</h6>
+                <ul class="list-unstyled mb-0">
+                    <li class="mb-2">
+                        <i class="bi bi-1-circle text-primary me-2"></i>
+                        Choisissez la période
+                    </li>
+                    <li class="mb-2">
+                        <i class="bi bi-2-circle text-primary me-2"></i>
+                        Les réunions sont créées automatiquement
+                    </li>
+                    <li class="mb-0">
+                        <i class="bi bi-3-circle text-primary me-2"></i>
+                        Vous pouvez les modifier individuellement
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const startDateInput = document.getElementById('start_date');
+    const endDateInput = document.getElementById('end_date');
+    
+    // Mettre à jour la date de fin minimum quand la date de début change
+    startDateInput.addEventListener('change', function() {
+        endDateInput.min = this.value;
+        if (endDateInput.value < this.value) {
+            endDateInput.value = this.value;
+        }
+    });
+});
+</script>
+{% endblock %}

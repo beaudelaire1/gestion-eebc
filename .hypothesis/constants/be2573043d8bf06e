@@ -1,0 +1,4 @@
+# file: C:\Users\vilme\OneDrive\Bureau\eebc_project\apps\core\migrations\0006_add_auditlog_model.py
+# hypothesis_version: 6.148.7
+
+[100, 200, 500, '-timestamp', 'Accès refusé', 'Action', 'Adresse IP', 'AuditLog', 'Changements', 'Chemin URL', 'Connexion', 'Consultation', 'Création', 'Date/Heure', 'Déconnexion', 'Export', 'ID', 'ID Objet', "Journal d'audit", "Journaux d'audit", 'Modification', 'Modèle', 'Représentation', 'Suppression', 'URL de la requête', 'User Agent', 'Utilisateur', 'access_denied', 'action', 'audit_logs', 'changes', 'core', 'create', 'delete', 'export', 'extra_data', 'id', 'indexes', 'ip_address', 'login', 'login_failed', 'logout', 'model_name', 'object_id', 'object_repr', 'ordering', 'path', 'timestamp', 'update', 'user', 'user_agent', 'verbose_name', 'verbose_name_plural', 'view', 'Échec connexion']

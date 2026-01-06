@@ -7,7 +7,11 @@
 {% block content %}
 <div class="row mb-4">
     <div class="col-md-8">
-        <form method="get" class="d-flex gap-2">
+        <form method="get" class="d-flex gap-2"
+              hx-get="{% url 'members:family_list' %}"
+              hx-target="#family-content"
+              hx-trigger="submit, keyup changed delay:500ms from:input[type=text], change from:select"
+              hx-indicator="#family-loading">
             <input type="text" name="search" class="form-control" placeholder="Rechercher une famille..." value="{{ request.GET.search }}">
             <select name="site" class="form-select" style="width: auto;">
                 <option value="">Tous les sites</option>

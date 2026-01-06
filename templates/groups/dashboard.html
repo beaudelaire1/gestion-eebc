@@ -1,0 +1,212 @@
+{% extends 'base.html' %}
+
+{% block title %}Dashboard Groupes - EEBC{% endblock %}
+{% block page_title %}Dashboard des Groupes{% endblock %}
+{% block page_subtitle %}Vue d'ensemble des activités{% endblock %}
+
+{% block content %}
+<!-- Statistiques globales -->
+<div class="row g-3 mb-4">
+    <div class="col-md-4">
+        <div class="card text-center">
+            <div class="card-body">
+                <div class="display-6 text-primary mb-2">{{ total_groups }}</div>
+                <h6 class="card-title">Groupes actifs</h6>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card text-center">
+            <div class="card-body">
+                <div class="display-6 text-success mb-2">{{ total_members }}</div>
+                <h6 class="card-title">Membres total</h6>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card text-center">
+            <div class="card-body">
+                <div class="display-6 text-info mb-2">{{ meetings_this_week }}</div>
+                <h6 class="card-title">Réunions cette semaine</h6>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Actions rapides -->
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h5 class="mb-0">Groupes et Statistiques</h5>
+    <div class="d-flex gap-2">
+        <a href="{% url 'groups:list' %}" class="btn btn-outline-secondary">
+            <i class="bi bi-grid me-2"></i>Vue grille
+        </a>
+        <a href="{% url 'groups:create' %}" class="btn btn-primary">
+            <i class="bi bi-plus-lg me-2"></i>Nouveau groupe
+        </a>
+    </div>
+</div>
+
+<!-- Liste des groupes avec statistiques -->
+<div class="row g-4">
+    {% for item in groups_stats %}
+    <div class="col-lg-6">
+        <div class="card h-100" style="border-top: 4px solid {{ item.group.color }};">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-start mb-3">
+                    <div class="d-flex align-items-center">
+                        <div class="avatar me-3" style="width: 48px; height: 48px; background-color: {{ item.group.color }};">
+                            {{ item.group.name|slice:":1"|upper }}
+                        </div>
+                        <div>
+                            <h6 class="mb-1">
+                                <a href="{% url 'groups:detail' item.group.pk %}" class="text-decoration-none">
+                                    {{ item.group.name }}
+                                </a>
+                            </h6>
+                            <small class="text-muted">{{ item.group.get_group_type_display }}</small>
+                        </div>
+                    </div>
+                    <span class="badge bg-primary">{{ item.group.member_count }} membres</span>
+                </div>
+                
+                <!-- Statistiques de présence -->
+                <div class="row g-2 mb-3">
+                    <div class="col-6">
+                        <div class="text-center p-2 bg-light rounded">
+                            <div class="fw-bold text-primary">{{ item.stats.total_meetings }}</div>
+                            <small class="text-muted">Réunions</small>
+                        </div>
+                    </div>
+                    <div class="col-6">
+                        <div class="text-center p-2 bg-light rounded">
+                            <div class="fw-bold text-success">{{ item.stats.avg_attendance|floatformat:1 }}</div>
+                            <small class="text-muted">Présence moy.</small>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Prochaine réunion -->
+                {% if item.next_meeting %}
+                <div class="alert alert-info py-2 mb-3">
+                    <i class="bi bi-calendar-event me-2"></i>
+                    <strong>Prochaine réunion:</strong> {{ item.next_meeting.date|date:"d/m/Y" }}
+                    {% if item.next_meeting.time %} à {{ item.next_meeting.time|time:"H:i" }}{% endif %}
+                    {% if item.next_meeting.topic %}<br><small>{{ item.next_meeting.topic }}</small>{% endif %}
+                </div>
+                {% elif item.upcoming_meetings_count > 0 %}
+                <div class="alert alert-light py-2 mb-3">
+                    <i class="bi bi-calendar me-2"></i>
+                    {{ item.upcoming_meetings_count }} réunion{{ item.upcoming_meetings_count|pluralize }} planifiée{{ item.upcoming_meetings_count|pluralize }}
+                </div>
+                {% else %}
+                <div class="alert alert-warning py-2 mb-3">
+                    <i class="bi bi-calendar-x me-2"></i>
+                    Aucune réunion planifiée
+                </div>
+                {% endif %}
+                
+                <!-- Responsable -->
+                {% if item.group.leader %}
+                <p class="mb-2">
+                    <i class="bi bi-person-badge me-2 text-muted"></i>
+                    <small><strong>Responsable:</strong> {{ item.group.leader.get_full_name }}</small>
+                </p>
+                {% endif %}
+                
+                <!-- Taux de présence -->
+                {% if item.stats.attendance_rate > 0 %}
+                <div class="mb-3">
+                    <div class="d-flex justify-content-between align-items-center mb-1">
+                        <small class="text-muted">Taux de présence</small>
+                        <small class="fw-bold">{{ item.stats.attendance_rate|floatformat:0 }}%</small>
+                    </div>
+                    <div class="progress" style="height: 6px;">
+                        <div class="progress-bar" role="progressbar" 
+                             style="width: {{ item.stats.attendance_rate }}%; background-color: {{ item.group.color }};"
+                             aria-valuenow="{{ item.stats.attendance_rate }}" aria-valuemin="0" aria-valuemax="100">
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+            
+            <div class="card-footer">
+                <div class="d-flex gap-2">
+                    <a href="{% url 'groups:detail' item.group.pk %}" class="btn btn-outline-light btn-sm flex-grow-1">
+                        <i class="bi bi-eye me-1"></i>Détails
+                    </a>
+                    <a href="{% url 'groups:statistics' item.group.pk %}" class="btn btn-outline-info btn-sm">
+                        <i class="bi bi-graph-up"></i>
+                    </a>
+                    <a href="{% url 'groups:update' item.group.pk %}" class="btn btn-outline-light btn-sm">
+                        <i class="bi bi-pencil"></i>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% empty %}
+    <div class="col-12">
+        <div class="card">
+            <div class="card-body text-center py-5 text-muted">
+                <i class="bi bi-diagram-3 fs-1 d-block mb-3"></i>
+                Aucun groupe trouvé
+                <br><br>
+                <a href="{% url 'groups:create' %}" class="btn btn-primary">
+                    Créer un groupe
+                </a>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+
+<!-- Légende des couleurs de taux de présence -->
+{% if groups_stats %}
+<div class="row mt-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-body">
+                <h6 class="card-title">
+                    <i class="bi bi-info-circle me-2"></i>Légende des taux de présence
+                </h6>
+                <div class="row g-2">
+                    <div class="col-md-3">
+                        <div class="d-flex align-items-center">
+                            <div class="progress me-2" style="width: 30px; height: 6px;">
+                                <div class="progress-bar bg-danger" style="width: 100%;"></div>
+                            </div>
+                            <small>0-25% - Faible</small>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="d-flex align-items-center">
+                            <div class="progress me-2" style="width: 30px; height: 6px;">
+                                <div class="progress-bar bg-warning" style="width: 100%;"></div>
+                            </div>
+                            <small>26-50% - Moyen</small>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="d-flex align-items-center">
+                            <div class="progress me-2" style="width: 30px; height: 6px;">
+                                <div class="progress-bar bg-info" style="width: 100%;"></div>
+                            </div>
+                            <small>51-75% - Bon</small>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="d-flex align-items-center">
+                            <div class="progress me-2" style="width: 30px; height: 6px;">
+                                <div class="progress-bar bg-success" style="width: 100%;"></div>
+                            </div>
+                            <small>76-100% - Excellent</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+{% endblock %}

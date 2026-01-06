@@ -1,0 +1,428 @@
+/* Skeleton Loaders CSS */
+
+/* Base skeleton animation */
+@keyframes skeleton-loading {
+    0% {
+        background-position: -200px 0;
+    }
+    100% {
+        background-position: calc(200px + 100%) 0;
+    }
+}
+
+.skeleton {
+    background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+    background-size: 200px 100%;
+    animation: skeleton-loading 1.5s infinite;
+    border-radius: 4px;
+}
+
+/* Skeleton variants */
+.skeleton-text {
+    height: 1rem;
+    margin-bottom: 0.5rem;
+}
+
+.skeleton-text.large {
+    height: 1.5rem;
+}
+
+.skeleton-text.small {
+    height: 0.75rem;
+}
+
+.skeleton-title {
+    height: 2rem;
+    margin-bottom: 1rem;
+    width: 60%;
+}
+
+.skeleton-avatar {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+}
+
+.skeleton-avatar.large {
+    width: 60px;
+    height: 60px;
+}
+
+.skeleton-button {
+    height: 2.5rem;
+    width: 120px;
+    border-radius: 8px;
+}
+
+.skeleton-card {
+    height: 200px;
+    border-radius: 12px;
+    margin-bottom: 1rem;
+}
+
+.skeleton-image {
+    height: 150px;
+    border-radius: 8px;
+}
+
+/* Table skeleton */
+.skeleton-table {
+    width: 100%;
+}
+
+.skeleton-table-row {
+    display: flex;
+    gap: 1rem;
+    margin-bottom: 1rem;
+    align-items: center;
+}
+
+.skeleton-table-cell {
+    height: 1rem;
+    flex: 1;
+}
+
+.skeleton-table-cell.narrow {
+    flex: 0.3;
+}
+
+.skeleton-table-cell.wide {
+    flex: 2;
+}
+
+/* List skeleton */
+.skeleton-list-item {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 1rem;
+    margin-bottom: 0.5rem;
+    border: 1px solid #e0e0e0;
+    border-radius: 8px;
+}
+
+.skeleton-list-content {
+    flex: 1;
+}
+
+/* Form skeleton */
+.skeleton-form-group {
+    margin-bottom: 1.5rem;
+}
+
+.skeleton-label {
+    height: 1rem;
+    width: 30%;
+    margin-bottom: 0.5rem;
+}
+
+.skeleton-input {
+    height: 2.5rem;
+    width: 100%;
+    border-radius: 6px;
+}
+
+/* Chart skeleton */
+.skeleton-chart {
+    height: 300px;
+    border-radius: 8px;
+    position: relative;
+    overflow: hidden;
+}
+
+.skeleton-chart::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 60px;
+    height: 60px;
+    border: 4px solid #e0e0e0;
+    border-top: 4px solid #c0c0c0;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    0% { transform: translate(-50%, -50%) rotate(0deg); }
+    100% { transform: translate(-50%, -50%) rotate(360deg); }
+}
+
+/* Pagination skeleton */
+.skeleton-pagination {
+    display: flex;
+    justify-content: center;
+    gap: 0.5rem;
+    margin-top: 2rem;
+}
+
+.skeleton-page-item {
+    width: 40px;
+    height: 40px;
+    border-radius: 6px;
+}
+
+/* Dashboard stats skeleton */
+.skeleton-stat-card {
+    padding: 1.5rem;
+    border: 1px solid #e0e0e0;
+    border-radius: 12px;
+    margin-bottom: 1rem;
+}
+
+.skeleton-stat-icon {
+    width: 50px;
+    height: 50px;
+    border-radius: 10px;
+    margin-bottom: 1rem;
+}
+
+.skeleton-stat-value {
+    height: 2rem;
+    width: 80px;
+    margin-bottom: 0.5rem;
+}
+
+.skeleton-stat-label {
+    height: 1rem;
+    width: 120px;
+}
+
+/* Calendar skeleton */
+.skeleton-calendar {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 1px;
+    background: #e0e0e0;
+    border-radius: 8px;
+    overflow: hidden;
+}
+
+.skeleton-calendar-day {
+    height: 80px;
+    background: #f0f0f0;
+}
+
+/* Member card skeleton */
+.skeleton-member-card {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 1rem;
+    border: 1px solid #e0e0e0;
+    border-radius: 8px;
+    margin-bottom: 1rem;
+}
+
+.skeleton-member-info {
+    flex: 1;
+}
+
+.skeleton-member-name {
+    height: 1.25rem;
+    width: 60%;
+    margin-bottom: 0.5rem;
+}
+
+.skeleton-member-role {
+    height: 1rem;
+    width: 40%;
+}
+
+/* Transaction skeleton */
+.skeleton-transaction {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1rem;
+    border: 1px solid #e0e0e0;
+    border-radius: 8px;
+    margin-bottom: 0.5rem;
+}
+
+.skeleton-transaction-info {
+    flex: 1;
+}
+
+.skeleton-transaction-description {
+    height: 1rem;
+    width: 70%;
+    margin-bottom: 0.5rem;
+}
+
+.skeleton-transaction-date {
+    height: 0.875rem;
+    width: 40%;
+}
+
+.skeleton-transaction-amount {
+    height: 1.25rem;
+    width: 80px;
+}
+
+/* Event skeleton */
+.skeleton-event-card {
+    border: 1px solid #e0e0e0;
+    border-radius: 8px;
+    overflow: hidden;
+    margin-bottom: 1rem;
+}
+
+.skeleton-event-header {
+    height: 120px;
+}
+
+.skeleton-event-body {
+    padding: 1rem;
+}
+
+.skeleton-event-title {
+    height: 1.5rem;
+    width: 80%;
+    margin-bottom: 0.5rem;
+}
+
+.skeleton-event-date {
+    height: 1rem;
+    width: 50%;
+    margin-bottom: 0.5rem;
+}
+
+.skeleton-event-description {
+    height: 1rem;
+    width: 100%;
+    margin-bottom: 0.25rem;
+}
+
+/* Search skeleton */
+.skeleton-search-bar {
+    display: flex;
+    gap: 1rem;
+    margin-bottom: 2rem;
+}
+
+.skeleton-search-input {
+    flex: 1;
+    height: 2.5rem;
+    border-radius: 6px;
+}
+
+.skeleton-search-button {
+    width: 100px;
+    height: 2.5rem;
+    border-radius: 6px;
+}
+
+/* Filter skeleton */
+.skeleton-filters {
+    display: flex;
+    gap: 1rem;
+    margin-bottom: 1rem;
+    flex-wrap: wrap;
+}
+
+.skeleton-filter {
+    width: 150px;
+    height: 2rem;
+    border-radius: 6px;
+}
+
+/* Loading overlay */
+.skeleton-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(255, 255, 255, 0.8);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 10;
+}
+
+.skeleton-spinner {
+    width: 40px;
+    height: 40px;
+    border: 4px solid #e0e0e0;
+    border-top: 4px solid #007bff;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .skeleton-table-row {
+        flex-direction: column;
+        gap: 0.5rem;
+    }
+    
+    .skeleton-table-cell {
+        width: 100%;
+    }
+    
+    .skeleton-filters {
+        flex-direction: column;
+    }
+    
+    .skeleton-filter {
+        width: 100%;
+    }
+    
+    .skeleton-search-bar {
+        flex-direction: column;
+    }
+}
+
+/* Dark mode support */
+@media (prefers-color-scheme: dark) {
+    .skeleton {
+        background: linear-gradient(90deg, #2a2a2a 25%, #3a3a3a 50%, #2a2a2a 75%);
+    }
+    
+    .skeleton-list-item,
+    .skeleton-member-card,
+    .skeleton-transaction,
+    .skeleton-event-card {
+        border-color: #404040;
+    }
+    
+    .skeleton-calendar {
+        background: #404040;
+    }
+    
+    .skeleton-calendar-day {
+        background: #2a2a2a;
+    }
+}
+
+/* Utility classes */
+.skeleton-hide {
+    display: none;
+}
+
+.skeleton-show {
+    display: block;
+}
+
+/* Animation delays for staggered effect */
+.skeleton-delay-1 {
+    animation-delay: 0.1s;
+}
+
+.skeleton-delay-2 {
+    animation-delay: 0.2s;
+}
+
+.skeleton-delay-3 {
+    animation-delay: 0.3s;
+}
+
+.skeleton-delay-4 {
+    animation-delay: 0.4s;
+}
+
+.skeleton-delay-5 {
+    animation-delay: 0.5s;
+}

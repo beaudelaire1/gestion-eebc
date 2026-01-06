@@ -1,0 +1,22 @@
+<!-- Skeleton Loader for Event List -->
+<div class="skeleton-overlay">
+    <div class="row">
+        {% for i in "123456789" %}
+        <div class="col-md-6 col-lg-4 mb-3">
+            <div class="skeleton-event-card skeleton-delay-{{ forloop.counter|divisibleby:3|yesno:"1,2,3" }}">
+                <div class="skeleton-event-header"></div>
+                <div class="skeleton-event-body">
+                    <div class="skeleton-event-title"></div>
+                    <div class="skeleton-event-date"></div>
+                    <div class="skeleton-event-description"></div>
+                    <div class="skeleton-event-description"></div>
+                    <div class="d-flex justify-content-between align-items-center mt-3">
+                        <div class="skeleton-text small"></div>
+                        <div class="skeleton-button"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>

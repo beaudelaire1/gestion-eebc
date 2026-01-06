@@ -194,6 +194,44 @@
         </div>
     </div>
     
+    <!-- Graphique de présences -->
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h6 class="card-title">
+                    <i class="bi bi-bar-chart me-2"></i>
+                    Évolution des présences (12 derniers mois)
+                </h6>
+                <div class="d-flex gap-2">
+                    <select class="form-select form-select-sm" id="attendanceChartPeriod" style="width: auto;">
+                        <option value="12">12 mois</option>
+                        <option value="6">6 mois</option>
+                        <option value="3">3 mois</option>
+                    </select>
+                </div>
+            </div>
+            <div class="card-body">
+                <div style="position: relative; height: 300px;">
+                    <canvas id="attendanceChart"></canvas>
+                </div>
+                <div class="row mt-3 text-center">
+                    <div class="col-4">
+                        <div class="text-muted small">Taux moyen</div>
+                        <div class="fs-6 fw-bold text-primary">{{ attendance_chart_data.average_rate }}%</div>
+                    </div>
+                    <div class="col-4">
+                        <div class="text-muted small">Meilleur mois</div>
+                        <div class="fs-6 fw-bold text-success">{{ attendance_chart_data.best_month }}%</div>
+                    </div>
+                    <div class="col-4">
+                        <div class="text-muted small">Plus faible</div>
+                        <div class="fs-6 fw-bold text-warning">{{ attendance_chart_data.worst_month }}%</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
     <!-- Classes Overview -->
     <div class="col-12">
         <div class="card">
@@ -240,5 +278,123 @@
         </div>
     </div>
 </div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Configuration du graphique de présences
+    const attendanceCtx = document.getElementById('attendanceChart').getContext('2d');
+    
+    // Données initiales (12 mois)
+    const attendanceData = {
+        labels: {{ attendance_chart_data.labels|safe }},
+        datasets: [{
+            label: 'Taux de présence (%)',
+            data: {{ attendance_chart_data.data|safe }},
+            backgroundColor: 'rgba(16, 185, 129, 0.2)',
+            borderColor: 'rgb(16, 185, 129)',
+            borderWidth: 3,
+            borderRadius: 4,
+            borderSkipped: false,
+        }]
+    };
+    
+    const attendanceChart = new Chart(attendanceCtx, {
+        type: 'bar',
+        data: attendanceData,
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    display: false
+                },
+                tooltip: {
+                    backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                    titleColor: '#ffffff',
+                    bodyColor: '#ffffff',
+                    borderColor: 'rgb(16, 185, 129)',
+                    borderWidth: 1,
+                    cornerRadius: 8,
+                    displayColors: false,
+                    callbacks: {
+                        label: function(context) {
+                            return 'Présence: ' + context.parsed.y + '%';
+                        }
+                    }
+                }
+            },
+            scales: {
+                x: {
+                    grid: {
+                        display: false
+                    },
+                    ticks: {
+                        color: '#64748B',
+                        font: {
+                            size: 12,
+                            weight: '500'
+                        }
+                    }
+                },
+                y: {
+                    beginAtZero: true,
+                    max: 100,
+                    grid: {
+                        color: 'rgba(100, 116, 139, 0.1)'
+                    },
+                    ticks: {
+                        color: '#64748B',
+                        font: {
+                            size: 12,
+                            weight: '500'
+                        },
+                        callback: function(value) {
+                            return value + '%';
+                        }
+                    }
+                }
+            },
+            interaction: {
+                intersect: false,
+                mode: 'index'
+            }
+        }
+    });
+    
+    // Gestion du changement de période
+    document.getElementById('attendanceChartPeriod').addEventListener('change', function() {
+        const months = this.value;
+        
+        // Faire une requête AJAX pour récupérer les nouvelles données
+        fetch(`/bibleclub/chart-data/?months=${months}`, {
+            method: 'GET',
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest',
+                'X-CSRFToken': '{{ csrf_token }}'
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            // Mettre à jour le graphique
+            attendanceChart.data.labels = data.labels;
+            attendanceChart.data.datasets[0].data = data.data;
+            attendanceChart.update('active');
+            
+            // Mettre à jour les statistiques
+            document.querySelector('.col-4:nth-child(1) .fs-6').textContent = 
+                data.average_rate + '%';
+            document.querySelector('.col-4:nth-child(2) .fs-6').textContent = 
+                data.best_month + '%';
+            document.querySelector('.col-4:nth-child(3) .fs-6').textContent = 
+                data.worst_month + '%';
+        })
+        .catch(error => {
+            console.error('Erreur lors du chargement des données de présence:', error);
+        });
+    });
+});
+</script>
 {% endblock %}
 

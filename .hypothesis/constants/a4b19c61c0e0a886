@@ -1,0 +1,4 @@
+# file: C:\Users\vilme\OneDrive\Bureau\eebc_project\apps\transport\forms.py
+# hypothesis_version: 6.148.7
+
+['1', '20', 'available_sunday', 'available_week', 'capacity', 'class', 'date', 'driver', 'event_date', 'event_name', 'event_time', 'form-check-input', 'form-control', 'form-select', 'is_available', 'license_plate', 'max', 'min', 'notes', 'passengers_count', 'pickup_address', 'requester_email', 'requester_name', 'requester_phone', 'rows', 'status', 'time', 'type', 'user', 'user_id', 'vehicle_model', 'vehicle_type', 'zone']

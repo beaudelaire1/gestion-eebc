@@ -1,0 +1,4 @@
+# file: C:\Users\vilme\OneDrive\Bureau\eebc_project\apps\core\tasks.py
+# hypothesis_version: 6.148.7
+
+[1024, 3306, 5432, '%Y%m%d_%H%M%S', '--dbname', '--file', '--host', '--no-password', '--port', '--routines', '--single-transaction', '--triggers', '--user', '--username', '--verbose', 'ENGINE', 'HOST', 'MySQL', 'NAME', 'PASSWORD', 'PGPASSWORD', 'PORT', 'PostgreSQL', 'SQLite', 'USER', 'Unknown', 'automatic', 'backup_*', 'backup_*.sql', 'backup_*.sqlite3', 'backup_file', 'backup_id', 'backup_record', 'backups', 'default', 'localhost', 'manual', 'message', 'mysql', 'mysqldump', 'pg_dump', 'postgresql', 'size_bytes', 'success', 'w']

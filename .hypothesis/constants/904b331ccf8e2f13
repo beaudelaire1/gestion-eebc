@@ -1,0 +1,4 @@
+# file: C:\Users\vilme\OneDrive\Bureau\eebc_project\apps\transport\models.py
+# hypothesis_version: 6.148.7
+
+[100, 200, '-event_date', '-event_time', 'Annulé', 'Capacité (passagers)', 'Chauffeur assigné', 'Confirmé', 'Date', 'Demande de Transport', 'Demandeur', 'Disponible', 'Effectué', 'Email du demandeur', 'En attente', 'Heure', 'Immatriculation', 'Modèle', 'Nombre de passagers', 'Notes', 'Profil Chauffeur', 'Profils Chauffeurs', 'Statut', 'Type de véhicule', 'Téléphone', 'Utilisateur', 'Zone desservie', 'cancelled', 'completed', 'confirmed', 'driver_profile', 'pending', 'transport_requests', 'user__first_name', 'user__last_name', 'Événement']

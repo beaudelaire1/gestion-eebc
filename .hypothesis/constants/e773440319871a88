@@ -1,0 +1,4 @@
+# file: C:\Users\vilme\OneDrive\Bureau\eebc_project\apps\finance\migrations\0002_add_site_field.py
+# hypothesis_version: 6.148.7
+
+['0001_initial', '0001_initial_core', 'Site', 'core', 'core.site', 'finance', 'financialtransaction', 'site', 'transactions']

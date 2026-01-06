@@ -1,0 +1,170 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ title }} - EEBC{% endblock %}
+{% block page_title %}{{ title }}{% endblock %}
+{% block page_subtitle %}{{ group.name }}{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-lg-8">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">
+                    <i class="bi bi-people me-2"></i>Gérer les membres
+                </h5>
+            </div>
+            <div class="card-body">
+                <form method="post">
+                    {% csrf_token %}
+                    
+                    <div class="mb-3">
+                        <div class="input-group">
+                            <span class="input-group-text">
+                                <i class="bi bi-search"></i>
+                            </span>
+                            <input type="text" class="form-control" id="member-search" 
+                                   placeholder="Rechercher un membre...">
+                        </div>
+                    </div>
+                    
+                    <div class="row g-2" id="members-list">
+                        {% for field in form.members %}
+                            <div class="col-md-6 member-item" data-name="{{ field.choice_label|lower }}">
+                                <div class="form-check p-3 border rounded">
+                                    {{ field.tag }}
+                                    <label class="form-check-label ms-2" for="{{ field.id_for_label }}">
+                                        <div class="d-flex align-items-center">
+                                            <div class="avatar me-2" style="width: 32px; height: 32px; font-size: 0.7rem;">
+                                                {% with names=field.choice_label|split:" " %}
+                                                    {{ names.0|slice:":1"|upper }}{{ names.1|slice:":1"|upper }}
+                                                {% endwith %}
+                                            </div>
+                                            <span>{{ field.choice_label }}</span>
+                                        </div>
+                                    </label>
+                                </div>
+                            </div>
+                        {% endfor %}
+                    </div>
+                    
+                    {% if form.members.errors %}
+                        <div class="alert alert-danger mt-3">
+                            {{ form.members.errors.0 }}
+                        </div>
+                    {% endif %}
+                    
+                    <div class="d-flex justify-content-between mt-4">
+                        <a href="{% url 'groups:detail' group.pk %}" class="btn btn-outline-secondary">
+                            <i class="bi bi-arrow-left me-2"></i>Retour
+                        </a>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="bi bi-check-lg me-2"></i>Enregistrer les membres
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-lg-4">
+        <div class="card">
+            <div class="card-header">
+                <h6 class="card-title mb-0">
+                    <i class="bi bi-info-circle me-2"></i>Informations
+                </h6>
+            </div>
+            <div class="card-body">
+                <div class="d-flex align-items-center mb-3">
+                    <div class="avatar me-3" style="width: 48px; height: 48px; background-color: {{ group.color }};">
+                        {{ group.name|slice:":1"|upper }}
+                    </div>
+                    <div>
+                        <h6 class="mb-1">{{ group.name }}</h6>
+                        <small class="text-muted">{{ group.get_group_type_display }}</small>
+                    </div>
+                </div>
+                
+                {% if group.leader %}
+                <p class="mb-2">
+                    <i class="bi bi-person-badge me-2 text-muted"></i>
+                    <strong>Responsable:</strong> {{ group.leader.get_full_name }}
+                </p>
+                {% endif %}
+                
+                {% if group.meeting_day %}
+                <p class="mb-2">
+                    <i class="bi bi-calendar-week me-2 text-muted"></i>
+                    <strong>Réunions:</strong> {{ group.get_meeting_day_display }}
+                    {% if group.meeting_time %} à {{ group.meeting_time|time:"H:i" }}{% endif %}
+                </p>
+                {% endif %}
+                
+                <p class="mb-0">
+                    <i class="bi bi-people me-2 text-muted"></i>
+                    <strong>Membres actuels:</strong> <span id="current-count">{{ group.member_count }}</span>
+                </p>
+            </div>
+        </div>
+        
+        <div class="card mt-3">
+            <div class="card-header">
+                <h6 class="card-title mb-0">
+                    <i class="bi bi-lightbulb me-2"></i>Conseils
+                </h6>
+            </div>
+            <div class="card-body">
+                <ul class="list-unstyled mb-0">
+                    <li class="mb-2">
+                        <i class="bi bi-check-circle text-success me-2"></i>
+                        Utilisez la recherche pour trouver rapidement un membre
+                    </li>
+                    <li class="mb-2">
+                        <i class="bi bi-check-circle text-success me-2"></i>
+                        Les membres peuvent appartenir à plusieurs groupes
+                    </li>
+                    <li class="mb-0">
+                        <i class="bi bi-check-circle text-success me-2"></i>
+                        Seuls les membres actifs sont affichés
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const searchInput = document.getElementById('member-search');
+    const memberItems = document.querySelectorAll('.member-item');
+    const currentCountSpan = document.getElementById('current-count');
+    
+    // Fonction de recherche
+    searchInput.addEventListener('input', function() {
+        const searchTerm = this.value.toLowerCase();
+        
+        memberItems.forEach(item => {
+            const memberName = item.dataset.name;
+            if (memberName.includes(searchTerm)) {
+                item.style.display = 'block';
+            } else {
+                item.style.display = 'none';
+            }
+        });
+    });
+    
+    // Compter les membres sélectionnés
+    function updateMemberCount() {
+        const checkedBoxes = document.querySelectorAll('input[name="members"]:checked');
+        currentCountSpan.textContent = checkedBoxes.length;
+    }
+    
+    // Écouter les changements de sélection
+    document.querySelectorAll('input[name="members"]').forEach(checkbox => {
+        checkbox.addEventListener('change', updateMemberCount);
+    });
+    
+    // Initialiser le compteur
+    updateMemberCount();
+});
+</script>
+{% endblock %}

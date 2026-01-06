@@ -27,53 +27,232 @@
                 </div>
                 {% endif %}
                 
-                <a href="{% url 'admin:departments_department_change' department.pk %}" class="btn btn-outline-light w-100">
-                    <i class="bi bi-pencil me-2"></i>Modifier
-                </a>
+                <div class="d-grid gap-2">
+                    {% if user.role == 'admin' or user.role == 'secretariat' %}
+                    <a href="{% url 'departments:update' department.pk %}" class="btn btn-outline-light">
+                        <i class="bi bi-pencil me-2"></i>Modifier
+                    </a>
+                    <a href="{% url 'departments:members' department.pk %}" class="btn btn-outline-primary">
+                        <i class="bi bi-people me-2"></i>Gérer les membres
+                    </a>
+                    {% endif %}
+                    <a href="{% url 'departments:list' %}" class="btn btn-outline-secondary">
+                        <i class="bi bi-arrow-left me-2"></i>Retour à la liste
+                    </a>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Statistiques du département -->
+        <div class="card mt-3">
+            <div class="card-header">
+                <h6 class="card-title mb-0">
+                    <i class="bi bi-graph-up me-2"></i>Statistiques
+                </h6>
+            </div>
+            <div class="card-body">
+                <div class="row g-3 text-center">
+                    <div class="col-6">
+                        <div class="border rounded p-2">
+                            <div class="fs-4 fw-bold text-primary">{{ stats.total_members }}</div>
+                            <small class="text-muted">Membres</small>
+                        </div>
+                    </div>
+                    <div class="col-6">
+                        <div class="border rounded p-2">
+                            <div class="fs-4 fw-bold text-success">{{ stats.active_members }}</div>
+                            <small class="text-muted">Actifs</small>
+                        </div>
+                    </div>
+                    <div class="col-6">
+                        <div class="border rounded p-2">
+                            <div class="fs-4 fw-bold text-info">{{ stats.has_phone }}</div>
+                            <small class="text-muted">Téléphones</small>
+                        </div>
+                    </div>
+                    <div class="col-6">
+                        <div class="border rounded p-2">
+                            <div class="fs-4 fw-bold text-warning">{{ stats.has_email }}</div>
+                            <small class="text-muted">Emails</small>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
     
     <div class="col-lg-8">
         <div class="card">
-            <div class="card-header">
-                <h6 class="card-title"><i class="bi bi-people me-2"></i>Membres ({{ department.member_count }})</h6>
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h6 class="card-title mb-0">
+                    <i class="bi bi-people me-2"></i>Membres ({{ stats.total_members }})
+                </h6>
+                
+                <!-- Filtres et recherche -->
+                <div class="d-flex gap-2">
+                    <input type="text" id="member-search" class="form-control form-control-sm" 
+                           placeholder="Rechercher..." style="width: 200px;">
+                    <div class="dropdown">
+                        <button class="btn btn-outline-secondary btn-sm dropdown-toggle" type="button" 
+                                data-bs-toggle="dropdown" aria-expanded="false">
+                            <i class="bi bi-funnel"></i>
+                        </button>
+                        <ul class="dropdown-menu dropdown-menu-end">
+                            <li><a class="dropdown-item filter-option" href="#" data-filter="all">Tous</a></li>
+                            <li><a class="dropdown-item filter-option" href="#" data-filter="active">Actifs seulement</a></li>
+                            <li><a class="dropdown-item filter-option" href="#" data-filter="phone">Avec téléphone</a></li>
+                            <li><a class="dropdown-item filter-option" href="#" data-filter="email">Avec email</a></li>
+                        </ul>
+                    </div>
+                </div>
             </div>
             <div class="card-body p-0">
-                {% if department.members.exists %}
+                {% if members %}
                 <div class="table-responsive">
-                    <table class="table table-hover mb-0">
+                    <table class="table table-hover mb-0" id="members-table">
                         <thead>
                             <tr>
                                 <th>Nom</th>
-                                <th>Contact</th>
+                                <th>Téléphone</th>
+                                <th>Email</th>
+                                <th>Statut</th>
                             </tr>
                         </thead>
                         <tbody>
-                            {% for member in department.members.all %}
-                            <tr>
+                            {% for member in members %}
+                            <tr class="member-row" 
+                                data-name="{{ member.full_name|lower }}"
+                                data-phone="{{ member.phone|default:'' }}"
+                                data-email="{{ member.email|default:'' }}"
+                                data-active="{{ member.status|yesno:'actif,inactif' }}">
                                 <td>
                                     <div class="d-flex align-items-center">
                                         <div class="avatar me-3" style="width: 36px; height: 36px; font-size: 0.75rem;">
                                             {{ member.first_name|slice:":1"|upper }}{{ member.last_name|slice:":1"|upper }}
                                         </div>
-                                        <span>{{ member.full_name }}</span>
+                                        <div>
+                                            <div class="fw-medium">{{ member.full_name }}</div>
+                                            {% if member.birth_date %}
+                                            <small class="text-muted">
+                                                {{ member.birth_date|date:"d/m/Y" }}
+                                                {% if member.age %}({{ member.age }} ans){% endif %}
+                                            </small>
+                                            {% endif %}
+                                        </div>
                                     </div>
                                 </td>
-                                <td>{{ member.phone|default:"-" }}</td>
+                                <td>
+                                    {% if member.phone %}
+                                    <a href="tel:{{ member.phone }}" class="text-decoration-none">
+                                        <i class="bi bi-telephone me-1"></i>{{ member.phone }}
+                                    </a>
+                                    {% else %}
+                                    <span class="text-muted">-</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if member.email %}
+                                    <a href="mailto:{{ member.email }}" class="text-decoration-none">
+                                        <i class="bi bi-envelope me-1"></i>{{ member.email|truncatechars:25 }}
+                                    </a>
+                                    {% else %}
+                                    <span class="text-muted">-</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if member.status == 'actif' %}
+                                    <span class="badge bg-success">Actif</span>
+                                    {% else %}
+                                    <span class="badge bg-secondary">{{ member.get_status_display }}</span>
+                                    {% endif %}
+                                </td>
                             </tr>
                             {% endfor %}
                         </tbody>
                     </table>
                 </div>
                 {% else %}
-                <div class="text-center py-4 text-muted">
+                <div class="text-center py-5 text-muted">
+                    <i class="bi bi-people fs-1 d-block mb-3"></i>
                     Aucun membre dans ce département
+                    <br><br>
+                    {% if user.role == 'admin' or user.role == 'secretariat' %}
+                    <a href="{% url 'departments:members' department.pk %}" class="btn btn-primary">
+                        <i class="bi bi-person-plus me-2"></i>Ajouter des membres
+                    </a>
+                    {% endif %}
                 </div>
                 {% endif %}
             </div>
         </div>
     </div>
 </div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const searchInput = document.getElementById('member-search');
+    const memberRows = document.querySelectorAll('.member-row');
+    const filterOptions = document.querySelectorAll('.filter-option');
+    
+    let currentFilter = 'all';
+    
+    // Fonction de recherche
+    function filterMembers() {
+        const searchTerm = searchInput.value.toLowerCase();
+        
+        memberRows.forEach(function(row) {
+            const name = row.dataset.name;
+            const phone = row.dataset.phone;
+            const email = row.dataset.email;
+            const isActive = row.dataset.active === 'true';
+            
+            // Vérifier le filtre de recherche
+            const matchesSearch = name.includes(searchTerm) || 
+                                phone.includes(searchTerm) || 
+                                email.includes(searchTerm);
+            
+            // Vérifier le filtre de statut
+            let matchesFilter = true;
+            switch(currentFilter) {
+                case 'active':
+                    matchesFilter = isActive === 'actif';
+                    break;
+                case 'phone':
+                    matchesFilter = phone !== '';
+                    break;
+                case 'email':
+                    matchesFilter = email !== '';
+                    break;
+                default:
+                    matchesFilter = true;
+            }
+            
+            // Afficher/masquer la ligne
+            if (matchesSearch && matchesFilter) {
+                row.style.display = '';
+            } else {
+                row.style.display = 'none';
+            }
+        });
+    }
+    
+    // Événement de recherche
+    searchInput.addEventListener('input', filterMembers);
+    
+    // Événements de filtrage
+    filterOptions.forEach(function(option) {
+        option.addEventListener('click', function(e) {
+            e.preventDefault();
+            currentFilter = this.dataset.filter;
+            
+            // Mettre à jour l'apparence du filtre actif
+            filterOptions.forEach(opt => opt.classList.remove('active'));
+            this.classList.add('active');
+            
+            filterMembers();
+        });
+    });
+});
+</script>
 {% endblock %}
 

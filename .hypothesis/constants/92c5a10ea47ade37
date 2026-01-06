@@ -1,0 +1,4 @@
+# file: C:\Users\vilme\OneDrive\Bureau\eebc_project\apps\core\migrations\0005_add_newsarticle_author_fields.py
+# hypothesis_version: 6.148.7
+
+[100, 'Auteur (utilisateur)', "Début d'affichage", "Fin d'affichage", "Nom de l'auteur", 'author', 'author_name', 'core', 'display_end_date', 'display_start_date', 'news_articles', 'newsarticle']

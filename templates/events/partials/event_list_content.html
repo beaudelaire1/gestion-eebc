@@ -1,0 +1,92 @@
+<!-- Events List Content Partial for HTMX -->
+{% if events %}
+<div class="row">
+    {% for event in events %}
+        <div class="col-md-6 col-lg-4 mb-3">
+            <div class="card h-100 {% if event.is_cancelled %}border-danger{% endif %}">
+                {% if event.image %}
+                    <img src="{{ event.image.url }}" class="card-img-top" alt="{{ event.title }}" style="height: 150px; object-fit: cover;">
+                {% endif %}
+                
+                <div class="card-body d-flex flex-column">
+                    <div class="d-flex justify-content-between align-items-start mb-2">
+                        <h6 class="card-title mb-0">
+                            <a href="{% url 'events:detail' event.pk %}" class="text-decoration-none">
+                                {{ event.title }}
+                            </a>
+                        </h6>
+                        {% if event.category %}
+                            <span class="badge ms-2" style="background-color: {{ event.category.color }};">
+                                {{ event.category.name }}
+                            </span>
+                        {% endif %}
+                    </div>
+
+                    {% if event.is_cancelled %}
+                        <div class="alert alert-danger py-1 px-2 mb-2">
+                            <small><i class="bi bi-exclamation-triangle"></i> Événement annulé</small>
+                        </div>
+                    {% endif %}
+
+                    <p class="card-text small text-muted mb-2">
+                        <i class="bi bi-calendar"></i> {{ event.start_date|date:"l j F Y" }}
+                        {% if event.start_time %}
+                            à {{ event.start_time|time:"H:i" }}
+                        {% endif %}
+                    </p>
+
+                    {% if event.location %}
+                        <p class="card-text small text-muted mb-2">
+                            <i class="bi bi-geo-alt"></i> {{ event.location }}
+                        </p>
+                    {% endif %}
+
+                    {% if event.description %}
+                        <p class="card-text flex-grow-1">
+                            {{ event.description|truncatewords:15 }}
+                        </p>
+                    {% endif %}
+
+                    <div class="mt-auto">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <small class="text-muted">
+                                {% if event.organizers.exists %}
+                                    Par {{ event.organizers.first.get_full_name|default:event.organizers.first.username }}
+                                    {% if event.organizers.count > 1 %}
+                                        +{{ event.organizers.count|add:"-1" }}
+                                    {% endif %}
+                                {% endif %}
+                            </small>
+                            
+                            <div class="btn-group btn-group-sm">
+                                <a href="{% url 'events:detail' event.pk %}" class="btn btn-outline-primary btn-sm">
+                                    <i class="bi bi-eye"></i>
+                                </a>
+                                {% if user.role == 'admin' or user.role == 'secretariat' or user in event.organizers.all %}
+                                    <a href="{% url 'events:update' event.pk %}" class="btn btn-outline-secondary btn-sm">
+                                        <i class="bi bi-pencil"></i>
+                                    </a>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    {% endfor %}
+</div>
+
+<!-- Pagination -->
+{% with page_obj=events target_id='events-content' skeleton_template='components/skeleton_event_list.html' %}
+    {% include 'components/htmx_pagination.html' %}
+{% endwith %}
+
+{% else %}
+<div class="text-center py-5">
+    <div class="mb-3">
+        <i class="bi bi-calendar-x display-1 text-muted"></i>
+    </div>
+    <h5 class="text-muted">Aucun événement trouvé</h5>
+    <p class="text-muted">Aucun événement ne correspond à vos critères de recherche.</p>
+</div>
+{% endif %}

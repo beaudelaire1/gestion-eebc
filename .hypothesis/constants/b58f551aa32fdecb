@@ -1,0 +1,4 @@
+# file: C:\Users\vilme\OneDrive\Bureau\eebc_project\apps\worship\confirmation_views.py
+# hypothesis_version: 6.148.7
+
+['/', 'POST', 'accepted', 'accepted_count', 'actif', 'admin', 'assignment', 'assignments', 'declined', 'declined_count', 'first_name', 'last_name', 'member', 'members', 'on', 'pending', 'pending_count', 'reason', 'responsable_groupe', 'role', 'role_choices', 'schedule', 'send_notification', 'service', 'status']

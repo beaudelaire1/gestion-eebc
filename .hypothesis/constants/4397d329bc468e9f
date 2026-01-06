@@ -1,0 +1,4 @@
+# file: C:\Users\vilme\OneDrive\Bureau\eebc_project\apps\departments\admin.py
+# hypothesis_version: 6.148.7
+
+['Nombre de membres', 'description', 'is_active', 'leader', 'member_count', 'members', 'name']

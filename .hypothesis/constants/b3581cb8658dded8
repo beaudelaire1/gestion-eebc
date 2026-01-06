@@ -1,0 +1,4 @@
+# file: C:\Users\vilme\OneDrive\Bureau\eebc_project\apps\groups\models.py
+# hypothesis_version: 6.148.7
+
+[100, 200, '#0d6efd', '-date', 'Actif', 'Annulé', 'Autre', 'Bihebdomadaire', 'Chorale', 'Couleur', 'Date', 'Description', 'Dimanche', 'Fréquence', 'Groupe', "Groupe d'étude", 'Groupe de prière', 'Groupes', 'Hebdomadaire', 'Heure', 'Heure de réunion', 'Image', 'Jeudi', 'Jeunesse', 'Jour de réunion', 'Lieu', 'Lieu de réunion', 'Lundi', 'Mardi', 'Membres', 'Mensuel', 'Mercredi', 'Nom', 'Notes', 'Responsable', 'Réunion', 'Réunions', 'Samedi', 'Service', 'Site', 'Sujet', 'Type', 'Vendredi', 'biweekly', 'choir', 'core.Site', 'friday', 'groups', 'groups/', 'led_groups', 'meetings', 'members.Member', 'monday', 'monthly', 'name', 'other', 'prayer', 'saturday', 'service', 'study', 'sunday', 'thursday', 'tuesday', 'wednesday', 'weekly', 'youth']

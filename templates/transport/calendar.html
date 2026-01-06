@@ -1,0 +1,198 @@
+{% extends 'base.html' %}
+
+{% block title %}Calendrier des transports - EEBC{% endblock %}
+{% block page_title %}Calendrier des transports{% endblock %}
+{% block page_subtitle %}Planning des demandes de transport{% endblock %}
+
+{% block extra_css %}
+<link href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.10/index.global.min.css" rel="stylesheet">
+<style>
+    .fc-event {
+        cursor: pointer;
+    }
+    .fc-event:hover {
+        opacity: 0.8;
+    }
+    .legend {
+        display: flex;
+        gap: 20px;
+        margin-bottom: 20px;
+        flex-wrap: wrap;
+    }
+    .legend-item {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+    .legend-color {
+        width: 16px;
+        height: 16px;
+        border-radius: 3px;
+    }
+    .transport-tooltip {
+        max-width: 300px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div class="legend">
+        <div class="legend-item">
+            <div class="legend-color legend-color--pending"></div>
+            <span>En attente</span>
+        </div>
+        <div class="legend-item">
+            <div class="legend-color legend-color--confirmed"></div>
+            <span>Confirmé</span>
+        </div>
+        <div class="legend-item">
+            <div class="legend-color legend-color--completed"></div>
+            <span>Effectué</span>
+        </div>
+        <div class="legend-item">
+            <div class="legend-color legend-color--cancelled"></div>
+            <span>Annulé</span>
+        </div>
+    </div>
+    
+    <div class="d-flex gap-2">
+        <a href="{% url 'transport:request_create' %}" class="btn btn-primary">
+            <i class="bi bi-plus-lg me-2"></i>Nouvelle demande
+        </a>
+        <a href="{% url 'transport:requests' %}" class="btn btn-outline-secondary">
+            <i class="bi bi-list me-2"></i>Vue liste
+        </a>
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-body">
+        <div id="calendar"></div>
+    </div>
+</div>
+
+<!-- Modal pour afficher les détails d'un événement -->
+<div class="modal fade" id="eventModal" tabindex="-1" aria-labelledby="eventModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="eventModalLabel">Détails du transport</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body" id="eventModalBody">
+                <!-- Contenu dynamique -->
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fermer</button>
+                <a href="#" id="eventDetailLink" class="btn btn-primary">Voir détails</a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.10/index.global.min.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    var calendarEl = document.getElementById('calendar');
+    var calendar = new FullCalendar.Calendar(calendarEl, {
+        initialView: 'dayGridMonth',
+        locale: 'fr',
+        headerToolbar: {
+            left: 'prev,next today',
+            center: 'title',
+            right: 'dayGridMonth,timeGridWeek,timeGridDay'
+        },
+        buttonText: {
+            today: 'Aujourd\'hui',
+            month: 'Mois',
+            week: 'Semaine',
+            day: 'Jour'
+        },
+        events: {
+            url: '{% url "transport:calendar_data" %}',
+            failure: function() {
+                alert('Erreur lors du chargement des événements');
+            }
+        },
+        eventClick: function(info) {
+            showEventModal(info.event);
+        },
+        eventMouseEnter: function(info) {
+            // Créer un tooltip
+            var tooltip = document.createElement('div');
+            tooltip.className = 'tooltip bs-tooltip-top show transport-tooltip';
+            tooltip.innerHTML = `
+                <div class="tooltip-arrow"></div>
+                <div class="tooltip-inner">
+                    <strong>${info.event.title}</strong><br>
+                    ${info.event.extendedProps.description.replace(/\n/g, '<br>')}
+                </div>
+            `;
+            
+            document.body.appendChild(tooltip);
+            
+            // Positionner le tooltip
+            var rect = info.el.getBoundingClientRect();
+            tooltip.style.position = 'absolute';
+            tooltip.style.left = (rect.left + rect.width / 2) + 'px';
+            tooltip.style.top = (rect.top - tooltip.offsetHeight - 5) + 'px';
+            tooltip.style.transform = 'translateX(-50%)';
+            tooltip.style.zIndex = '9999';
+            
+            info.el._tooltip = tooltip;
+        },
+        eventMouseLeave: function(info) {
+            if (info.el._tooltip) {
+                document.body.removeChild(info.el._tooltip);
+                info.el._tooltip = null;
+            }
+        }
+    });
+    
+    calendar.render();
+    
+    function showEventModal(event) {
+        var props = event.extendedProps;
+        var modalBody = document.getElementById('eventModalBody');
+        var detailLink = document.getElementById('eventDetailLink');
+        
+        modalBody.innerHTML = `
+            <div class="row">
+                <div class="col-sm-4"><strong>Demandeur:</strong></div>
+                <div class="col-sm-8">${props.requester}</div>
+            </div>
+            <div class="row mt-2">
+                <div class="col-sm-4"><strong>Téléphone:</strong></div>
+                <div class="col-sm-8">${props.phone}</div>
+            </div>
+            <div class="row mt-2">
+                <div class="col-sm-4"><strong>Date/Heure:</strong></div>
+                <div class="col-sm-8">${event.start.toLocaleDateString('fr-FR')} à ${event.start.toLocaleTimeString('fr-FR', {hour: '2-digit', minute: '2-digit'})}</div>
+            </div>
+            <div class="row mt-2">
+                <div class="col-sm-4"><strong>Passagers:</strong></div>
+                <div class="col-sm-8">${props.passengers}</div>
+            </div>
+            <div class="row mt-2">
+                <div class="col-sm-4"><strong>Chauffeur:</strong></div>
+                <div class="col-sm-8">${props.driver}</div>
+            </div>
+            <div class="row mt-2">
+                <div class="col-sm-4"><strong>Statut:</strong></div>
+                <div class="col-sm-8">
+                    <span class="badge" style="background-color: ${event.backgroundColor}">${props.status}</span>
+                </div>
+            </div>
+        `;
+        
+        detailLink.href = props.url;
+        
+        var modal = new bootstrap.Modal(document.getElementById('eventModal'));
+        modal.show();
+    }
+});
+</script>
+{% endblock %}

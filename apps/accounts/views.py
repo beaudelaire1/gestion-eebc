@@ -2,55 +2,69 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth import authenticate, login, logout, get_user_model
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
-from django.http import JsonResponse
+from django.http import JsonResponse, HttpResponseRedirect
 from django.views.decorators.http import require_http_methods
 from django.core.exceptions import ValidationError
 from django.contrib.auth.password_validation import validate_password
-from .user_creation import create_user_by_team, activate_user_account
+from django.urls import reverse
+from urllib.parse import urlencode
 from .forms import UserCreationByTeamForm, FirstLoginPasswordChangeForm
+from .services import AuthenticationService, AccountsService
 
 User = get_user_model()
 
 
 def login_view(request):
-    """Vue de connexion personnalisée."""
+    """Vue de connexion personnalisée avec rate limiting et tokens sécurisés."""
     if request.method == 'POST':
         username = request.POST.get('username')
         password = request.POST.get('password')
         
         if username and password:
-            user = authenticate(request, username=username, password=password)
+            # Utiliser le service d'authentification avec rate limiting
+            user, error_message = AuthenticationService.authenticate_user(
+                username=username,
+                password=password,
+                request=request
+            )
             
             if user is not None:
                 # Vérifier si l'utilisateur doit changer son mot de passe
                 if user.must_change_password:
-                    # Ne pas connecter l'utilisateur, rediriger vers le changement de mot de passe
-                    request.session['first_login_user_id'] = user.id
-                    request.session['temp_username'] = username
-                    request.session['temp_password'] = password
-                    return redirect('accounts:first_login_password_change')
+                    # Générer un token sécurisé au lieu de stocker le mot de passe en session
+                    token = AuthenticationService.generate_password_change_token(user)
+                    # Rediriger vers le changement de mot de passe avec le token
+                    url = reverse('accounts:first_login_password_change')
+                    return HttpResponseRedirect(f'{url}?token={token}')
                 
                 # Connexion normale
                 login(request, user)
                 next_url = request.GET.get('next', 'dashboard:home')
                 return redirect(next_url)
             else:
-                messages.error(request, 'Nom d\'utilisateur ou mot de passe incorrect.')
+                messages.error(request, error_message)
     
     return render(request, 'accounts/login.html')
 
 
 def first_login_password_change(request):
-    """Changement de mot de passe obligatoire à la première connexion."""
-    user_id = request.session.get('first_login_user_id')
-    temp_username = request.session.get('temp_username')
-    temp_password = request.session.get('temp_password')
+    """Changement de mot de passe obligatoire à la première connexion.
     
-    if not user_id or not temp_username or not temp_password:
-        messages.error(request, 'Session expirée. Veuillez vous reconnecter.')
+    Utilise un token sécurisé signé au lieu de stocker le mot de passe en session.
+    """
+    # Récupérer le token depuis l'URL
+    token = request.GET.get('token') or request.POST.get('token')
+    
+    if not token:
+        messages.error(request, 'Token manquant. Veuillez vous reconnecter.')
         return redirect('accounts:login')
     
-    user = get_object_or_404(User, id=user_id)
+    # Vérifier le token (sans le consommer pour le GET)
+    user = AuthenticationService.verify_password_change_token(token)
+    
+    if not user:
+        messages.error(request, 'Token invalide ou expiré. Veuillez vous reconnecter.')
+        return redirect('accounts:login')
     
     # Vérifier que l'utilisateur doit encore changer son mot de passe
     if not user.must_change_password:
@@ -62,44 +76,49 @@ def first_login_password_change(request):
         if form.is_valid():
             new_password = form.cleaned_data['new_password1']
             
-            # Vérifier que le nouveau mot de passe est différent de l'ancien
-            if temp_password == new_password:
-                form.add_error('new_password1', 'Le nouveau mot de passe doit être différent de l\'ancien.')
-            else:
-                # Activer le compte avec le nouveau mot de passe
-                if activate_user_account(user, new_password):
-                    # Marquer que l'utilisateur n'a plus besoin de changer son mot de passe
-                    user.must_change_password = False
-                    user.save()
-                    
-                    # Nettoyer la session
-                    del request.session['first_login_user_id']
-                    del request.session['temp_username']
-                    del request.session['temp_password']
-                    
-                    # Connecter l'utilisateur avec le nouveau mot de passe
-                    user = authenticate(request, username=temp_username, password=new_password)
-                    if user:
-                        login(request, user)
-                        messages.success(request, 'Votre mot de passe a été changé avec succès. Bienvenue !')
-                        return redirect('dashboard:home')
-                    else:
-                        messages.error(request, 'Erreur lors de la connexion automatique.')
-                        return redirect('accounts:login')
+            # Consommer le token (le marquer comme utilisé)
+            verified_user = AuthenticationService.consume_password_change_token(token)
+            
+            if not verified_user:
+                messages.error(request, 'Token invalide ou expiré. Veuillez vous reconnecter.')
+                return redirect('accounts:login')
+            
+            # Activer le compte avec le nouveau mot de passe via le service
+            result = AccountsService.activate_user_account(verified_user, new_password)
+            
+            if result.success:
+                # Connecter l'utilisateur avec le nouveau mot de passe
+                authenticated_user = authenticate(
+                    request,
+                    username=verified_user.username,
+                    password=new_password
+                )
+                if authenticated_user:
+                    login(request, authenticated_user)
+                    messages.success(request, 'Votre mot de passe a été changé avec succès. Bienvenue !')
+                    return redirect('dashboard:home')
                 else:
-                    messages.error(request, 'Erreur lors du changement de mot de passe.')
+                    messages.error(request, 'Erreur lors de la connexion automatique.')
+                    return redirect('accounts:login')
+            else:
+                messages.error(request, result.error or 'Erreur lors du changement de mot de passe.')
     else:
         form = FirstLoginPasswordChangeForm()
     
     return render(request, 'accounts/first_login_password_change.html', {
         'form': form,
-        'user': user
+        'user': user,
+        'token': token  # Passer le token au template pour le formulaire POST
     })
 
 
 @login_required
 def create_user_view(request):
-    """Vue pour créer un nouvel utilisateur (réservée à l'équipe)."""
+    """Vue pour créer un nouvel utilisateur (réservée à l'équipe).
+    
+    Délègue la logique métier au service AccountsService.
+    La vue ne fait que: recevoir requête → appeler service → renvoyer réponse.
+    """
     # Vérifier les permissions
     if not (request.user.is_admin or request.user.role in ['admin', 'secretariat']):
         messages.error(request, 'Vous n\'avez pas les permissions pour créer des utilisateurs.')
@@ -108,8 +127,8 @@ def create_user_view(request):
     if request.method == 'POST':
         form = UserCreationByTeamForm(request.POST)
         if form.is_valid():
-            # Créer l'utilisateur
-            user, username, password = create_user_by_team(
+            # Déléguer la création au service
+            result = AccountsService.create_user_by_team(
                 first_name=form.cleaned_data['first_name'],
                 last_name=form.cleaned_data['last_name'],
                 email=form.cleaned_data['email'],
@@ -118,7 +137,8 @@ def create_user_view(request):
                 created_by=request.user
             )
             
-            if user:
+            if result.success:
+                user = result.data['user']
                 messages.success(
                     request, 
                     f'Utilisateur {user.get_full_name()} créé avec succès. '
@@ -126,7 +146,7 @@ def create_user_view(request):
                 )
                 return redirect('accounts:create_user')
             else:
-                messages.error(request, 'Erreur lors de la création de l\'utilisateur.')
+                messages.error(request, result.error or 'Erreur lors de la création de l\'utilisateur.')
     else:
         form = UserCreationByTeamForm()
     
@@ -152,59 +172,43 @@ def user_list_view(request):
 @login_required
 @require_http_methods(["POST"])
 def resend_invitation(request, user_id):
-    """Renvoyer l'email d'invitation à un utilisateur."""
+    """Renvoyer l'email d'invitation à un utilisateur.
+    
+    Délègue la logique métier au service AccountsService.
+    """
     if not (request.user.is_admin or request.user.role in ['admin', 'secretariat']):
         return JsonResponse({'success': False, 'error': 'Permissions insuffisantes'})
     
     user = get_object_or_404(User, id=user_id)
     
-    # Vérifier que l'utilisateur n'a pas encore activé son compte
-    if not user.must_change_password:
-        return JsonResponse({'success': False, 'error': 'L\'utilisateur a déjà activé son compte'})
+    # Déléguer au service
+    result = AccountsService.resend_invitation(user, request.user)
     
-    # Générer un nouveau mot de passe temporaire
-    from .user_creation import generate_password, send_invitation_email
-    new_password = generate_password()
-    
-    # Mettre à jour le mot de passe temporaire
-    user.set_password(new_password)
-    user.must_change_password = True  # S'assurer que le changement est requis
-    user.save()
-    
-    # Renvoyer l'email
-    if send_invitation_email(user, user.username, new_password, request.user):
+    if result.success:
         return JsonResponse({'success': True, 'message': 'Email d\'invitation renvoyé'})
     else:
-        return JsonResponse({'success': False, 'error': 'Erreur lors de l\'envoi de l\'email'})
+        return JsonResponse({'success': False, 'error': result.error})
 
 
 @login_required
 @require_http_methods(["POST"])
 def reset_user_password(request, user_id):
-    """Réinitialiser le mot de passe d'un utilisateur actif."""
+    """Réinitialiser le mot de passe d'un utilisateur actif.
+    
+    Délègue la logique métier au service AccountsService.
+    """
     if not (request.user.is_admin or request.user.role in ['admin', 'secretariat']):
         return JsonResponse({'success': False, 'error': 'Permissions insuffisantes'})
     
     user = get_object_or_404(User, id=user_id)
     
-    # Vérifier que l'utilisateur a un compte actif
-    if user.must_change_password:
-        return JsonResponse({'success': False, 'error': 'L\'utilisateur doit d\'abord changer son mot de passe'})
+    # Déléguer au service
+    result = AccountsService.reset_user_password(user, request.user)
     
-    # Générer un nouveau mot de passe temporaire
-    from .user_creation import generate_password, send_password_reset_email
-    new_password = generate_password()
-    
-    # Réinitialiser le mot de passe et forcer le changement
-    user.set_password(new_password)
-    user.must_change_password = True  # Forcer le changement à la prochaine connexion
-    user.save()
-    
-    # Envoyer l'email de réinitialisation
-    if send_password_reset_email(user, user.username, new_password, request.user):
+    if result.success:
         return JsonResponse({'success': True, 'message': 'Mot de passe réinitialisé et email envoyé'})
     else:
-        return JsonResponse({'success': False, 'error': 'Erreur lors de l\'envoi de l\'email'})
+        return JsonResponse({'success': False, 'error': result.error})
 
 
 def logout_view(request):

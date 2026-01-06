@@ -30,9 +30,23 @@
                 </div>
                 {% endif %}
                 
-                <a href="{% url 'admin:groups_group_change' group.pk %}" class="btn btn-outline-light w-100">
-                    <i class="bi bi-pencil me-2"></i>Modifier
-                </a>
+                <div class="d-grid gap-2">
+                    <a href="{% url 'groups:update' group.pk %}" class="btn btn-outline-light">
+                        <i class="bi bi-pencil me-2"></i>Modifier
+                    </a>
+                    <a href="{% url 'groups:members_manage' group.pk %}" class="btn btn-outline-secondary">
+                        <i class="bi bi-people me-2"></i>Gérer les membres
+                    </a>
+                    <a href="{% url 'groups:meeting_create' group.pk %}" class="btn btn-outline-primary">
+                        <i class="bi bi-calendar-plus me-2"></i>Planifier réunion
+                    </a>
+                    <a href="{% url 'groups:generate_meetings' group.pk %}" class="btn btn-outline-success">
+                        <i class="bi bi-calendar-range me-2"></i>Générer réunions
+                    </a>
+                    <a href="{% url 'groups:statistics' group.pk %}" class="btn btn-outline-info">
+                        <i class="bi bi-graph-up me-2"></i>Statistiques
+                    </a>
+                </div>
             </div>
         </div>
         
@@ -133,6 +147,7 @@
                                 <th>Date</th>
                                 <th>Sujet</th>
                                 <th>Participants</th>
+                                <th>Actions</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -141,6 +156,12 @@
                                 <td>{{ meeting.date|date:"d/m/Y" }}</td>
                                 <td>{{ meeting.topic|default:"-" }}</td>
                                 <td>{{ meeting.attendees_count }}</td>
+                                <td>
+                                    <a href="{% url 'groups:meeting_update' group.pk meeting.pk %}" 
+                                       class="btn btn-outline-light btn-sm" title="Modifier">
+                                        <i class="bi bi-pencil"></i>
+                                    </a>
+                                </td>
                             </tr>
                             {% endfor %}
                         </tbody>

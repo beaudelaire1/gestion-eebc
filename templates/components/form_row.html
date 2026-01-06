@@ -1,0 +1,18 @@
+{% comment %}
+Composant pour afficher plusieurs champs sur une même ligne
+Usage: {% include 'components/form_row.html' with fields="field1,field2" form=form %}
+{% endcomment %}
+
+<div class="row">
+    {% for field_name in fields|split:"," %}
+        {% with field=form|get_item:field_name.strip %}
+            <div class="col-md-{{ 12|div:fields|split:",".|length }}">
+                {% if field.field.widget.input_type == 'checkbox' %}
+                    {% include 'components/form_field_inline.html' with field=field %}
+                {% else %}
+                    {% include 'components/form_field.html' with field=field %}
+                {% endif %}
+            </div>
+        {% endwith %}
+    {% endfor %}
+</div>

@@ -1,0 +1,4 @@
+# file: C:\Users\vilme\OneDrive\Bureau\eebc_project\apps\core\export_urls.py
+# hypothesis_version: 6.148.7
+
+['attendance_excel', 'attendance_print', 'budget_detail_excel', 'budgets_excel', 'budgets_print', 'children_excel', 'children_print', 'departements/excel/', 'departements/pdf/', 'departments_excel', 'departments_print', 'drivers_excel', 'drivers_print', 'evenements/excel/', 'evenements/pdf/', 'events_excel', 'events_print', 'exports', 'finance/budgets/pdf/', 'group_members_excel', 'groupes/excel/', 'groupes/pdf/', 'groups_excel', 'groups_print', 'inventaire/excel/', 'inventaire/pdf/', 'inventory_excel', 'inventory_print', 'members_excel', 'members_print', 'membres/excel/', 'membres/pdf/', 'transactions_excel', 'users_excel', 'users_print', 'utilisateurs/excel/', 'utilisateurs/pdf/', 'worship/cultes/pdf/']

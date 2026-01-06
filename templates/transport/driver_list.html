@@ -27,7 +27,7 @@
             </li>
         </ul>
     </div>
-    <a href="{% url 'admin:transport_driverprofile_add' %}" class="btn btn-primary">
+    <a href="{% url 'transport:driver_create' %}" class="btn btn-primary">
         <i class="bi bi-plus-lg me-2"></i>Nouveau chauffeur
     </a>
 </div>
@@ -38,11 +38,15 @@
         <div class="card h-100">
             <div class="card-body">
                 <div class="d-flex align-items-center mb-3">
-                    <div class="avatar me-3" style="width: 50px; height: 50px;">
+                    <div class="avatar avatar--lg me-3">
                         {{ driver.user.first_name|slice:":1"|upper }}{{ driver.user.last_name|slice:":1"|upper }}
                     </div>
                     <div>
-                        <h5 class="mb-0">{{ driver.user.get_full_name }}</h5>
+                        <h5 class="mb-0">
+                            <a href="{% url 'transport:driver_detail' driver.pk %}" class="text-decoration-none">
+                                {{ driver.user.get_full_name }}
+                            </a>
+                        </h5>
                         <small class="text-muted">{{ driver.vehicle_type }}</small>
                     </div>
                 </div>
@@ -76,9 +80,14 @@
                 </div>
             </div>
             <div class="card-footer">
-                <a href="{% url 'admin:transport_driverprofile_change' driver.pk %}" class="btn btn-outline-light btn-sm">
-                    <i class="bi bi-pencil me-1"></i>Modifier
-                </a>
+                <div class="d-flex gap-2">
+                    <a href="{% url 'transport:driver_detail' driver.pk %}" class="btn btn-outline-light btn-sm">
+                        <i class="bi bi-eye me-1"></i>Voir
+                    </a>
+                    <a href="{% url 'transport:driver_update' driver.pk %}" class="btn btn-outline-light btn-sm">
+                        <i class="bi bi-pencil me-1"></i>Modifier
+                    </a>
+                </div>
             </div>
         </div>
     </div>
@@ -89,7 +98,7 @@
                 <i class="bi bi-truck fs-1 d-block mb-3"></i>
                 Aucun chauffeur enregistré
                 <br><br>
-                <a href="{% url 'admin:transport_driverprofile_add' %}" class="btn btn-primary">
+                <a href="{% url 'transport:driver_create' %}" class="btn btn-primary">
                     Ajouter un chauffeur
                 </a>
             </div>

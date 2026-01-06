@@ -1,0 +1,38 @@
+{% comment %}
+Composant pour afficher les erreurs globales du formulaire
+Usage: {% include 'components/form_errors.html' with form=form %}
+{% endcomment %}
+
+{% if form.non_field_errors %}
+    <div class="alert alert-danger alert-dismissible fade show" role="alert">
+        <i class="bi bi-exclamation-triangle-fill me-2"></i>
+        <strong>Erreurs de validation :</strong>
+        <ul class="mb-0 mt-2">
+            {% for error in form.non_field_errors %}
+                <li>{{ error }}</li>
+            {% endfor %}
+        </ul>
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Fermer"></button>
+    </div>
+{% endif %}
+
+{% comment %}Afficher un résumé des erreurs de champs si il y en a beaucoup{% endcomment %}
+{% if form.errors and form.errors|length > 1 %}
+    <div class="alert alert-warning alert-dismissible fade show" role="alert">
+        <i class="bi bi-info-circle-fill me-2"></i>
+        <strong>Veuillez corriger les erreurs suivantes :</strong>
+        <ul class="mb-0 mt-2">
+            {% for field, errors in form.errors.items %}
+                {% if field != '__all__' %}
+                    <li>
+                        <strong>{{ form.fields|get_item:field.label|default:field }}:</strong>
+                        {% for error in errors %}
+                            {{ error }}{% if not forloop.last %}, {% endif %}
+                        {% endfor %}
+                    </li>
+                {% endif %}
+            {% endfor %}
+        </ul>
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Fermer"></button>
+    </div>
+{% endif %}

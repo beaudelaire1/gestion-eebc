@@ -1,0 +1,4 @@
+# file: C:\Users\vilme\OneDrive\Bureau\eebc_project\apps\members\family_views.py
+# hypothesis_version: 6.148.7
+
+['-family_role', 'Autre', 'CHILD', 'Chef de famille', 'Conjoint(e)', 'Enfant', 'HEAD', 'OTHER', 'PARENT', 'POST', 'Parent', 'SPOUSE', 'actif', 'address', 'available_members', 'city', 'email', 'families', 'family', 'family_role', 'family_roles', 'first_name', 'last_name', 'latitude', 'longitude', 'member_id', 'members', 'name', 'neighborhood', 'neighborhood__city', 'neighborhoods', 'notes', 'phone', 'postal_code', 'search', 'site', 'sites', 'total_count']

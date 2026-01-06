@@ -5,6 +5,7 @@ app_name = 'bibleclub'
 
 urlpatterns = [
     path('', views.bibleclub_home, name='home'),
+    path('chart-data/', views.attendance_chart_data, name='attendance_chart_data'),
     
     # Classes
     path('classes/', views.class_list, name='class_list'),

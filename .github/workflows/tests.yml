@@ -1,0 +1,285 @@
+name: Tests et Qualité du Code
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main, develop ]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    
+    strategy:
+      matrix:
+        python-version: [3.11, 3.12]
+    
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: test_gestion_eebc
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+    
+    steps:
+    - name: Checkout du code
+      uses: actions/checkout@v4
+    
+    - name: Configuration Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v4
+      with:
+        python-version: ${{ matrix.python-version }}
+    
+    - name: Cache des dépendances pip
+      uses: actions/cache@v3
+      with:
+        path: ~/.cache/pip
+        key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements/dev.txt') }}
+        restore-keys: |
+          ${{ runner.os }}-pip-
+    
+    - name: Installation des dépendances système
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y \
+          libpq-dev \
+          gettext \
+          libcairo2-dev \
+          libpango1.0-dev \
+          libgdk-pixbuf2.0-dev \
+          libffi-dev \
+          shared-mime-info
+    
+    - name: Installation des dépendances Python
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements/dev.txt
+    
+    - name: Configuration des variables d'environnement
+      run: |
+        echo "DEBUG=False" >> $GITHUB_ENV
+        echo "SECRET_KEY=test-secret-key-for-ci" >> $GITHUB_ENV
+        echo "DATABASE_URL=postgres://postgres:postgres@localhost:5432/test_gestion_eebc" >> $GITHUB_ENV
+        echo "ALLOWED_HOSTS=localhost,127.0.0.1" >> $GITHUB_ENV
+        echo "EMAIL_BACKEND=django.core.mail.backends.locmem.EmailBackend" >> $GITHUB_ENV
+    
+    - name: Vérification du formatage avec Black
+      run: |
+        black --check --diff apps/ gestion_eebc/
+    
+    - name: Vérification du style avec flake8
+      run: |
+        flake8 apps/ gestion_eebc/ --max-line-length=88 --extend-ignore=E203,W503
+    
+    - name: Vérification des imports avec isort
+      run: |
+        isort --check-only --diff apps/ gestion_eebc/
+    
+    - name: Vérification des types avec mypy
+      run: |
+        mypy apps/ --ignore-missing-imports --no-strict-optional
+      continue-on-error: true  # mypy peut être strict, ne pas faire échouer le build
+    
+    - name: Collecte des fichiers statiques
+      run: |
+        python manage.py collectstatic --noinput --settings=gestion_eebc.settings.test
+    
+    - name: Vérification des migrations
+      run: |
+        python manage.py makemigrations --check --dry-run --settings=gestion_eebc.settings.test
+    
+    - name: Exécution des migrations
+      run: |
+        python manage.py migrate --settings=gestion_eebc.settings.test
+    
+    - name: Exécution des tests avec couverture
+      run: |
+        pytest --cov=apps --cov-report=xml --cov-report=html --cov-report=term-missing --cov-fail-under=70 -v
+      env:
+        DJANGO_SETTINGS_MODULE: gestion_eebc.settings.test
+    
+    - name: Upload de la couverture vers Codecov
+      uses: codecov/codecov-action@v3
+      with:
+        file: ./coverage.xml
+        flags: unittests
+        name: codecov-umbrella
+        fail_ci_if_error: false
+    
+    - name: Upload des artefacts de couverture
+      uses: actions/upload-artifact@v3
+      if: always()
+      with:
+        name: coverage-report-${{ matrix.python-version }}
+        path: htmlcov/
+    
+    - name: Tests de sécurité avec bandit
+      run: |
+        bandit -r apps/ gestion_eebc/ -f json -o bandit-report.json
+      continue-on-error: true
+    
+    - name: Upload du rapport de sécurité
+      uses: actions/upload-artifact@v3
+      if: always()
+      with:
+        name: security-report-${{ matrix.python-version }}
+        path: bandit-report.json
+
+  lint-and-format:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout du code
+      uses: actions/checkout@v4
+    
+    - name: Configuration Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.11'
+    
+    - name: Installation des outils de linting
+      run: |
+        python -m pip install --upgrade pip
+        pip install black flake8 isort mypy
+    
+    - name: Vérification du formatage
+      run: |
+        black --check apps/ gestion_eebc/
+    
+    - name: Vérification du style
+      run: |
+        flake8 apps/ gestion_eebc/ --max-line-length=88 --extend-ignore=E203,W503
+    
+    - name: Vérification des imports
+      run: |
+        isort --check-only apps/ gestion_eebc/
+
+  security:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout du code
+      uses: actions/checkout@v4
+    
+    - name: Configuration Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.11'
+    
+    - name: Installation des outils de sécurité
+      run: |
+        python -m pip install --upgrade pip
+        pip install bandit safety
+    
+    - name: Analyse de sécurité avec bandit
+      run: |
+        bandit -r apps/ gestion_eebc/ -ll
+    
+    - name: Vérification des vulnérabilités des dépendances
+      run: |
+        safety check --json --output safety-report.json
+      continue-on-error: true
+    
+    - name: Upload du rapport de sécurité
+      uses: actions/upload-artifact@v3
+      if: always()
+      with:
+        name: security-reports
+        path: |
+          safety-report.json
+
+  build-check:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout du code
+      uses: actions/checkout@v4
+    
+    - name: Configuration Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.11'
+    
+    - name: Installation des dépendances
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements/base.txt
+    
+    - name: Vérification de la syntaxe Python
+      run: |
+        python -m py_compile apps/**/*.py gestion_eebc/**/*.py
+    
+    - name: Vérification des imports
+      run: |
+        python -c "
+        import sys
+        sys.path.insert(0, '.')
+        import django
+        from django.conf import settings
+        settings.configure(
+            DEBUG=True,
+            SECRET_KEY='test',
+            INSTALLED_APPS=[
+                'django.contrib.auth',
+                'django.contrib.contenttypes',
+                'apps.core',
+                'apps.accounts',
+                'apps.finance',
+                'apps.members',
+            ]
+        )
+        django.setup()
+        print('Django setup successful')
+        "
+
+  dependency-check:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout du code
+      uses: actions/checkout@v4
+    
+    - name: Configuration Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.11'
+    
+    - name: Vérification des dépendances obsolètes
+      run: |
+        python -m pip install --upgrade pip
+        pip install pip-audit
+        pip-audit --requirement requirements/base.txt --format=json --output=audit-report.json
+      continue-on-error: true
+    
+    - name: Upload du rapport d'audit
+      uses: actions/upload-artifact@v3
+      if: always()
+      with:
+        name: dependency-audit
+        path: audit-report.json
+
+  notify:
+    runs-on: ubuntu-latest
+    needs: [test, lint-and-format, security, build-check]
+    if: always()
+    
+    steps:
+    - name: Notification de succès
+      if: needs.test.result == 'success' && needs.lint-and-format.result == 'success'
+      run: |
+        echo "✅ Tous les tests sont passés avec succès!"
+        echo "✅ Le code respecte les standards de qualité!"
+    
+    - name: Notification d'échec
+      if: needs.test.result == 'failure' || needs.lint-and-format.result == 'failure'
+      run: |
+        echo "❌ Certains tests ont échoué ou le code ne respecte pas les standards."
+        echo "Veuillez vérifier les logs pour plus de détails."
+        exit 1

@@ -1,0 +1,4 @@
+# file: C:\Users\vilme\OneDrive\Bureau\eebc_project\apps\communication\admin.py
+# hypothesis_version: 6.148.7
+
+[300, '__all__', 'author', 'content', 'created_at', 'end_date', 'height', 'is_active', 'is_pinned', 'is_read', 'message', 'notification_type', 'read_at', 'recipient', 'recipient__username', 'recipient_email', 'recipient_name', 'recipient_phone', 'sent_at', 'start_date', 'status', 'subject', 'title']

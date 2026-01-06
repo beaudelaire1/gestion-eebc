@@ -13,6 +13,7 @@ from django.utils import timezone
 
 from .models import RoleAssignment, ScheduledService, MonthlySchedule
 from apps.members.models import Member
+from apps.core.permissions import role_required
 
 
 def confirm_role(request, token):
@@ -99,6 +100,7 @@ def decline_role(request, token):
 
 
 @login_required
+@role_required('admin', 'responsable_groupe')
 def role_assignments_list(request, service_pk):
     """
     Liste des assignations de rôles pour un culte (admin).
@@ -119,6 +121,7 @@ def role_assignments_list(request, service_pk):
 
 
 @login_required
+@role_required('admin', 'responsable_groupe')
 def create_role_assignment(request, service_pk):
     """
     Créer une assignation de rôle et envoyer la notification.
@@ -166,6 +169,7 @@ def create_role_assignment(request, service_pk):
 
 
 @login_required
+@role_required('admin', 'responsable_groupe')
 def send_assignment_notification(request, pk):
     """
     Envoyer/renvoyer la notification pour une assignation.
@@ -180,6 +184,7 @@ def send_assignment_notification(request, pk):
 
 
 @login_required
+@role_required('admin', 'responsable_groupe')
 def send_all_notifications(request, service_pk):
     """
     Envoyer les notifications à tous les membres en attente.

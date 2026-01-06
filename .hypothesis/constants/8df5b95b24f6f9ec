@@ -1,0 +1,4 @@
+# file: C:\Users\vilme\OneDrive\Bureau\eebc_project\apps\core\forms.py
+# hypothesis_version: 6.148.7
+
+['0', '0.', '0.01', '1', '[0-9\\s\\-\\+\\(\\)]{10,}', '[0-9]{5}', 'amount', 'blank', 'class', 'date', 'date_of_birth', 'datetime-local', 'decimal_places', 'email', 'empty', 'error_messages', 'file_size', 'form-check-input', 'form-control', 'form-select', 'invalid', 'invalid_choice', 'invalid_date', 'invalid_datetime', 'invalid_decimal', 'invalid_email', 'invalid_extension', 'invalid_image', 'invalid_integer', 'invalid_number', 'invalid_time', 'invalid_url', 'max', 'max_length', 'max_value', 'maxlength', 'min', 'min_length', 'min_value', 'minlength', 'missing', 'null', 'number', 'password_mismatch', 'password_too_common', 'password_too_short', 'pattern', 'percentage', 'phone', 'postal', 'postal_code', 'price', 'required', 'step', 'tel', 'telephone', 'time', 'title', 'type', 'unique', 'unique_together', 'url', 'zip']

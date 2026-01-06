@@ -1,0 +1,4 @@
+# file: C:\Users\vilme\OneDrive\Bureau\eebc_project\apps\finance\migrations\0005_budgetitem_approval_comments_and_more.py
+# hypothesis_version: 6.148.7
+
+['Approuvé', 'Approuvé le', 'Approuvé par', 'En attente', 'Motif de refus', 'Rejeté', "Statut d'approbation", 'approval_comments', 'approval_status', 'approved', 'approved_at', 'approved_by', 'budgetitem', 'finance', 'partially_approved', 'pending', 'rejected', 'rejection_reason']

@@ -11,39 +11,25 @@ from datetime import date, datetime
 from decimal import Decimal
 
 from .models import Budget, BudgetItem, BudgetCategory, BudgetRequest, FinancialTransaction
+from .services import BudgetService
 from apps.groups.models import Group
 from apps.departments.models import Department
+from apps.core.permissions import role_required
 
 
 @login_required
+@role_required('admin', 'finance')
 def budget_dashboard(request):
-    """Tableau de bord des budgets."""
+    """
+    Tableau de bord des budgets.
+    
+    Utilise BudgetService pour récupérer les statistiques.
+    Requirements: 7.2
+    """
     current_year = date.today().year
     
-    # Statistiques générales
-    active_budgets = Budget.objects.filter(
-        year=current_year,
-        status=Budget.Status.ACTIVE
-    )
-    
-    total_approved = active_budgets.aggregate(
-        total=Sum('total_approved')
-    )['total'] or Decimal('0.00')
-    
-    total_spent = sum(budget.spent_amount for budget in active_budgets)
-    
-    pending_requests = BudgetRequest.objects.filter(
-        status=BudgetRequest.Status.PENDING
-    ).count()
-    
-    # Budgets par statut
-    budget_stats = {}
-    for status_code, status_name in Budget.Status.choices:
-        count = Budget.objects.filter(
-            year=current_year,
-            status=status_code
-        ).count()
-        budget_stats[status_name] = count
+    # Déléguer la logique métier au service
+    stats = BudgetService.get_budget_stats(year=current_year)
     
     # Demandes urgentes
     urgent_requests = BudgetRequest.objects.filter(
@@ -51,31 +37,26 @@ def budget_dashboard(request):
         urgency__in=[BudgetRequest.Urgency.HIGH, BudgetRequest.Urgency.URGENT]
     ).order_by('-created_at')[:5]
     
-    # Budgets avec faible reste
-    low_budget_items = []
-    for budget in active_budgets:
-        for item in budget.items.all():
-            if item.approved_amount > 0:
-                utilization = item.utilization_percentage
-                if utilization > 80:  # Plus de 80% utilisé
-                    low_budget_items.append(item)
+    # Lignes de budget avec faible reste (utilisation > 80%)
+    low_budget_items = BudgetService.get_low_budget_items(threshold_percent=80.0)[:5]
     
     context = {
         'current_year': current_year,
-        'total_approved': total_approved,
-        'total_spent': total_spent,
-        'remaining_budget': total_approved - total_spent,
-        'utilization_percentage': (total_spent / total_approved * 100) if total_approved > 0 else 0,
-        'pending_requests': pending_requests,
-        'budget_stats': budget_stats,
+        'total_approved': stats['total_approved'],
+        'total_spent': stats['total_spent'],
+        'remaining_budget': stats['remaining_budget'],
+        'utilization_percentage': stats['utilization_percentage'],
+        'pending_requests': stats['pending_requests'],
+        'budget_stats': stats['budget_stats'],
         'urgent_requests': urgent_requests,
-        'low_budget_items': low_budget_items[:5],
+        'low_budget_items': low_budget_items,
     }
     
     return render(request, 'finance/budget/dashboard.html', context)
 
 
 @login_required
+@role_required('admin', 'finance')
 def budget_list(request):
     """Liste des budgets."""
     year = request.GET.get('year', date.today().year)
@@ -111,6 +92,7 @@ def budget_list(request):
 
 
 @login_required
+@role_required('admin', 'finance')
 def budget_detail(request, budget_id):
     """Détail d'un budget."""
     budget = get_object_or_404(Budget, id=budget_id)
@@ -149,6 +131,7 @@ def budget_detail(request, budget_id):
 
 
 @login_required
+@role_required('admin', 'finance')
 def budget_create(request):
     """Créer un nouveau budget."""
     if not (request.user.is_admin or request.user.role in ['admin', 'finance']):
@@ -253,6 +236,7 @@ def budget_create(request):
 
 
 @login_required
+@role_required('admin', 'finance')
 def budget_request_list(request):
     """Liste des demandes de budget."""
     status = request.GET.get('status', '')
@@ -280,6 +264,7 @@ def budget_request_list(request):
 
 
 @login_required
+@role_required('admin', 'finance')
 def budget_request_create(request):
     """Créer une demande de budget."""
     if request.method == 'POST':
@@ -324,6 +309,7 @@ def budget_request_create(request):
 
 
 @login_required
+@role_required('admin', 'finance')
 def budget_request_detail(request, request_id):
     """Détail d'une demande de budget."""
     budget_request = get_object_or_404(BudgetRequest, id=request_id)
@@ -343,6 +329,7 @@ def budget_request_detail(request, request_id):
 
 
 @login_required
+@role_required('admin', 'finance')
 def budget_approve_detailed(request, budget_id):
     """Approbation détaillée ligne par ligne."""
     if not (request.user.is_admin or request.user.role in ['admin', 'finance']):
@@ -422,6 +409,7 @@ def budget_approve_detailed(request, budget_id):
     return render(request, 'finance/budget/approve_detailed.html', context)
 
 @login_required
+@role_required('admin', 'finance')
 def budget_submit(request, budget_id):
     """Soumettre un budget pour approbation."""
     budget = get_object_or_404(Budget, id=budget_id)
@@ -452,6 +440,7 @@ def budget_submit(request, budget_id):
 
 
 @login_required
+@role_required('admin', 'finance')
 def budget_edit(request, budget_id):
     """Éditer un budget en brouillon."""
     budget = get_object_or_404(Budget, id=budget_id)
@@ -586,6 +575,7 @@ from datetime import datetime
 
 
 @login_required
+@role_required('admin', 'finance')
 def budget_export_excel(request, budget_id):
     """Exporter un budget en Excel."""
     budget = get_object_or_404(Budget, id=budget_id)
@@ -715,6 +705,7 @@ def budget_export_excel(request, budget_id):
 
 
 @login_required
+@role_required('admin', 'finance')
 def budget_print_view(request, budget_id):
     """Vue d'impression pour un budget."""
     budget = get_object_or_404(Budget, id=budget_id)
@@ -742,6 +733,7 @@ def budget_print_view(request, budget_id):
 
 
 @login_required
+@role_required('admin', 'finance')
 def budget_list_export_excel(request):
     """Exporter la liste des budgets en Excel."""
     year = request.GET.get('year', date.today().year)
@@ -820,6 +812,7 @@ def budget_list_export_excel(request):
 
 
 @login_required
+@role_required('admin', 'finance')
 def transactions_export_excel(request):
     """Exporter les transactions financières en Excel."""
     # Filtres

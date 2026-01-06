@@ -1,0 +1,22 @@
+<!-- Sortable Table Header Component -->
+{% load static %}
+
+<th class="sortable-header" 
+    hx-get="?sort={{ field }}{% if current_sort == field and current_order == 'asc' %}&order=desc{% else %}&order=asc{% endif %}{% for key, value in request.GET.items %}{% if key != 'sort' and key != 'order' %}&{{ key }}={{ value }}{% endif %}{% endfor %}"
+    hx-target="#{{ target_id|default:'content-list' }}"
+    hx-indicator="#loading-indicator"
+    hx-push-url="true"
+    style="cursor: pointer; user-select: none;">
+    
+    {{ label }}
+    
+    {% if current_sort == field %}
+        {% if current_order == 'asc' %}
+            <i class="bi bi-arrow-up ms-1"></i>
+        {% else %}
+            <i class="bi bi-arrow-down ms-1"></i>
+        {% endif %}
+    {% else %}
+        <i class="bi bi-arrow-up-down ms-1 text-muted"></i>
+    {% endif %}
+</th>

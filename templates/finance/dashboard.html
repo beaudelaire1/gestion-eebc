@@ -124,6 +124,90 @@
     </div>
 </div>
 
+<!-- Graphique d'évolution des dons -->
+<div class="row g-4 mb-4">
+    <div class="col-12">
+        <div class="card border-0 shadow-sm">
+            <div class="card-header bg-transparent border-0 d-flex justify-content-between align-items-center">
+                <h6 class="mb-0 fw-bold"><i class="bi bi-graph-up me-2 text-primary"></i>Évolution des dons (12 derniers mois)</h6>
+                <div class="d-flex gap-2">
+                    <select class="form-select form-select-sm" id="donationsChartPeriod" style="width: auto;">
+                        <option value="12">12 mois</option>
+                        <option value="6">6 mois</option>
+                        <option value="3">3 mois</option>
+                    </select>
+                </div>
+            </div>
+            <div class="card-body">
+                <div style="position: relative; height: 300px;">
+                    <canvas id="donationsChart"></canvas>
+                </div>
+                <div class="row mt-3 text-center">
+                    <div class="col-4">
+                        <div class="text-muted small">Total période</div>
+                        <div class="fs-6 fw-bold text-primary">{{ donations_chart_data.total|floatformat:0 }}€</div>
+                    </div>
+                    <div class="col-4">
+                        <div class="text-muted small">Moyenne mensuelle</div>
+                        <div class="fs-6 fw-bold text-info">{{ donations_chart_data.average|floatformat:0 }}€</div>
+                    </div>
+                    <div class="col-4">
+                        <div class="text-muted small">Dernier mois</div>
+                        <div class="fs-6 fw-bold text-success">{{ donations_chart_data.data|last|floatformat:0 }}€</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Graphique de répartition des dépenses -->
+<div class="row g-4 mb-4">
+    <div class="col-md-6">
+        <div class="card border-0 shadow-sm">
+            <div class="card-header bg-transparent border-0 d-flex justify-content-between align-items-center">
+                <h6 class="mb-0 fw-bold"><i class="bi bi-pie-chart me-2 text-danger"></i>Répartition des dépenses</h6>
+                <div class="d-flex gap-2">
+                    <select class="form-select form-select-sm" id="expensesChartPeriod" style="width: auto;">
+                        <option value="12">12 mois</option>
+                        <option value="6">6 mois</option>
+                        <option value="3">3 mois</option>
+                    </select>
+                </div>
+            </div>
+            <div class="card-body">
+                <div style="position: relative; height: 300px;">
+                    <canvas id="expensesChart"></canvas>
+                </div>
+                <div class="row mt-3 text-center">
+                    <div class="col-6">
+                        <div class="text-muted small">Total dépenses</div>
+                        <div class="fs-6 fw-bold text-danger">{{ expenses_chart_data.total|floatformat:0 }}€</div>
+                    </div>
+                    <div class="col-6">
+                        <div class="text-muted small">Catégories</div>
+                        <div class="fs-6 fw-bold text-info">{{ expenses_chart_data.count }}</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <!-- Placeholder pour un futur graphique ou contenu -->
+        <div class="card border-0 shadow-sm">
+            <div class="card-header bg-transparent border-0">
+                <h6 class="mb-0 fw-bold"><i class="bi bi-info-circle me-2 text-info"></i>Informations</h6>
+            </div>
+            <div class="card-body">
+                <div class="text-center py-4">
+                    <i class="bi bi-graph-up fs-1 text-muted opacity-50 d-block mb-3"></i>
+                    <p class="text-muted mb-0">Espace réservé pour de futurs graphiques ou statistiques.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
 <!-- Transactions récentes -->
 <div class="card border-0 shadow-sm">
     <div class="card-header bg-transparent border-0 d-flex justify-content-between align-items-center">
@@ -180,4 +264,224 @@
         </div>
     </div>
 </div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Configuration du graphique d'évolution des dons
+    const donationsCtx = document.getElementById('donationsChart').getContext('2d');
+    
+    // Données initiales (12 mois)
+    const donationsData = {
+        labels: {{ donations_chart_data.labels|safe }},
+        datasets: [{
+            label: 'Dons (€)',
+            data: {{ donations_chart_data.data|safe }},
+            borderColor: 'rgb(10, 54, 255)',
+            backgroundColor: 'rgba(10, 54, 255, 0.1)',
+            borderWidth: 3,
+            fill: true,
+            tension: 0.4,
+            pointBackgroundColor: 'rgb(10, 54, 255)',
+            pointBorderColor: '#ffffff',
+            pointBorderWidth: 2,
+            pointRadius: 6,
+            pointHoverRadius: 8
+        }]
+    };
+    
+    const donationsChart = new Chart(donationsCtx, {
+        type: 'line',
+        data: donationsData,
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    display: false
+                },
+                tooltip: {
+                    backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                    titleColor: '#ffffff',
+                    bodyColor: '#ffffff',
+                    borderColor: 'rgb(10, 54, 255)',
+                    borderWidth: 1,
+                    cornerRadius: 8,
+                    displayColors: false,
+                    callbacks: {
+                        label: function(context) {
+                            return 'Dons: ' + context.parsed.y.toLocaleString('fr-FR') + ' €';
+                        }
+                    }
+                }
+            },
+            scales: {
+                x: {
+                    grid: {
+                        display: false
+                    },
+                    ticks: {
+                        color: '#64748B',
+                        font: {
+                            size: 12,
+                            weight: '500'
+                        }
+                    }
+                },
+                y: {
+                    beginAtZero: true,
+                    grid: {
+                        color: 'rgba(100, 116, 139, 0.1)'
+                    },
+                    ticks: {
+                        color: '#64748B',
+                        font: {
+                            size: 12,
+                            weight: '500'
+                        },
+                        callback: function(value) {
+                            return value.toLocaleString('fr-FR') + ' €';
+                        }
+                    }
+                }
+            },
+            interaction: {
+                intersect: false,
+                mode: 'index'
+            },
+            elements: {
+                point: {
+                    hoverBackgroundColor: 'rgb(10, 54, 255)'
+                }
+            }
+        }
+    });
+    
+    // Gestion du changement de période
+    document.getElementById('donationsChartPeriod').addEventListener('change', function() {
+        const months = this.value;
+        
+        // Faire une requête AJAX pour récupérer les nouvelles données
+        fetch(`/app/finance/dashboard/chart-data/?months=${months}`, {
+            method: 'GET',
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest',
+                'X-CSRFToken': '{{ csrf_token }}'
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            // Mettre à jour le graphique
+            donationsChart.data.labels = data.labels;
+            donationsChart.data.datasets[0].data = data.data;
+            donationsChart.update('active');
+            
+            // Mettre à jour les statistiques
+            document.querySelector('.col-4:nth-child(1) .fs-6').textContent = 
+                data.total.toLocaleString('fr-FR') + '€';
+            document.querySelector('.col-4:nth-child(2) .fs-6').textContent = 
+                Math.round(data.average).toLocaleString('fr-FR') + '€';
+            document.querySelector('.col-4:nth-child(3) .fs-6').textContent = 
+                (data.data[data.data.length - 1] || 0).toLocaleString('fr-FR') + '€';
+        })
+        .catch(error => {
+            console.error('Erreur lors du chargement des données:', error);
+        });
+    });
+    
+    // Configuration du graphique de répartition des dépenses
+    const expensesCtx = document.getElementById('expensesChart').getContext('2d');
+    
+    // Données initiales (12 mois)
+    const expensesData = {
+        labels: {{ expenses_chart_data.labels|safe }},
+        datasets: [{
+            data: {{ expenses_chart_data.data|safe }},
+            backgroundColor: {{ expenses_chart_data.colors|safe }},
+            borderWidth: 2,
+            borderColor: '#ffffff',
+            hoverBorderWidth: 3,
+            hoverBorderColor: '#ffffff'
+        }]
+    };
+    
+    const expensesChart = new Chart(expensesCtx, {
+        type: 'doughnut',
+        data: expensesData,
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    position: 'bottom',
+                    labels: {
+                        padding: 20,
+                        usePointStyle: true,
+                        font: {
+                            size: 12,
+                            weight: '500'
+                        },
+                        color: '#64748B'
+                    }
+                },
+                tooltip: {
+                    backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                    titleColor: '#ffffff',
+                    bodyColor: '#ffffff',
+                    borderColor: 'rgba(255, 255, 255, 0.1)',
+                    borderWidth: 1,
+                    cornerRadius: 8,
+                    displayColors: true,
+                    callbacks: {
+                        label: function(context) {
+                            const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                            const percentage = ((context.parsed / total) * 100).toFixed(1);
+                            return context.label + ': ' + context.parsed.toLocaleString('fr-FR') + ' € (' + percentage + '%)';
+                        }
+                    }
+                }
+            },
+            cutout: '60%',
+            elements: {
+                arc: {
+                    borderWidth: 2
+                }
+            }
+        }
+    });
+    
+    // Gestion du changement de période pour les dépenses
+    document.getElementById('expensesChartPeriod').addEventListener('change', function() {
+        const months = this.value;
+        
+        // Faire une requête AJAX pour récupérer les nouvelles données
+        fetch(`/app/finance/dashboard/chart-data/?months=${months}&type=expenses`, {
+            method: 'GET',
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest',
+                'X-CSRFToken': '{{ csrf_token }}'
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            // Mettre à jour le graphique
+            expensesChart.data.labels = data.labels;
+            expensesChart.data.datasets[0].data = data.data;
+            expensesChart.data.datasets[0].backgroundColor = data.colors;
+            expensesChart.update('active');
+            
+            // Mettre à jour les statistiques
+            const expensesStatsRow = document.querySelector('#expensesChart').closest('.card').querySelector('.row.mt-3');
+            expensesStatsRow.querySelector('.col-6:nth-child(1) .fs-6').textContent = 
+                data.total.toLocaleString('fr-FR') + '€';
+            expensesStatsRow.querySelector('.col-6:nth-child(2) .fs-6').textContent = 
+                data.count;
+        })
+        .catch(error => {
+            console.error('Erreur lors du chargement des données des dépenses:', error);
+        });
+    });
+});
+</script>
 {% endblock %}

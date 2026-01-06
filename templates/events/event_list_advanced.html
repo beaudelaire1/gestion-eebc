@@ -1,0 +1,104 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Événements{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h1 class="h3 mb-0">Événements</h1>
+                <div class="btn-group">
+                    <a href="{% url 'events:calendar' %}" class="btn btn-outline-primary">
+                        <i class="bi bi-calendar3"></i> Calendrier
+                    </a>
+                    {% if user.role == 'admin' or user.role == 'secretariat' %}
+                        <a href="{% url 'events:create' %}" class="btn btn-primary">
+                            <i class="bi bi-plus-lg"></i> Nouvel événement
+                        </a>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Filtres de recherche -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h6 class="card-title mb-0">
+                        <i class="bi bi-funnel"></i> Filtres et recherche
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <form method="get" class="row g-3"
+                          hx-get="{% url 'events:list_advanced' %}"
+                          hx-target="#events-content"
+                          hx-trigger="submit, change from:select, keyup changed delay:500ms from:input[type=text]"
+                          hx-indicator="#events-loading">
+                        <div class="col-md-4">
+                            {{ form.search.label_tag }}
+                            {{ form.search }}
+                        </div>
+                        <div class="col-md-2">
+                            {{ form.category.label_tag }}
+                            {{ form.category }}
+                        </div>
+                        <div class="col-md-2">
+                            {{ form.start_date.label_tag }}
+                            {{ form.start_date }}
+                        </div>
+                        <div class="col-md-2">
+                            {{ form.end_date.label_tag }}
+                            {{ form.end_date }}
+                        </div>
+                        <div class="col-md-2">
+                            {{ form.visibility.label_tag }}
+                            {{ form.visibility }}
+                        </div>
+                        <div class="col-12">
+                            <div class="form-check">
+                                {{ form.show_cancelled }}
+                                <label class="form-check-label" for="{{ form.show_cancelled.id_for_label }}">
+                                    {{ form.show_cancelled.label }}
+                                </label>
+                            </div>
+                        </div>
+                        <div class="col-12">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="bi bi-search"></i> Rechercher
+                            </button>
+                            <a href="{% url 'events:list_advanced' %}" class="btn btn-outline-secondary">
+                                <i class="bi bi-x-lg"></i> Effacer
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Résultats -->
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h6 class="card-title mb-0">
+                        Résultats ({{ total_count }} événement{{ total_count|pluralize }})
+                    </h6>
+                    <div class="btn-group btn-group-sm">
+                        <a href="{% url 'events:list' %}" class="btn btn-outline-secondary">
+                            <i class="bi bi-list"></i> Vue simple
+                        </a>
+                        <a href="{% url 'events:calendar' %}" class="btn btn-outline-secondary">
+                            <i class="bi bi-calendar3"></i> Calendrier
+                        </a>
+                    </div>
+                </div>
+                <div class="card-body" id="events-content">
+                    {% include 'events/partials/event_list_content.html' %}
+                </div>
+            </div>
+            
+            <!-- Events Loading Indicator -->
+            <div id="events-loading" class="htmx-indicator">
+                {% include 'components/skeleton_event_list.html' %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

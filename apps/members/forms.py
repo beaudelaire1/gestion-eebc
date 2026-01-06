@@ -1,11 +1,45 @@
 """Formulaires pour le module Members et Pastoral CRM."""
 
 from django import forms
+from apps.core.forms import EnhancedModelForm
+from apps.core.validators import (
+    phone_validator, postal_code_validator, 
+    validate_reasonable_birth_date, small_image_validator
+)
 from .models import Member, LifeEvent, VisitationLog
 
 
-class MemberForm(forms.ModelForm):
+class MemberForm(EnhancedModelForm):
     """Formulaire de création/édition de membre."""
+    
+    # Redéfinir certains champs avec des validateurs personnalisés
+    phone = forms.CharField(
+        max_length=20,
+        required=False,
+        label="Téléphone",
+        validators=[phone_validator]
+    )
+    
+    postal_code = forms.CharField(
+        max_length=5,
+        required=False,
+        label="Code postal",
+        validators=[postal_code_validator]
+    )
+    
+    date_of_birth = forms.DateField(
+        required=False,
+        label="Date de naissance",
+        validators=[validate_reasonable_birth_date],
+        widget=forms.DateInput(attrs={'type': 'date'})
+    )
+    
+    photo = forms.ImageField(
+        required=False,
+        label="Photo",
+        validators=[small_image_validator],
+        widget=forms.FileInput(attrs={'accept': 'image/*'})
+    )
     
     class Meta:
         model = Member
@@ -17,7 +51,6 @@ class MemberForm(forms.ModelForm):
             'notes'
         ]
         widgets = {
-            'date_of_birth': forms.DateInput(attrs={'type': 'date'}),
             'date_joined': forms.DateInput(attrs={'type': 'date'}),
             'baptism_date': forms.DateInput(attrs={'type': 'date'}),
             'address': forms.Textarea(attrs={'rows': 2}),
@@ -25,7 +58,7 @@ class MemberForm(forms.ModelForm):
         }
 
 
-class LifeEventForm(forms.ModelForm):
+class LifeEventForm(EnhancedModelForm):
     """Formulaire pour les événements de vie."""
     
     class Meta:
@@ -39,7 +72,7 @@ class LifeEventForm(forms.ModelForm):
             'event_date': forms.DateInput(attrs={'type': 'date'}),
             'description': forms.Textarea(attrs={'rows': 3}),
             'notes': forms.Textarea(attrs={'rows': 3}),
-            'related_members': forms.SelectMultiple(attrs={'class': 'form-select', 'size': 5}),
+            'related_members': forms.SelectMultiple(attrs={'size': 5}),
         }
     
     def __init__(self, *args, **kwargs):
@@ -49,7 +82,7 @@ class LifeEventForm(forms.ModelForm):
         self.fields['related_members'].required = False
 
 
-class VisitationLogForm(forms.ModelForm):
+class VisitationLogForm(EnhancedModelForm):
     """Formulaire pour les visites pastorales."""
     
     class Meta:
@@ -61,62 +94,32 @@ class VisitationLogForm(forms.ModelForm):
             'follow_up_needed', 'follow_up_notes', 'is_confidential'
         ]
         widgets = {
-            'scheduled_date': forms.DateInput(attrs={
-                'type': 'date',
-                'class': 'form-control'
-            }),
-            'visit_date': forms.DateInput(attrs={
-                'type': 'date',
-                'class': 'form-control'
-            }),
+            'scheduled_date': forms.DateInput(attrs={'type': 'date'}),
+            'visit_date': forms.DateInput(attrs={'type': 'date'}),
             'duration_minutes': forms.NumberInput(attrs={
-                'class': 'form-control',
-                'placeholder': '45'
+                'placeholder': '45',
+                'min': 5,
+                'max': 300
             }),
             'summary': forms.Textarea(attrs={
                 'rows': 4,
-                'class': 'form-control',
                 'placeholder': 'Décrivez le déroulement de la visite...'
             }),
             'prayer_requests': forms.Textarea(attrs={
                 'rows': 3,
-                'class': 'form-control',
                 'placeholder': 'Sujets de prière mentionnés...'
             }),
             'follow_up_notes': forms.Textarea(attrs={
                 'rows': 2,
-                'class': 'form-control',
                 'placeholder': 'Actions à entreprendre...'
-            }),
-            'follow_up_needed': forms.CheckboxInput(attrs={
-                'class': 'form-check-input'
-            }),
-            'is_confidential': forms.CheckboxInput(attrs={
-                'class': 'form-check-input'
             }),
         }
     
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         
-        # Ajouter les classes CSS à tous les champs
-        for field_name, field in self.fields.items():
-            if isinstance(field.widget, (forms.Select, forms.SelectMultiple)):
-                field.widget.attrs['class'] = 'form-select'
-            elif isinstance(field.widget, forms.CheckboxInput):
-                pass  # Déjà défini dans widgets
-            elif not field.widget.attrs.get('class'):
-                field.widget.attrs['class'] = 'form-control'
-        
         # Queryset pour les membres
         self.fields['member'].queryset = Member.objects.filter(status='actif').order_by('last_name', 'first_name')
-        self.fields['member'].widget.attrs['class'] = 'form-select'
         
         self.fields['visitor'].required = False
-        self.fields['visitor'].widget.attrs['class'] = 'form-select'
-        
-        self.fields['visit_type'].widget.attrs['class'] = 'form-select'
-        self.fields['status'].widget.attrs['class'] = 'form-select'
-        
         self.fields['life_event'].required = False
-        self.fields['life_event'].widget.attrs['class'] = 'form-select'

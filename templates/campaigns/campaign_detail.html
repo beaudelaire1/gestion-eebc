@@ -10,23 +10,38 @@
         <div class="card mb-4" style="border-left: 4px solid var(--bs-{{ campaign.status_color }});">
             <div class="card-body">
                 <div class="text-center mb-4">
-                    <div class="h1 mb-0" style="color: var(--bs-{{ campaign.status_color }});">{{ campaign.progress_percentage }}%</div>
+                    <div class="h1 mb-0" style="color: var(--bs-{{ campaign.status_color }});" id="progress-percentage">
+                        {{ campaign.progress_percentage }}%
+                    </div>
                     <small class="text-muted">de l'objectif atteint</small>
+                    {% if campaign.collected_amount >= campaign.goal_amount %}
+                    <div class="mt-2">
+                        <span class="badge bg-success fs-6">🎉 Objectif atteint !</span>
+                    </div>
+                    {% endif %}
                 </div>
                 
-                <div class="progress mb-4" style="height: 12px;">
-                    <div class="progress-bar bg-{{ campaign.status_color }}" style="width: {{ campaign.progress_percentage }}%;"></div>
+                <!-- Barre de progression en temps réel -->
+                <div class="progress mb-4" style="height: 12px;" id="campaign-progress">
+                    <div class="progress-bar bg-{{ campaign.status_color }}" 
+                         style="width: {{ campaign.progress_percentage }}%;"
+                         id="progress-bar"></div>
                 </div>
                 
                 <div class="row text-center mb-4">
                     <div class="col-6">
-                        <div class="h4 mb-0">{{ campaign.collected_amount|floatformat:0 }}€</div>
+                        <div class="h4 mb-0" id="collected-amount">{{ campaign.collected_amount|floatformat:0 }}€</div>
                         <small class="text-muted">Collecté</small>
                     </div>
                     <div class="col-6">
                         <div class="h4 mb-0">{{ campaign.goal_amount|floatformat:0 }}€</div>
                         <small class="text-muted">Objectif</small>
                     </div>
+                </div>
+                
+                <div class="text-center mb-4">
+                    <div class="h5 mb-0" id="remaining-amount">{{ campaign.remaining_amount|floatformat:0 }}€</div>
+                    <small class="text-muted">Restant à collecter</small>
                 </div>
                 
                 <p class="mb-2">
@@ -42,9 +57,19 @@
                 {% endif %}
             </div>
             <div class="card-footer">
-                <a href="{% url 'admin:campaigns_donation_add' %}?campaign={{ campaign.pk }}" class="btn btn-primary w-100">
-                    <i class="bi bi-plus me-2"></i>Ajouter un don
-                </a>
+                <div class="d-grid gap-2">
+                    <a href="{% url 'campaigns:donate' campaign.pk %}" class="btn btn-primary">
+                        <i class="bi bi-plus me-2"></i>Ajouter un don
+                    </a>
+                    <div class="btn-group">
+                        <a href="{% url 'campaigns:update' campaign.pk %}" class="btn btn-outline-primary btn-sm">
+                            <i class="bi bi-pencil me-1"></i>Modifier
+                        </a>
+                        <a href="{% url 'campaigns:list' %}" class="btn btn-outline-secondary btn-sm">
+                            <i class="bi bi-arrow-left me-1"></i>Retour
+                        </a>
+                    </div>
+                </div>
             </div>
         </div>
         
@@ -69,7 +94,7 @@
                 <h6 class="card-title"><i class="bi bi-info-circle me-2"></i>Description</h6>
             </div>
             <div class="card-body">
-                <p class="mb-0">{{ campaign.description }}</p>
+                <p class="mb-0">{{ campaign.description|linebreaks }}</p>
             </div>
         </div>
         {% endif %}
@@ -77,12 +102,12 @@
         <div class="card">
             <div class="card-header d-flex justify-content-between align-items-center">
                 <h6 class="card-title"><i class="bi bi-coin me-2"></i>Derniers dons</h6>
-                <span class="badge bg-primary">{{ donations|length }} don(s)</span>
+                <span class="badge bg-primary" id="donations-count">{{ donations|length }} don(s)</span>
             </div>
             <div class="card-body p-0">
                 {% if donations %}
                 <div class="table-responsive">
-                    <table class="table table-hover mb-0">
+                    <table class="table table-hover mb-0" id="donations-table">
                         <thead>
                             <tr>
                                 <th>Donateur</th>
@@ -113,8 +138,51 @@
                 </div>
                 {% endif %}
             </div>
+            {% if donations %}
+            <div class="card-footer text-center">
+                <small class="text-muted">Affichage des 20 derniers dons</small>
+            </div>
+            {% endif %}
         </div>
     </div>
 </div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Mise à jour en temps réel de la progression
+function updateCampaignProgress() {
+    fetch(`/campaigns/{{ campaign.pk }}/progress/`)
+        .then(response => response.json())
+        .then(data => {
+            // Mettre à jour la barre de progression
+            const progressBar = document.getElementById('progress-bar');
+            const progressPercentage = document.getElementById('progress-percentage');
+            const collectedAmount = document.getElementById('collected-amount');
+            const remainingAmount = document.getElementById('remaining-amount');
+            
+            if (progressBar && progressPercentage && collectedAmount && remainingAmount) {
+                progressBar.style.width = `${data.progress_percentage}%`;
+                progressBar.className = `progress-bar bg-${data.status_color}`;
+                progressPercentage.textContent = `${data.progress_percentage}%`;
+                progressPercentage.style.color = `var(--bs-${data.status_color})`;
+                
+                collectedAmount.textContent = `${Math.round(data.collected_amount)}€`;
+                remainingAmount.textContent = `${Math.round(data.remaining_amount)}€`;
+                
+                // Notification si objectif atteint pour la première fois
+                if (data.goal_reached && !window.goalNotified) {
+                    window.goalNotified = true;
+                    window.toastManager.goalReached('{{ campaign.name|escapejs }}');
+                }
+            }
+        })
+        .catch(error => console.error('Erreur lors de la mise à jour:', error));
+}
+
+// Mettre à jour toutes les 10 secondes sur la page de détail
+setInterval(updateCampaignProgress, 10000);
+</script>
 {% endblock %}
 

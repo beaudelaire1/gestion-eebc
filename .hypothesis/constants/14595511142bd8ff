@@ -1,0 +1,4 @@
+# file: C:\Users\vilme\OneDrive\Bureau\eebc_project\apps\events\urls.py
+# hypothesis_version: 6.148.7
+
+['<int:pk>/', '<int:pk>/cancel/', '<int:pk>/duplicate/', '<int:pk>/edit/', 'advanced/', 'api/events/', 'calendar', 'calendar/', 'calendar/pdf/', 'calendar/print/', 'calendar_pdf', 'calendar_print', 'cancel', 'create', 'create/', 'detail', 'duplicate', 'events', 'events_json', 'list', 'list_advanced', 'upcoming', 'upcoming/', 'update']

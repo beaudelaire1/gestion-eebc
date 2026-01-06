@@ -1,0 +1,4 @@
+# file: C:\Users\vilme\OneDrive\Bureau\eebc_project\apps\campaigns\admin.py
+# hypothesis_version: 6.148.7
+
+['Anonyme', 'Donateur', 'Non spécifié', 'Progression', 'Statut', 'amount', 'campaign', 'campaign__name', 'collected_amount', 'created_at', 'danger', 'description', 'donation_date', 'donor_display', 'donor_name', 'end_date', 'goal_amount', 'info', 'is_active', 'is_anonymous', 'name', 'primary', 'progress_percentage', 'secondary', 'start_date', 'status_display', 'success', 'warning', '⚪', '🔴', '🔵', '🔷', '🟠', '🟢']

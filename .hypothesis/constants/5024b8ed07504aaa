@@ -1,0 +1,4 @@
+# file: C:\Users\vilme\OneDrive\Bureau\eebc_project\apps\finance\stripe_service.py
+# hypothesis_version: 6.148.7
+
+[100, 'Don', 'Don récurrent', 'Dîme', 'Dîme mensuelle', 'Offrande', 'Offrande récurrente', 'Reçu de don - EEBC', 'STRIPE_PUBLIC_KEY', 'STRIPE_SECRET_KEY', 'acknowledged', 'amount_paid', 'amount_total', 'card', 'completed', 'currency', 'customer_email', 'data', 'description', 'dime', 'don', 'donation_type', 'email', 'eur', 'id', 'ignored', 'interval', 'invoice.paid', 'member_id', 'metadata', 'month', 'name', 'object', 'offrande', 'payment', 'payment_intent', 'price', 'price_data', 'product_data', 'public_key', 'quantity', 'recurring', 'reference', 'session_id', 'site_id', 'status', 'subscription', 'success', 'transaction_id', 'true', 'type', 'unit_amount', 'url']

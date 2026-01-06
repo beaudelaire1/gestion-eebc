@@ -13,6 +13,7 @@ from .permissions import (
     get_user_classes, get_monitor_for_user, can_access_class,
     can_access_child, is_club_admin, is_club_staff
 )
+from .services import AttendanceService, SessionService, ChildService
 
 
 @login_required
@@ -26,46 +27,35 @@ def bibleclub_home(request):
     user_classes = get_user_classes(user)
     monitor = get_monitor_for_user(user)
     
-    # Statistiques selon le rôle
+    # Utiliser le service pour les statistiques
+    stats = ChildService.get_dashboard_stats(user)
+    
+    # Classes avec annotations
     if is_club_admin(user):
-        # Admin : stats globales
-        stats = {
-            'total_children': Child.objects.filter(is_active=True).count(),
-            'total_classes': BibleClass.objects.filter(is_active=True).count(),
-            'total_monitors': Monitor.objects.filter(is_active=True).count(),
-        }
         classes = BibleClass.objects.filter(is_active=True).annotate(
             children_count_anno=Count('children', filter=Q(children__is_active=True))
         )
     else:
-        # Moniteur : stats de sa classe uniquement
         if monitor and monitor.bible_class:
-            my_class = monitor.bible_class
-            stats = {
-                'total_children': Child.objects.filter(is_active=True, bible_class=my_class).count(),
-                'total_classes': 1,
-                'total_monitors': Monitor.objects.filter(is_active=True, bible_class=my_class).count(),
-            }
-            classes = BibleClass.objects.filter(pk=my_class.pk).annotate(
+            classes = BibleClass.objects.filter(pk=monitor.bible_class.pk).annotate(
                 children_count_anno=Count('children', filter=Q(children__is_active=True))
             )
         else:
-            stats = {'total_children': 0, 'total_classes': 0, 'total_monitors': 0}
             classes = BibleClass.objects.none()
     
-    # Prochain dimanche
-    days_until_sunday = (6 - today.weekday()) % 7
-    if days_until_sunday == 0 and today.weekday() != 6:
-        days_until_sunday = 7
-    next_sunday = today + timedelta(days=days_until_sunday)
+    # Prochain dimanche via le service
+    next_sunday = SessionService.get_next_sunday()
     
     # Session du jour si c'est dimanche
     current_session = None
     if today.weekday() == 6:  # Dimanche
         current_session = Session.objects.filter(date=today).first()
     
-    # Dernières sessions
-    recent_sessions = Session.objects.all()[:5]
+    # Dernières sessions via le service
+    recent_sessions = SessionService.get_recent_sessions(limit=5)
+    
+    # Données pour le graphique de présences (12 mois)
+    attendance_chart_data = AttendanceService.get_attendance_chart_data(12)
     
     context = {
         'stats': stats,
@@ -75,8 +65,29 @@ def bibleclub_home(request):
         'classes': classes,
         'monitor': monitor,
         'is_admin': is_club_admin(user),
+        'attendance_chart_data': attendance_chart_data,
     }
     return render(request, 'bibleclub/home.html', context)
+
+
+@login_required
+@club_staff_required
+def attendance_chart_data(request):
+    """
+    API endpoint pour les données de graphique de présences.
+    
+    Requirements: 21.3, 21.4
+    """
+    months = int(request.GET.get('months', 12))
+    
+    # Limiter le nombre de mois pour éviter les abus
+    if months not in [3, 6, 12, 24]:
+        months = 12
+    
+    # Récupérer les données via le service
+    chart_data = AttendanceService.get_attendance_chart_data(months)
+    
+    return JsonResponse(chart_data)
 
 
 @login_required
@@ -144,7 +155,7 @@ def children_list(request):
         children = children.filter(
             Q(first_name__icontains=search) |
             Q(last_name__icontains=search) |
-            Q(parent1_name__icontains=search)
+            Q(father_name__icontains=search)
         )
     
     # Filtre par classe (seulement si l'utilisateur y a accès)
@@ -184,19 +195,16 @@ def children_list(request):
 def child_detail(request, pk):
     """Détail d'un enfant."""
     child = get_object_or_404(Child, pk=pk)
-    attendances = child.attendances.select_related('session').order_by('-session__date')[:10]
     
-    # Stats de présence
-    total_sessions = child.attendances.count()
-    present_count = child.attendances.filter(status__in=['present', 'late']).count()
-    attendance_rate = (present_count / total_sessions * 100) if total_sessions > 0 else 0
+    # Utiliser le service pour les statistiques de présence
+    attendance_stats = AttendanceService.get_child_attendance_stats(child)
     
     context = {
         'child': child,
-        'attendances': attendances,
-        'attendance_rate': attendance_rate,
-        'total_sessions': total_sessions,
-        'present_count': present_count,
+        'attendances': attendance_stats['recent_attendances'],
+        'attendance_rate': attendance_stats['attendance_rate'],
+        'total_sessions': attendance_stats['total_sessions'],
+        'present_count': attendance_stats['present_count'],
         'is_admin': is_club_admin(request.user),
     }
     return render(request, 'bibleclub/child_detail.html', context)
@@ -260,51 +268,46 @@ def take_attendance(request, session_pk, class_pk):
         messages.error(request, "Vous ne pouvez faire l'appel que pour votre classe.")
         return redirect('bibleclub:session_detail', pk=session_pk)
     
-    # Récupérer ou créer les présences pour tous les enfants de la classe
-    children = bible_class.children.filter(is_active=True)
-    
-    for child in children:
-        Attendance.objects.get_or_create(
-            session=session,
-            child=child,
-            defaults={'bible_class': bible_class, 'status': Attendance.Status.ABSENT}
-        )
+    # Initialiser les présences via le service
+    AttendanceService.initialize_session_attendance(session, bible_class)
     
     attendances = session.attendances.filter(bible_class=bible_class).select_related('child')
     
     if request.method == 'POST':
+        # Collecter les données de présence
+        attendance_data = []
         for attendance in attendances:
             status = request.POST.get(f'status_{attendance.id}')
             check_in = request.POST.get(f'checkin_{attendance.id}')
             notes = request.POST.get(f'notes_{attendance.id}', '')
             
             if status:
-                attendance.status = status
-                attendance.notes = notes
-                if check_in:
-                    attendance.check_in_time = check_in
-                if status in ['present', 'late'] and not attendance.check_in_time:
-                    attendance.check_in_time = timezone.now().time()
-                attendance.recorded_by = request.user
-                attendance.save()
+                attendance_data.append({
+                    'child_id': attendance.child_id,
+                    'status': status,
+                    'check_in_time': check_in if check_in else None,
+                    'notes': notes
+                })
         
-        messages.success(request, f"Appel enregistré pour {bible_class}")
+        # Enregistrer les présences via le service
+        result = AttendanceService.bulk_record_attendance(
+            session=session,
+            attendance_data=attendance_data,
+            recorded_by=request.user
+        )
+        
+        if result.success:
+            messages.success(request, f"Appel enregistré pour {bible_class}")
+        else:
+            messages.error(request, result.error)
         
         # Envoyer notification de fin d'appel aux responsables
         try:
             from apps.communication.email_service import send_session_completed
             from apps.bibleclub.models import Monitor
             
-            # Calculer les stats
-            present = attendances.filter(status__in=['present', 'late']).count()
-            absent = attendances.filter(status__in=['absent', 'absent_notified', 'excused']).count()
-            total = present + absent
-            stats = {
-                'present': present,
-                'absent': absent,
-                'total': total,
-                'attendance_rate': round((present / total * 100) if total > 0 else 0),
-            }
+            # Calculer les stats via le service
+            stats = AttendanceService.get_session_stats(session, bible_class)
             
             # Notifier les moniteurs principaux et admins
             lead_monitors = Monitor.objects.filter(
@@ -355,11 +358,19 @@ def update_attendance_status(request, attendance_pk):
     status = request.POST.get('status')
     
     if status and status in dict(Attendance.Status.choices):
-        attendance.status = status
-        if status in ['present', 'late'] and not attendance.check_in_time:
-            attendance.check_in_time = timezone.now().time()
-        attendance.recorded_by = request.user
-        attendance.save()
+        # Utiliser le service pour enregistrer la présence
+        result = AttendanceService.record_attendance(
+            session=attendance.session,
+            child=attendance.child,
+            status=status,
+            recorded_by=request.user
+        )
+        
+        if not result.success:
+            return JsonResponse({'error': result.error}, status=400)
+        
+        # Recharger l'attendance pour avoir les données à jour
+        attendance.refresh_from_db()
     
     return render(request, 'bibleclub/partials/attendance_row.html', {
         'attendance': attendance,
@@ -376,25 +387,22 @@ def create_session(request):
         theme = request.POST.get('theme', '')
         
         if session_date:
-            session, created = Session.objects.get_or_create(
-                date=session_date,
-                defaults={'theme': theme}
+            # Utiliser le service pour créer la session
+            result = SessionService.create_session(
+                session_date=session_date,
+                theme=theme,
+                auto_create_attendance=True
             )
             
-            if created:
-                # Créer automatiquement les présences pour tous les enfants actifs
-                for child in Child.objects.filter(is_active=True):
-                    Attendance.objects.create(
-                        session=session,
-                        child=child,
-                        bible_class=child.bible_class,
-                        status=Attendance.Status.ABSENT
-                    )
-                messages.success(request, f"Session du {session_date} créée avec succès!")
+            if result.success:
+                session = result.data['session']
+                if result.data.get('created'):
+                    messages.success(request, f"Session du {session_date} créée avec succès!")
+                else:
+                    messages.info(request, result.data.get('message', f"Une session existe déjà pour le {session_date}"))
+                return redirect('bibleclub:session_detail', pk=session.pk)
             else:
-                messages.info(request, f"Une session existe déjà pour le {session_date}")
-            
-            return redirect('bibleclub:session_detail', pk=session.pk)
+                messages.error(request, result.error)
     
     return render(request, 'bibleclub/create_session.html')
 

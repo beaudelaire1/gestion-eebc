@@ -1,0 +1,62 @@
+<!-- Skeleton Loader for Member List -->
+<div class="skeleton-overlay">
+    <!-- Grid View Skeleton -->
+    <div class="members-grid" id="grid-view-skeleton">
+        {% for i in "123456789" %}
+        <div class="skeleton-member-card skeleton-delay-{{ forloop.counter|divisibleby:3|yesno:"1,2,3" }}">
+            <div class="skeleton-avatar large"></div>
+            <div class="skeleton-member-info">
+                <div class="skeleton-member-name"></div>
+                <div class="skeleton-member-role"></div>
+                <div class="skeleton-text small"></div>
+                <div class="skeleton-text small"></div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    
+    <!-- Table View Skeleton -->
+    <div class="card table-view skeleton-table" id="table-view-skeleton" style="display: none;">
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover mb-0">
+                    <thead>
+                        <tr>
+                            <th>Membre</th>
+                            <th>Contact</th>
+                            <th>Ville</th>
+                            <th>Statut</th>
+                            <th>Baptisé</th>
+                            <th class="text-end">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for i in "12345678" %}
+                        <tr>
+                            <td>
+                                <div class="skeleton-table-row">
+                                    <div class="skeleton-avatar"></div>
+                                    <div class="skeleton-table-cell">
+                                        <div class="skeleton-text"></div>
+                                        <div class="skeleton-text small"></div>
+                                    </div>
+                                </div>
+                            </td>
+                            <td>
+                                <div class="skeleton-text"></div>
+                                <div class="skeleton-text small"></div>
+                            </td>
+                            <td><div class="skeleton-text"></div></td>
+                            <td><div class="skeleton-button"></div></td>
+                            <td><div class="skeleton-text narrow"></div></td>
+                            <td class="text-end">
+                                <div class="skeleton-button"></div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>

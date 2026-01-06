@@ -1,0 +1,4 @@
+# file: C:\Users\vilme\OneDrive\Bureau\eebc_project\apps\members\forms.py
+# hypothesis_version: 6.148.7
+
+[300, '45', 'Code postal', 'Date de naissance', 'Photo', 'Téléphone', 'accept', 'actif', 'address', 'announce_sunday', 'baptism_date', 'city', 'date', 'date_joined', 'date_of_birth', 'description', 'duration_minutes', 'email', 'event_date', 'event_type', 'first_name', 'follow_up_needed', 'follow_up_notes', 'gender', 'image/*', 'is_baptized', 'is_confidential', 'last_name', 'life_event', 'marital_status', 'max', 'member', 'min', 'notes', 'phone', 'photo', 'placeholder', 'postal_code', 'prayer_requests', 'primary_member', 'priority', 'profession', 'related_members', 'requires_visit', 'rows', 'scheduled_date', 'size', 'status', 'summary', 'title', 'type', 'visit_date', 'visit_type', 'visitor']

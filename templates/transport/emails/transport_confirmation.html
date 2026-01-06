@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>Confirmation de transport</title>
+</head>
+<body class="email-container">
+    <div class="email-container">
+        <h2 class="email-header">
+            Confirmation de transport
+        </h2>
+        
+        <p>Bonjour {{ transport_request.requester_name }},</p>
+        
+        <p>Nous avons le plaisir de vous confirmer qu'un chauffeur a été assigné à votre demande de transport.</p>
+        
+        <div class="email-content">
+            <h3 class="email-content__title">Détails du transport</h3>
+            
+            <table class="email-table">
+                <tr>
+                    <td class="email-table__cell email-table__cell--label">Date:</td>
+                    <td class="email-table__cell">{{ transport_request.event_date|date:"l d F Y" }}</td>
+                </tr>
+                <tr>
+                    <td class="email-table__cell email-table__cell--label">Heure:</td>
+                    <td class="email-table__cell">{{ transport_request.event_time|time:"H:i" }}</td>
+                </tr>
+                {% if transport_request.event_name %}
+                <tr>
+                    <td class="email-table__cell email-table__cell--label">Événement:</td>
+                    <td class="email-table__cell">{{ transport_request.event_name }}</td>
+                </tr>
+                {% endif %}
+                <tr>
+                    <td class="email-table__cell email-table__cell--label">Nombre de passagers:</td>
+                    <td class="email-table__cell">{{ transport_request.passengers_count }}</td>
+                </tr>
+                <tr>
+                    <td class="email-table__cell email-table__cell--label">Adresse de prise en charge:</td>
+                    <td class="email-table__cell">{{ transport_request.pickup_address|linebreaks }}</td>
+                </tr>
+            </table>
+        </div>
+        
+        <div class="email-highlight">
+            <h3 class="email-highlight__title">Votre chauffeur</h3>
+            
+            <table class="email-table">
+                <tr>
+                    <td class="email-table__cell email-table__cell--label">Nom:</td>
+                    <td class="email-table__cell">{{ driver.user.get_full_name }}</td>
+                </tr>
+                <tr>
+                    <td class="email-table__cell email-table__cell--label">Véhicule:</td>
+                    <td class="email-table__cell">{{ driver.vehicle_type }}{% if driver.vehicle_model %} - {{ driver.vehicle_model }}{% endif %}</td>
+                </tr>
+                <tr>
+                    <td class="email-table__cell email-table__cell--label">Capacité:</td>
+                    <td class="email-table__cell">{{ driver.capacity }} passagers</td>
+                </tr>
+            </table>
+        </div>
+        
+        <p><strong>Important:</strong> Veuillez être prêt(e) à l'heure convenue. Le chauffeur vous contactera si nécessaire.</p>
+        
+        <p>Si vous avez des questions ou si vous devez modifier votre demande, n'hésitez pas à nous contacter.</p>
+        
+        <p>Bonne journée,<br>
+        L'équipe transport de l'EEBC</p>
+        
+        <div class="email-footer">
+            <p class="email-footer__text">
+                Cet email a été envoyé automatiquement. Merci de ne pas y répondre directement.
+            </p>
+        </div>
+    </div>
+</body>
+</html>

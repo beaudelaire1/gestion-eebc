@@ -1,10 +1,11 @@
 """Formulaires pour le module Finance."""
 
 from django import forms
+from apps.core.forms import EnhancedModelForm
 from .models import FinancialTransaction, ReceiptProof, BudgetLine
 
 
-class TransactionForm(forms.ModelForm):
+class TransactionForm(EnhancedModelForm):
     """Formulaire de création/édition de transaction."""
     
     class Meta:
@@ -15,42 +16,48 @@ class TransactionForm(forms.ModelForm):
             'member', 'event', 'notes'
         ]
         widgets = {
-            'transaction_type': forms.Select(attrs={'class': 'form-select'}),
-            'amount': forms.NumberInput(attrs={'class': 'form-control', 'step': '0.01', 'min': '0.01'}),
-            'transaction_date': forms.DateInput(attrs={'type': 'date', 'class': 'form-control'}),
-            'payment_method': forms.Select(attrs={'class': 'form-select'}),
-            'category': forms.Select(attrs={'class': 'form-select'}),
-            'description': forms.Textarea(attrs={'rows': 3, 'class': 'form-control'}),
-            'member': forms.Select(attrs={'class': 'form-select'}),
-            'event': forms.Select(attrs={'class': 'form-select'}),
-            'notes': forms.Textarea(attrs={'rows': 2, 'class': 'form-control'}),
+            'amount': forms.NumberInput(attrs={
+                'step': '0.01', 
+                'min': '0.01',
+                'placeholder': '0.00'
+            }),
+            'transaction_date': forms.DateInput(attrs={'type': 'date'}),
+            'description': forms.Textarea(attrs={'rows': 3}),
+            'notes': forms.Textarea(attrs={'rows': 2}),
         }
 
 
-class ProofUploadForm(forms.ModelForm):
+class ProofUploadForm(EnhancedModelForm):
     """Formulaire d'upload de justificatif."""
     
     class Meta:
         model = ReceiptProof
         fields = ['transaction', 'proof_type', 'image', 'notes']
         widgets = {
-            'transaction': forms.Select(attrs={'class': 'form-select'}),
-            'proof_type': forms.Select(attrs={'class': 'form-select'}),
-            'image': forms.FileInput(attrs={'class': 'form-control', 'accept': 'image/*'}),
-            'notes': forms.Textarea(attrs={'rows': 2, 'class': 'form-control'}),
+            'image': forms.FileInput(attrs={'accept': 'image/*'}),
+            'notes': forms.Textarea(attrs={'rows': 2}),
         }
 
 
-class BudgetLineForm(forms.ModelForm):
+class BudgetLineForm(EnhancedModelForm):
     """Formulaire de ligne budgétaire."""
     
     class Meta:
         model = BudgetLine
         fields = ['category', 'year', 'month', 'planned_amount', 'notes']
         widgets = {
-            'category': forms.Select(attrs={'class': 'form-select'}),
-            'year': forms.NumberInput(attrs={'class': 'form-control'}),
-            'month': forms.NumberInput(attrs={'class': 'form-control', 'min': '1', 'max': '12'}),
-            'planned_amount': forms.NumberInput(attrs={'class': 'form-control', 'step': '0.01'}),
-            'notes': forms.Textarea(attrs={'rows': 2, 'class': 'form-control'}),
+            'year': forms.NumberInput(attrs={
+                'min': 2020,
+                'max': 2050
+            }),
+            'month': forms.NumberInput(attrs={
+                'min': 1, 
+                'max': 12
+            }),
+            'planned_amount': forms.NumberInput(attrs={
+                'step': '0.01',
+                'min': '0.00',
+                'placeholder': '0.00'
+            }),
+            'notes': forms.Textarea(attrs={'rows': 2}),
         }

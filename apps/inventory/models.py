@@ -16,6 +16,12 @@ class Category(models.Model):
         return self.name
 
 
+class ActiveEquipmentManager(models.Manager):
+    """Manager pour récupérer uniquement les équipements actifs."""
+    def get_queryset(self):
+        return super().get_queryset().filter(is_active=True)
+
+
 class Equipment(models.Model):
     """
     Modèle représentant un équipement de l'église.
@@ -70,8 +76,15 @@ class Equipment(models.Model):
     notes = models.TextField(blank=True, verbose_name="Notes")
     photo = models.ImageField(upload_to='inventory/photos/', blank=True, null=True, verbose_name="Photo")
     
+    # Soft delete field
+    is_active = models.BooleanField(default=True, verbose_name="Actif")
+    
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+    
+    # Managers
+    objects = models.Manager()  # Manager par défaut (tous les équipements)
+    active = ActiveEquipmentManager()  # Manager pour les équipements actifs
     
     class Meta:
         verbose_name = "Équipement"
@@ -80,4 +93,19 @@ class Equipment(models.Model):
     
     def __str__(self):
         return f"{self.name} ({self.get_condition_display()})"
+    
+    def soft_delete(self):
+        """Suppression logique de l'équipement."""
+        self.is_active = False
+        self.save()
+    
+    def restore(self):
+        """Restauration d'un équipement supprimé."""
+        self.is_active = True
+        self.save()
+    
+    @property
+    def needs_attention(self):
+        """Retourne True si l'équipement nécessite une attention (mauvais état)."""
+        return self.condition in [self.Condition.MAINTENANCE, self.Condition.BROKEN]
 

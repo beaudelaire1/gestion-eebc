@@ -1,0 +1,4 @@
+# file: C:\Users\vilme\OneDrive\Bureau\eebc_project\apps\campaigns\tests.py
+# hypothesis_version: 6.148.7
+
+[300.0, 700.0, 1000.0, 200, 302, '%Y-%m-%d', '-50.00', '0.00', '1000.00', '1000€', '150.00', '1500.00', '2000.00', '250.00', '300.00', 'Campagne Invalide', 'Campagne Modifiée', 'Campagnes', 'Description de test', 'Don anonyme', 'Don de test', 'Gros Donateur', 'Jean Dupont', 'Modifier', 'Nouveau don', 'Nouvelle Campagne', 'Nouvelle campagne', 'Test', 'Test Campaign', 'Test Donor', 'Une campagne de test', 'admin', 'amount', 'atteint', 'campaign', 'campaigns:create', 'campaigns:detail', 'campaigns:donate', 'campaigns:list', 'campaigns:update', 'collected_amount', 'description', 'donor_name', 'end_date', 'finance', 'goal-reached', 'goal_amount', 'goal_reached', 'is_active', 'is_anonymous', 'membre', 'name', 'notes', 'objectif', 'pk', 'postérieure', 'progress_percentage', 'remaining_amount', 'start_date', 'testpass123']

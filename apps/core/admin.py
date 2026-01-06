@@ -525,3 +525,294 @@ class SiteSettingsAdmin(admin.ModelAdmin):
     
     def has_delete_permission(self, request, obj=None):
         return False
+
+
+# =============================================================================
+# AUDIT LOG ADMIN
+# =============================================================================
+
+from .models import AuditLog
+
+
+@admin.register(AuditLog)
+class AuditLogAdmin(admin.ModelAdmin):
+    """
+    Administration du journal d'audit.
+    
+    Permet de consulter les logs d'audit avec filtrage et recherche.
+    Les entrées sont en lecture seule pour préserver l'intégrité des logs.
+    
+    Requirements: 8.5
+    """
+    
+    list_display = [
+        'timestamp', 'user_display', 'action_badge', 'model_name', 
+        'object_repr_short', 'ip_address'
+    ]
+    list_filter = ['action', 'model_name', 'timestamp']
+    search_fields = [
+        'user__username', 'user__first_name', 'user__last_name',
+        'model_name', 'object_repr', 'ip_address', 'path'
+    ]
+    readonly_fields = [
+        'user', 'action', 'model_name', 'object_id', 'object_repr',
+        'changes', 'ip_address', 'user_agent', 'timestamp', 'path', 'extra_data'
+    ]
+    date_hierarchy = 'timestamp'
+    ordering = ['-timestamp']
+    list_per_page = 50
+    
+    fieldsets = (
+        ('Informations principales', {
+            'fields': ('user', 'action', 'timestamp')
+        }),
+        ('Objet concerné', {
+            'fields': ('model_name', 'object_id', 'object_repr')
+        }),
+        ('Détails des changements', {
+            'fields': ('changes',),
+            'classes': ('collapse',)
+        }),
+        ('Contexte de la requête', {
+            'fields': ('ip_address', 'user_agent', 'path'),
+            'classes': ('collapse',)
+        }),
+        ('Données supplémentaires', {
+            'fields': ('extra_data',),
+            'classes': ('collapse',)
+        }),
+    )
+    
+    def has_add_permission(self, request):
+        """Empêcher la création manuelle d'entrées d'audit."""
+        return False
+    
+    def has_change_permission(self, request, obj=None):
+        """Empêcher la modification des entrées d'audit."""
+        return False
+    
+    def has_delete_permission(self, request, obj=None):
+        """Empêcher la suppression des entrées d'audit (sauf superuser)."""
+        return request.user.is_superuser
+    
+    def user_display(self, obj):
+        """Affiche le nom de l'utilisateur ou 'Anonyme'."""
+        if obj.user:
+            return obj.user.get_full_name() or obj.user.username
+        return format_html('<span style="color: #999;">Anonyme</span>')
+    user_display.short_description = 'Utilisateur'
+    user_display.admin_order_field = 'user__username'
+    
+    def action_badge(self, obj):
+        """Affiche l'action avec un badge coloré."""
+        colors = {
+            'login': 'success',
+            'logout': 'info',
+            'login_failed': 'danger',
+            'create': 'primary',
+            'update': 'warning',
+            'delete': 'danger',
+            'export': 'info',
+            'access_denied': 'danger',
+            'view': 'secondary',
+        }
+        color = colors.get(obj.action, 'secondary')
+        return format_html(
+            '<span class="badge bg-{}">{}</span>',
+            color, obj.get_action_display()
+        )
+    action_badge.short_description = 'Action'
+    action_badge.admin_order_field = 'action'
+    
+    def object_repr_short(self, obj):
+        """Affiche une version tronquée de la représentation de l'objet."""
+        if obj.object_repr:
+            if len(obj.object_repr) > 50:
+                return obj.object_repr[:50] + '...'
+            return obj.object_repr
+        return '-'
+    object_repr_short.short_description = 'Objet'
+
+
+# =============================================================================
+# DATABASE BACKUP ADMIN
+# =============================================================================
+
+from .models import DatabaseBackup
+from django.http import HttpResponse, Http404
+from django.urls import path
+from django.shortcuts import get_object_or_404
+from django.contrib import messages
+from django.utils.html import format_html
+from pathlib import Path
+
+
+@admin.register(DatabaseBackup)
+class DatabaseBackupAdmin(admin.ModelAdmin):
+    """
+    Administration des sauvegardes de base de données.
+    
+    Permet de:
+    - Lister les sauvegardes disponibles
+    - Télécharger les sauvegardes
+    - Déclencher une sauvegarde manuelle
+    - Voir le statut des sauvegardes
+    
+    Requirements: 18.3
+    """
+    
+    list_display = [
+        'filename', 'status_badge', 'backup_type', 'file_size_display',
+        'database_engine', 'created_by', 'created_at', 'download_link'
+    ]
+    list_filter = ['status', 'backup_type', 'database_engine', 'created_at']
+    search_fields = ['filename', 'created_by__username']
+    readonly_fields = [
+        'filename', 'file_path', 'file_size', 'status', 'database_engine',
+        'backup_type', 'created_by', 'celery_task_id', 'error_message',
+        'created_at', 'completed_at', 'file_exists_display'
+    ]
+    date_hierarchy = 'created_at'
+    ordering = ['-created_at']
+    list_per_page = 25
+    
+    fieldsets = (
+        ('Informations de la sauvegarde', {
+            'fields': ('filename', 'file_path', 'file_size', 'file_exists_display')
+        }),
+        ('Statut', {
+            'fields': ('status', 'error_message')
+        }),
+        ('Métadonnées', {
+            'fields': ('backup_type', 'database_engine', 'created_by', 'celery_task_id')
+        }),
+        ('Dates', {
+            'fields': ('created_at', 'completed_at')
+        }),
+    )
+    
+    def has_add_permission(self, request):
+        """Empêcher la création manuelle - utiliser le bouton de sauvegarde."""
+        return False
+    
+    def has_change_permission(self, request, obj=None):
+        """Empêcher la modification des sauvegardes."""
+        return False
+    
+    def has_delete_permission(self, request, obj=None):
+        """Permettre la suppression seulement aux admins."""
+        return request.user.is_superuser
+    
+    def status_badge(self, obj):
+        """Affiche le statut avec un badge coloré."""
+        colors = {
+            'pending': 'warning',
+            'success': 'success',
+            'failed': 'danger',
+        }
+        color = colors.get(obj.status, 'secondary')
+        return format_html(
+            '<span class="badge bg-{}">{}</span>',
+            color, obj.get_status_display()
+        )
+    status_badge.short_description = 'Statut'
+    status_badge.admin_order_field = 'status'
+    
+    def file_size_display(self, obj):
+        """Affiche la taille du fichier en format lisible."""
+        if obj.file_size_mb:
+            return f"{obj.file_size_mb} MB"
+        return '-'
+    file_size_display.short_description = 'Taille'
+    file_size_display.admin_order_field = 'file_size'
+    
+    def file_exists_display(self, obj):
+        """Indique si le fichier existe sur le disque."""
+        if obj.file_exists:
+            return format_html('<span style="color: green;">✓ Existe</span>')
+        else:
+            return format_html('<span style="color: red;">✗ Manquant</span>')
+    file_exists_display.short_description = 'Fichier sur disque'
+    
+    def download_link(self, obj):
+        """Lien de téléchargement si le fichier existe et la sauvegarde est réussie."""
+        if obj.status == 'success' and obj.file_exists:
+            return format_html(
+                '<a href="{}" class="btn btn-sm btn-primary">Télécharger</a>',
+                f'/admin/core/databasebackup/{obj.pk}/download/'
+            )
+        return '-'
+    download_link.short_description = 'Téléchargement'
+    
+    def get_urls(self):
+        """Ajouter les URLs personnalisées."""
+        urls = super().get_urls()
+        custom_urls = [
+            path(
+                '<int:backup_id>/download/',
+                self.admin_site.admin_view(self.download_backup),
+                name='core_databasebackup_download'
+            ),
+            path(
+                'create-manual-backup/',
+                self.admin_site.admin_view(self.create_manual_backup),
+                name='core_databasebackup_manual'
+            ),
+        ]
+        return custom_urls + urls
+    
+    def download_backup(self, request, backup_id):
+        """Vue pour télécharger une sauvegarde."""
+        backup = get_object_or_404(DatabaseBackup, pk=backup_id)
+        
+        # Vérifier que le fichier existe
+        if not backup.file_exists:
+            raise Http404("Le fichier de sauvegarde n'existe pas sur le disque.")
+        
+        # Vérifier que la sauvegarde est réussie
+        if backup.status != 'success':
+            messages.error(request, "Cette sauvegarde n'est pas dans un état valide pour le téléchargement.")
+            return self.response_redirect(request, '../')
+        
+        try:
+            # Lire le fichier
+            file_path = Path(backup.file_path)
+            
+            with open(file_path, 'rb') as f:
+                response = HttpResponse(f.read(), content_type='application/octet-stream')
+                response['Content-Disposition'] = f'attachment; filename="{backup.filename}"'
+                return response
+                
+        except Exception as e:
+            messages.error(request, f"Erreur lors du téléchargement: {str(e)}")
+            return self.response_redirect(request, '../')
+    
+    def create_manual_backup(self, request):
+        """Vue pour déclencher une sauvegarde manuelle."""
+        from apps.core.tasks import manual_backup_task
+        
+        try:
+            # Déclencher la tâche Celery
+            task = manual_backup_task.delay(user_id=request.user.id)
+            
+            messages.success(
+                request, 
+                f"Sauvegarde manuelle déclenchée. ID de tâche: {task.id}. "
+                "Actualisez la page dans quelques minutes pour voir le résultat."
+            )
+            
+        except Exception as e:
+            messages.error(request, f"Erreur lors du déclenchement de la sauvegarde: {str(e)}")
+        
+        return self.response_redirect(request, '../')
+    
+    def response_redirect(self, request, url):
+        """Redirection helper."""
+        from django.shortcuts import redirect
+        return redirect(url)
+    
+    def changelist_view(self, request, extra_context=None):
+        """Ajouter le bouton de sauvegarde manuelle."""
+        extra_context = extra_context or {}
+        extra_context['show_manual_backup_button'] = True
+        return super().changelist_view(request, extra_context)

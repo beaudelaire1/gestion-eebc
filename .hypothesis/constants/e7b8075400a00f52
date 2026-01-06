@@ -1,0 +1,4 @@
+# file: C:\Users\vilme\OneDrive\Bureau\eebc_project\apps\core\permissions.py
+# hypothesis_version: 6.148.7
+
+['*', 'accounts', 'actions', 'admin', 'bibleclub', 'campaigns', 'create', 'dashboard:home', 'encadrant', 'events', 'export', 'finance', 'groups', 'members', 'membre', 'modules', 'moniteur', 'own_class', 'own_group', 'pastoral_data', 'public_only', 'responsable_club', 'responsable_groupe', 'role', 'scope', 'secretariat', 'update', 'validate', 'view', 'worship']

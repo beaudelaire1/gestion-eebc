@@ -1,0 +1,4 @@
+# file: C:\Users\vilme\OneDrive\Bureau\eebc_project\apps\groups\services.py
+# hypothesis_version: 6.148.7
+
+[100, '%Y-%m-%d', '-date', 'Réunion', 'attendance_rate', 'attendees', 'attendees_count', 'avg_attendance', 'biweekly', 'date', 'friday', 'id', 'location', 'max_attendance', 'member_count', 'monday', 'monthly', 'saturday', 'sunday', 'thursday', 'topic', 'total_meetings', 'tuesday', 'wednesday', 'weekly']

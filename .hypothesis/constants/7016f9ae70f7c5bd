@@ -1,0 +1,4 @@
+# file: C:\Users\vilme\OneDrive\Bureau\eebc_project\apps\communication\signals.py
+# hypothesis_version: 6.148.7
+
+[180, 'a_faire', 'actif', 'bapteme', 'days_since', 'deces', 'domicile', 'effectue', 'hopital', 'hospitalisation', 'info', 'last_visit', 'mariage', 'member', 'members.LifeEvent', 'naissance', 'success', 'visit_completed', 'warning']

@@ -1,0 +1,4 @@
+# file: C:\Users\vilme\OneDrive\Bureau\eebc_project\apps\bibleclub\urls.py
+# hypothesis_version: 6.148.7
+
+['bibleclub', 'child_detail', 'children/', 'children/<int:pk>/', 'children_list', 'class_detail', 'class_list', 'classes/', 'classes/<int:pk>/', 'create_session', 'home', 'my_class_children', 'session_detail', 'session_list', 'sessions/', 'sessions/<int:pk>/', 'sessions/create/', 'take_attendance', 'transport_checkin', 'update_attendance']

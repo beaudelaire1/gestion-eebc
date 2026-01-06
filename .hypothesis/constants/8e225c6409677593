@@ -1,0 +1,4 @@
+# file: C:\Users\vilme\OneDrive\Bureau\eebc_project\apps\events\migrations\0003_remove_event_organizer_alter_event_recurrence_and_more.py
+# hypothesis_version: 6.148.7
+
+['Annuel', 'Aucune', 'Bihebdomadaire', 'Hebdomadaire', 'Mensuel', 'Organisateur', 'Quotidien', 'Récurrence', 'Trimestriel', 'biweekly', 'daily', 'event', 'events', 'monthly', 'none', 'organized_events', 'organizer', 'recurrence', 'trimesterly', 'weekly', 'yearly']

@@ -1,0 +1,189 @@
+{% extends 'base.html' %}
+
+{% block title %}Membres - {{ department.name }} - EEBC{% endblock %}
+{% block page_title %}Gérer les membres{% endblock %}
+{% block page_subtitle %}{{ department.name }}{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-lg-4">
+        <!-- Informations du département -->
+        <div class="card mb-4">
+            <div class="card-body">
+                <h5 class="mb-3">{{ department.name }}</h5>
+                
+                {% if department.description %}
+                <p class="text-muted mb-3">{{ department.description }}</p>
+                {% endif %}
+                
+                {% if department.leader %}
+                <div class="d-flex align-items-center mb-3">
+                    <div class="avatar me-2" style="width: 36px; height: 36px; font-size: 0.75rem;">
+                        {{ department.leader.first_name|slice:":1"|upper }}{{ department.leader.last_name|slice:":1"|upper }}
+                    </div>
+                    <div>
+                        <small class="text-muted">Responsable</small>
+                        <div>{{ department.leader.get_full_name }}</div>
+                    </div>
+                </div>
+                {% endif %}
+                
+                <div class="d-flex gap-2">
+                    <a href="{% url 'departments:detail' department.pk %}" class="btn btn-outline-light btn-sm">
+                        <i class="bi bi-arrow-left me-1"></i>Retour
+                    </a>
+                    <a href="{% url 'departments:update' department.pk %}" class="btn btn-outline-light btn-sm">
+                        <i class="bi bi-pencil me-1"></i>Modifier
+                    </a>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Membres actuels -->
+        <div class="card">
+            <div class="card-header">
+                <h6 class="card-title mb-0">
+                    <i class="bi bi-people me-2"></i>Membres actuels ({{ current_members.count }})
+                </h6>
+            </div>
+            <div class="card-body p-0">
+                {% if current_members %}
+                <div class="list-group list-group-flush">
+                    {% for member in current_members %}
+                    <div class="list-group-item">
+                        <div class="d-flex align-items-center">
+                            <div class="avatar me-3" style="width: 32px; height: 32px; font-size: 0.7rem;">
+                                {{ member.first_name|slice:":1"|upper }}{{ member.last_name|slice:":1"|upper }}
+                            </div>
+                            <div>
+                                <div class="fw-medium">{{ member.full_name }}</div>
+                                {% if member.phone %}
+                                <small class="text-muted">{{ member.phone }}</small>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <div class="text-center py-3 text-muted">
+                    <i class="bi bi-people fs-4 d-block mb-2"></i>
+                    Aucun membre assigné
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-lg-8">
+        <!-- Formulaire de gestion des membres -->
+        <div class="card">
+            <div class="card-header">
+                <h6 class="card-title mb-0">
+                    <i class="bi bi-person-plus me-2"></i>Assigner des membres
+                </h6>
+            </div>
+            <div class="card-body">
+                <form method="post">
+                    {% csrf_token %}
+                    
+                    <div class="mb-3">
+                        <p class="text-muted mb-3">
+                            Sélectionnez les membres qui doivent faire partie de ce département. 
+                            Les membres actuellement assignés sont pré-cochés.
+                        </p>
+                        
+                        <!-- Barre de recherche -->
+                        <div class="mb-3">
+                            <input type="text" id="member-search" class="form-control" 
+                                   placeholder="Rechercher un membre...">
+                        </div>
+                        
+                        <!-- Liste des membres avec cases à cocher -->
+                        <div class="row g-2" id="members-list">
+                            {% for choice in form.members %}
+                            <div class="col-md-6 member-item">
+                                <div class="form-check p-3 border rounded">
+                                    {{ choice.tag }}
+                                    <label class="form-check-label ms-2" for="{{ choice.id_for_label }}">
+                                        <div class="d-flex align-items-center">
+                                            <div class="avatar me-2" style="width: 28px; height: 28px; font-size: 0.6rem;">
+                                                {% with choice.choice_label as member_name %}
+                                                {{ member_name|slice:":1"|upper }}{{ member_name|slice:"1:2"|upper }}
+                                                {% endwith %}
+                                            </div>
+                                            <span class="member-name">{{ choice.choice_label }}</span>
+                                        </div>
+                                    </label>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                        
+                        {% if form.members.errors %}
+                        <div class="invalid-feedback d-block mt-2">
+                            {{ form.members.errors.0 }}
+                        </div>
+                        {% endif %}
+                    </div>
+                    
+                    <!-- Actions -->
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <button type="button" class="btn btn-outline-secondary btn-sm" id="select-all">
+                                Tout sélectionner
+                            </button>
+                            <button type="button" class="btn btn-outline-secondary btn-sm" id="select-none">
+                                Tout désélectionner
+                            </button>
+                        </div>
+                        
+                        <button type="submit" class="btn btn-primary">
+                            <i class="bi bi-check-lg me-2"></i>Mettre à jour les membres
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Recherche de membres
+    const searchInput = document.getElementById('member-search');
+    const memberItems = document.querySelectorAll('.member-item');
+    
+    searchInput.addEventListener('input', function() {
+        const searchTerm = this.value.toLowerCase();
+        
+        memberItems.forEach(function(item) {
+            const memberName = item.querySelector('.member-name').textContent.toLowerCase();
+            if (memberName.includes(searchTerm)) {
+                item.style.display = 'block';
+            } else {
+                item.style.display = 'none';
+            }
+        });
+    });
+    
+    // Sélectionner tout
+    document.getElementById('select-all').addEventListener('click', function() {
+        const checkboxes = document.querySelectorAll('#members-list input[type="checkbox"]');
+        checkboxes.forEach(function(checkbox) {
+            if (checkbox.closest('.member-item').style.display !== 'none') {
+                checkbox.checked = true;
+            }
+        });
+    });
+    
+    // Désélectionner tout
+    document.getElementById('select-none').addEventListener('click', function() {
+        const checkboxes = document.querySelectorAll('#members-list input[type="checkbox"]');
+        checkboxes.forEach(function(checkbox) {
+            checkbox.checked = false;
+        });
+    });
+});
+</script>
+{% endblock %}

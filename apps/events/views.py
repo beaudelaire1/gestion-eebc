@@ -1,13 +1,17 @@
-from django.shortcuts import render, get_object_or_404
+from django.shortcuts import render, get_object_or_404, redirect
 from django.contrib.auth.decorators import login_required
+from django.contrib import messages
 from django.http import JsonResponse, HttpResponse
 from django.template.loader import render_to_string
 from django.db.models import Q
+from django.urls import reverse
 from datetime import date, timedelta
 from calendar import monthrange
 import calendar as cal_module
 
-from .models import Event, EventCategory
+from apps.core.permissions import role_required
+from .models import Event, EventCategory, EventRegistration
+from .forms import EventForm, EventCancelForm, EventDuplicateForm, EventSearchForm
 
 
 @login_required
@@ -51,7 +55,7 @@ def events_json(request):
     start = request.GET.get('start')
     end = request.GET.get('end')
     
-    events = Event.objects.filter(is_cancelled=False)
+    events = Event.objects.all()
     
     if start:
         events = events.filter(start_date__gte=start[:10])
@@ -64,8 +68,12 @@ def events_json(request):
     elif not request.user.is_staff:
         events = events.filter(Q(visibility='public') | Q(visibility='members'))
     
+    # Inclure les événements annulés pour les admins/organisateurs
+    if not (request.user.role in ['admin', 'secretariat']):
+        events = events.filter(is_cancelled=False)
+    
     events_data = []
-    for event in events.select_related('category'):
+    for event in events.select_related('category').prefetch_related('organizers'):
         event_dict = {
             'id': event.id,
             'title': event.title,
@@ -73,15 +81,35 @@ def events_json(request):
             'color': event.color,
             'allDay': event.all_day,
             'url': f'/events/{event.id}/',
+            'extendedProps': {
+                'location': event.location,
+                'description': event.description[:100] + '...' if len(event.description) > 100 else event.description,
+                'is_cancelled': event.is_cancelled,
+                'visibility': event.visibility,
+                'category_name': event.category.name if event.category else None,
+                'organizers': [org.get_full_name() or org.username for org in event.organizers.all()],
+            }
         }
         
-        if event.start_time:
+        # Gestion des heures
+        if event.start_time and not event.all_day:
             event_dict['start'] = f"{event.start_date.isoformat()}T{event.start_time.isoformat()}"
         
+        # Gestion de la date/heure de fin
         if event.end_date:
-            event_dict['end'] = event.end_date.isoformat()
-            if event.end_time:
+            if event.end_time and not event.all_day:
                 event_dict['end'] = f"{event.end_date.isoformat()}T{event.end_time.isoformat()}"
+            else:
+                # Pour les événements "toute la journée", ajouter un jour à la date de fin
+                # car FullCalendar utilise des dates de fin exclusives
+                from datetime import timedelta
+                end_date = event.end_date + timedelta(days=1)
+                event_dict['end'] = end_date.isoformat()
+        
+        # Modifier l'apparence des événements annulés
+        if event.is_cancelled:
+            event_dict['color'] = '#6c757d'  # Gris pour les événements annulés
+            event_dict['title'] = f"[ANNULÉ] {event.title}"
         
         events_data.append(event_dict)
     
@@ -491,3 +519,300 @@ def _build_calendar_context_with_description(mode, year, month):
         'month': month,
         'title': title,
     }
+
+
+# =============================================================================
+# VUES CRUD POUR LES ÉVÉNEMENTS
+# =============================================================================
+
+@login_required
+@role_required('admin', 'secretariat')
+def event_create(request):
+    """
+    Créer un nouvel événement.
+    Requirements: 15.1
+    """
+    if request.method == 'POST':
+        form = EventForm(request.POST, request.FILES)
+        if form.is_valid():
+            event = form.save(commit=False)
+            
+            # Ajouter l'utilisateur actuel comme organisateur par défaut
+            event.save()
+            if not event.organizers.exists():
+                event.organizers.add(request.user)
+            
+            messages.success(request, f"L'événement '{event.title}' a été créé avec succès.")
+            return redirect('events:detail', pk=event.pk)
+    else:
+        # Pré-remplir le formulaire avec les paramètres de l'URL (depuis le calendrier)
+        initial_data = {}
+        
+        # Date de début depuis le calendrier
+        if request.GET.get('date'):
+            initial_data['start_date'] = request.GET.get('date')
+        if request.GET.get('start_date'):
+            initial_data['start_date'] = request.GET.get('start_date')
+        
+        # Date de fin depuis le calendrier (sélection de plage)
+        if request.GET.get('end_date'):
+            end_date = request.GET.get('end_date')
+            # FullCalendar envoie la date de fin exclusive, on soustrait un jour
+            from datetime import datetime, timedelta
+            try:
+                end_date_obj = datetime.strptime(end_date, '%Y-%m-%d').date()
+                if end_date_obj > datetime.strptime(initial_data.get('start_date', end_date), '%Y-%m-%d').date():
+                    initial_data['end_date'] = (end_date_obj - timedelta(days=1)).strftime('%Y-%m-%d')
+            except (ValueError, TypeError):
+                pass
+        
+        # Titre pré-rempli
+        if request.GET.get('title'):
+            initial_data['title'] = request.GET.get('title')
+        
+        form = EventForm(initial=initial_data)
+    
+    context = {
+        'form': form,
+        'title': 'Créer un événement',
+        'submit_text': 'Créer l\'événement'
+    }
+    return render(request, 'events/event_form.html', context)
+
+
+@login_required
+@role_required('admin', 'secretariat')
+def event_update(request, pk):
+    """
+    Modifier un événement existant.
+    Requirements: 15.2
+    """
+    event = get_object_or_404(Event, pk=pk)
+    
+    # Vérifier si l'utilisateur peut modifier cet événement
+    if not request.user.role == 'admin' and request.user not in event.organizers.all():
+        messages.error(request, "Vous ne pouvez modifier que les événements que vous organisez.")
+        return redirect('events:detail', pk=event.pk)
+    
+    if request.method == 'POST':
+        form = EventForm(request.POST, request.FILES, instance=event)
+        if form.is_valid():
+            event = form.save()
+            messages.success(request, f"L'événement '{event.title}' a été modifié avec succès.")
+            return redirect('events:detail', pk=event.pk)
+    else:
+        form = EventForm(instance=event)
+    
+    context = {
+        'form': form,
+        'event': event,
+        'title': f'Modifier - {event.title}',
+        'submit_text': 'Enregistrer les modifications'
+    }
+    return render(request, 'events/event_form.html', context)
+
+
+@login_required
+@role_required('admin', 'secretariat')
+def event_cancel(request, pk):
+    """
+    Annuler un événement avec notification aux inscrits.
+    Requirements: 15.3
+    """
+    event = get_object_or_404(Event, pk=pk)
+    
+    # Vérifier si l'utilisateur peut annuler cet événement
+    if not request.user.role == 'admin' and request.user not in event.organizers.all():
+        messages.error(request, "Vous ne pouvez annuler que les événements que vous organisez.")
+        return redirect('events:detail', pk=event.pk)
+    
+    if event.is_cancelled:
+        messages.warning(request, "Cet événement est déjà annulé.")
+        return redirect('events:detail', pk=event.pk)
+    
+    if request.method == 'POST':
+        form = EventCancelForm(request.POST)
+        if form.is_valid():
+            # Marquer l'événement comme annulé
+            event.is_cancelled = True
+            event.save()
+            
+            # Envoyer des notifications si demandé
+            if form.cleaned_data['notify_participants']:
+                _send_cancellation_notifications(event, form.cleaned_data['reason'])
+            
+            messages.success(request, f"L'événement '{event.title}' a été annulé.")
+            return redirect('events:detail', pk=event.pk)
+    else:
+        form = EventCancelForm()
+    
+    # Compter les participants inscrits
+    participants_count = event.registrations.count()
+    
+    context = {
+        'form': form,
+        'event': event,
+        'participants_count': participants_count,
+        'title': f'Annuler - {event.title}'
+    }
+    return render(request, 'events/event_cancel.html', context)
+
+
+@login_required
+@role_required('admin', 'secretariat')
+def event_duplicate(request, pk):
+    """
+    Dupliquer un événement existant.
+    Requirements: 15.4
+    """
+    original_event = get_object_or_404(Event, pk=pk)
+    
+    if request.method == 'POST':
+        form = EventDuplicateForm(request.POST, original_event=original_event)
+        if form.is_valid():
+            # Créer une copie de l'événement
+            new_event = Event.objects.get(pk=original_event.pk)
+            new_event.pk = None  # Créer une nouvelle instance
+            new_event.id = None
+            
+            # Modifier les données selon le formulaire
+            new_event.title = original_event.title + form.cleaned_data['duplicate_title_suffix']
+            new_event.start_date = form.cleaned_data['new_start_date']
+            if form.cleaned_data['new_start_time']:
+                new_event.start_time = form.cleaned_data['new_start_time']
+            
+            # Calculer la nouvelle date de fin si elle existait
+            if original_event.end_date:
+                days_diff = (original_event.end_date - original_event.start_date).days
+                new_event.end_date = new_event.start_date + timedelta(days=days_diff)
+            
+            # Réinitialiser certains champs
+            new_event.is_cancelled = False
+            new_event.notification_sent = False
+            
+            new_event.save()
+            
+            # Copier les organisateurs
+            new_event.organizers.set(original_event.organizers.all())
+            
+            messages.success(request, f"L'événement '{new_event.title}' a été créé par duplication.")
+            return redirect('events:detail', pk=new_event.pk)
+    else:
+        form = EventDuplicateForm(original_event=original_event)
+    
+    context = {
+        'form': form,
+        'original_event': original_event,
+        'title': f'Dupliquer - {original_event.title}'
+    }
+    return render(request, 'events/event_duplicate.html', context)
+
+
+def _send_cancellation_notifications(event, reason):
+    """
+    Envoie des notifications d'annulation aux participants inscrits.
+    """
+    # Récupérer tous les participants inscrits
+    registrations = EventRegistration.objects.filter(event=event).select_related('user')
+    
+    if not registrations.exists():
+        return
+    
+    # Préparer le contexte pour l'email
+    email_context = {
+        'event': event,
+        'reason': reason or "Aucune raison spécifiée",
+    }
+    
+    # Envoyer les emails (implémentation basique)
+    from django.core.mail import send_mail
+    from django.template.loader import render_to_string
+    from django.conf import settings
+    
+    subject = f"Annulation - {event.title}"
+    
+    for registration in registrations:
+        if registration.user.email:
+            try:
+                # Personnaliser le contexte pour chaque utilisateur
+                user_context = email_context.copy()
+                user_context['user'] = registration.user
+                
+                message = render_to_string('events/emails/event_cancelled.html', user_context)
+                
+                send_mail(
+                    subject=subject,
+                    message=message,
+                    from_email=settings.DEFAULT_FROM_EMAIL,
+                    recipient_list=[registration.user.email],
+                    fail_silently=True,
+                )
+            except Exception:
+                # En cas d'erreur, continuer avec les autres emails
+                continue
+
+
+@login_required
+def event_list_advanced(request):
+    """
+    Liste avancée des événements avec recherche et filtres.
+    """
+    form = EventSearchForm(request.GET or None)
+    events = Event.objects.select_related('category').prefetch_related('organizers')
+    
+    # Appliquer les filtres de base
+    if not request.user.is_staff:
+        # Filtrer par visibilité pour les non-staff
+        events = events.filter(Q(visibility='public') | Q(visibility='members'))
+    
+    # Appliquer les filtres du formulaire
+    if form.is_valid():
+        search = form.cleaned_data.get('search')
+        if search:
+            events = events.filter(
+                Q(title__icontains=search) |
+                Q(description__icontains=search) |
+                Q(location__icontains=search)
+            )
+        
+        category = form.cleaned_data.get('category')
+        if category:
+            events = events.filter(category=category)
+        
+        start_date = form.cleaned_data.get('start_date')
+        if start_date:
+            events = events.filter(start_date__gte=start_date)
+        
+        end_date = form.cleaned_data.get('end_date')
+        if end_date:
+            events = events.filter(start_date__lte=end_date)
+        
+        visibility = form.cleaned_data.get('visibility')
+        if visibility:
+            events = events.filter(visibility=visibility)
+        
+        show_cancelled = form.cleaned_data.get('show_cancelled')
+        if not show_cancelled:
+            events = events.filter(is_cancelled=False)
+    else:
+        # Par défaut, ne pas afficher les événements annulés
+        events = events.filter(is_cancelled=False)
+    
+    # Ordonner par date
+    events = events.order_by('start_date', 'start_time')
+    
+    # Pagination
+    from django.core.paginator import Paginator
+    paginator = Paginator(events, 20)
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+    
+    context = {
+        'form': form,
+        'events': page_obj,
+        'total_count': events.count(),
+    }
+    
+    if request.htmx:
+        return render(request, 'events/partials/event_list_content.html', context)
+    return render(request, 'events/event_list_advanced.html', context)

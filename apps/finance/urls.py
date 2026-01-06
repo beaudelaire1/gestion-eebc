@@ -8,6 +8,7 @@ app_name = 'finance'
 
 urlpatterns = [
     path('', views.dashboard, name='dashboard'),
+    path('dashboard/chart-data/', views.dashboard_chart_data, name='dashboard_chart_data'),
     path('transactions/', views.transaction_list, name='transaction_list'),
     path('transactions/create/', views.transaction_create, name='transaction_create'),
     path('transactions/<int:pk>/', views.transaction_detail, name='transaction_detail'),
@@ -49,4 +50,9 @@ urlpatterns = [
     path('receipts/', views.receipt_proof_list, name='receipt_proof_list'),
     path('receipts/upload/', views.receipt_proof_upload, name='receipt_proof_upload'),
     path('receipts/<int:pk>/process-ocr/', views.receipt_process_ocr, name='receipt_process_ocr'),
+    path('receipts/batch-retry-ocr/', views.batch_retry_ocr, name='batch_retry_ocr'),
+    
+    # API endpoints pour OCR
+    path('api/receipts/<int:pk>/ocr-status/', views.receipt_ocr_status_api, name='receipt_ocr_status_api'),
+    path('api/receipts/batch-ocr-status/', views.batch_ocr_status_api, name='batch_ocr_status_api'),
 ]

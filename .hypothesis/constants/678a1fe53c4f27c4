@@ -1,0 +1,4 @@
+# file: C:\Users\vilme\OneDrive\Bureau\eebc_project\apps\core\middleware.py
+# hypothesis_version: 6.148.7
+
+[100, 429, 500, ',', '/accounts/login/', '/admin/jsi18n/', '/api/', '/media/', '/static/', '0.0.0.0', 'HTTP_USER_AGENT', 'HTTP_X_FORWARDED_FOR', 'LOGIN_URL', 'RATE_LIMIT_ENABLED', 'RATE_LIMIT_REQUESTS', 'RATE_LIMIT_WINDOW', 'REMOTE_ADDR', 'Retry-After', 'X-Requested-With', 'XMLHttpRequest', '_session_expired', 'admin', 'application/json', 'count', 'error', 'rate_limit_exceeded', 'ratelimit', 'reason', 'retry_after', 'role', 'session_timeout', 'text/html', 'window_start']

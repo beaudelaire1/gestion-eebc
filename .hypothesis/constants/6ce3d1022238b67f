@@ -1,0 +1,4 @@
+# file: C:\Users\vilme\OneDrive\Bureau\eebc_project\apps\finance\forms.py
+# hypothesis_version: 6.148.7
+
+['0.01', '1', '12', 'accept', 'amount', 'category', 'class', 'date', 'description', 'event', 'form-control', 'form-select', 'image', 'image/*', 'max', 'member', 'min', 'month', 'notes', 'payment_method', 'planned_amount', 'proof_type', 'rows', 'step', 'transaction', 'transaction_date', 'transaction_type', 'type', 'year']

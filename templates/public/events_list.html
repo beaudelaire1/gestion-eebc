@@ -17,17 +17,17 @@
             <div class="col-md-6 col-lg-4 mb-4">
                 <div class="card h-100">
                     {% if event.image %}
-                    <img src="{{ event.image.url }}" class="card-img-top" alt="{{ event.title }}" style="height: 180px; object-fit: cover;">
+                    <img src="{{ event.image.url }}" class="card-img-top image-card--sm" alt="{{ event.title }}">
                     {% else %}
-                    <div class="card-img-top bg-primary d-flex align-items-center justify-content-center" style="height: 180px;">
-                        <i class="bi bi-calendar-event text-white" style="font-size: 3rem;"></i>
+                    <div class="card-img-top image-placeholder image-placeholder--primary image-card--sm">
+                        <i class="bi bi-calendar-event text-white image-placeholder__icon"></i>
                     </div>
                     {% endif %}
                     <div class="card-body">
                         <div class="d-flex align-items-center mb-3">
-                            <div class="bg-primary text-white text-center rounded p-2 me-3" style="min-width: 60px;">
-                                <div class="fw-bold fs-4">{{ event.start_date|date:"d" }}</div>
-                                <div class="small text-uppercase">{{ event.start_date|date:"M" }}</div>
+                            <div class="event-date-badge me-3">
+                                <div class="event-date-badge__day">{{ event.start_date|date:"d" }}</div>
+                                <div class="event-date-badge__month">{{ event.start_date|date:"M" }}</div>
                             </div>
                             <div>
                                 <h5 class="card-title mb-1">{{ event.title }}</h5>
@@ -54,7 +54,7 @@
             </div>
             {% empty %}
             <div class="col-12 text-center py-5">
-                <i class="bi bi-calendar-x text-muted" style="font-size: 4rem;"></i>
+                <i class="bi bi-calendar-x text-muted image-placeholder__icon--lg"></i>
                 <p class="text-muted mt-3">Aucun événement à venir pour le moment.</p>
             </div>
             {% endfor %}

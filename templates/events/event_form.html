@@ -1,0 +1,314 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}{{ title }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h1 class="h3 mb-0">{{ title }}</h1>
+                <a href="{% if event %}{% url 'events:detail' event.pk %}{% else %}{% url 'events:list' %}{% endif %}" 
+                   class="btn btn-outline-secondary">
+                    <i class="bi bi-arrow-left"></i> Retour
+                </a>
+            </div>
+
+            <div class="row">
+                <div class="col-lg-8">
+                    <div class="card">
+                        <div class="card-body">
+                            <form method="post" enctype="multipart/form-data">
+                                {% csrf_token %}
+                                
+                                {% if form.non_field_errors %}
+                                    <div class="alert alert-danger">
+                                        {{ form.non_field_errors }}
+                                    </div>
+                                {% endif %}
+
+                                <!-- Informations de base -->
+                                <div class="row mb-3">
+                                    <div class="col-12">
+                                        <h5 class="card-title">Informations générales</h5>
+                                    </div>
+                                </div>
+
+                                <div class="row mb-3">
+                                    <div class="col-md-8">
+                                        <label for="{{ form.title.id_for_label }}" class="form-label">{{ form.title.label }} *</label>
+                                        {{ form.title }}
+                                        {% if form.title.errors %}
+                                            <div class="text-danger small">{{ form.title.errors.0 }}</div>
+                                        {% endif %}
+                                    </div>
+                                    <div class="col-md-4">
+                                        <label for="{{ form.category.id_for_label }}" class="form-label">{{ form.category.label }}</label>
+                                        {{ form.category }}
+                                        {% if form.category.errors %}
+                                            <div class="text-danger small">{{ form.category.errors.0 }}</div>
+                                        {% endif %}
+                                    </div>
+                                </div>
+
+                                <div class="row mb-3">
+                                    <div class="col-12">
+                                        <label for="{{ form.description.id_for_label }}" class="form-label">{{ form.description.label }}</label>
+                                        {{ form.description }}
+                                        {% if form.description.errors %}
+                                            <div class="text-danger small">{{ form.description.errors.0 }}</div>
+                                        {% endif %}
+                                    </div>
+                                </div>
+
+                                <!-- Date et heure -->
+                                <div class="row mb-3">
+                                    <div class="col-12">
+                                        <h5 class="card-title">Date et heure</h5>
+                                    </div>
+                                </div>
+
+                                <div class="row mb-3">
+                                    <div class="col-md-3">
+                                        <label for="{{ form.start_date.id_for_label }}" class="form-label">{{ form.start_date.label }} *</label>
+                                        {{ form.start_date }}
+                                        {% if form.start_date.errors %}
+                                            <div class="text-danger small">{{ form.start_date.errors.0 }}</div>
+                                        {% endif %}
+                                    </div>
+                                    <div class="col-md-3">
+                                        <label for="{{ form.start_time.id_for_label }}" class="form-label">{{ form.start_time.label }}</label>
+                                        {{ form.start_time }}
+                                        {% if form.start_time.errors %}
+                                            <div class="text-danger small">{{ form.start_time.errors.0 }}</div>
+                                        {% endif %}
+                                    </div>
+                                    <div class="col-md-3">
+                                        <label for="{{ form.end_date.id_for_label }}" class="form-label">{{ form.end_date.label }}</label>
+                                        {{ form.end_date }}
+                                        {% if form.end_date.errors %}
+                                            <div class="text-danger small">{{ form.end_date.errors.0 }}</div>
+                                        {% endif %}
+                                    </div>
+                                    <div class="col-md-3">
+                                        <label for="{{ form.end_time.id_for_label }}" class="form-label">{{ form.end_time.label }}</label>
+                                        {{ form.end_time }}
+                                        {% if form.end_time.errors %}
+                                            <div class="text-danger small">{{ form.end_time.errors.0 }}</div>
+                                        {% endif %}
+                                    </div>
+                                </div>
+
+                                <div class="row mb-3">
+                                    <div class="col-md-6">
+                                        <div class="form-check">
+                                            {{ form.all_day }}
+                                            <label class="form-check-label" for="{{ form.all_day.id_for_label }}">
+                                                {{ form.all_day.label }}
+                                            </label>
+                                            {% if form.all_day.help_text %}
+                                                <div class="form-text">{{ form.all_day.help_text }}</div>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Lieu -->
+                                <div class="row mb-3">
+                                    <div class="col-12">
+                                        <h5 class="card-title">Lieu</h5>
+                                    </div>
+                                </div>
+
+                                <div class="row mb-3">
+                                    <div class="col-md-6">
+                                        <label for="{{ form.location.id_for_label }}" class="form-label">{{ form.location.label }}</label>
+                                        {{ form.location }}
+                                        {% if form.location.errors %}
+                                            <div class="text-danger small">{{ form.location.errors.0 }}</div>
+                                        {% endif %}
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label for="{{ form.address.id_for_label }}" class="form-label">{{ form.address.label }}</label>
+                                        {{ form.address }}
+                                        {% if form.address.errors %}
+                                            <div class="text-danger small">{{ form.address.errors.0 }}</div>
+                                        {% endif %}
+                                    </div>
+                                </div>
+
+                                <!-- Organisateurs et paramètres -->
+                                <div class="row mb-3">
+                                    <div class="col-12">
+                                        <h5 class="card-title">Organisation</h5>
+                                    </div>
+                                </div>
+
+                                <div class="row mb-3">
+                                    <div class="col-md-6">
+                                        <label for="{{ form.organizers.id_for_label }}" class="form-label">{{ form.organizers.label }}</label>
+                                        {{ form.organizers }}
+                                        {% if form.organizers.errors %}
+                                            <div class="text-danger small">{{ form.organizers.errors.0 }}</div>
+                                        {% endif %}
+                                        <div class="form-text">Maintenez Ctrl (Cmd sur Mac) pour sélectionner plusieurs organisateurs</div>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <label for="{{ form.visibility.id_for_label }}" class="form-label">{{ form.visibility.label }}</label>
+                                        {{ form.visibility }}
+                                        {% if form.visibility.errors %}
+                                            <div class="text-danger small">{{ form.visibility.errors.0 }}</div>
+                                        {% endif %}
+                                    </div>
+                                    <div class="col-md-3">
+                                        <label for="{{ form.notification_scope.id_for_label }}" class="form-label">{{ form.notification_scope.label }}</label>
+                                        {{ form.notification_scope }}
+                                        {% if form.notification_scope.errors %}
+                                            <div class="text-danger small">{{ form.notification_scope.errors.0 }}</div>
+                                        {% endif %}
+                                    </div>
+                                </div>
+
+                                <div class="row mb-3">
+                                    <div class="col-md-4">
+                                        <label for="{{ form.department.id_for_label }}" class="form-label">{{ form.department.label }}</label>
+                                        {{ form.department }}
+                                        {% if form.department.errors %}
+                                            <div class="text-danger small">{{ form.department.errors.0 }}</div>
+                                        {% endif %}
+                                    </div>
+                                    <div class="col-md-4">
+                                        <label for="{{ form.group.id_for_label }}" class="form-label">{{ form.group.label }}</label>
+                                        {{ form.group }}
+                                        {% if form.group.errors %}
+                                            <div class="text-danger small">{{ form.group.errors.0 }}</div>
+                                        {% endif %}
+                                    </div>
+                                    <div class="col-md-4">
+                                        <label for="{{ form.notify_before.id_for_label }}" class="form-label">{{ form.notify_before.label }}</label>
+                                        {{ form.notify_before }}
+                                        {% if form.notify_before.errors %}
+                                            <div class="text-danger small">{{ form.notify_before.errors.0 }}</div>
+                                        {% endif %}
+                                        {% if form.notify_before.help_text %}
+                                            <div class="form-text">{{ form.notify_before.help_text }}</div>
+                                        {% endif %}
+                                    </div>
+                                </div>
+
+                                <!-- Récurrence -->
+                                <div class="row mb-3">
+                                    <div class="col-12">
+                                        <h5 class="card-title">Récurrence</h5>
+                                    </div>
+                                </div>
+
+                                <div class="row mb-3">
+                                    <div class="col-md-6">
+                                        <label for="{{ form.recurrence.id_for_label }}" class="form-label">{{ form.recurrence.label }}</label>
+                                        {{ form.recurrence }}
+                                        {% if form.recurrence.errors %}
+                                            <div class="text-danger small">{{ form.recurrence.errors.0 }}</div>
+                                        {% endif %}
+                                        {% if form.recurrence.help_text %}
+                                            <div class="form-text">{{ form.recurrence.help_text }}</div>
+                                        {% endif %}
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label for="{{ form.recurrence_end_date.id_for_label }}" class="form-label">{{ form.recurrence_end_date.label }}</label>
+                                        {{ form.recurrence_end_date }}
+                                        {% if form.recurrence_end_date.errors %}
+                                            <div class="text-danger small">{{ form.recurrence_end_date.errors.0 }}</div>
+                                        {% endif %}
+                                    </div>
+                                </div>
+
+                                <!-- Image -->
+                                <div class="row mb-3">
+                                    <div class="col-md-6">
+                                        <label for="{{ form.image.id_for_label }}" class="form-label">{{ form.image.label }}</label>
+                                        {{ form.image }}
+                                        {% if form.image.errors %}
+                                            <div class="text-danger small">{{ form.image.errors.0 }}</div>
+                                        {% endif %}
+                                        {% if event and event.image %}
+                                            <div class="mt-2">
+                                                <small class="text-muted">Image actuelle:</small><br>
+                                                <img src="{{ event.image.url }}" alt="Image actuelle" class="img-thumbnail" style="max-width: 200px;">
+                                            </div>
+                                        {% endif %}
+                                    </div>
+                                </div>
+
+                                <div class="d-flex justify-content-between">
+                                    <a href="{% if event %}{% url 'events:detail' event.pk %}{% else %}{% url 'events:list' %}{% endif %}" 
+                                       class="btn btn-outline-secondary">Annuler</a>
+                                    <button type="submit" class="btn btn-primary">
+                                        <i class="bi bi-check-lg"></i> {{ submit_text }}
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-lg-4">
+                    <div class="card">
+                        <div class="card-header">
+                            <h6 class="card-title mb-0">Aide</h6>
+                        </div>
+                        <div class="card-body">
+                            <ul class="list-unstyled small">
+                                <li><strong>Titre :</strong> Nom de l'événement (obligatoire)</li>
+                                <li><strong>Catégorie :</strong> Permet de classer et colorer l'événement</li>
+                                <li><strong>Toute la journée :</strong> Cocher si l'événement n'a pas d'heure précise</li>
+                                <li><strong>Récurrence :</strong> Pour les événements répétitifs</li>
+                                <li><strong>Visibilité :</strong> Qui peut voir cet événement</li>
+                                <li><strong>Notifications :</strong> Qui recevra les notifications</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Gérer l'affichage des heures selon "Toute la journée"
+    const allDayCheckbox = document.getElementById('{{ form.all_day.id_for_label }}');
+    const startTimeField = document.getElementById('{{ form.start_time.id_for_label }}');
+    const endTimeField = document.getElementById('{{ form.end_time.id_for_label }}');
+    
+    function toggleTimeFields() {
+        const isAllDay = allDayCheckbox.checked;
+        startTimeField.disabled = isAllDay;
+        endTimeField.disabled = isAllDay;
+        if (isAllDay) {
+            startTimeField.value = '';
+            endTimeField.value = '';
+        }
+    }
+    
+    allDayCheckbox.addEventListener('change', toggleTimeFields);
+    toggleTimeFields(); // Initialiser l'état
+    
+    // Gérer l'affichage de la date de fin de récurrence
+    const recurrenceField = document.getElementById('{{ form.recurrence.id_for_label }}');
+    const recurrenceEndField = document.getElementById('{{ form.recurrence_end_date.id_for_label }}');
+    
+    function toggleRecurrenceEndDate() {
+        const isRecurrent = recurrenceField.value !== 'none' && recurrenceField.value !== '';
+        recurrenceEndField.disabled = !isRecurrent;
+        if (!isRecurrent) {
+            recurrenceEndField.value = '';
+        }
+    }
+    
+    recurrenceField.addEventListener('change', toggleRecurrenceEndDate);
+    toggleRecurrenceEndDate(); // Initialiser l'état
+});
+</script>
+{% endblock %}

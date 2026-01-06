@@ -1,0 +1,4 @@
+# file: C:\Users\vilme\OneDrive\Bureau\eebc_project\gestion_eebc\settings\test.py
+# hypothesis_version: 6.148.7
+
+[':memory:', 'BACKEND', 'ENGINE', 'NAME', 'default']

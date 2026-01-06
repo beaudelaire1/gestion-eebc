@@ -14,9 +14,14 @@
             Toutes
         </a>
     </div>
-    <a href="{% url 'admin:campaigns_campaign_add' %}" class="btn btn-primary">
-        <i class="bi bi-plus-lg me-2"></i>Nouvelle campagne
-    </a>
+    <div>
+        <a href="{% url 'campaigns:donate_general' %}" class="btn btn-success me-2">
+            <i class="bi bi-coin me-2"></i>Nouveau don
+        </a>
+        <a href="{% url 'campaigns:create' %}" class="btn btn-primary">
+            <i class="bi bi-plus-lg me-2"></i>Nouvelle campagne
+        </a>
+    </div>
 </div>
 
 <div class="row g-4">
@@ -31,6 +36,8 @@
                         <span class="badge bg-secondary">Terminée</span>
                         {% elif campaign.is_critical %}
                         <span class="badge bg-danger">Critique</span>
+                        {% elif campaign.collected_amount >= campaign.goal_amount %}
+                        <span class="badge bg-success">Objectif atteint</span>
                         {% endif %}
                     </div>
                     <div class="text-end">
@@ -38,13 +45,16 @@
                     </div>
                 </div>
                 
-                <div class="progress mb-3" style="height: 12px;">
-                    <div class="progress-bar bg-{{ campaign.status_color }}" style="width: {{ campaign.progress_percentage }}%;"></div>
+                <!-- Barre de progression en temps réel -->
+                <div class="progress mb-3" style="height: 12px;" id="progress-{{ campaign.pk }}">
+                    <div class="progress-bar bg-{{ campaign.status_color }}" 
+                         style="width: {{ campaign.progress_percentage }}%;"
+                         data-campaign-id="{{ campaign.pk }}"></div>
                 </div>
                 
                 <div class="row text-center mb-3">
                     <div class="col-4">
-                        <div class="h5 mb-0">{{ campaign.collected_amount|floatformat:0 }}€</div>
+                        <div class="h5 mb-0" id="collected-{{ campaign.pk }}">{{ campaign.collected_amount|floatformat:0 }}€</div>
                         <small class="text-muted">Collecté</small>
                     </div>
                     <div class="col-4">
@@ -52,7 +62,7 @@
                         <small class="text-muted">Objectif</small>
                     </div>
                     <div class="col-4">
-                        <div class="h5 mb-0">{{ campaign.remaining_amount|floatformat:0 }}€</div>
+                        <div class="h5 mb-0" id="remaining-{{ campaign.pk }}">{{ campaign.remaining_amount|floatformat:0 }}€</div>
                         <small class="text-muted">Restant</small>
                     </div>
                 </div>
@@ -63,12 +73,19 @@
                 </p>
             </div>
             <div class="card-footer">
-                <a href="{% url 'campaigns:detail' campaign.pk %}" class="btn btn-outline-light btn-sm">
-                    <i class="bi bi-eye me-1"></i>Détails
-                </a>
-                <a href="{% url 'admin:campaigns_donation_add' %}?campaign={{ campaign.pk }}" class="btn btn-primary btn-sm">
-                    <i class="bi bi-plus me-1"></i>Ajouter un don
-                </a>
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <a href="{% url 'campaigns:detail' campaign.pk %}" class="btn btn-outline-light btn-sm">
+                            <i class="bi bi-eye me-1"></i>Détails
+                        </a>
+                        <a href="{% url 'campaigns:update' campaign.pk %}" class="btn btn-outline-primary btn-sm">
+                            <i class="bi bi-pencil me-1"></i>Modifier
+                        </a>
+                    </div>
+                    <a href="{% url 'campaigns:donate' campaign.pk %}" class="btn btn-primary btn-sm">
+                        <i class="bi bi-plus me-1"></i>Ajouter un don
+                    </a>
+                </div>
             </div>
         </div>
     </div>
@@ -79,7 +96,7 @@
                 <i class="bi bi-coin fs-1 d-block mb-3"></i>
                 Aucune campagne trouvée
                 <br><br>
-                <a href="{% url 'admin:campaigns_campaign_add' %}" class="btn btn-primary">
+                <a href="{% url 'campaigns:create' %}" class="btn btn-primary">
                     Créer une campagne
                 </a>
             </div>
@@ -87,5 +104,51 @@
     </div>
     {% endfor %}
 </div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Mise à jour en temps réel de la progression des campagnes
+function updateCampaignProgress() {
+    const progressBars = document.querySelectorAll('[data-campaign-id]');
+    
+    progressBars.forEach(bar => {
+        const campaignId = bar.dataset.campaignId;
+        
+        fetch(`/campaigns/${campaignId}/progress/`)
+            .then(response => response.json())
+            .then(data => {
+                // Mettre à jour la barre de progression
+                bar.style.width = `${data.progress_percentage}%`;
+                bar.className = `progress-bar bg-${data.status_color}`;
+                
+                // Mettre à jour les montants
+                const collectedElement = document.getElementById(`collected-${campaignId}`);
+                const remainingElement = document.getElementById(`remaining-${campaignId}`);
+                
+                if (collectedElement) {
+                    collectedElement.textContent = `${Math.round(data.collected_amount)}€`;
+                }
+                if (remainingElement) {
+                    remainingElement.textContent = `${Math.round(data.remaining_amount)}€`;
+                }
+                
+                // Notification si objectif atteint pour la première fois
+                if (data.goal_reached && !bar.dataset.goalNotified) {
+                    bar.dataset.goalNotified = 'true';
+                    // Récupérer le nom de la campagne depuis le DOM
+                    const campaignCard = bar.closest('.card');
+                    const campaignNameElement = campaignCard.querySelector('h5');
+                    const campaignName = campaignNameElement ? campaignNameElement.textContent.trim() : 'cette campagne';
+                    window.toastManager.goalReached(campaignName);
+                }
+            })
+            .catch(error => console.error('Erreur lors de la mise à jour:', error));
+    });
+}
+
+// Mettre à jour toutes les 30 secondes
+setInterval(updateCampaignProgress, 30000);
+</script>
 {% endblock %}
 

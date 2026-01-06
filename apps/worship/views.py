@@ -6,10 +6,12 @@ from django.contrib import messages
 from django.http import JsonResponse, HttpResponse
 from django.template.loader import render_to_string
 from django.views.decorators.http import require_POST
+from django.db import models
 from datetime import date, timedelta
 
 from .models import WorshipService, ServiceRole, ServicePlanItem, ServiceTemplate
 from .forms import WorshipServiceForm, ServiceRoleForm, ServicePlanItemForm
+from apps.core.permissions import role_required
 
 
 @login_required
@@ -52,6 +54,7 @@ def service_detail(request, pk):
 
 
 @login_required
+@role_required('admin', 'responsable_groupe')
 def service_create(request):
     """Créer un nouveau service."""
     if request.method == 'POST':
@@ -69,6 +72,7 @@ def service_create(request):
 
 
 @login_required
+@role_required('admin', 'responsable_groupe')
 def service_edit(request, pk):
     """Modifier un service."""
     service = get_object_or_404(WorshipService, pk=pk)
@@ -86,6 +90,7 @@ def service_edit(request, pk):
 
 
 @login_required
+@role_required('admin', 'responsable_groupe')
 @require_POST
 def role_assign(request, service_pk):
     """Assigner un membre à un rôle (HTMX)."""
@@ -154,6 +159,7 @@ def role_decline(request, pk):
 
 
 @login_required
+@role_required('admin', 'responsable_groupe')
 def plan_edit(request, service_pk):
     """Éditer le déroulement d'un service."""
     service = get_object_or_404(WorshipService, pk=service_pk)
@@ -169,6 +175,7 @@ def plan_edit(request, service_pk):
 
 
 @login_required
+@role_required('admin', 'responsable_groupe')
 @require_POST
 def plan_item_add(request, service_pk):
     """Ajouter un élément au programme (HTMX)."""
@@ -225,6 +232,7 @@ def run_sheet_pdf(request, pk):
 
 
 @login_required
+@role_required('admin', 'responsable_groupe')
 def apply_template(request, service_pk, template_pk):
     """Applique un modèle de service."""
     service = get_object_or_404(WorshipService, pk=service_pk)
@@ -284,6 +292,7 @@ def monthly_schedule_list(request):
 
 
 @login_required
+@role_required('admin', 'responsable_groupe')
 def monthly_schedule_create(request):
     """Créer un nouveau planning mensuel."""
     from apps.core.models import Site
@@ -348,6 +357,7 @@ def monthly_schedule_detail(request, pk):
 
 
 @login_required
+@role_required('admin', 'responsable_groupe')
 def monthly_schedule_edit(request, pk):
     """Modifier les paramètres d'un planning."""
     schedule = get_object_or_404(MonthlySchedule, pk=pk)
@@ -376,6 +386,7 @@ def monthly_schedule_edit(request, pk):
 
 
 @login_required
+@role_required('admin', 'responsable_groupe')
 def generate_sundays(request, pk):
     """Génère les cultes pour tous les dimanches du mois."""
     schedule = get_object_or_404(MonthlySchedule, pk=pk)
@@ -397,6 +408,7 @@ def generate_sundays(request, pk):
 
 
 @login_required
+@role_required('admin', 'responsable_groupe')
 def publish_schedule(request, pk):
     """Publie le planning."""
     schedule = get_object_or_404(MonthlySchedule, pk=pk)
@@ -406,6 +418,7 @@ def publish_schedule(request, pk):
 
 
 @login_required
+@role_required('admin', 'responsable_groupe')
 def send_notifications(request, pk):
     """Envoie les notifications pour tous les cultes."""
     schedule = get_object_or_404(MonthlySchedule, pk=pk)
@@ -447,6 +460,7 @@ def scheduled_service_detail(request, pk):
 
 
 @login_required
+@role_required('admin', 'responsable_groupe')
 def scheduled_service_edit(request, pk):
     """Modifier un culte programmé."""
     service = get_object_or_404(ScheduledService, pk=pk)

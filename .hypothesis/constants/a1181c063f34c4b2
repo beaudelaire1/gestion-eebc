@@ -1,0 +1,4 @@
+# file: C:\Users\vilme\OneDrive\Bureau\eebc_project\gestion_eebc\urls.py
+# hypothesis_version: 6.148.7
+
+['EEBC Admin', 'Gestion EEBC', 'admin/', 'admin/members/map/', 'admin_members_map', 'app/', 'app/accounts/', 'app/bibleclub/', 'app/campaigns/', 'app/communication/', 'app/departments/', 'app/events/', 'app/exports/', 'app/finance/', 'app/groups/', 'app/inventory/', 'app/members/', 'app/transport/', 'app/worship/', 'apps.accounts.urls', 'apps.bibleclub.urls', 'apps.campaigns.urls', 'apps.core.urls', 'apps.dashboard.urls', 'apps.events.urls', 'apps.finance.urls', 'apps.groups.urls', 'apps.inventory.urls', 'apps.members.urls', 'apps.transport.urls', 'apps.worship.urls', 'public_confirm_role', 'public_decline_role']

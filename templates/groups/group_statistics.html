@@ -1,0 +1,217 @@
+{% extends 'base.html' %}
+
+{% block title %}Statistiques - {{ group.name }} - EEBC{% endblock %}
+{% block page_title %}Statistiques de présence{% endblock %}
+{% block page_subtitle %}{{ group.name }}{% endblock %}
+
+{% block extra_head %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+{% endblock %}
+
+{% block content %}
+<div class="row g-4">
+    <!-- Statistiques générales -->
+    <div class="col-12">
+        <div class="row g-3">
+            <div class="col-md-3">
+                <div class="card text-center">
+                    <div class="card-body">
+                        <div class="display-6 text-primary mb-2">{{ stats.total_meetings }}</div>
+                        <h6 class="card-title">Réunions</h6>
+                        <small class="text-muted">6 derniers mois</small>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card text-center">
+                    <div class="card-body">
+                        <div class="display-6 text-success mb-2">{{ stats.avg_attendance|floatformat:1 }}</div>
+                        <h6 class="card-title">Présence moyenne</h6>
+                        <small class="text-muted">par réunion</small>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card text-center">
+                    <div class="card-body">
+                        <div class="display-6 text-info mb-2">{{ stats.member_count }}</div>
+                        <h6 class="card-title">Membres</h6>
+                        <small class="text-muted">inscrits au groupe</small>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card text-center">
+                    <div class="card-body">
+                        <div class="display-6 text-warning mb-2">
+                            {% if stats.member_count > 0 %}
+                                {{ stats.attendance_rate|floatformat:0 }}%
+                            {% else %}
+                                0%
+                            {% endif %}
+                        </div>
+                        <h6 class="card-title">Taux de présence</h6>
+                        <small class="text-muted">moyen</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Graphique d'évolution -->
+    <div class="col-lg-8">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">
+                    <i class="bi bi-graph-up me-2"></i>Évolution de la présence
+                </h5>
+            </div>
+            <div class="card-body">
+                <canvas id="attendanceChart" width="400" height="200"></canvas>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Informations du groupe -->
+    <div class="col-lg-4">
+        <div class="card">
+            <div class="card-header">
+                <h6 class="card-title mb-0">
+                    <i class="bi bi-info-circle me-2"></i>Informations du groupe
+                </h6>
+            </div>
+            <div class="card-body">
+                <div class="d-flex align-items-center mb-3">
+                    <div class="avatar me-3" style="width: 48px; height: 48px; background-color: {{ group.color }};">
+                        {{ group.name|slice:":1"|upper }}
+                    </div>
+                    <div>
+                        <h6 class="mb-1">{{ group.name }}</h6>
+                        <small class="text-muted">{{ group.get_group_type_display }}</small>
+                    </div>
+                </div>
+                
+                {% if group.description %}
+                <p class="text-muted mb-3">{{ group.description }}</p>
+                {% endif %}
+                
+                {% if group.leader %}
+                <p class="mb-2">
+                    <i class="bi bi-person-badge me-2 text-muted"></i>
+                    <strong>Responsable:</strong> {{ group.leader.get_full_name }}
+                </p>
+                {% endif %}
+                
+                {% if group.meeting_day %}
+                <p class="mb-2">
+                    <i class="bi bi-calendar-week me-2 text-muted"></i>
+                    <strong>Réunions:</strong> {{ group.get_meeting_day_display }}
+                    {% if group.meeting_time %} à {{ group.meeting_time|time:"H:i" }}{% endif %}
+                </p>
+                {% endif %}
+                
+                {% if group.meeting_location %}
+                <p class="mb-0">
+                    <i class="bi bi-geo-alt me-2 text-muted"></i>
+                    <strong>Lieu:</strong> {{ group.meeting_location }}
+                </p>
+                {% endif %}
+            </div>
+            <div class="card-footer">
+                <div class="d-flex gap-2">
+                    <a href="{% url 'groups:detail' group.pk %}" class="btn btn-outline-light btn-sm flex-grow-1">
+                        <i class="bi bi-arrow-left me-1"></i>Retour
+                    </a>
+                    <a href="{% url 'groups:update' group.pk %}" class="btn btn-outline-light btn-sm">
+                        <i class="bi bi-pencil"></i>
+                    </a>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Actions rapides -->
+        <div class="card mt-3">
+            <div class="card-header">
+                <h6 class="card-title mb-0">
+                    <i class="bi bi-lightning me-2"></i>Actions rapides
+                </h6>
+            </div>
+            <div class="card-body">
+                <div class="d-grid gap-2">
+                    <a href="{% url 'groups:meeting_create' group.pk %}" class="btn btn-outline-primary btn-sm">
+                        <i class="bi bi-calendar-plus me-2"></i>Planifier une réunion
+                    </a>
+                    <a href="{% url 'groups:members_manage' group.pk %}" class="btn btn-outline-secondary btn-sm">
+                        <i class="bi bi-people me-2"></i>Gérer les membres
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const chartData = {{ chart_data|safe }};
+    
+    const ctx = document.getElementById('attendanceChart').getContext('2d');
+    const chart = new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: chartData.map(item => {
+                const date = new Date(item.date);
+                return date.toLocaleDateString('fr-FR', { 
+                    day: '2-digit', 
+                    month: '2-digit' 
+                });
+            }),
+            datasets: [{
+                label: 'Nombre de participants',
+                data: chartData.map(item => item.attendees),
+                borderColor: '{{ group.color }}',
+                backgroundColor: '{{ group.color }}20',
+                borderWidth: 2,
+                fill: true,
+                tension: 0.4
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    display: false
+                },
+                tooltip: {
+                    callbacks: {
+                        title: function(context) {
+                            const index = context[0].dataIndex;
+                            const date = new Date(chartData[index].date);
+                            return date.toLocaleDateString('fr-FR', { 
+                                weekday: 'long',
+                                day: '2-digit', 
+                                month: 'long',
+                                year: 'numeric'
+                            });
+                        },
+                        afterLabel: function(context) {
+                            const index = context.dataIndex;
+                            const topic = chartData[index].topic;
+                            return topic ? `Sujet: ${topic}` : '';
+                        }
+                    }
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    ticks: {
+                        stepSize: 1
+                    }
+                }
+            }
+        }
+    });
+});
+</script>
+{% endblock %}

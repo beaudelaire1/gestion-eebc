@@ -1,0 +1,4 @@
+# file: C:\Users\vilme\OneDrive\Bureau\eebc_project\apps\finance\forms.py
+# hypothesis_version: 6.148.7
+
+[2020, 2050, '0.00', '0.01', 'accept', 'amount', 'category', 'date', 'description', 'event', 'image', 'image/*', 'max', 'member', 'min', 'month', 'notes', 'payment_method', 'placeholder', 'planned_amount', 'proof_type', 'rows', 'step', 'transaction', 'transaction_date', 'transaction_type', 'type', 'year']

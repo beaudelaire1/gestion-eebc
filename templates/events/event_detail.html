@@ -76,12 +76,14 @@
                 </div>
                 {% endif %}
                 
-                {% if event.organizer %}
+                {% if event.organizers.exists %}
                 <div class="mb-3">
-                    <div class="text-muted small mb-1">Organisateur</div>
+                    <div class="text-muted small mb-1">Organisateur{{ event.organizers.count|pluralize }}</div>
                     <div class="fw-semibold">
                         <i class="bi bi-person me-2"></i>
-                        {{ event.organizer.get_full_name }}
+                        {% for organizer in event.organizers.all %}
+                            {{ organizer.get_full_name|default:organizer.username }}{% if not forloop.last %}, {% endif %}
+                        {% endfor %}
                     </div>
                 </div>
                 {% endif %}
@@ -98,13 +100,26 @@
             </div>
         </div>
         
-        <div class="d-flex gap-2">
-            <a href="{% url 'events:calendar' %}" class="btn btn-outline-light flex-grow-1">
+        <div class="d-flex gap-2 flex-wrap">
+            <a href="{% url 'events:calendar' %}" class="btn btn-outline-secondary">
                 <i class="bi bi-calendar me-2"></i>Calendrier
             </a>
-            <a href="{% url 'admin:events_event_change' event.pk %}" class="btn btn-primary flex-grow-1">
-                <i class="bi bi-pencil me-2"></i>Modifier
-            </a>
+            
+            {% if user.role == 'admin' or user.role == 'secretariat' or user in event.organizers.all %}
+                <a href="{% url 'events:update' event.pk %}" class="btn btn-primary">
+                    <i class="bi bi-pencil me-2"></i>Modifier
+                </a>
+                
+                {% if not event.is_cancelled %}
+                    <a href="{% url 'events:cancel' event.pk %}" class="btn btn-warning">
+                        <i class="bi bi-x-circle me-2"></i>Annuler
+                    </a>
+                {% endif %}
+                
+                <a href="{% url 'events:duplicate' event.pk %}" class="btn btn-outline-primary">
+                    <i class="bi bi-copy me-2"></i>Dupliquer
+                </a>
+            {% endif %}
         </div>
     </div>
 </div>

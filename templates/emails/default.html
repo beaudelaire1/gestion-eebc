@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ subject|default:"Notification EEBC" }}</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .header {
+            background-color: #2c3e50;
+            color: white;
+            padding: 20px;
+            text-align: center;
+            border-radius: 5px 5px 0 0;
+        }
+        .content {
+            background-color: #f8f9fa;
+            padding: 30px;
+            border-radius: 0 0 5px 5px;
+        }
+        .footer {
+            text-align: center;
+            margin-top: 30px;
+            padding: 20px;
+            background-color: #ecf0f1;
+            border-radius: 5px;
+            font-size: 12px;
+            color: #7f8c8d;
+        }
+        .button {
+            display: inline-block;
+            background-color: #3498db;
+            color: white;
+            padding: 12px 24px;
+            text-decoration: none;
+            border-radius: 5px;
+            margin: 10px 0;
+        }
+        .button:hover {
+            background-color: #2980b9;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>{{ site_name|default:"EEBC" }}</h1>
+    </div>
+    
+    <div class="content">
+        {% if recipient_name %}
+            <p>Cher(e) {{ recipient_name }},</p>
+        {% else %}
+            <p>Bonjour,</p>
+        {% endif %}
+        
+        <p>Vous recevez cette notification de la part de l'Église Évangélique Baptiste de Cabassou.</p>
+        
+        {% block content %}
+            <p>Contenu du message non disponible.</p>
+        {% endblock %}
+        
+        <p>Que Dieu vous bénisse,</p>
+        <p><strong>L'équipe EEBC</strong></p>
+    </div>
+    
+    <div class="footer">
+        <p>
+            {{ site_name|default:"EEBC - Église Évangélique Baptiste de Cabassou" }}<br>
+            {% if contact_email %}Email: {{ contact_email }}{% endif %}<br>
+            {% if site_url %}Site web: <a href="{{ site_url }}">{{ site_url }}</a>{% endif %}
+        </p>
+        <p>© {{ current_year }} EEBC. Tous droits réservés.</p>
+    </div>
+</body>
+</html>

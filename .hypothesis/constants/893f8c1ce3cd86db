@@ -1,0 +1,4 @@
+# file: C:\Users\vilme\OneDrive\Bureau\eebc_project\apps\events\tests.py
+# hypothesis_version: 6.148.7
+
+[200, 302, 500, 2020, ' (Copie Test)', ' (Copie)', '#ff0000', '%Y-%m-%d', '15:00', '2024-12-25', '?date=2024-12-25', '?search=Test', 'Content-Type', 'Copie Test', 'Filtres et recherche', 'Form errors:', 'Nouvel Événement', 'Response content:', 'Response status:', 'Test Category', 'Test Event', 'Test Location', 'Test cancellation', 'Test description', 'Test reason', 'admin', 'admin@test.com', 'admin_test', 'application/json', 'category', 'end_date', 'events:cancel', 'events:create', 'events:duplicate', 'events:events_json', 'events:list_advanced', 'events:update', 'membre', 'membre@test.com', 'membre_test', 'new_start_date', 'new_start_time', 'none', 'notification_scope', 'notify_before', 'notify_participants', 'pk', 'public', 'reason', 'recurrence', 'secretariat', 'secretariat@test.com', 'secretariat_test', 'start_date', 'testpass123', 'title', 'visibility']

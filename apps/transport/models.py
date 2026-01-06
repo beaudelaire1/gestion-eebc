@@ -58,6 +58,7 @@ class TransportRequest(models.Model):
     
     requester_name = models.CharField(max_length=200, verbose_name="Demandeur")
     requester_phone = models.CharField(max_length=20, verbose_name="Téléphone")
+    requester_email = models.EmailField(blank=True, verbose_name="Email du demandeur")
     pickup_address = models.TextField(verbose_name="Adresse de prise en charge")
     
     event_date = models.DateField(verbose_name="Date")

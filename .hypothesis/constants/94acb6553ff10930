@@ -1,0 +1,4 @@
+# file: C:\Users\vilme\OneDrive\Bureau\eebc_project\apps\finance\tasks.py
+# hypothesis_version: 6.148.7
+
+[100, 300, 'N/A', 'Unknown error', 'amount', 'cleaned_up', 'confidence', 'cutoff_time', 'date', 'error', 'errors', 'extracted_amount', 'extracted_date', 'failed', 'failed_receipts', 'failure_rate', 'id', 'ocr_confidence', 'processed_receipts', 'raw_text_length', 'receipt_id', 'success', 'success_rate', 'text', 'total', 'total_receipts']

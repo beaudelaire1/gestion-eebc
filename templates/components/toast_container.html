@@ -1,0 +1,158 @@
+<!-- Toast Container -->
+<div class="toast-container position-fixed bottom-0 end-0 p-3" style="z-index: 1055;">
+    <!-- Success Toast Template -->
+    <div id="success-toast-template" class="toast d-none" role="alert" aria-live="assertive" aria-atomic="true">
+        <div class="toast-header bg-success text-white">
+            <i class="bi bi-check-circle-fill me-2"></i>
+            <strong class="me-auto">Succès</strong>
+            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="toast"></button>
+        </div>
+        <div class="toast-body"></div>
+    </div>
+    
+    <!-- Goal Reached Toast Template -->
+    <div id="goal-reached-toast-template" class="toast d-none" role="alert" aria-live="assertive" aria-atomic="true">
+        <div class="toast-header bg-success text-white">
+            <i class="bi bi-trophy-fill me-2"></i>
+            <strong class="me-auto">🎉 Félicitations !</strong>
+            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="toast"></button>
+        </div>
+        <div class="toast-body"></div>
+    </div>
+    
+    <!-- Error Toast Template -->
+    <div id="error-toast-template" class="toast d-none" role="alert" aria-live="assertive" aria-atomic="true">
+        <div class="toast-header bg-danger text-white">
+            <i class="bi bi-exclamation-triangle-fill me-2"></i>
+            <strong class="me-auto">Erreur</strong>
+            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="toast"></button>
+        </div>
+        <div class="toast-body"></div>
+    </div>
+    
+    <!-- Warning Toast Template -->
+    <div id="warning-toast-template" class="toast d-none" role="alert" aria-live="assertive" aria-atomic="true">
+        <div class="toast-header bg-warning text-dark">
+            <i class="bi bi-exclamation-triangle-fill me-2"></i>
+            <strong class="me-auto">Attention</strong>
+            <button type="button" class="btn-close" data-bs-dismiss="toast"></button>
+        </div>
+        <div class="toast-body"></div>
+    </div>
+    
+    <!-- Info Toast Template -->
+    <div id="info-toast-template" class="toast d-none" role="alert" aria-live="assertive" aria-atomic="true">
+        <div class="toast-header bg-info text-white">
+            <i class="bi bi-info-circle-fill me-2"></i>
+            <strong class="me-auto">Information</strong>
+            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="toast"></button>
+        </div>
+        <div class="toast-body"></div>
+    </div>
+</div>
+
+<script>
+// Toast Notification System
+class ToastManager {
+    constructor() {
+        this.container = document.querySelector('.toast-container');
+        this.counter = 0;
+    }
+    
+    show(type, message, options = {}) {
+        const template = document.getElementById(`${type}-toast-template`);
+        if (!template) {
+            console.error(`Toast template not found: ${type}`);
+            return;
+        }
+        
+        // Clone template
+        const toast = template.cloneNode(true);
+        toast.id = `toast-${++this.counter}`;
+        toast.classList.remove('d-none');
+        
+        // Set message
+        const body = toast.querySelector('.toast-body');
+        body.innerHTML = message;
+        
+        // Configure options
+        const duration = options.duration || 5000;
+        const autohide = options.autohide !== false;
+        
+        // Add to container
+        this.container.appendChild(toast);
+        
+        // Initialize Bootstrap toast
+        const bsToast = new bootstrap.Toast(toast, {
+            autohide: autohide,
+            delay: duration
+        });
+        
+        // Show toast
+        bsToast.show();
+        
+        // Remove from DOM when hidden
+        toast.addEventListener('hidden.bs.toast', () => {
+            toast.remove();
+        });
+        
+        return bsToast;
+    }
+    
+    success(message, options = {}) {
+        return this.show('success', message, options);
+    }
+    
+    error(message, options = {}) {
+        return this.show('error', message, options);
+    }
+    
+    warning(message, options = {}) {
+        return this.show('warning', message, options);
+    }
+    
+    info(message, options = {}) {
+        return this.show('info', message, options);
+    }
+    
+    goalReached(campaignName, options = {}) {
+        const message = `L'objectif de la campagne "<strong>${campaignName}</strong>" a été atteint !`;
+        return this.show('goal-reached', message, { 
+            duration: 8000, 
+            ...options 
+        });
+    }
+}
+
+// Global toast manager
+window.toastManager = new ToastManager();
+
+// Convert Django messages to toasts on page load
+document.addEventListener('DOMContentLoaded', function() {
+    const alerts = document.querySelectorAll('.alert');
+    alerts.forEach(alert => {
+        const message = alert.textContent.trim();
+        let type = 'info';
+        
+        if (alert.classList.contains('alert-success')) {
+            type = 'success';
+        } else if (alert.classList.contains('alert-danger')) {
+            type = 'error';
+        } else if (alert.classList.contains('alert-warning')) {
+            type = 'warning';
+        }
+        
+        // Check for goal-reached messages
+        if (message.includes('objectif') && message.includes('atteint')) {
+            const campaignMatch = message.match(/campagne "([^"]+)"/);
+            const campaignName = campaignMatch ? campaignMatch[1] : 'cette campagne';
+            window.toastManager.goalReached(campaignName);
+        } else {
+            window.toastManager.show(type, message);
+        }
+        
+        // Hide original alert
+        alert.style.display = 'none';
+    });
+});
+</script>

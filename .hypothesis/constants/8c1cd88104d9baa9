@@ -1,0 +1,4 @@
+# file: C:\Users\vilme\OneDrive\Bureau\eebc_project\conftest.py
+# hypothesis_version: 6.148.7
+
+['Admin', 'Club', 'Encadrant', 'Finance', 'Groupe', 'Membre', 'Moniteur', 'Responsable', 'Secretariat', 'Super', 'Test', 'User', 'admin', 'admin_test', 'encadrant', 'encadrant_test', 'finance', 'finance_test', 'membre', 'membre_test', 'moniteur', 'moniteur_test', 'responsable_club', 'responsable_groupe', 'secretariat', 'secretariat_test', 'superuser_test', 'testpass123']

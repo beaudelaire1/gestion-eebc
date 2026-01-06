@@ -1,0 +1,146 @@
+{% extends 'base.html' %}
+
+{% block title %}Assigner un chauffeur - EEBC{% endblock %}
+{% block page_title %}Assigner un chauffeur{% endblock %}
+{% block page_subtitle %}{{ transport_request.requester_name }} - {{ transport_request.event_date|date:"d/m/Y" }}{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-lg-8">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">Assignation de chauffeur</h5>
+            </div>
+            <div class="card-body">
+                <form method="post">
+                    {% csrf_token %}
+                    
+                    <div class="row mb-4">
+                        <div class="col-md-6">
+                            <h6 class="text-muted">Détails de la demande</h6>
+                            <p><strong>Demandeur:</strong> {{ transport_request.requester_name }}</p>
+                            <p><strong>Date:</strong> {{ transport_request.event_date|date:"l d F Y" }}</p>
+                            <p><strong>Heure:</strong> {{ transport_request.event_time|time:"H:i" }}</p>
+                            <p><strong>Passagers:</strong> {{ transport_request.passengers_count }}</p>
+                            {% if transport_request.event_name %}
+                            <p><strong>Événement:</strong> {{ transport_request.event_name }}</p>
+                            {% endif %}
+                        </div>
+                        <div class="col-md-6">
+                            <h6 class="text-muted">Adresse de prise en charge</h6>
+                            <p>{{ transport_request.pickup_address|linebreaks }}</p>
+                        </div>
+                    </div>
+                    
+                    <hr>
+                    
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="{{ form.driver.id_for_label }}" class="form-label">
+                                {{ form.driver.label }}
+                            </label>
+                            {{ form.driver }}
+                            {% if form.driver.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {{ form.driver.errors.0 }}
+                                </div>
+                            {% endif %}
+                            <div class="form-text">
+                                {% if available_drivers.count > 0 %}
+                                    {{ available_drivers.count }} chauffeur{{ available_drivers.count|pluralize }} disponible{{ available_drivers.count|pluralize }}
+                                {% else %}
+                                    Aucun chauffeur disponible pour cette date/heure
+                                {% endif %}
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-6 mb-3">
+                            <label for="{{ form.status.id_for_label }}" class="form-label">
+                                {{ form.status.label }}
+                            </label>
+                            {{ form.status }}
+                            {% if form.status.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {{ form.status.errors.0 }}
+                                </div>
+                            {% endif %}
+                            <div class="form-text">
+                                Sélectionnez "Confirmé" pour envoyer un email de confirmation
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="d-flex gap-2">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="bi bi-check-lg me-2"></i>Assigner le chauffeur
+                        </button>
+                        <a href="{% url 'transport:request_detail' transport_request.pk %}" class="btn btn-outline-secondary">
+                            <i class="bi bi-x-lg me-2"></i>Annuler
+                        </a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-lg-4">
+        <div class="card">
+            <div class="card-header">
+                <h6 class="mb-0">Chauffeurs disponibles</h6>
+            </div>
+            <div class="card-body">
+                {% if available_drivers %}
+                    {% for driver in available_drivers %}
+                    <div class="d-flex align-items-center mb-3 pb-3 {% if not forloop.last %}border-bottom{% endif %}">
+                        <div class="avatar avatar--md me-3">
+                            {{ driver.user.first_name|slice:":1"|upper }}{{ driver.user.last_name|slice:":1"|upper }}
+                        </div>
+                        <div class="flex-grow-1">
+                            <div class="fw-semibold">{{ driver.user.get_full_name }}</div>
+                            <small class="text-muted">
+                                {{ driver.vehicle_type }} - {{ driver.capacity }} places
+                                {% if driver.zone %} - {{ driver.zone }}{% endif %}
+                            </small>
+                        </div>
+                    </div>
+                    {% endfor %}
+                {% else %}
+                    <div class="text-center text-muted">
+                        <i class="bi bi-exclamation-triangle fs-1 d-block mb-2"></i>
+                        <p>Aucun chauffeur disponible</p>
+                        <small>
+                            Vérifiez les disponibilités ou la capacité requise
+                        </small>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+        
+        <div class="card mt-3">
+            <div class="card-header">
+                <h6 class="mb-0">Critères de sélection</h6>
+            </div>
+            <div class="card-body">
+                <ul class="list-unstyled mb-0">
+                    <li class="mb-2">
+                        <i class="bi bi-check-circle text-success me-2"></i>
+                        Disponible le {% if transport_request.event_date.weekday == 6 %}dimanche{% else %}en semaine{% endif %}
+                    </li>
+                    <li class="mb-2">
+                        <i class="bi bi-check-circle text-success me-2"></i>
+                        Capacité ≥ {{ transport_request.passengers_count }} passagers
+                    </li>
+                    <li class="mb-2">
+                        <i class="bi bi-check-circle text-success me-2"></i>
+                        Pas d'autre transport à la même heure
+                    </li>
+                    <li>
+                        <i class="bi bi-check-circle text-success me-2"></i>
+                        Statut actif
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,229 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Erreur serveur - Gestion EEBC</title>
+    
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    
+    <style>
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        .error-container {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        
+        .error-card {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            overflow: hidden;
+            max-width: 600px;
+            width: 100%;
+        }
+        
+        .error-header {
+            background: linear-gradient(135deg, #ff6b6b, #ee5a24);
+            color: white;
+            padding: 2rem;
+            text-align: center;
+        }
+        
+        .error-icon {
+            font-size: 4rem;
+            margin-bottom: 1rem;
+            animation: pulse 2s infinite;
+        }
+        
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
+        }
+        
+        .error-body {
+            padding: 2rem;
+        }
+        
+        .btn-custom {
+            border-radius: 25px;
+            padding: 12px 30px;
+            font-weight: 500;
+            text-decoration: none;
+            transition: all 0.3s ease;
+        }
+        
+        .btn-primary-custom {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            border: none;
+            color: white;
+        }
+        
+        .btn-primary-custom:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+            color: white;
+        }
+        
+        .btn-outline-custom {
+            border: 2px solid #667eea;
+            color: #667eea;
+            background: transparent;
+        }
+        
+        .btn-outline-custom:hover {
+            background: #667eea;
+            color: white;
+            transform: translateY(-2px);
+        }
+        
+        .contact-info {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 1.5rem;
+            margin-top: 1.5rem;
+        }
+        
+        .error-code {
+            font-size: 1.2rem;
+            font-family: 'Courier New', monospace;
+            background: #f1f3f4;
+            padding: 0.5rem 1rem;
+            border-radius: 5px;
+            display: inline-block;
+            margin-top: 1rem;
+        }
+        
+        @media (max-width: 576px) {
+            .error-header {
+                padding: 1.5rem;
+            }
+            
+            .error-body {
+                padding: 1.5rem;
+            }
+            
+            .error-icon {
+                font-size: 3rem;
+            }
+            
+            .btn-custom {
+                width: 100%;
+                margin-bottom: 0.5rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="error-container">
+        <div class="error-card">
+            <!-- En-tête avec icône et titre -->
+            <div class="error-header">
+                <div class="error-icon">
+                    <i class="fas fa-exclamation-triangle"></i>
+                </div>
+                <h1 class="display-4 mb-2">500</h1>
+                <h2 class="h4 mb-0">Erreur interne du serveur</h2>
+            </div>
+            
+            <!-- Corps du message -->
+            <div class="error-body">
+                <!-- Message d'excuse -->
+                <div class="text-center mb-4">
+                    <h3 class="h5 text-dark mb-3">Nous sommes désolés !</h3>
+                    <p class="text-muted mb-3">
+                        Une erreur inattendue s'est produite sur notre serveur. 
+                        Nos équipes techniques ont été automatiquement notifiées et travaillent à résoudre ce problème.
+                    </p>
+                    <p class="text-muted">
+                        Veuillez réessayer dans quelques minutes.
+                    </p>
+                </div>
+                
+                <!-- Code d'erreur pour le support -->
+                <div class="text-center mb-4">
+                    <small class="text-muted d-block mb-2">Code d'erreur pour le support :</small>
+                    <div class="error-code">
+                        ERR-500-{{ "now"|date:"YmdHis" }}
+                    </div>
+                </div>
+                
+                <!-- Boutons d'action -->
+                <div class="d-flex flex-column flex-sm-row gap-3 justify-content-center mb-4">
+                    <button onclick="location.reload()" class="btn btn-outline-custom">
+                        <i class="fas fa-redo me-2"></i>
+                        Réessayer
+                    </button>
+                    <a href="/" class="btn btn-primary-custom">
+                        <i class="fas fa-home me-2"></i>
+                        Retour à l'accueil
+                    </a>
+                </div>
+                
+                <!-- Informations de contact support -->
+                <div class="contact-info">
+                    <h5 class="text-dark mb-3">
+                        <i class="fas fa-headset me-2 text-primary"></i>
+                        Besoin d'aide immédiate ?
+                    </h5>
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <div class="d-flex align-items-center">
+                                <i class="fas fa-envelope text-primary me-2"></i>
+                                <div>
+                                    <small class="text-muted d-block">Email</small>
+                                    <a href="mailto:support@eebc.org" class="text-decoration-none">
+                                        support@eebc.org
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="d-flex align-items-center">
+                                <i class="fas fa-phone text-primary me-2"></i>
+                                <div>
+                                    <small class="text-muted d-block">Téléphone</small>
+                                    <a href="tel:+33123456789" class="text-decoration-none">
+                                        01 23 45 67 89
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="mt-3 p-3 bg-white rounded">
+                        <small class="text-muted">
+                            <strong>Conseil :</strong> Lors de votre contact, mentionnez le code d'erreur ci-dessus 
+                            pour nous aider à identifier rapidement le problème.
+                        </small>
+                    </div>
+                </div>
+                
+                <!-- Message de statut système -->
+                <div class="text-center mt-4">
+                    <small class="text-muted">
+                        <i class="fas fa-info-circle me-1"></i>
+                        Statut du système : <a href="#" class="text-decoration-none">status.eebc.org</a>
+                    </small>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

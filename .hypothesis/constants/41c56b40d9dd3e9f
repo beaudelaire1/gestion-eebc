@@ -1,0 +1,4 @@
+# file: C:\Users\vilme\OneDrive\Bureau\eebc_project\apps\communication\urls.py
+# hypothesis_version: 6.148.7
+
+['announcement_create', 'announcement_detail', 'announcements', 'announcements/', 'communication', 'email_logs', 'logs/email/', 'logs/sms/', 'notification_detail', 'notifications', 'notifications/', 'notifications/count/', 'notifications_count', 'sms_logs']

@@ -310,48 +310,48 @@
 <!-- Stats Bar -->
 <div class="stats-bar">
     <div class="mini-stat">
-        <div class="mini-stat-icon" style="background: linear-gradient(135deg, #0A36FF 0%, #3b82f6 100%);">
+        <div class="mini-stat__icon mini-stat__icon--primary">
             <i class="bi bi-people-fill"></i>
         </div>
-        <div>
-            <div class="mini-stat-value">{{ total_count }}</div>
-            <div class="mini-stat-label">Total membres</div>
+        <div class="mini-stat__content">
+            <div class="mini-stat__value">{{ total_count }}</div>
+            <div class="mini-stat__label">Total membres</div>
         </div>
     </div>
     <div class="mini-stat">
-        <div class="mini-stat-icon" style="background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%);">
+        <div class="mini-stat__icon mini-stat__icon--success">
             <i class="bi bi-person-check-fill"></i>
         </div>
-        <div>
-            <div class="mini-stat-value">{{ actifs_count }}</div>
-            <div class="mini-stat-label">Actifs</div>
+        <div class="mini-stat__content">
+            <div class="mini-stat__value">{{ actifs_count }}</div>
+            <div class="mini-stat__label">Actifs</div>
         </div>
     </div>
     <div class="mini-stat">
-        <div class="mini-stat-icon" style="background: linear-gradient(135deg, #8b5cf6 0%, #6d28d9 100%);">
+        <div class="mini-stat__icon mini-stat__icon--purple">
             <i class="bi bi-droplet-fill"></i>
         </div>
-        <div>
-            <div class="mini-stat-value">{{ baptises_count }}</div>
-            <div class="mini-stat-label">Baptisés</div>
+        <div class="mini-stat__content">
+            <div class="mini-stat__value">{{ baptises_count }}</div>
+            <div class="mini-stat__label">Baptisés</div>
         </div>
     </div>
     <div class="mini-stat">
-        <div class="mini-stat-icon" style="background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);">
+        <div class="mini-stat__icon mini-stat__icon--blue">
             <i class="bi bi-gender-male"></i>
         </div>
-        <div>
-            <div class="mini-stat-value">{{ hommes_count }}</div>
-            <div class="mini-stat-label">Hommes</div>
+        <div class="mini-stat__content">
+            <div class="mini-stat__value">{{ hommes_count }}</div>
+            <div class="mini-stat__label">Hommes</div>
         </div>
     </div>
     <div class="mini-stat">
-        <div class="mini-stat-icon" style="background: linear-gradient(135deg, #ec4899 0%, #be185d 100%);">
+        <div class="mini-stat__icon mini-stat__icon--pink">
             <i class="bi bi-gender-female"></i>
         </div>
-        <div>
-            <div class="mini-stat-value">{{ femmes_count }}</div>
-            <div class="mini-stat-label">Femmes</div>
+        <div class="mini-stat__content">
+            <div class="mini-stat__value">{{ femmes_count }}</div>
+            <div class="mini-stat__label">Femmes</div>
         </div>
     </div>
 </div>
@@ -362,16 +362,16 @@
         <div class="col-md-5">
             <label class="form-label fw-bold">Rechercher</label>
             <div class="input-group">
-                <span class="input-group-text" style="border-radius: 12px 0 0 12px;">
+                <span class="input-group-text input-group__text">
                     <i class="bi bi-search"></i>
                 </span>
                 <input type="text" class="form-control" name="search" value="{{ search }}" 
                        placeholder="Nom, email ou téléphone..."
-                       style="border-radius: 0 12px 12px 0;"
                        hx-get="{% url 'members:list' %}"
                        hx-trigger="keyup changed delay:500ms"
                        hx-target="#members-content"
-                       hx-include="[name='status']">
+                       hx-include="[name='status']"
+                       hx-indicator="#search-loading">
             </div>
         </div>
         <div class="col-md-3">
@@ -380,7 +380,8 @@
                     hx-get="{% url 'members:list' %}"
                     hx-trigger="change"
                     hx-target="#members-content"
-                    hx-include="[name='search']">
+                    hx-include="[name='search']"
+                    hx-indicator="#search-loading">
                 <option value="">Tous les statuts</option>
                 {% for value, label in status_choices %}
                 <option value="{{ value }}" {% if status == value %}selected{% endif %}>{{ label }}</option>
@@ -498,32 +499,30 @@
     </div>
     
     <!-- Table View (hidden by default) -->
-    <div class="card table-view" id="table-view" style="display: none;">
-        <div class="card-body p-0">
+    <div class="card table-view" id="table-view">
+        <div class="card__body p-0">
             <div class="table-responsive">
                 <table class="table table-hover mb-0">
                     <thead>
                         <tr>
-                            <th>Membre</th>
-                            <th>Contact</th>
-                            <th>Ville</th>
-                            <th>Statut</th>
-                            <th>Baptisé</th>
-                            <th class="text-end">Actions</th>
+                            <th class="table__header">Membre</th>
+                            <th class="table__header">Contact</th>
+                            <th class="table__header">Ville</th>
+                            <th class="table__header">Statut</th>
+                            <th class="table__header">Baptisé</th>
+                            <th class="table__header text-end">Actions</th>
                         </tr>
                     </thead>
                     <tbody>
                         {% for member in members %}
-                        <tr>
-                            <td>
+                        <tr class="table__row">
+                            <td class="table__cell">
                                 <div class="d-flex align-items-center">
                                     {% if member.photo %}
                                     <img src="{{ member.photo.url }}" alt="{{ member.full_name }}" 
-                                         class="me-3" style="width: 45px; height: 45px; border-radius: 12px; object-fit: cover;">
+                                         class="avatar avatar--md me-3 image-card--sm">
                                     {% else %}
-                                    <div class="me-3" style="width: 45px; height: 45px; border-radius: 12px; 
-                                         background: {% if member.gender == 'M' %}linear-gradient(135deg, #0A36FF, #1d4ed8){% else %}linear-gradient(135deg, #8b5cf6, #6d28d9){% endif %};
-                                         display: flex; align-items: center; justify-content: center; color: white; font-weight: 700; font-size: 0.85rem;">
+                                    <div class="avatar avatar--md me-3 {% if member.gender == 'M' %}avatar--primary{% else %}avatar--purple{% endif %}">
                                         {{ member.first_name|slice:":1"|upper }}{{ member.last_name|slice:":1"|upper }}
                                     </div>
                                     {% endif %}
@@ -608,6 +607,11 @@
         </div>
     </div>
     {% endif %}
+</div>
+
+<!-- Search Loading Indicator -->
+<div id="search-loading" class="htmx-indicator">
+    {% include 'components/skeleton_member_list.html' %}
 </div>
 {% endblock %}
 

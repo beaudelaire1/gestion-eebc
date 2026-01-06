@@ -1,0 +1,4 @@
+# file: C:\Users\vilme\OneDrive\Bureau\eebc_project\apps\worship\signals.py
+# hypothesis_version: 6.148.7
+
+['%d/%m/%Y', 'event', 'notified_at', 'status']

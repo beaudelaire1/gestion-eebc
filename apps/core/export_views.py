@@ -8,8 +8,9 @@ Ce module fournit des vues génériques pour :
 
 from django.views.generic import View, TemplateView
 from django.contrib.auth.mixins import LoginRequiredMixin, PermissionRequiredMixin
+from django.contrib import messages
 from django.http import HttpResponse, JsonResponse
-from django.shortcuts import get_object_or_404, render
+from django.shortcuts import get_object_or_404, render, redirect
 from django.utils import timezone
 from datetime import datetime
 from decimal import Decimal
@@ -17,6 +18,179 @@ import json
 
 from .services import ExportService
 from .pdf_service import PDFService
+from .permissions import has_role
+
+
+# =============================================================================
+# EXPORT PERMISSION MIXIN
+# =============================================================================
+
+# Configuration des permissions par type d'export
+EXPORT_PERMISSIONS = {
+    # Membres: admin, secretariat
+    'members': ('admin', 'secretariat'),
+    'members_excel': ('admin', 'secretariat'),
+    'members_print': ('admin', 'secretariat'),
+    
+    # Enfants du club biblique: admin, responsable_club
+    'children': ('admin', 'responsable_club'),
+    'children_excel': ('admin', 'responsable_club'),
+    'children_print': ('admin', 'responsable_club'),
+    'attendance': ('admin', 'responsable_club'),
+    'attendance_excel': ('admin', 'responsable_club'),
+    'attendance_print': ('admin', 'responsable_club'),
+    
+    # Finance (transactions, budgets): admin, finance
+    'transactions': ('admin', 'finance'),
+    'transactions_excel': ('admin', 'finance'),
+    'budgets': ('admin', 'finance'),
+    'budgets_excel': ('admin', 'finance'),
+    'budgets_print': ('admin', 'finance'),
+    'budget_detail': ('admin', 'finance'),
+    'budget_detail_excel': ('admin', 'finance'),
+    
+    # Utilisateurs: admin uniquement
+    'users': ('admin',),
+    'users_excel': ('admin',),
+    'users_print': ('admin',),
+    
+    # Autres exports avec permissions par défaut (admin, secretariat)
+    'events': ('admin', 'secretariat'),
+    'events_excel': ('admin', 'secretariat'),
+    'events_print': ('admin', 'secretariat'),
+    'groups': ('admin', 'secretariat', 'responsable_groupe'),
+    'groups_excel': ('admin', 'secretariat', 'responsable_groupe'),
+    'groups_print': ('admin', 'secretariat', 'responsable_groupe'),
+    'group_members': ('admin', 'secretariat', 'responsable_groupe'),
+    'departments': ('admin', 'secretariat'),
+    'departments_excel': ('admin', 'secretariat'),
+    'departments_print': ('admin', 'secretariat'),
+    'drivers': ('admin', 'secretariat'),
+    'drivers_excel': ('admin', 'secretariat'),
+    'drivers_print': ('admin', 'secretariat'),
+    'inventory': ('admin', 'secretariat'),
+    'inventory_excel': ('admin', 'secretariat'),
+    'inventory_print': ('admin', 'secretariat'),
+    'worship': ('admin', 'responsable_groupe'),
+    'worship_excel': ('admin', 'responsable_groupe'),
+    'worship_print': ('admin', 'responsable_groupe'),
+}
+
+
+class ExportPermissionMixin:
+    """
+    Mixin pour contrôler les permissions d'export par type de données.
+    
+    Ce mixin vérifie que l'utilisateur a les permissions nécessaires pour
+    exporter un type de données spécifique. Les permissions sont définies
+    dans EXPORT_PERMISSIONS. Les exports sont loggés dans AuditLog.
+    
+    Attributes:
+        export_type (str): Type d'export (ex: 'members', 'children', 'transactions')
+        permission_denied_message (str): Message d'erreur personnalisé
+        permission_denied_redirect (str): URL de redirection si accès refusé
+    
+    Usage:
+        class MembersExportView(ExportPermissionMixin, BaseExportView):
+            export_type = 'members'
+            ...
+    
+    Notes:
+        - Ce mixin doit être placé AVANT les autres mixins/vues dans l'héritage
+        - Les superusers et admins ont toujours accès
+        - Nécessite que l'utilisateur soit authentifié
+        - Les exports sont loggés dans AuditLog (Requirement 4.5)
+    
+    Requirements: 4.1, 4.2, 4.3, 4.4, 4.5
+    """
+    export_type = None
+    permission_denied_message = "Vous n'avez pas les permissions nécessaires pour effectuer cet export."
+    permission_denied_redirect = 'dashboard:home'
+    
+    def get_export_allowed_roles(self):
+        """
+        Retourne les rôles autorisés pour ce type d'export.
+        
+        Returns:
+            tuple: Tuple des rôles autorisés
+        """
+        if self.export_type and self.export_type in EXPORT_PERMISSIONS:
+            return EXPORT_PERMISSIONS[self.export_type]
+        # Par défaut, seuls les admins peuvent exporter
+        return ('admin',)
+    
+    def has_export_permission(self):
+        """
+        Vérifie si l'utilisateur a les permissions pour cet export.
+        
+        Returns:
+            bool: True si l'utilisateur a les permissions requises
+        """
+        allowed_roles = self.get_export_allowed_roles()
+        return has_role(self.request.user, *allowed_roles)
+    
+    def log_export(self, success=True, record_count=0):
+        """
+        Logger l'export dans AuditLog.
+        
+        Args:
+            success: True si l'export a réussi
+            record_count: Nombre d'enregistrements exportés
+        
+        Requirements: 4.5
+        """
+        from apps.core.models import AuditLog
+        
+        AuditLog.log_from_request(
+            request=self.request,
+            action=AuditLog.Action.EXPORT,
+            model_name=self.export_type or 'unknown',
+            extra_data={
+                'export_type': self.export_type,
+                'export_format': getattr(self, 'export_format', 'excel'),
+                'record_count': record_count,
+                'success': success,
+                'filters': dict(self.request.GET) if self.request.GET else {}
+            }
+        )
+    
+    def dispatch(self, request, *args, **kwargs):
+        """
+        Vérifie les permissions avant de traiter la requête d'export.
+        """
+        # Vérifier que l'utilisateur est authentifié
+        if not request.user.is_authenticated:
+            return self.handle_no_permission()
+        
+        # Vérifier les permissions d'export
+        if not self.has_export_permission():
+            # Logger la tentative d'export refusée
+            from apps.core.models import AuditLog
+            AuditLog.log_from_request(
+                request=request,
+                action=AuditLog.Action.ACCESS_DENIED,
+                model_name=self.export_type or 'unknown',
+                extra_data={
+                    'export_type': self.export_type,
+                    'required_roles': list(self.get_export_allowed_roles()),
+                    'user_role': getattr(request.user, 'role', 'unknown')
+                }
+            )
+            return self.handle_no_permission()
+        
+        return super().dispatch(request, *args, **kwargs)
+    
+    def handle_no_permission(self):
+        """
+        Gère le cas où l'utilisateur n'a pas les permissions d'export.
+        """
+        if self.request.user.is_authenticated:
+            messages.error(self.request, self.permission_denied_message)
+            return redirect(self.permission_denied_redirect)
+        
+        # Si non authentifié, rediriger vers login
+        from django.contrib.auth.views import redirect_to_login
+        return redirect_to_login(self.request.get_full_path())
 
 
 class BaseExportView(LoginRequiredMixin, View):
@@ -25,6 +199,7 @@ class BaseExportView(LoginRequiredMixin, View):
     model = None
     export_title = "Export"
     export_filename_prefix = "export"
+    export_format = 'excel'
     
     def get_queryset(self):
         """Retourne le queryset à exporter."""
@@ -64,6 +239,10 @@ class BaseExportView(LoginRequiredMixin, View):
         timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
         filename = f"{self.export_filename_prefix}_{timestamp}.xlsx"
         
+        # Logger l'export si le mixin ExportPermissionMixin est présent
+        if hasattr(self, 'log_export'):
+            self.log_export(success=True, record_count=len(data))
+        
         return ExportService.export_to_excel(
             data=data,
             headers=headers,
@@ -79,6 +258,7 @@ class BasePDFView(LoginRequiredMixin, View):
     template_name = None
     pdf_title = "Document"
     pdf_filename_prefix = "document"
+    export_format = 'pdf'
     
     def get_queryset(self):
         """Retourne le queryset à imprimer."""
@@ -101,6 +281,18 @@ class BasePDFView(LoginRequiredMixin, View):
     def get(self, request, *args, **kwargs):
         """Génère et retourne le PDF."""
         context = self.get_context_data()
+        
+        # Logger l'export si le mixin ExportPermissionMixin est présent
+        if hasattr(self, 'log_export'):
+            record_count = context.get('object_list', [])
+            if hasattr(record_count, 'count'):
+                record_count = record_count.count()
+            elif hasattr(record_count, '__len__'):
+                record_count = len(record_count)
+            else:
+                record_count = 0
+            self.log_export(success=True, record_count=record_count)
+        
         return PDFService.generate_pdf(
             template_name=self.template_name,
             context=context,
@@ -119,9 +311,14 @@ class BasePrintView(BasePDFView):
 # EXPORTS BIBLECLUB (Enfants)
 # =============================================================================
 
-class ChildrenExportView(BaseExportView):
-    """Export des enfants du club biblique."""
+class ChildrenExportView(ExportPermissionMixin, BaseExportView):
+    """Export des enfants du club biblique.
     
+    Permissions: admin, responsable_club
+    Requirements: 4.2
+    """
+    
+    export_type = 'children'
     export_title = "Liste des Enfants - Club Biblique"
     export_filename_prefix = "enfants_club_biblique"
     
@@ -164,9 +361,14 @@ class ChildrenExportView(BaseExportView):
         }
 
 
-class ChildrenPrintView(BasePDFView):
-    """Impression PDF de la liste des enfants."""
+class ChildrenPrintView(ExportPermissionMixin, BasePDFView):
+    """Impression PDF de la liste des enfants.
     
+    Permissions: admin, responsable_club
+    Requirements: 4.2
+    """
+    
+    export_type = 'children'
     template_name = 'bibleclub/print/children_list.html'
     pdf_title = "Liste des Enfants - Club Biblique"
     pdf_filename_prefix = "enfants_club_biblique"
@@ -195,9 +397,14 @@ class ChildrenPrintView(BasePDFView):
 # EXPORTS MEMBRES
 # =============================================================================
 
-class MembersExportView(BaseExportView):
-    """Export des membres de l'église."""
+class MembersExportView(ExportPermissionMixin, BaseExportView):
+    """Export des membres de l'église.
     
+    Permissions: admin, secretariat
+    Requirements: 4.1
+    """
+    
+    export_type = 'members'
     export_title = "Liste des Membres"
     export_filename_prefix = "membres"
     
@@ -239,9 +446,14 @@ class MembersExportView(BaseExportView):
         }
 
 
-class MembersPrintView(BasePDFView):
-    """Impression PDF de la liste des membres."""
+class MembersPrintView(ExportPermissionMixin, BasePDFView):
+    """Impression PDF de la liste des membres.
     
+    Permissions: admin, secretariat
+    Requirements: 4.1
+    """
+    
+    export_type = 'members'
     template_name = 'members/print/members_list.html'
     pdf_title = "Liste des Membres"
     pdf_filename_prefix = "membres"
@@ -269,9 +481,14 @@ class MembersPrintView(BasePDFView):
 # EXPORTS FINANCE (Budgets, Transactions)
 # =============================================================================
 
-class BudgetsExportView(BaseExportView):
-    """Export des budgets."""
+class BudgetsExportView(ExportPermissionMixin, BaseExportView):
+    """Export des budgets.
     
+    Permissions: admin, finance
+    Requirements: 4.4
+    """
+    
+    export_type = 'budgets'
     export_title = "Liste des Budgets"
     export_filename_prefix = "budgets"
     
@@ -307,9 +524,14 @@ class BudgetsExportView(BaseExportView):
         }
 
 
-class BudgetDetailExportView(BaseExportView):
-    """Export détaillé d'un budget avec ses lignes."""
+class BudgetDetailExportView(ExportPermissionMixin, BaseExportView):
+    """Export détaillé d'un budget avec ses lignes.
     
+    Permissions: admin, finance
+    Requirements: 4.4
+    """
+    
+    export_type = 'budget_detail'
     export_filename_prefix = "budget_detail"
     
     def get_budget(self):
@@ -344,9 +566,14 @@ class BudgetDetailExportView(BaseExportView):
         return super().get(request, *args, **kwargs)
 
 
-class TransactionsExportView(BaseExportView):
-    """Export des transactions financières."""
+class TransactionsExportView(ExportPermissionMixin, BaseExportView):
+    """Export des transactions financières.
     
+    Permissions: admin, finance
+    Requirements: 4.3
+    """
+    
+    export_type = 'transactions'
     export_title = "Transactions Financières"
     export_filename_prefix = "transactions"
     
@@ -390,9 +617,14 @@ class TransactionsExportView(BaseExportView):
         }
 
 
-class BudgetsPrintView(BasePDFView):
-    """Impression PDF de la liste des budgets."""
+class BudgetsPrintView(ExportPermissionMixin, BasePDFView):
+    """Impression PDF de la liste des budgets.
     
+    Permissions: admin, finance
+    Requirements: 4.4
+    """
+    
+    export_type = 'budgets'
     template_name = 'finance/print/budgets_list.html'
     pdf_title = "Liste des Budgets"
     pdf_filename_prefix = "budgets"
@@ -421,9 +653,13 @@ class BudgetsPrintView(BasePDFView):
 # EXPORTS ÉVÉNEMENTS
 # =============================================================================
 
-class EventsExportView(BaseExportView):
-    """Export des événements."""
+class EventsExportView(ExportPermissionMixin, BaseExportView):
+    """Export des événements.
     
+    Permissions: admin, secretariat
+    """
+    
+    export_type = 'events'
     export_title = "Liste des Événements"
     export_filename_prefix = "evenements"
     
@@ -467,9 +703,13 @@ class EventsExportView(BaseExportView):
         }
 
 
-class EventsPrintView(BasePDFView):
-    """Impression PDF de la liste des événements."""
+class EventsPrintView(ExportPermissionMixin, BasePDFView):
+    """Impression PDF de la liste des événements.
     
+    Permissions: admin, secretariat
+    """
+    
+    export_type = 'events'
     template_name = 'events/print/events_list.html'
     pdf_title = "Liste des Événements"
     pdf_filename_prefix = "evenements"
@@ -499,9 +739,13 @@ class EventsPrintView(BasePDFView):
 # EXPORTS GROUPES
 # =============================================================================
 
-class GroupsExportView(BaseExportView):
-    """Export des groupes."""
+class GroupsExportView(ExportPermissionMixin, BaseExportView):
+    """Export des groupes.
     
+    Permissions: admin, secretariat, responsable_groupe
+    """
+    
+    export_type = 'groups'
     export_title = "Liste des Groupes"
     export_filename_prefix = "groupes"
     
@@ -536,9 +780,13 @@ class GroupsExportView(BaseExportView):
         }
 
 
-class GroupMembersExportView(BaseExportView):
-    """Export des membres d'un groupe spécifique."""
+class GroupMembersExportView(ExportPermissionMixin, BaseExportView):
+    """Export des membres d'un groupe spécifique.
     
+    Permissions: admin, secretariat, responsable_groupe
+    """
+    
+    export_type = 'group_members'
     export_filename_prefix = "groupe_membres"
     
     def get_group(self):
@@ -567,9 +815,13 @@ class GroupMembersExportView(BaseExportView):
         return super().get(request, *args, **kwargs)
 
 
-class GroupsPrintView(BasePDFView):
-    """Impression PDF de la liste des groupes."""
+class GroupsPrintView(ExportPermissionMixin, BasePDFView):
+    """Impression PDF de la liste des groupes.
     
+    Permissions: admin, secretariat, responsable_groupe
+    """
+    
+    export_type = 'groups'
     template_name = 'groups/print/groups_list.html'
     pdf_title = "Liste des Groupes"
     pdf_filename_prefix = "groupes"
@@ -597,9 +849,14 @@ class GroupsPrintView(BasePDFView):
 # EXPORTS PRÉSENCES (Club Biblique)
 # =============================================================================
 
-class AttendanceExportView(BaseExportView):
-    """Export des présences du club biblique."""
+class AttendanceExportView(ExportPermissionMixin, BaseExportView):
+    """Export des présences du club biblique.
     
+    Permissions: admin, responsable_club
+    Requirements: 4.2
+    """
+    
+    export_type = 'attendance'
     export_title = "Présences - Club Biblique"
     export_filename_prefix = "presences_club_biblique"
     
@@ -642,9 +899,14 @@ class AttendanceExportView(BaseExportView):
         }
 
 
-class AttendancePrintView(BasePDFView):
-    """Impression PDF des présences."""
+class AttendancePrintView(ExportPermissionMixin, BasePDFView):
+    """Impression PDF des présences.
     
+    Permissions: admin, responsable_club
+    Requirements: 4.2
+    """
+    
+    export_type = 'attendance'
     template_name = 'bibleclub/print/attendance_list.html'
     pdf_title = "Présences - Club Biblique"
     pdf_filename_prefix = "presences_club_biblique"
@@ -677,9 +939,13 @@ class AttendancePrintView(BasePDFView):
 # EXPORTS DÉPARTEMENTS
 # =============================================================================
 
-class DepartmentsExportView(BaseExportView):
-    """Export des départements."""
+class DepartmentsExportView(ExportPermissionMixin, BaseExportView):
+    """Export des départements.
     
+    Permissions: admin, secretariat
+    """
+    
+    export_type = 'departments'
     export_title = "Liste des Départements"
     export_filename_prefix = "departements"
     
@@ -707,9 +973,13 @@ class DepartmentsExportView(BaseExportView):
         }
 
 
-class DepartmentsPrintView(BasePDFView):
-    """Impression PDF des départements."""
+class DepartmentsPrintView(ExportPermissionMixin, BasePDFView):
+    """Impression PDF des départements.
     
+    Permissions: admin, secretariat
+    """
+    
+    export_type = 'departments'
     template_name = 'departments/print/departments_list.html'
     pdf_title = "Liste des Départements"
     pdf_filename_prefix = "departements"
@@ -735,9 +1005,13 @@ class DepartmentsPrintView(BasePDFView):
 # EXPORTS TRANSPORT
 # =============================================================================
 
-class DriversExportView(BaseExportView):
-    """Export des chauffeurs."""
+class DriversExportView(ExportPermissionMixin, BaseExportView):
+    """Export des chauffeurs.
     
+    Permissions: admin, secretariat
+    """
+    
+    export_type = 'drivers'
     export_title = "Liste des Chauffeurs"
     export_filename_prefix = "chauffeurs"
     
@@ -766,9 +1040,13 @@ class DriversExportView(BaseExportView):
         }
 
 
-class DriversPrintView(BasePDFView):
-    """Impression PDF des chauffeurs."""
+class DriversPrintView(ExportPermissionMixin, BasePDFView):
+    """Impression PDF des chauffeurs.
     
+    Permissions: admin, secretariat
+    """
+    
+    export_type = 'drivers'
     template_name = 'transport/print/drivers_list.html'
     pdf_title = "Liste des Chauffeurs"
     pdf_filename_prefix = "chauffeurs"
@@ -793,9 +1071,13 @@ class DriversPrintView(BasePDFView):
 # EXPORTS INVENTAIRE
 # =============================================================================
 
-class InventoryExportView(BaseExportView):
-    """Export de l'inventaire."""
+class InventoryExportView(ExportPermissionMixin, BaseExportView):
+    """Export de l'inventaire.
     
+    Permissions: admin, secretariat
+    """
+    
+    export_type = 'inventory'
     export_title = "Inventaire"
     export_filename_prefix = "inventaire"
     
@@ -828,9 +1110,13 @@ class InventoryExportView(BaseExportView):
         }
 
 
-class InventoryPrintView(BasePDFView):
-    """Impression PDF de l'inventaire."""
+class InventoryPrintView(ExportPermissionMixin, BasePDFView):
+    """Impression PDF de l'inventaire.
     
+    Permissions: admin, secretariat
+    """
+    
+    export_type = 'inventory'
     template_name = 'inventory/print/inventory_list.html'
     pdf_title = "Inventaire"
     pdf_filename_prefix = "inventaire"
@@ -856,9 +1142,13 @@ class InventoryPrintView(BasePDFView):
 # EXPORTS WORSHIP (Cultes)
 # =============================================================================
 
-class WorshipServicesExportView(BaseExportView):
-    """Export des cultes."""
+class WorshipServicesExportView(ExportPermissionMixin, BaseExportView):
+    """Export des cultes.
     
+    Permissions: admin, responsable_groupe
+    """
+    
+    export_type = 'worship'
     export_title = "Liste des Cultes"
     export_filename_prefix = "cultes"
     
@@ -889,9 +1179,13 @@ class WorshipServicesExportView(BaseExportView):
         }
 
 
-class WorshipServicesPrintView(BasePDFView):
-    """Impression PDF des cultes."""
+class WorshipServicesPrintView(ExportPermissionMixin, BasePDFView):
+    """Impression PDF des cultes.
     
+    Permissions: admin, responsable_groupe
+    """
+    
+    export_type = 'worship'
     template_name = 'worship/print/services_list.html'
     pdf_title = "Liste des Cultes"
     pdf_filename_prefix = "cultes"
@@ -917,9 +1211,13 @@ class WorshipServicesPrintView(BasePDFView):
 # EXPORTS UTILISATEURS
 # =============================================================================
 
-class UsersExportView(BaseExportView):
-    """Export des utilisateurs."""
+class UsersExportView(ExportPermissionMixin, BaseExportView):
+    """Export des utilisateurs.
     
+    Permissions: admin uniquement
+    """
+    
+    export_type = 'users'
     export_title = "Liste des Utilisateurs"
     export_filename_prefix = "utilisateurs"
     
@@ -950,9 +1248,13 @@ class UsersExportView(BaseExportView):
         }
 
 
-class UsersPrintView(BasePDFView):
-    """Impression PDF des utilisateurs."""
+class UsersPrintView(ExportPermissionMixin, BasePDFView):
+    """Impression PDF des utilisateurs.
     
+    Permissions: admin uniquement
+    """
+    
+    export_type = 'users'
     template_name = 'accounts/print/users_list.html'
     pdf_title = "Liste des Utilisateurs"
     pdf_filename_prefix = "utilisateurs"

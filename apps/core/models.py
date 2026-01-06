@@ -998,3 +998,387 @@ class SiteSettings(models.Model):
         """Retourne l'instance unique des paramètres."""
         obj, created = cls.objects.get_or_create(pk=1)
         return obj
+
+
+# =============================================================================
+# AUDIT LOGGING
+# =============================================================================
+
+class AuditLog(models.Model):
+    """
+    Journal d'audit des actions utilisateurs.
+    
+    Ce modèle trace toutes les actions sensibles effectuées dans l'application:
+    - Connexions/déconnexions
+    - Modifications de données sensibles (membres, finances)
+    - Exports de données
+    - Tentatives d'accès refusées
+    
+    Requirements: 8.1, 8.2, 8.3, 8.4, 8.5
+    """
+    
+    class Action(models.TextChoices):
+        LOGIN = 'login', 'Connexion'
+        LOGOUT = 'logout', 'Déconnexion'
+        LOGIN_FAILED = 'login_failed', 'Échec connexion'
+        CREATE = 'create', 'Création'
+        UPDATE = 'update', 'Modification'
+        DELETE = 'delete', 'Suppression'
+        EXPORT = 'export', 'Export'
+        ACCESS_DENIED = 'access_denied', 'Accès refusé'
+        VIEW = 'view', 'Consultation'
+        SERVER_ERROR = 'server_error', 'Erreur serveur'
+    
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='audit_logs',
+        verbose_name="Utilisateur"
+    )
+    action = models.CharField(
+        max_length=20,
+        choices=Action.choices,
+        verbose_name="Action"
+    )
+    model_name = models.CharField(
+        max_length=100,
+        blank=True,
+        verbose_name="Modèle",
+        help_text="Nom du modèle concerné (ex: Member, FinancialTransaction)"
+    )
+    object_id = models.CharField(
+        max_length=50,
+        blank=True,
+        verbose_name="ID Objet",
+        help_text="Identifiant de l'objet concerné"
+    )
+    object_repr = models.CharField(
+        max_length=200,
+        blank=True,
+        verbose_name="Représentation",
+        help_text="Représentation textuelle de l'objet"
+    )
+    changes = models.JSONField(
+        default=dict,
+        blank=True,
+        verbose_name="Changements",
+        help_text="Détails des modifications (ancien/nouveau)"
+    )
+    ip_address = models.GenericIPAddressField(
+        null=True,
+        blank=True,
+        verbose_name="Adresse IP"
+    )
+    user_agent = models.CharField(
+        max_length=500,
+        blank=True,
+        verbose_name="User Agent"
+    )
+    timestamp = models.DateTimeField(
+        auto_now_add=True,
+        verbose_name="Date/Heure"
+    )
+    
+    # Champs additionnels pour plus de contexte
+    path = models.CharField(
+        max_length=500,
+        blank=True,
+        verbose_name="Chemin URL",
+        help_text="URL de la requête"
+    )
+    extra_data = models.JSONField(
+        default=dict,
+        blank=True,
+        verbose_name="Données supplémentaires",
+        help_text="Informations additionnelles contextuelles"
+    )
+    
+    class Meta:
+        verbose_name = "Journal d'audit"
+        verbose_name_plural = "Journaux d'audit"
+        ordering = ['-timestamp']
+        indexes = [
+            models.Index(fields=['user', '-timestamp']),
+            models.Index(fields=['action', '-timestamp']),
+            models.Index(fields=['model_name', '-timestamp']),
+            models.Index(fields=['-timestamp']),
+        ]
+    
+    def __str__(self):
+        user_str = self.user.username if self.user else 'Anonyme'
+        return f"{user_str} - {self.get_action_display()} - {self.timestamp.strftime('%d/%m/%Y %H:%M')}"
+    
+    @classmethod
+    def log(cls, action, user=None, model_name='', object_id='', object_repr='',
+            changes=None, ip_address=None, user_agent='', path='', extra_data=None):
+        """
+        Méthode utilitaire pour créer une entrée d'audit.
+        
+        Args:
+            action: Type d'action (utiliser AuditLog.Action)
+            user: Utilisateur effectuant l'action
+            model_name: Nom du modèle concerné
+            object_id: ID de l'objet concerné
+            object_repr: Représentation textuelle de l'objet
+            changes: Dict des changements {field: {'old': x, 'new': y}}
+            ip_address: Adresse IP du client
+            user_agent: User-Agent du navigateur
+            path: Chemin URL de la requête
+            extra_data: Données supplémentaires
+        
+        Returns:
+            AuditLog: L'entrée d'audit créée
+        """
+        return cls.objects.create(
+            action=action,
+            user=user,
+            model_name=model_name,
+            object_id=str(object_id) if object_id else '',
+            object_repr=str(object_repr)[:200] if object_repr else '',
+            changes=changes or {},
+            ip_address=ip_address,
+            user_agent=user_agent[:500] if user_agent else '',
+            path=path[:500] if path else '',
+            extra_data=extra_data or {}
+        )
+    
+    @classmethod
+    def log_from_request(cls, request, action, model_name='', object_id='',
+                         object_repr='', changes=None, extra_data=None):
+        """
+        Crée une entrée d'audit à partir d'une requête HTTP.
+        
+        Args:
+            request: Objet HttpRequest Django
+            action: Type d'action
+            model_name: Nom du modèle concerné
+            object_id: ID de l'objet concerné
+            object_repr: Représentation textuelle de l'objet
+            changes: Dict des changements
+            extra_data: Données supplémentaires
+        
+        Returns:
+            AuditLog: L'entrée d'audit créée
+        """
+        # Extraire l'IP (gérer les proxies)
+        ip_address = cls.get_client_ip(request)
+        
+        # Extraire le User-Agent
+        user_agent = request.META.get('HTTP_USER_AGENT', '')
+        
+        # Utilisateur (peut être anonyme)
+        user = request.user if request.user.is_authenticated else None
+        
+        return cls.log(
+            action=action,
+            user=user,
+            model_name=model_name,
+            object_id=object_id,
+            object_repr=object_repr,
+            changes=changes,
+            ip_address=ip_address,
+            user_agent=user_agent,
+            path=request.path,
+            extra_data=extra_data
+        )
+    
+    @staticmethod
+    def get_client_ip(request):
+        """
+        Extrait l'adresse IP du client depuis la requête.
+        Gère les cas avec proxy (X-Forwarded-For).
+        """
+        x_forwarded_for = request.META.get('HTTP_X_FORWARDED_FOR')
+        if x_forwarded_for:
+            ip = x_forwarded_for.split(',')[0].strip()
+        else:
+            ip = request.META.get('REMOTE_ADDR')
+        return ip
+
+
+# =============================================================================
+# BACKUP MANAGEMENT
+# =============================================================================
+
+class DatabaseBackup(models.Model):
+    """
+    Modèle pour tracer les sauvegardes de base de données.
+    
+    Permet de:
+    - Lister les sauvegardes disponibles
+    - Télécharger les sauvegardes depuis l'admin
+    - Suivre le statut des sauvegardes
+    
+    Requirements: 18.3
+    """
+    
+    class Status(models.TextChoices):
+        PENDING = 'pending', 'En cours'
+        SUCCESS = 'success', 'Réussie'
+        FAILED = 'failed', 'Échouée'
+    
+    filename = models.CharField(
+        max_length=255,
+        verbose_name="Nom du fichier",
+        help_text="Nom du fichier de sauvegarde"
+    )
+    file_path = models.CharField(
+        max_length=500,
+        verbose_name="Chemin du fichier",
+        help_text="Chemin complet vers le fichier de sauvegarde"
+    )
+    file_size = models.BigIntegerField(
+        null=True,
+        blank=True,
+        verbose_name="Taille du fichier (bytes)"
+    )
+    status = models.CharField(
+        max_length=10,
+        choices=Status.choices,
+        default=Status.PENDING,
+        verbose_name="Statut"
+    )
+    database_engine = models.CharField(
+        max_length=50,
+        blank=True,
+        verbose_name="Moteur de base de données",
+        help_text="Type de base de données (SQLite, PostgreSQL, MySQL)"
+    )
+    
+    # Métadonnées de la sauvegarde
+    backup_type = models.CharField(
+        max_length=20,
+        choices=[
+            ('automatic', 'Automatique'),
+            ('manual', 'Manuelle'),
+        ],
+        default='automatic',
+        verbose_name="Type de sauvegarde"
+    )
+    
+    created_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='created_backups',
+        verbose_name="Créé par",
+        help_text="Utilisateur ayant déclenché la sauvegarde (pour les sauvegardes manuelles)"
+    )
+    
+    # Informations sur l'exécution
+    celery_task_id = models.CharField(
+        max_length=255,
+        blank=True,
+        verbose_name="ID de tâche Celery",
+        help_text="Identifiant de la tâche Celery ayant créé cette sauvegarde"
+    )
+    
+    error_message = models.TextField(
+        blank=True,
+        verbose_name="Message d'erreur",
+        help_text="Détails de l'erreur en cas d'échec"
+    )
+    
+    # Dates
+    created_at = models.DateTimeField(
+        auto_now_add=True,
+        verbose_name="Créé le"
+    )
+    completed_at = models.DateTimeField(
+        null=True,
+        blank=True,
+        verbose_name="Terminé le"
+    )
+    
+    class Meta:
+        verbose_name = "Sauvegarde de base de données"
+        verbose_name_plural = "Sauvegardes de base de données"
+        ordering = ['-created_at']
+        indexes = [
+            models.Index(fields=['-created_at']),
+            models.Index(fields=['status', '-created_at']),
+        ]
+    
+    def __str__(self):
+        return f"{self.filename} - {self.get_status_display()}"
+    
+    @property
+    def file_size_mb(self):
+        """Retourne la taille du fichier en MB."""
+        if self.file_size:
+            return round(self.file_size / (1024 * 1024), 2)
+        return None
+    
+    @property
+    def file_exists(self):
+        """Vérifie si le fichier de sauvegarde existe sur le disque."""
+        from pathlib import Path
+        return Path(self.file_path).exists() if self.file_path else False
+    
+    def mark_as_success(self, file_size=None):
+        """Marque la sauvegarde comme réussie."""
+        from django.utils import timezone
+        self.status = self.Status.SUCCESS
+        self.completed_at = timezone.now()
+        if file_size:
+            self.file_size = file_size
+        self.save(update_fields=['status', 'completed_at', 'file_size'])
+    
+    def mark_as_failed(self, error_message=''):
+        """Marque la sauvegarde comme échouée."""
+        from django.utils import timezone
+        self.status = self.Status.FAILED
+        self.completed_at = timezone.now()
+        self.error_message = error_message
+        self.save(update_fields=['status', 'completed_at', 'error_message'])
+    
+    @classmethod
+    def create_backup_record(cls, filename, file_path, backup_type='automatic', 
+                           created_by=None, celery_task_id='', database_engine=''):
+        """
+        Crée un enregistrement de sauvegarde.
+        
+        Args:
+            filename: Nom du fichier de sauvegarde
+            file_path: Chemin complet vers le fichier
+            backup_type: Type de sauvegarde ('automatic' ou 'manual')
+            created_by: Utilisateur ayant déclenché la sauvegarde
+            celery_task_id: ID de la tâche Celery
+            database_engine: Type de base de données
+        
+        Returns:
+            DatabaseBackup: L'enregistrement créé
+        """
+        return cls.objects.create(
+            filename=filename,
+            file_path=file_path,
+            backup_type=backup_type,
+            created_by=created_by,
+            celery_task_id=celery_task_id,
+            database_engine=database_engine
+        )
+    
+    @classmethod
+    def cleanup_old_records(cls, keep_count=30):
+        """
+        Supprime les anciens enregistrements de sauvegarde.
+        
+        Args:
+            keep_count: Nombre d'enregistrements à conserver
+        """
+        if cls.objects.count() > keep_count:
+            old_records = cls.objects.all()[keep_count:]
+            for record in old_records:
+                # Supprimer le fichier physique s'il existe
+                if record.file_exists:
+                    try:
+                        from pathlib import Path
+                        Path(record.file_path).unlink()
+                    except Exception:
+                        pass  # Ignorer les erreurs de suppression de fichier
+                
+                # Supprimer l'enregistrement
+                record.delete()

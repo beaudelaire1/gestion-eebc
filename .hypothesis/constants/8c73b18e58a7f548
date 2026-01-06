@@ -1,0 +1,4 @@
+# file: C:\Users\vilme\OneDrive\Bureau\eebc_project\apps\departments\tests.py
+# hypothesis_version: 6.148.7
+
+[200, 302, '0123456789', 'Doe', 'Jane', 'John', 'New Department', 'Smith', 'Test Department', 'active_members', 'admin', 'admin_test', 'departments:create', 'departments:detail', 'departments:list', 'departments:members', 'departments:update', 'description', 'has_email', 'has_phone', 'jane@example.com', 'john@example.com', 'leader', 'members', 'membre', 'membre_test', 'name', 'pk', 'secretariat', 'secretariat_test', 'stats', 'testpass123', 'total_members']

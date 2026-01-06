@@ -1,0 +1,4 @@
+# file: C:\Users\vilme\OneDrive\Bureau\eebc_project\apps\communication\models.py
+# hypothesis_version: 6.148.7
+
+[200, 500, '-created_at', '-is_pinned', 'Absence', 'Active', "Afficher jusqu'à", 'Afficher à partir de', 'Annonce', 'Annonces', 'Auteur', 'Avertissement', 'Campagne', 'Contenu', 'Corps du message', 'Destinataire', 'Email destinataire', 'En attente', 'Envoyé', 'Envoyé le', 'Erreur', 'Information', 'Lien', 'Log Email', 'Log SMS', 'Logs Emails', 'Logs SMS', 'Lu', 'Lu le', 'Message', "Message d'erreur", 'Nom', 'Nom destinataire', 'Notification', 'Notifications', 'Statut', 'Succès', 'Sujet', 'Titre', 'Type', 'Téléphone', 'absence', 'announcements', 'campaign', 'error', 'event', 'failed', 'info', 'notifications', 'pending', 'sent', 'success', 'warning', 'Échec', 'Épinglée', 'Événement']

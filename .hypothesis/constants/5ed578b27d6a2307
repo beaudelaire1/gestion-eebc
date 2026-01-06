@@ -1,0 +1,4 @@
+# file: C:\Users\vilme\OneDrive\Bureau\eebc_project\apps\accounts\models.py
+# hypothesis_version: 6.148.7
+
+['-created_at', '2FA activé', '2FA confirmé', 'Administrateur', 'Chauffeur', 'Clé secrète 2FA', 'Codes de secours', 'Créé le', 'Créé par', "Créé par l'équipe", 'Encadrant', 'Expire le', 'Finance', 'Membre', 'Moniteur', 'Photo', 'Rôle', 'Secrétariat', 'Token', 'Téléphone', 'Utilisateur', 'Utilisateurs', 'Utilisé', "Verrouillé jusqu'à", 'admin', 'chauffeur', 'created_users', 'encadrant', 'finance', 'first_name', 'last_name', 'locked_until', 'membre', 'moniteur', 'responsable_club', 'responsable_groupe', 'secretariat', 'self', 'used', 'users/photos/']

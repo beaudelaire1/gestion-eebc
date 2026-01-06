@@ -1,0 +1,4 @@
+# file: C:\Users\vilme\OneDrive\Bureau\eebc_project\apps\core\signals.py
+# hypothesis_version: 6.148.7
+
+['HTTP_USER_AGENT', '_created', '_deleted_data', '_old_instance', 'accounts.User', 'attempted_username', 'background_task', 'created_at', 'email', 'finance.Budget', 'last_login', 'members.Member', 'new', 'old', 'password', 'pk', 'request', 'role', 'source', 'two_factor_secret', 'unknown', 'updated_at', 'username']

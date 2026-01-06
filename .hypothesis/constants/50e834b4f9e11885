@@ -1,0 +1,4 @@
+# file: C:\Users\vilme\OneDrive\Bureau\eebc_project\apps\groups\tests.py
+# hypothesis_version: 6.148.7
+
+[9.0, 200, 302, '#ff0000', 'Bonne participation', 'Créer un groupe', 'New Group', 'New description', "Raison d'annulation", 'Salle 1', 'Test Group', 'Test Meeting', 'Test description', 'admin', 'attendees', 'avg_attendance', 'choir', 'color', 'date', 'description', 'group_type', 'groups:create', 'groups:dashboard', 'groups:detail', 'groups:list', 'groups:statistics', 'groups:update', 'leader', 'member', 'member_count', 'membre', 'name', 'pk', 'responsable_groupe', 'sunday', 'testpass123', 'testuser', 'total_meetings', 'youth']

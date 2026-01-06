@@ -1,0 +1,4 @@
+# file: C:\Users\vilme\OneDrive\Bureau\eebc_project\apps\accounts\migrations\0001_initial.py
+# hypothesis_version: 6.148.7
+
+[128, 150, 254, 'Administrateur', 'Chauffeur', 'ID', 'Membre', 'Moniteur', 'Photo', 'Rôle', 'Téléphone', 'User', 'Utilisateur', 'Utilisateurs', 'active', 'admin', 'auth', 'auth.group', 'auth.permission', 'chauffeur', 'date joined', 'date_joined', 'date_joined_church', 'email', 'email address', 'first name', 'first_name', 'groups', 'id', 'is_active', 'is_staff', 'is_superuser', 'last login', 'last name', 'last_login', 'last_name', 'membre', 'moniteur', 'objects', 'ordering', 'password', 'phone', 'photo', 'responsable_club', 'responsable_groupe', 'role', 'staff status', 'superuser status', 'unique', 'user', 'user permissions', 'user_permissions', 'user_set', 'username', 'users/photos/', 'verbose_name', 'verbose_name_plural']

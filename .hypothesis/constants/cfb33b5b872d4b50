@@ -1,0 +1,4 @@
+# file: C:\Users\vilme\OneDrive\Bureau\eebc_project\apps\transport\admin.py
+# hypothesis_version: 6.148.7
+
+['available_sunday', 'available_week', 'capacity', 'driver', 'event_date', 'event_time', 'is_available', 'pickup_address', 'requester_name', 'requester_phone', 'status', 'user', 'user__first_name', 'user__last_name', 'vehicle_model', 'vehicle_type', 'zone']

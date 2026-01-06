@@ -1,0 +1,4 @@
+# file: C:\Users\vilme\OneDrive\Bureau\eebc_project\apps\groups\forms.py
+# hypothesis_version: 6.148.7
+
+['Lieu de la réunion', 'Lieu de réunion', 'Membres', 'Nom du groupe', 'Notes sur la réunion', 'Sujet de la réunion', 'actif', 'admin', 'attendees_count', 'class', 'color', 'date', 'description', 'first_name', 'form-check-input', 'form-control', 'form-select', 'group', 'group_type', 'image', 'last_name', 'leader', 'location', 'meeting_day', 'meeting_frequency', 'meeting_location', 'meeting_time', 'members', 'min', 'name', 'notes', 'placeholder', 'responsable_groupe', 'rows', 'secretariat', 'time', 'topic', 'type']

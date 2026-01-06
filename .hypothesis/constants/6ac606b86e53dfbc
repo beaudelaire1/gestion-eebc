@@ -1,0 +1,4 @@
+# file: C:\Users\vilme\OneDrive\Bureau\eebc_project\apps\accounts\middleware.py
+# hypothesis_version: 6.148.7
+
+['/admin/login/', '/admin/logout/', '/favicon.ico', '/media/', '/static/', 'accounts:login', 'accounts:logout', 'must_change_password', 'public:home']

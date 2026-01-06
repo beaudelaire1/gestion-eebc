@@ -1,0 +1,4 @@
+# file: C:\Users\vilme\OneDrive\Bureau\eebc_project\apps\events\migrations\0005_remove_event_organizer.py
+# hypothesis_version: 6.148.7
+
+['event', 'events', 'organizer']

@@ -27,9 +27,11 @@
             </li>
         </ul>
     </div>
-    <a href="{% url 'admin:departments_department_add' %}" class="btn btn-primary">
+    {% if user.role == 'admin' or user.role == 'secretariat' %}
+    <a href="{% url 'departments:create' %}" class="btn btn-primary">
         <i class="bi bi-plus-lg me-2"></i>Nouveau département
     </a>
+    {% endif %}
 </div>
 
 <div class="row g-4">
@@ -59,12 +61,19 @@
                 {% endif %}
             </div>
             <div class="card-footer">
-                <a href="{% url 'departments:detail' department.pk %}" class="btn btn-outline-light btn-sm">
-                    <i class="bi bi-eye me-1"></i>Détails
-                </a>
-                <a href="{% url 'admin:departments_department_change' department.pk %}" class="btn btn-outline-light btn-sm">
-                    <i class="bi bi-pencil me-1"></i>Modifier
-                </a>
+                <div class="d-flex gap-2 flex-wrap">
+                    <a href="{% url 'departments:detail' department.pk %}" class="btn btn-outline-light btn-sm">
+                        <i class="bi bi-eye me-1"></i>Détails
+                    </a>
+                    {% if user.role == 'admin' or user.role == 'secretariat' %}
+                    <a href="{% url 'departments:update' department.pk %}" class="btn btn-outline-light btn-sm">
+                        <i class="bi bi-pencil me-1"></i>Modifier
+                    </a>
+                    <a href="{% url 'departments:members' department.pk %}" class="btn btn-outline-light btn-sm">
+                        <i class="bi bi-people me-1"></i>Membres
+                    </a>
+                    {% endif %}
+                </div>
             </div>
         </div>
     </div>
@@ -75,9 +84,11 @@
                 <i class="bi bi-building fs-1 d-block mb-3"></i>
                 Aucun département configuré
                 <br><br>
-                <a href="{% url 'admin:departments_department_add' %}" class="btn btn-primary">
+                {% if user.role == 'admin' or user.role == 'secretariat' %}
+                <a href="{% url 'departments:create' %}" class="btn btn-primary">
                     Créer un département
                 </a>
+                {% endif %}
             </div>
         </div>
     </div>

@@ -6,6 +6,7 @@ from django.db.models import Q
 from django.http import HttpResponse
 from datetime import date, timedelta
 from .models import Member, LifeEvent, VisitationLog
+from apps.core.permissions import role_required
 
 
 @login_required
@@ -36,7 +37,19 @@ def member_list(request):
         members_qs = members_qs.filter(status=status)
     
     # Tri
-    members_qs = members_qs.order_by('last_name', 'first_name')
+    sort_by = request.GET.get('sort', 'last_name')
+    sort_order = request.GET.get('order', 'asc')
+    
+    # Champs de tri autorisés
+    allowed_sort_fields = ['last_name', 'first_name', 'email', 'city', 'status', 'birth_date']
+    if sort_by not in allowed_sort_fields:
+        sort_by = 'last_name'
+    
+    # Appliquer le tri
+    if sort_order == 'desc':
+        sort_by = f'-{sort_by}'
+    
+    members_qs = members_qs.order_by(sort_by, 'first_name')
     
     # Pagination
     paginator = Paginator(members_qs, 25)
@@ -53,10 +66,12 @@ def member_list(request):
         'baptises_count': baptises_count,
         'hommes_count': hommes_count,
         'femmes_count': femmes_count,
+        'current_sort': request.GET.get('sort', 'last_name'),
+        'current_order': request.GET.get('order', 'asc'),
     }
     
     if request.htmx:
-        return render(request, 'members/partials/member_list.html', context)
+        return render(request, 'members/partials/member_list_content.html', context)
     return render(request, 'members/member_list.html', context)
 
 
@@ -65,15 +80,21 @@ def member_detail(request, pk):
     """Détail d'un membre."""
     member = get_object_or_404(Member, pk=pk)
     
-    # Récupérer les événements de vie et visites
-    life_events = member.life_events.all().order_by('-event_date')[:5]
-    visits = member.visits_received.all().order_by('-visit_date')[:5]
-    
     context = {
         'member': member,
-        'life_events': life_events,
-        'visits': visits,
     }
+    
+    # Récupérer les événements de vie et visites seulement pour les rôles autorisés
+    from apps.core.permissions import has_role
+    if has_role(request.user, 'admin', 'secretariat', 'encadrant'):
+        life_events = member.life_events.all().order_by('-event_date')[:5]
+        visits = member.visits_received.all().order_by('-visit_date')[:5]
+        context.update({
+            'life_events': life_events,
+            'visits': visits,
+            'can_view_pastoral_data': True,
+        })
+    
     return render(request, 'members/member_detail.html', context)
 
 
@@ -82,6 +103,7 @@ def member_detail(request, pk):
 # =============================================================================
 
 @login_required
+@role_required('admin', 'secretariat', 'encadrant')
 def life_event_list(request):
     """Liste des événements de vie."""
     events = LifeEvent.objects.select_related('primary_member').order_by('-event_date')
@@ -117,6 +139,7 @@ def life_event_list(request):
 
 
 @login_required
+@role_required('admin', 'secretariat', 'encadrant')
 def life_event_create(request):
     """Créer un événement de vie."""
     from .forms import LifeEventForm
@@ -141,6 +164,7 @@ def life_event_create(request):
 
 
 @login_required
+@role_required('admin', 'secretariat', 'encadrant')
 def life_event_detail(request, pk):
     """Détail d'un événement de vie."""
     event = get_object_or_404(
@@ -157,6 +181,7 @@ def life_event_detail(request, pk):
 
 
 @login_required
+@role_required('admin', 'secretariat', 'encadrant')
 def life_event_mark_visited(request, pk):
     """Marquer un événement comme visité."""
     event = get_object_or_404(LifeEvent, pk=pk)
@@ -170,6 +195,7 @@ def life_event_mark_visited(request, pk):
 
 
 @login_required
+@role_required('admin', 'secretariat', 'encadrant')
 def life_event_mark_announced(request, pk):
     """Marquer un événement comme annoncé."""
     event = get_object_or_404(LifeEvent, pk=pk)
@@ -187,6 +213,7 @@ def life_event_mark_announced(request, pk):
 # =============================================================================
 
 @login_required
+@role_required('admin', 'secretariat', 'encadrant')
 def visit_list(request):
     """Liste des visites pastorales."""
     visits = VisitationLog.objects.select_related('member', 'visitor').order_by('-visit_date', '-scheduled_date')
@@ -227,6 +254,7 @@ def visit_list(request):
 
 
 @login_required
+@role_required('admin', 'secretariat', 'encadrant')
 def visit_create(request):
     """Créer une visite pastorale."""
     from .forms import VisitationLogForm
@@ -255,6 +283,7 @@ def visit_create(request):
 
 
 @login_required
+@role_required('admin', 'secretariat', 'encadrant')
 def visit_detail(request, pk):
     """Détail d'une visite."""
     visit = get_object_or_404(
@@ -265,6 +294,7 @@ def visit_detail(request, pk):
 
 
 @login_required
+@role_required('admin', 'secretariat', 'encadrant')
 def visit_complete(request, pk):
     """Marquer une visite comme effectuée."""
     visit = get_object_or_404(VisitationLog, pk=pk)
@@ -285,6 +315,7 @@ def visit_complete(request, pk):
 
 
 @login_required
+@role_required('admin', 'secretariat', 'encadrant')
 def members_needing_visit(request):
     """Liste des membres nécessitant une visite (pas visités depuis 6 mois)."""
     members = []

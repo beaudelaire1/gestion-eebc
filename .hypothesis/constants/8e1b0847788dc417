@@ -1,0 +1,4 @@
+# file: C:\Users\vilme\OneDrive\Bureau\eebc_project\apps\accounts\services.py
+# hypothesis_version: 6.148.7
+
+[',', 'HTTP_X_FORWARDED_FOR', 'REMOTE_ADDR', 'last_login_ip', 'token', 'user_id']

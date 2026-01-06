@@ -1,0 +1,4 @@
+# file: C:\Users\vilme\OneDrive\Bureau\eebc_project\apps\members\migrations\0003_initial_core.py
+# hypothesis_version: 6.148.7
+
+['0001_initial_core', 'Autre', 'CHILD', 'Chef de famille', 'Conjoint(e)', 'Date de décès', 'Date de mariage', 'Enfant', 'Famille', 'HEAD', 'ID Membre', 'Member', 'Notifier par SMS', 'Notifier par email', 'Numéro WhatsApp', 'OTHER', 'PARENT', 'Parent', 'Rôle dans la famille', 'SPOUSE', 'Site', 'core', 'core.family', 'core.site', 'death_date', 'family', 'family_role', 'member', 'member_id', 'members', 'notify_by_email', 'notify_by_sms', 'notify_by_whatsapp', 'site', 'wedding_date', 'whatsapp_number']

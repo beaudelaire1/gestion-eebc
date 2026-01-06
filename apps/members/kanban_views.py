@@ -14,11 +14,13 @@ from django.utils import timezone
 import json
 
 from .models import VisitationLog, Member, LifeEvent
+from apps.core.permissions import RoleRequiredMixin
 
 
-class KanbanBoardView(LoginRequiredMixin, TemplateView):
+class KanbanBoardView(RoleRequiredMixin, LoginRequiredMixin, TemplateView):
     """Vue principale du tableau Kanban des visites."""
     template_name = 'members/kanban_board.html'
+    allowed_roles = ('admin', 'secretariat', 'encadrant')
     
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -115,8 +117,9 @@ class KanbanBoardView(LoginRequiredMixin, TemplateView):
         }
 
 
-class KanbanUpdateView(LoginRequiredMixin, View):
+class KanbanUpdateView(RoleRequiredMixin, LoginRequiredMixin, View):
     """API pour mettre à jour le statut d'une visite (drag & drop)."""
+    allowed_roles = ('admin', 'secretariat', 'encadrant')
     
     def post(self, request):
         try:
@@ -153,8 +156,9 @@ class KanbanUpdateView(LoginRequiredMixin, View):
             }, status=400)
 
 
-class QuickVisitCreateView(LoginRequiredMixin, View):
+class QuickVisitCreateView(RoleRequiredMixin, LoginRequiredMixin, View):
     """Création rapide d'une visite depuis le Kanban."""
+    allowed_roles = ('admin', 'secretariat', 'encadrant')
     
     def post(self, request):
         try:

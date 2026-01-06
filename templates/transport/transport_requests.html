@@ -6,7 +6,7 @@
 
 {% block content %}
 <div class="d-flex justify-content-end mb-4">
-    <a href="{% url 'admin:transport_transportrequest_add' %}" class="btn btn-primary">
+    <a href="{% url 'transport:request_create' %}" class="btn btn-primary">
         <i class="bi bi-plus-lg me-2"></i>Nouvelle demande
     </a>
 </div>
@@ -30,22 +30,61 @@
                     {% for request in requests %}
                     <tr>
                         <td>
-                            <div class="fw-semibold">{{ request.requester_name }}</div>
-                            <small class="text-muted">{{ request.requester_phone }}</small>
+                            <div class="fw-semibold">
+                                <a href="{% url 'transport:request_detail' request.pk %}" class="text-decoration-none">
+                                    {{ request.requester_name }}
+                                </a>
+                            </div>
+                            <small class="text-muted">
+                                {{ request.requester_phone }}
+                                {% if request.requester_email %}
+                                <br>{{ request.requester_email }}
+                                {% endif %}
+                            </small>
                         </td>
                         <td>{{ request.event_date|date:"d/m/Y" }}</td>
                         <td>{{ request.event_time|time:"H:i" }}</td>
                         <td>{{ request.passengers_count }}</td>
-                        <td>{{ request.driver|default:"-" }}</td>
+                        <td>
+                            {% if request.driver %}
+                                <a href="{% url 'transport:driver_detail' request.driver.pk %}" class="text-decoration-none">
+                                    {{ request.driver.user.get_full_name }}
+                                </a>
+                            {% else %}
+                                <span class="text-muted">-</span>
+                            {% endif %}
+                        </td>
                         <td>
                             <span class="badge bg-{% if request.status == 'confirmed' %}success{% elif request.status == 'pending' %}warning{% elif request.status == 'completed' %}info{% else %}danger{% endif %}">
                                 {{ request.get_status_display }}
                             </span>
                         </td>
                         <td class="text-end">
-                            <a href="{% url 'admin:transport_transportrequest_change' request.pk %}" class="btn btn-sm btn-outline-light">
-                                <i class="bi bi-pencil"></i>
-                            </a>
+                            <div class="dropdown">
+                                <button class="btn btn-sm btn-outline-light dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                                    <i class="bi bi-three-dots"></i>
+                                </button>
+                                <ul class="dropdown-menu dropdown-menu-end">
+                                    <li>
+                                        <a class="dropdown-item" href="{% url 'transport:request_detail' request.pk %}">
+                                            <i class="bi bi-eye me-2"></i>Voir détails
+                                        </a>
+                                    </li>
+                                    <li>
+                                        <a class="dropdown-item" href="{% url 'transport:request_update' request.pk %}">
+                                            <i class="bi bi-pencil me-2"></i>Modifier
+                                        </a>
+                                    </li>
+                                    {% if user.role in 'admin,secretariat,responsable_groupe' and request.status == 'pending' %}
+                                    <li><hr class="dropdown-divider"></li>
+                                    <li>
+                                        <a class="dropdown-item" href="{% url 'transport:assign_driver' request.pk %}">
+                                            <i class="bi bi-person-plus me-2"></i>Assigner chauffeur
+                                        </a>
+                                    </li>
+                                    {% endif %}
+                                </ul>
+                            </div>
                         </td>
                     </tr>
                     {% empty %}
@@ -53,6 +92,10 @@
                         <td colspan="7" class="text-center py-5 text-muted">
                             <i class="bi bi-truck fs-1 d-block mb-3"></i>
                             Aucune demande de transport
+                            <br><br>
+                            <a href="{% url 'transport:request_create' %}" class="btn btn-primary">
+                                Créer une demande
+                            </a>
                         </td>
                     </tr>
                     {% endfor %}

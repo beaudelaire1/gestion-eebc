@@ -1,0 +1,4 @@
+# file: C:\Users\vilme\OneDrive\Bureau\eebc_project\apps\finance\donation_views.py
+# hypothesis_version: 6.148.7
+
+[400, '/don/annule/', 'amount', 'dispatch', 'don', 'donation', 'email', 'error', 'interval', 'member_profile', 'month', 'recurring', 'session_id', 'site_id', 'sites', 'stripe_configured', 'stripe_public_key', 'type']
