@@ -52,7 +52,7 @@
                         <td>
                             <div class="d-flex align-items-center gap-2">
                                 <div class="avatar">
-                                    {{ user.first_name|slice:":1"|upper|default:"U" }}{{ user.last_name|slice:":1"|upper }}
+                                    {% if user.first_name %}{{ user.first_name|slice:":1"|upper }}{% else %}{{ user.username|slice:":1"|upper }}{% endif %}{{ user.last_name|slice:":1"|upper }}
                                 </div>
                                 <div>
                                     <div class="fw-bold">{{ user.get_full_name|default:user.username }}</div>

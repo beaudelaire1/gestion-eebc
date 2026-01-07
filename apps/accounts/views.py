@@ -6,6 +6,7 @@ from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 from django.contrib import messages
 from django.urls import reverse_lazy
 from django.views.generic import CreateView, ListView
+from django.db.models import Q
 
 from .forms import CustomLoginForm, UserProfileForm, UserCreateForm
 from .models import User
@@ -86,13 +87,10 @@ class UserListView(LoginRequiredMixin, UserPassesTestMixin, ListView):
         search = self.request.GET.get('search', '')
         if search:
             queryset = queryset.filter(
-                username__icontains=search
-            ) | queryset.filter(
-                first_name__icontains=search
-            ) | queryset.filter(
-                last_name__icontains=search
-            ) | queryset.filter(
-                email__icontains=search
+                Q(username__icontains=search) |
+                Q(first_name__icontains=search) |
+                Q(last_name__icontains=search) |
+                Q(email__icontains=search)
             )
         
         return queryset
