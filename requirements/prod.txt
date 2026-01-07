@@ -14,10 +14,10 @@ dj-database-url>=2.1.0
 # Static files
 whitenoise>=6.6.0
 
-# Cache et sessions
+# Cache et sessions (optionnel)
 redis>=5.0.0
 
-# Tâches asynchrones
+# Tâches asynchrones (optionnel)
 celery>=5.3.0
 
 # Notifications multicanales
@@ -35,6 +35,3 @@ django-storages>=1.14.0
 
 # Monitoring
 sentry-sdk>=1.29.0
-
-# Sécurité
-django-cors-headers>=4.2.0

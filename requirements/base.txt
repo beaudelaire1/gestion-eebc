@@ -2,7 +2,7 @@
 # GESTION EEBC - Dépendances de base (communes à tous les environnements)
 # =============================================================================
 
-# Framework Django
+# Framework Django (compatible 4.2+ et 5.x)
 Django>=4.2
 django-htmx>=1.17.0
 python-dotenv>=1.0.0
@@ -32,10 +32,8 @@ qrcode[pil]>=7.4.0
 
 # Sécurité
 django-cryptography>=1.1
+django-cors-headers>=4.2.0
 
 # API et HTTP (pour Hostinger)
 requests>=2.31.0
 urllib3>=2.0.0
-
-# Hostinger API (optionnel - si SDK officiel disponible)
-# hostinger-api>=1.0.0
