@@ -4,6 +4,9 @@ Middleware pour forcer le changement de mot de passe.
 from django.shortcuts import redirect
 from django.urls import reverse
 from django.contrib.auth import logout
+from django.http import HttpResponseRedirect
+
+from .services import AuthenticationService
 
 
 class ForcePasswordChangeMiddleware:
@@ -44,7 +47,6 @@ class ForcePasswordChangeMiddleware:
             
             # Permettre les URLs exemptées (mais déconnecter l'utilisateur)
             if current_path in exempt_paths:
-                from django.contrib.auth import logout
                 logout(request)
                 response = self.get_response(request)
                 return response
@@ -58,9 +60,6 @@ class ForcePasswordChangeMiddleware:
             
             # Rediriger vers le changement de mot de passe pour toute autre URL
             # Générer un token pour le changement de mot de passe
-            from .services import AuthenticationService
-            from django.http import HttpResponseRedirect
-            
             token = AuthenticationService.generate_password_change_token(request.user)
             url = reverse('accounts:first_login_password_change')
             return HttpResponseRedirect(f'{url}?token={token}')
