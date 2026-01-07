@@ -368,7 +368,7 @@ document.addEventListener('DOMContentLoaded', function() {
         const months = this.value;
         
         // Faire une requête AJAX pour récupérer les nouvelles données
-        fetch(`/bibleclub/chart-data/?months=${months}`, {
+        fetch("{% url 'bibleclub:attendance_chart_data' %}?months=" + months, {
             method: 'GET',
             headers: {
                 'X-Requested-With': 'XMLHttpRequest',
@@ -397,4 +397,3 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 </script>
 {% endblock %}
-

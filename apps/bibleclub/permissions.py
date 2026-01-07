@@ -87,7 +87,7 @@ def is_club_staff(user):
     if not user.is_authenticated:
         return False
     
-    if user.is_superuser or user.role in ['admin', 'responsable_club', 'moniteur']:
+    if user.is_superuser or user.role in ['admin', 'responsable_club', 'moniteur', 'secretariat']:
         return True
     
     monitor = get_monitor_for_user(user)
