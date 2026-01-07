@@ -1,9 +1,11 @@
 {% extends 'public/base.html' %}
-{% load static %}
+{% load static l10n %}
 
 {% block title %}Accueil - {{ settings.site_name|default:'EEBC' }}{% endblock %}
 
 {% block extra_css %}
+<!-- Leaflet CSS -->
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
 <style>
 /* Hero Carousel Styles */
 .hero-carousel {
@@ -483,6 +485,134 @@
     .carousel-arrow.prev { left: 10px; }
     .carousel-arrow.next { right: 10px; }
 }
+
+/* Map and GPS Styles */
+#homeMap {
+    height: 400px;
+    border-radius: 20px;
+    box-shadow: 0 10px 40px rgba(0,0,0,0.08);
+}
+
+.site-card-with-gps {
+    background: white;
+    border-radius: 20px;
+    padding: 25px;
+    margin-bottom: 20px;
+    box-shadow: 0 10px 40px rgba(0,0,0,0.08);
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    transition: all 0.4s ease;
+}
+
+.site-card-with-gps:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 20px 60px rgba(10, 54, 255, 0.15);
+}
+
+.site-card-with-gps .site-icon {
+    width: 60px;
+    height: 60px;
+    min-width: 60px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, var(--primary-color) 0%, #3b82f6 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: transform 0.4s ease;
+}
+
+.site-card-with-gps:hover .site-icon {
+    transform: scale(1.1) rotate(5deg);
+}
+
+.site-card-with-gps .site-icon i {
+    font-size: 1.8rem;
+    color: white;
+}
+
+.site-card-with-gps .site-info {
+    flex: 1;
+}
+
+.site-card-with-gps .site-info h4 {
+    font-weight: 700;
+    margin-bottom: 8px;
+    color: var(--secondary-color);
+    font-size: 1.2rem;
+}
+
+.site-card-with-gps .site-info .address {
+    color: #6c757d;
+    margin-bottom: 5px;
+    font-size: 0.95rem;
+}
+
+.site-card-with-gps .site-info .schedule {
+    color: var(--primary-color);
+    font-weight: 600;
+    margin-bottom: 0;
+    font-size: 0.95rem;
+}
+
+.btn-gps {
+    padding: 12px 24px;
+    border-radius: 50px;
+    background: linear-gradient(135deg, var(--primary-color) 0%, #3b82f6 100%);
+    color: white;
+    text-decoration: none;
+    font-weight: 600;
+    font-size: 0.95rem;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    white-space: nowrap;
+    transition: all 0.3s ease;
+    border: none;
+}
+
+.btn-gps:hover {
+    background: linear-gradient(135deg, #0829cc 0%, #2563eb 100%);
+    transform: translateY(-2px);
+    box-shadow: 0 10px 30px rgba(10, 54, 255, 0.3);
+    color: white;
+}
+
+.btn-gps i {
+    font-size: 1.1rem;
+}
+
+.leaflet-popup-content {
+    min-width: 200px;
+}
+
+.popup-title {
+    font-weight: bold;
+    font-size: 1.1rem;
+    color: var(--primary-color);
+    margin-bottom: 8px;
+}
+
+.popup-info {
+    margin: 5px 0;
+    font-size: 0.9rem;
+}
+
+@media (max-width: 991px) {
+    #homeMap {
+        margin-bottom: 30px;
+    }
+    
+    .site-card-with-gps {
+        flex-direction: column;
+        text-align: center;
+    }
+    
+    .btn-gps {
+        width: 100%;
+        justify-content: center;
+    }
+}
 </style>
 {% endblock %}
 
@@ -552,7 +682,7 @@
     </div>
 </section>
 
-<!-- Nos Églises (simplifié) -->
+<!-- Nos Églises avec Carte GPS -->
 <section class="sites-section">
     <div class="container">
         <div class="section-header" data-aos="fade-up">
@@ -561,27 +691,37 @@
             <div class="divider"></div>
         </div>
         
-        <div class="row justify-content-center g-4">
-            {% for site in church_sites %}
-            <div class="col-md-6 col-lg-5" data-aos="fade-up" data-aos-delay="{{ forloop.counter0|add:1 }}00">
-                <div class="site-card">
+        <div class="row">
+            <!-- Colonne carte -->
+            <div class="col-lg-6 mb-4" data-aos="fade-right">
+                <div id="homeMap"></div>
+            </div>
+            
+            <!-- Colonne églises -->
+            <div class="col-lg-6" data-aos="fade-left">
+                {% for site in church_sites %}
+                <div class="site-card-with-gps">
                     <div class="site-icon">
                         <i class="bi bi-church"></i>
                     </div>
-                    <h4>{{ site.name }}</h4>
-                    <p class="location">
-                        <i class="bi bi-geo-alt me-1"></i>{{ site.city }}
-                    </p>
-                    <a href="{% url 'public:sites' %}" class="btn btn-outline-primary rounded-pill px-4">
-                        Voir les horaires <i class="bi bi-arrow-right ms-2"></i>
+                    <div class="site-info">
+                        <h4>{{ site.name }}</h4>
+                        <p class="address"><i class="bi bi-geo-alt me-1"></i>{{ site.address }}, {{ site.city }}</p>
+                        <p class="schedule"><i class="bi bi-clock me-1"></i>{{ site.worship_schedule }}</p>
+                    </div>
+                    {% if site.latitude and site.longitude %}
+                    <a href="https://www.google.com/maps/dir/?api=1&destination={{ site.latitude|unlocalize }},{{ site.longitude|unlocalize }}" 
+                       target="_blank" class="btn btn-gps">
+                        <i class="bi bi-geo-alt-fill"></i> Itinéraire GPS
                     </a>
+                    {% endif %}
                 </div>
+                {% empty %}
+                <div class="text-center">
+                    <p class="text-muted">Informations à venir...</p>
+                </div>
+                {% endfor %}
             </div>
-            {% empty %}
-            <div class="col-12 text-center">
-                <p class="text-muted">Informations à venir...</p>
-            </div>
-            {% endfor %}
         </div>
     </div>
 </section>
@@ -825,6 +965,86 @@ document.querySelector('.scroll-indicator')?.addEventListener('click', () => {
     const nextSection = document.querySelector('.sites-section');
     if (nextSection) {
         nextSection.scrollIntoView({ behavior: 'smooth' });
+    }
+});
+</script>
+
+<!-- Leaflet JS -->
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+// Initialize home map with church locations
+document.addEventListener('DOMContentLoaded', function() {
+    const mapElement = document.getElementById('homeMap');
+    if (!mapElement) {
+        return;
+    }
+    
+    // Centre de la Guyane (Cayenne)
+    const map = L.map('homeMap').setView([4.9225, -52.3058], 11);
+    
+    // Couche OpenStreetMap
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+    }).addTo(map);
+    
+    // Ajouter les marqueurs des églises
+    const churches = [];
+    {% for site in church_sites %}
+    {% if site.latitude and site.longitude %}
+    churches.push({
+        name: '{{ site.name|escapejs }}',
+        address: '{{ site.address|escapejs }}',
+        city: '{{ site.city|escapejs }}',
+        schedule: '{{ site.worship_schedule|escapejs }}',
+        lat: {{ site.latitude|unlocalize }},
+        lng: {{ site.longitude|unlocalize }}
+    });
+    {% endif %}
+    {% endfor %}
+    
+    // Si on a des églises, centrer la carte sur elles
+    if (churches.length > 0) {
+        const bounds = [];
+        
+        churches.forEach(church => {
+            const marker = L.marker([church.lat, church.lng]).addTo(map);
+            
+            // Popup avec les informations (utilise textContent pour éviter XSS)
+            const popupDiv = document.createElement('div');
+            
+            const titleDiv = document.createElement('div');
+            titleDiv.className = 'popup-title';
+            titleDiv.textContent = church.name;
+            popupDiv.appendChild(titleDiv);
+            
+            const addressDiv = document.createElement('div');
+            addressDiv.className = 'popup-info';
+            addressDiv.innerHTML = '<i class="bi bi-geo-alt me-1"></i>';
+            const addressText = document.createTextNode(`${church.address}, ${church.city}`);
+            addressDiv.appendChild(addressText);
+            popupDiv.appendChild(addressDiv);
+            
+            const scheduleDiv = document.createElement('div');
+            scheduleDiv.className = 'popup-info';
+            scheduleDiv.innerHTML = '<i class="bi bi-clock me-1"></i>';
+            const scheduleText = document.createTextNode(church.schedule);
+            scheduleDiv.appendChild(scheduleText);
+            popupDiv.appendChild(scheduleDiv);
+            
+            marker.bindPopup(popupDiv);
+            bounds.push([church.lat, church.lng]);
+        });
+        
+        // Ajuster la vue pour inclure tous les marqueurs
+        if (bounds.length >= 1) {
+            if (bounds.length === 1) {
+                // Centrer sur l'église unique
+                map.setView(bounds[0], 13);
+            } else {
+                // Ajuster pour inclure toutes les églises
+                map.fitBounds(bounds, { padding: [50, 50] });
+            }
+        }
     }
 });
 </script>
