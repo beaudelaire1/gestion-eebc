@@ -20,7 +20,7 @@ class Command(BaseCommand):
                 'city': 'Cayenne',
                 'postal_code': '97300',
                 'phone': '',
-                'email': 'contact@eebc-guyane.org',
+                'email': 'contact@eglise-ebc.org',
                 'worship_schedule': '''Culte: Dimanche 9h30-12h00
 Étude biblique: Mercredi 19h00
 Réunion de prière: Vendredi 19h00

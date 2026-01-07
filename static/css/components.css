@@ -1244,6 +1244,7 @@ body {
 @media (max-width: 991.98px) {
     .sidebar {
         transform: translateX(-100%);
+        z-index: 1050;
     }
     
     .sidebar--show {
@@ -1260,6 +1261,65 @@ body {
     
     .mini-stat {
         min-width: auto;
+    }
+    
+    /* Overlay pour fermer le sidebar */
+    .sidebar-overlay {
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(0, 0, 0, 0.5);
+        z-index: 1040;
+        opacity: 0;
+        transition: opacity 0.3s ease;
+    }
+    
+    .sidebar-overlay--show {
+        display: block;
+        opacity: 1;
+    }
+    
+    /* Bouton toggle toujours visible sur mobile */
+    .sidebar-toggle {
+        display: flex !important;
+    }
+    
+    /* Bouton fermer dans le sidebar mobile */
+    .sidebar-close {
+        display: flex;
+        position: absolute;
+        top: 1rem;
+        right: 1rem;
+        width: 36px;
+        height: 36px;
+        border-radius: 50%;
+        background: rgba(255, 255, 255, 0.2);
+        border: none;
+        color: white;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        z-index: 10;
+        transition: all 0.2s ease;
+    }
+    
+    .sidebar-close:hover {
+        background: rgba(255, 255, 255, 0.3);
+        transform: scale(1.1);
+    }
+}
+
+/* Desktop: cacher le bouton fermer */
+@media (min-width: 992px) {
+    .sidebar-close {
+        display: none;
+    }
+    
+    .sidebar-overlay {
+        display: none !important;
     }
 }
 

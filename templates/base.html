@@ -44,8 +44,14 @@
     </script>
 </head>
 <body>
+    <!-- Sidebar Overlay (mobile) -->
+    <div class="sidebar-overlay" id="sidebarOverlay" onclick="closeSidebar()"></div>
+    
     <!-- Sidebar -->
     <nav class="sidebar" id="sidebar">
+        <button class="sidebar-close" onclick="closeSidebar()">
+            <i class="bi bi-x-lg"></i>
+        </button>
         <div class="sidebar__brand">
             <h4 class="sidebar__brand-title"><i class="bi bi-book-half me-2"></i>EEBC</h4>
             <small class="sidebar__brand-subtitle">Système de Gestion</small>
@@ -340,44 +346,84 @@
             event.detail.headers['X-CSRFToken'] = '{{ csrf_token }}';
         });
         
-        // Gestion du toggle sidebar
+        // Détection mobile
+        function isMobile() {
+            return window.innerWidth < 992;
+        }
+        
+        // Ouvrir le sidebar (mobile)
+        function openSidebar() {
+            const sidebar = document.getElementById('sidebar');
+            const overlay = document.getElementById('sidebarOverlay');
+            
+            sidebar.classList.add('sidebar--show');
+            overlay.classList.add('sidebar-overlay--show');
+            document.body.style.overflow = 'hidden';
+        }
+        
+        // Fermer le sidebar (mobile)
+        function closeSidebar() {
+            const sidebar = document.getElementById('sidebar');
+            const overlay = document.getElementById('sidebarOverlay');
+            
+            sidebar.classList.remove('sidebar--show');
+            overlay.classList.remove('sidebar-overlay--show');
+            document.body.style.overflow = '';
+        }
+        
+        // Toggle sidebar (desktop: collapse, mobile: show/hide)
         function toggleSidebar() {
             const sidebar = document.getElementById('sidebar');
             const mainContent = document.querySelector('.main-content');
             const toggleBtn = document.getElementById('sidebarToggle');
             
-            sidebar.classList.toggle('sidebar--collapsed');
-            mainContent.classList.toggle('main-content--expanded');
-            
-            // Changer l'icône du bouton
-            const icon = toggleBtn.querySelector('i');
-            if (sidebar.classList.contains('sidebar--collapsed')) {
-                icon.className = 'bi bi-layout-sidebar-inset';
-                localStorage.setItem('sidebarCollapsed', 'true');
+            if (isMobile()) {
+                // Mobile: ouvrir/fermer
+                if (sidebar.classList.contains('sidebar--show')) {
+                    closeSidebar();
+                } else {
+                    openSidebar();
+                }
             } else {
-                icon.className = 'bi bi-list';
-                localStorage.setItem('sidebarCollapsed', 'false');
+                // Desktop: collapse/expand
+                sidebar.classList.toggle('sidebar--collapsed');
+                mainContent.classList.toggle('main-content--expanded');
+                
+                const icon = toggleBtn.querySelector('i');
+                if (sidebar.classList.contains('sidebar--collapsed')) {
+                    icon.className = 'bi bi-layout-sidebar-inset';
+                    localStorage.setItem('sidebarCollapsed', 'true');
+                } else {
+                    icon.className = 'bi bi-list';
+                    localStorage.setItem('sidebarCollapsed', 'false');
+                }
             }
         }
         
         // Restaurer l'état du sidebar au chargement
         document.addEventListener('DOMContentLoaded', function() {
-            const isCollapsed = localStorage.getItem('sidebarCollapsed') === 'true';
-            if (isCollapsed) {
-                toggleSidebar();
-            }
-            
-            // Gestion de la déconnexion
-            const logoutForm = document.querySelector('form[action*="logout"]');
-            if (logoutForm) {
-                const logoutButton = logoutForm.querySelector('button[type="submit"]');
-                if (logoutButton) {
-                    logoutButton.addEventListener('click', function(e) {
-                        console.log('Déconnexion demandée');
-                        // Le formulaire se soumettra normalement
-                    });
+            // Desktop: restaurer l'état collapsed
+            if (!isMobile()) {
+                const isCollapsed = localStorage.getItem('sidebarCollapsed') === 'true';
+                if (isCollapsed) {
+                    const sidebar = document.getElementById('sidebar');
+                    const mainContent = document.querySelector('.main-content');
+                    const toggleBtn = document.getElementById('sidebarToggle');
+                    
+                    sidebar.classList.add('sidebar--collapsed');
+                    mainContent.classList.add('main-content--expanded');
+                    if (toggleBtn) {
+                        toggleBtn.querySelector('i').className = 'bi bi-layout-sidebar-inset';
+                    }
                 }
             }
+            
+            // Fermer le sidebar mobile lors du redimensionnement vers desktop
+            window.addEventListener('resize', function() {
+                if (!isMobile()) {
+                    closeSidebar();
+                }
+            });
         });
     </script>
     

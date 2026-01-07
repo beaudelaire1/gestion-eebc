@@ -65,7 +65,7 @@ class EmailService:
             'site_name': 'EEBC - Église Évangélique Baptiste de Cabassou',
             'site_url': getattr(settings, 'SITE_URL', 'https://eebc-guyane.org'),
             'current_year': timezone.now().year,
-            'contact_email': getattr(settings, 'CONTACT_EMAIL', 'contact@eebc-guyane.org'),
+            'contact_email': getattr(settings, 'CONTACT_EMAIL', 'contact@eglise-ebc.org'),
             'recipient_name': recipient_name,
         })
         
@@ -191,7 +191,7 @@ class EmailService:
             'site_name': 'EEBC - Église Évangélique Baptiste de Cabassou',
             'site_url': getattr(settings, 'SITE_URL', 'https://eebc-guyane.org'),
             'current_year': timezone.now().year,
-            'contact_email': getattr(settings, 'CONTACT_EMAIL', 'contact@eebc-guyane.org'),
+            'contact_email': getattr(settings, 'CONTACT_EMAIL', 'contact@eglise-ebc.org'),
         })
         
         # Générer le contenu HTML et texte
