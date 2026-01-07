@@ -1,3 +1,4 @@
+import re
 from django import forms
 from django.contrib.auth import get_user_model
 from django.contrib.auth.password_validation import validate_password
@@ -73,6 +74,14 @@ class UserCreationByTeamForm(EnhancedForm):
         if len(last_name) < 2:
             raise ValidationError("Le nom de famille doit contenir au moins 2 caractères.")
         return last_name.upper()
+
+    def clean_phone(self):
+        phone = self.cleaned_data.get('phone', '').strip()
+        if not phone:
+            return ''
+        normalized = re.sub(r'[\s\-\(\)\.]', '', phone)
+        phone_validator(normalized)
+        return normalized
 
 
 class FirstLoginPasswordChangeForm(EnhancedForm):
