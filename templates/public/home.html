@@ -976,11 +976,8 @@ document.querySelector('.scroll-indicator')?.addEventListener('click', () => {
 document.addEventListener('DOMContentLoaded', function() {
     const mapElement = document.getElementById('homeMap');
     if (!mapElement) {
-        console.log('Map element not found');
         return;
     }
-    
-    console.log('Initializing home map...');
     
     // Centre de la Guyane (Cayenne)
     const map = L.map('homeMap').setView([4.9225, -52.3058], 11);
@@ -1005,8 +1002,6 @@ document.addEventListener('DOMContentLoaded', function() {
         {% endif %}
         {% endfor %}
     ];
-    
-    console.log('Adding markers for ' + churches.length + ' churches');
     
     // Si on a des églises, centrer la carte sur elles
     if (churches.length > 0) {
@@ -1035,8 +1030,6 @@ document.addEventListener('DOMContentLoaded', function() {
             map.fitBounds(bounds, { padding: [50, 50] });
         }
     }
-    
-    console.log('Home map initialized');
 });
 </script>
 {% endblock %}
