@@ -2,10 +2,13 @@ from django.shortcuts import render, redirect
 from django.contrib.auth import login, logout
 from django.contrib.auth.views import LoginView, LogoutView
 from django.contrib.auth.decorators import login_required
+from django.contrib.auth.mixins import LoginRequiredMixin, UserPassesTestMixin
 from django.contrib import messages
 from django.urls import reverse_lazy
+from django.views.generic import CreateView, ListView
 
-from .forms import CustomLoginForm, UserProfileForm
+from .forms import CustomLoginForm, UserProfileForm, UserCreateForm
+from .models import User
 
 
 class CustomLoginView(LoginView):
@@ -44,4 +47,58 @@ def profile_view(request):
         form = UserProfileForm(instance=request.user)
     
     return render(request, 'accounts/profile.html', {'form': form})
+
+
+class UserCreateView(LoginRequiredMixin, UserPassesTestMixin, CreateView):
+    """Vue de création d'utilisateur."""
+    model = User
+    form_class = UserCreateForm
+    template_name = 'accounts/user_create.html'
+    success_url = reverse_lazy('accounts:user_list')
+    
+    def test_func(self):
+        """Seuls les staff/admin peuvent créer des utilisateurs."""
+        return self.request.user.is_staff or self.request.user.is_superuser
+    
+    def form_valid(self, form):
+        messages.success(
+            self.request, 
+            f"L'utilisateur {form.instance.username} a été créé avec succès!"
+        )
+        return super().form_valid(form)
+
+
+class UserListView(LoginRequiredMixin, UserPassesTestMixin, ListView):
+    """Vue liste des utilisateurs."""
+    model = User
+    template_name = 'accounts/user_list.html'
+    context_object_name = 'users'
+    paginate_by = 25
+    
+    def test_func(self):
+        """Seuls les staff/admin peuvent voir la liste des utilisateurs."""
+        return self.request.user.is_staff or self.request.user.is_superuser
+    
+    def get_queryset(self):
+        queryset = User.objects.all().order_by('last_name', 'first_name')
+        
+        # Recherche
+        search = self.request.GET.get('search', '')
+        if search:
+            queryset = queryset.filter(
+                username__icontains=search
+            ) | queryset.filter(
+                first_name__icontains=search
+            ) | queryset.filter(
+                last_name__icontains=search
+            ) | queryset.filter(
+                email__icontains=search
+            )
+        
+        return queryset
+    
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['search'] = self.request.GET.get('search', '')
+        return context
 

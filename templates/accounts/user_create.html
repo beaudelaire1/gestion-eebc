@@ -1,0 +1,133 @@
+{% extends 'base.html' %}
+
+{% block title %}Créer un utilisateur - EEBC{% endblock %}
+{% block page_title %}Créer un utilisateur{% endblock %}
+{% block page_subtitle %}Ajouter un nouveau compte utilisateur au système{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-lg-8 mx-auto">
+        <div class="card">
+            <div class="card-header">
+                <h6 class="card-title"><i class="bi bi-person-plus me-2"></i>Informations de l'utilisateur</h6>
+            </div>
+            <div class="card-body">
+                <form method="post" novalidate>
+                    {% csrf_token %}
+                    
+                    {% if form.non_field_errors %}
+                    <div class="alert alert-danger">
+                        {{ form.non_field_errors }}
+                    </div>
+                    {% endif %}
+                    
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label class="form-label">Nom d'utilisateur <span class="text-danger">*</span></label>
+                            {{ form.username }}
+                            {% if form.username.errors %}
+                            <div class="text-danger mt-1">
+                                {{ form.username.errors }}
+                            </div>
+                            {% endif %}
+                            <small class="text-muted">150 caractères maximum. Lettres, chiffres et @/./+/-/_ uniquement.</small>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Email <span class="text-danger">*</span></label>
+                            {{ form.email }}
+                            {% if form.email.errors %}
+                            <div class="text-danger mt-1">
+                                {{ form.email.errors }}
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label class="form-label">Prénom</label>
+                            {{ form.first_name }}
+                            {% if form.first_name.errors %}
+                            <div class="text-danger mt-1">
+                                {{ form.first_name.errors }}
+                            </div>
+                            {% endif %}
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Nom</label>
+                            {{ form.last_name }}
+                            {% if form.last_name.errors %}
+                            <div class="text-danger mt-1">
+                                {{ form.last_name.errors }}
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label class="form-label">Mot de passe <span class="text-danger">*</span></label>
+                            {{ form.password1 }}
+                            {% if form.password1.errors %}
+                            <div class="text-danger mt-1">
+                                {{ form.password1.errors }}
+                            </div>
+                            {% endif %}
+                            <small class="text-muted">Minimum 8 caractères.</small>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Confirmation du mot de passe <span class="text-danger">*</span></label>
+                            {{ form.password2 }}
+                            {% if form.password2.errors %}
+                            <div class="text-danger mt-1">
+                                {{ form.password2.errors }}
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Rôle</label>
+                        {{ form.role }}
+                        {% if form.role.errors %}
+                        <div class="text-danger mt-1">
+                            {{ form.role.errors }}
+                        </div>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="row mb-4">
+                        <div class="col-md-6">
+                            <div class="form-check">
+                                {{ form.is_active }}
+                                <label class="form-check-label" for="id_is_active">
+                                    Compte actif
+                                </label>
+                            </div>
+                            <small class="text-muted">Permet à l'utilisateur de se connecter.</small>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-check">
+                                {{ form.is_staff }}
+                                <label class="form-check-label" for="id_is_staff">
+                                    Accès administration
+                                </label>
+                            </div>
+                            <small class="text-muted">Accès à l'interface d'administration Django.</small>
+                        </div>
+                    </div>
+                    
+                    <div class="d-flex gap-2">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="bi bi-check-lg me-2"></i>Créer l'utilisateur
+                        </button>
+                        <a href="{% url 'accounts:user_list' %}" class="btn btn-outline-secondary">
+                            <i class="bi bi-x-lg me-2"></i>Annuler
+                        </a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
