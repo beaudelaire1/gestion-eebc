@@ -988,20 +988,19 @@ document.addEventListener('DOMContentLoaded', function() {
     }).addTo(map);
     
     // Ajouter les marqueurs des églises
-    const churches = [
-        {% for site in church_sites %}
-        {% if site.latitude and site.longitude %}
-        {
-            name: '{{ site.name|escapejs }}',
-            address: '{{ site.address|escapejs }}',
-            city: '{{ site.city|escapejs }}',
-            schedule: '{{ site.worship_schedule|escapejs }}',
-            lat: {{ site.latitude|unlocalize }},
-            lng: {{ site.longitude|unlocalize }}
-        }{% if not forloop.last %},{% endif %}
-        {% endif %}
-        {% endfor %}
-    ];
+    const churches = [];
+    {% for site in church_sites %}
+    {% if site.latitude and site.longitude %}
+    churches.push({
+        name: '{{ site.name|escapejs }}',
+        address: '{{ site.address|escapejs }}',
+        city: '{{ site.city|escapejs }}',
+        schedule: '{{ site.worship_schedule|escapejs }}',
+        lat: {{ site.latitude|unlocalize }},
+        lng: {{ site.longitude|unlocalize }}
+    });
+    {% endif %}
+    {% endfor %}
     
     // Si on a des églises, centrer la carte sur elles
     if (churches.length > 0) {
@@ -1010,24 +1009,41 @@ document.addEventListener('DOMContentLoaded', function() {
         churches.forEach(church => {
             const marker = L.marker([church.lat, church.lng]).addTo(map);
             
-            // Popup avec les informations
-            const popupContent = `
-                <div class="popup-title">${church.name}</div>
-                <div class="popup-info">
-                    <i class="bi bi-geo-alt me-1"></i>${church.address}, ${church.city}
-                </div>
-                <div class="popup-info">
-                    <i class="bi bi-clock me-1"></i>${church.schedule}
-                </div>
-            `;
+            // Popup avec les informations (utilise textContent pour éviter XSS)
+            const popupDiv = document.createElement('div');
             
-            marker.bindPopup(popupContent);
+            const titleDiv = document.createElement('div');
+            titleDiv.className = 'popup-title';
+            titleDiv.textContent = church.name;
+            popupDiv.appendChild(titleDiv);
+            
+            const addressDiv = document.createElement('div');
+            addressDiv.className = 'popup-info';
+            addressDiv.innerHTML = '<i class="bi bi-geo-alt me-1"></i>';
+            const addressText = document.createTextNode(`${church.address}, ${church.city}`);
+            addressDiv.appendChild(addressText);
+            popupDiv.appendChild(addressDiv);
+            
+            const scheduleDiv = document.createElement('div');
+            scheduleDiv.className = 'popup-info';
+            scheduleDiv.innerHTML = '<i class="bi bi-clock me-1"></i>';
+            const scheduleText = document.createTextNode(church.schedule);
+            scheduleDiv.appendChild(scheduleText);
+            popupDiv.appendChild(scheduleDiv);
+            
+            marker.bindPopup(popupDiv);
             bounds.push([church.lat, church.lng]);
         });
         
         // Ajuster la vue pour inclure tous les marqueurs
-        if (bounds.length > 1) {
-            map.fitBounds(bounds, { padding: [50, 50] });
+        if (bounds.length >= 1) {
+            if (bounds.length === 1) {
+                // Centrer sur l'église unique
+                map.setView(bounds[0], 13);
+            } else {
+                // Ajuster pour inclure toutes les églises
+                map.fitBounds(bounds, { padding: [50, 50] });
+            }
         }
     }
 });
