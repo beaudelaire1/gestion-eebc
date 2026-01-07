@@ -174,7 +174,23 @@ class UserListViewTests(TestCase):
         self.assertEqual(response.status_code, 200)
         # 7 utilisateurs au total (staff + regular + 5 créés dans setUp)
         self.assertEqual(len(response.context['users']), 7)
-    
+
+    def test_user_list_search(self):
+        """Test de la recherche d'utilisateurs."""
+        self.client.login(username='staff', password='testpass123')
+        response = self.client.get(self.url + '?search=user0')
+        self.assertEqual(response.status_code, 200)
+
+        users = list(response.context['users'])
+
+        # Devrait trouver uniquement user0
+        self.assertEqual(len(users), 1)
+        self.assertEqual(users[0].username, 'user0')
+
+        # Un utilisateur non correspondant (par ex. user1) ne doit pas être présent
+        usernames = {user.username for user in users}
+        self.assertNotIn('user1', usernames)
+
     def test_user_list_search(self):
         """Test de la recherche d'utilisateurs."""
         self.client.login(username='staff', password='testpass123')
