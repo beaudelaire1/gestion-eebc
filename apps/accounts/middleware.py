@@ -57,7 +57,13 @@ class ForcePasswordChangeMiddleware:
                 return response
             
             # Rediriger vers le changement de mot de passe pour toute autre URL
-            return redirect('accounts:first_login_password_change')
+            # Générer un token pour le changement de mot de passe
+            from .services import AuthenticationService
+            from django.http import HttpResponseRedirect
+            
+            token = AuthenticationService.generate_password_change_token(request.user)
+            url = reverse('accounts:first_login_password_change')
+            return HttpResponseRedirect(f'{url}?token={token}')
         
         response = self.get_response(request)
         return response
