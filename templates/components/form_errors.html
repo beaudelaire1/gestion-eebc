@@ -22,10 +22,10 @@ Usage: {% include 'components/form_errors.html' with form=form %}
         <i class="bi bi-info-circle-fill me-2"></i>
         <strong>Veuillez corriger les erreurs suivantes :</strong>
         <ul class="mb-0 mt-2">
-            {% for field, errors in form.errors.items %}
-                {% if field != '__all__' %}
+            {% for field_name, errors in form.errors.items %}
+                {% if field_name != '__all__' %}
                     <li>
-                        <strong>{{ form.fields|get_item:field.label|default:field }}:</strong>
+                        <strong>{{ field_name }}:</strong>
                         {% for error in errors %}
                             {{ error }}{% if not forloop.last %}, {% endif %}
                         {% endfor %}

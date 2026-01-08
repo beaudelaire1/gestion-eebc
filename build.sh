@@ -15,4 +15,7 @@ python manage.py collectstatic --noinput
 echo "=== Application des migrations ==="
 python manage.py migrate --noinput
 
+echo "=== Initialisation des données (sites, etc.) ==="
+python manage.py setup_sites
+
 echo "=== Build terminé avec succès ==="
