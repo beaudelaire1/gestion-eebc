@@ -2,7 +2,7 @@
 
 **Application de gestion pour l'Église Évangélique Baptiste de Cabassou**
 
-Version 1.0 | Janvier 2026
+Version 1.1 | Janvier 2026
 
 ---
 
@@ -20,7 +20,8 @@ Version 1.0 | Janvier 2026
 10. [Module Transport](#10-module-transport)
 11. [Module Inventaire](#11-module-inventaire)
 12. [Module Communication](#12-module-communication)
-13. [Annexes](#13-annexes)
+13. [Conseils et Bonnes Pratiques](#13-conseils-et-bonnes-pratiques)
+14. [Annexes](#14-annexes)
 
 ---
 
@@ -28,16 +29,25 @@ Version 1.0 | Janvier 2026
 
 ### 1.1 Présentation de l'application
 
-L'application Gestion EEBC est un système complet de gestion d'église conçu pour :
-- Gérer les membres et leur suivi pastoral
-- Organiser le club biblique des enfants
-- Planifier les cultes et les services
-- Suivre les finances (dons, dîmes, dépenses)
-- Coordonner les événements et activités
-- Gérer les groupes et départements
-- Organiser le transport des fidèles
-- Inventorier le matériel de l'église
-- Communiquer avec les membres (emails, SMS, annonces)
+L'application Gestion EEBC est un système complet de gestion d'église conçu spécifiquement pour l'Église Évangélique Baptiste de Cabassou. Cette solution moderne et intuitive permet de :
+
+- **Gérer les membres** et leur suivi pastoral avec CRM intégré
+- **Organiser le club biblique** des enfants avec suivi des présences
+- **Planifier les cultes** et services avec assignation automatique des rôles
+- **Suivre les finances** (dons, dîmes, dépenses) avec tableaux de bord
+- **Coordonner les événements** et activités avec calendrier intelligent
+- **Gérer les groupes** et départements de l'église
+- **Organiser le transport** des fidèles et des enfants
+- **Inventorier le matériel** de l'église
+- **Communiquer** avec les membres (emails, SMS, annonces)
+
+**Avantages clés :**
+- Interface moderne et intuitive
+- Accessible depuis n'importe quel appareil (ordinateur, tablette, smartphone)
+- Données sécurisées et sauvegardées
+- Rapports et statistiques en temps réel
+- Automatisation des tâches répétitives
+- Mode sombre pour confort visuel
 
 ### 1.2 Architecture multi-sites
 
@@ -59,21 +69,48 @@ Chaque membre, événement, transaction peut être associé à un site spécifiq
 
 ### 2.2 Connexion
 
+![Page de connexion](screenshots/01-login-page.png)
+
 1. Accédez à la page de connexion
 2. Entrez votre nom d'utilisateur et mot de passe
 3. Cliquez sur "Se connecter"
 
+**Sécurité :**
+- Les mots de passe sont cryptés
+- Session automatiquement fermée après 30 minutes d'inactivité
+- Possibilité d'activer l'authentification à deux facteurs (2FA)
+
 ### 2.3 Interface principale
+
+![Tableau de bord](screenshots/02-dashboard.png)
 
 L'interface se compose de :
 - **Barre supérieure** : Logo, recherche, notifications, profil utilisateur, mode nuit
-- **Menu latéral (sidebar)** : Navigation vers tous les modules
-- **Zone principale** : Contenu de la page active
-- **Tableau de bord** : Vue d'ensemble avec statistiques et raccourcis
+- **Menu latéral (sidebar)** : Navigation vers tous les modules organisés par catégories
+  - **Principal** : Tableau de bord, Calendrier, Site public
+  - **Club Biblique** : Vue d'ensemble, Enfants, Classes, Sessions
+  - **Vie d'Église** : Cultes, Planning mensuel, Trésorerie, Reçus fiscaux, Budgets, Campagnes
+  - **Gestion** : Membres, Familles, Événements de vie, Visites pastorales, Groupes, Départements
+  - **Ressources** : Transport, Inventaire
+  - **Communication** : Notifications, Annonces, Historique emails
+- **Zone principale** : Contenu de la page active avec cartes statistiques et raccourcis rapides
+- **Tableau de bord** : Vue d'ensemble avec statistiques en temps réel
 
-### 2.4 Mode nuit
+### 2.4 Tableau de bord - Vue d'ensemble
 
-Un bouton dans la barre supérieure permet de basculer entre le mode clair et le mode sombre. La préférence est sauvegardée automatiquement.
+Le tableau de bord affiche :
+- **Statistiques principales** : Enfants inscrits, classes actives, membres d'église, événements à venir
+- **Raccourcis rapides** : Accès direct aux fonctionnalités les plus utilisées
+- **Dernière session** : Information sur la dernière session du club biblique
+- **Événements à venir** : Prochains événements au calendrier
+- **Campagnes actives** : Liste des campagnes en cours
+- **Trésorerie du mois** : Résumé financier (entrées, sorties, solde)
+- **Prochain culte** : Informations sur le prochain service
+- **Suivi pastoral** : Visites à planifier, visites effectuées, événements de vie
+
+### 2.5 Mode nuit
+
+Un bouton dans la barre supérieure permet de basculer entre le mode clair et le mode sombre. La préférence est sauvegardée automatiquement dans le navigateur.
 
 ---
 
@@ -81,7 +118,16 @@ Un bouton dans la barre supérieure permet de basculer entre le mode clair et le
 
 ### 3.1 Vue d'ensemble
 
+![Module Membres](screenshots/03-membres-list.png)
+
 Le module Membres permet de gérer l'ensemble des personnes liées à l'église : membres actifs, visiteurs, personnes transférées.
+
+**Fonctionnalités principales :**
+- Vue liste avec statistiques en temps réel (total, actifs, baptisés, répartition hommes/femmes)
+- Recherche avancée par nom, email ou téléphone
+- Filtrage par statut (Actif, Inactif, Visiteur, Transféré)
+- Import/Export Excel pour gérer les membres en masse
+- Téléchargement de template Excel pour faciliter l'import
 
 ### 3.2 Statuts des membres
 
@@ -204,7 +250,17 @@ Le système génère des alertes pour :
 
 ### 4.1 Vue d'ensemble
 
+![Module Club Biblique](screenshots/04-club-biblique.png)
+
 Le module Club Biblique gère l'école du dimanche pour les enfants, incluant les classes, les moniteurs, les présences et le transport.
+
+**Fonctionnalités visibles :**
+- **Statistiques en temps réel** : Nombre d'enfants inscrits, classes actives, moniteurs
+- **Raccourcis rapides** : Créer une nouvelle session, voir la liste des enfants, gérer les classes
+- **Prochaine session** : Affichage du prochain dimanche avec lien pour créer la session
+- **Sessions récentes** : Historique des sessions avec taux de présence
+- **Évolution des présences** : Graphique sur 12 mois avec statistiques (taux moyen, meilleur mois, plus faible)
+- **Aperçu des classes** : Liste des classes avec nombre d'enfants par classe
 
 ### 4.2 Tranches d'âge (AgeGroup)
 
@@ -312,7 +368,15 @@ Pour les enfants transportés, le système enregistre :
 
 ### 5.1 Vue d'ensemble
 
+![Module Cultes](screenshots/05-cultes.png)
+
 Le module Worship gère l'organisation des cultes : types de services, rôles assignés, planning mensuel et notifications automatiques.
+
+**Interface du planning :**
+- **Onglets de navigation** : Afficher les services "À venir" ou "Tous" les services
+- **Bouton d'action** : "Nouveau service" pour créer rapidement un culte
+- **État vide** : Message d'aide pour commencer à créer des services
+- **Lien vers planning mensuel** : Accès au système de planification avancée
 
 ### 5.2 Types de services (WorshipService)
 
@@ -473,7 +537,23 @@ Les tokens expirent automatiquement 48h avant le culte (configurable via `ROLE_A
 
 ### 6.1 Vue d'ensemble
 
+![Module Finance](screenshots/06-finance.png)
+
 Le module Finance gère toutes les transactions financières de l'église : dons, dîmes, offrandes, dépenses, ainsi que les budgets et reçus fiscaux.
+
+**Tableau de bord financier :**
+- **Indicateurs du mois** : 
+  - Entrées du mois (en vert)
+  - Sorties du mois (en rouge)
+  - Solde du mois (net)
+  - Transactions en attente de validation
+- **Actions rapides** : Nouvelle transaction, voir toutes les transactions, gérer le budget, accès admin
+- **Année en cours** : Résumé annuel avec entrées, sorties et solde total
+- **Graphiques d'analyse** :
+  - Évolution des dons sur 12 mois (sélectionnable 3, 6 ou 12 mois)
+  - Répartition des dépenses par catégorie
+  - Statistiques : Total période, moyenne mensuelle, dernier mois
+- **Transactions récentes** : Tableau des dernières transactions avec référence, date, type, description, montant et statut
 
 ### 6.2 Transactions financières (FinancialTransaction)
 
@@ -653,7 +733,23 @@ Avec commentaires et motif de refus si applicable.
 
 ### 7.1 Vue d'ensemble
 
+![Module Calendrier](screenshots/07-calendar.png)
+
 Le module Événements gère le calendrier de l'église : cultes, réunions, activités spéciales.
+
+**Interface du calendrier intelligent :**
+- **Statistiques rapides** : Nombre d'événements à venir et ce mois
+- **Actions rapides** : 
+  - Voir tous les événements en liste
+  - Recherche avancée avec filtres
+- **Export PDF** : Impression du calendrier en plusieurs formats
+  - Vue semaine
+  - Vue mois
+  - Vue trimestre
+  - Brochure complète
+- **Catégories** : Liste des catégories d'événements avec codes couleur
+- **Prochains événements** : Liste chronologique des événements à venir
+- **Vue calendrier** : Visualisation mensuelle interactive (nécessite JavaScript)
 
 ### 7.2 Catégories d'événements (EventCategory)
 
@@ -930,7 +1026,18 @@ Le système signale automatiquement les équipements nécessitant attention :
 
 ### 12.1 Vue d'ensemble
 
+![Module Communication - Annonces](screenshots/08-communication.png)
+
 Le module Communication centralise tous les envois d'emails, SMS et notifications.
+
+**Fonctionnalités principales :**
+- **Annonces** : Publication d'informations importantes pour les membres
+  - Gestion des priorités (Basse, Normale, Haute, Urgente)
+  - Contrôle de la visibilité (Public, Membres, Équipe)
+  - Épinglage des annonces importantes
+  - Date de début et de fin de publication
+- **Notifications** : Système de notifications dans l'application
+- **Historique emails** : Suivi de tous les emails envoyés avec statuts
 
 ### 12.2 Logs d'emails (EmailLog)
 
@@ -1023,9 +1130,67 @@ L'application utilise le serveur SMTP Hostinger :
 
 ---
 
-## 13. Annexes
+## 13. Conseils et Bonnes Pratiques
 
-### 13.1 Raccourcis clavier
+### 13.1 Gestion quotidienne
+
+**Pour une utilisation optimale :**
+- Connectez-vous chaque jour pour vérifier les notifications et alertes
+- Mettez à jour les présences du club biblique dès le dimanche
+- Enregistrez les transactions financières dans les 24h
+- Répondez rapidement aux demandes de confirmation de rôles
+
+### 13.2 Saisie des données
+
+**Qualité des données :**
+- Toujours vérifier l'orthographe des noms et prénoms
+- Utiliser le format international pour les numéros de téléphone (+594)
+- Remplir au maximum les champs optionnels pour un meilleur suivi
+- Joindre des photos pour faciliter l'identification (membres, enfants)
+
+### 13.3 Communication
+
+**Efficacité des communications :**
+- Planifier les annonces importantes au moins 7 jours à l'avance
+- Utiliser les templates d'email pour gagner du temps
+- Vérifier les préférences de notification des membres
+- Envoyer les rappels 2-3 jours avant un événement
+
+### 13.4 Sécurité
+
+**Protection des données :**
+- Ne jamais partager vos identifiants de connexion
+- Déconnectez-vous après chaque session sur un ordinateur partagé
+- Activez l'authentification à deux facteurs (2FA)
+- Marquez les informations sensibles comme confidentielles
+
+### 13.5 Maintenance
+
+**Tâches régulières :**
+- **Hebdomadaire** : Vérifier les présences, valider les transactions
+- **Mensuel** : Générer les rapports financiers, vérifier les budgets
+- **Trimestriel** : Faire un export des données de sauvegarde
+- **Annuel** : Générer les reçus fiscaux, archiver l'année précédente
+
+### 13.6 Assistance et Support
+
+**Besoin d'aide ?**
+1. Consultez ce guide utilisateur
+2. Contactez votre administrateur système
+3. Envoyez un email à : contact@eglise-ebc.org
+4. Appelez le support technique (heures ouvrables)
+
+**En cas de problème technique :**
+- Essayez d'abord de vous déconnecter et reconnecter
+- Videz le cache de votre navigateur
+- Essayez avec un autre navigateur (Chrome, Firefox, Safari)
+- Prenez une capture d'écran du problème avant de contacter le support
+
+---
+
+## 14. Annexes
+
+### 14.1 Raccourcis clavier
 
 | Raccourci | Action |
 |-----------|--------|
@@ -1034,7 +1199,7 @@ L'application utilise le serveur SMTP Hostinger :
 | `Ctrl + F` | Rechercher |
 | `Esc` | Fermer modal |
 
-### 13.2 Formats de données
+### 14.2 Formats de données
 
 | Donnée | Format |
 |--------|--------|
@@ -1043,7 +1208,7 @@ L'application utilise le serveur SMTP Hostinger :
 | Téléphone | +594 XXX XXX XXX |
 | Montant | X XXX,XX € |
 
-### 13.3 Rôles utilisateurs
+### 14.3 Rôles utilisateurs
 
 | Rôle | Permissions |
 |------|-------------|
@@ -1054,16 +1219,17 @@ L'application utilise le serveur SMTP Hostinger :
 | **Moniteur** | Club Biblique |
 | **Responsable groupe** | Son groupe uniquement |
 
-### 13.4 Contact support
+### 14.4 Contact support
 
 - **Email** : contact@eglise-ebc.org
 - **Site web** : https://eglise-ebc.org
 
-### 13.5 Historique des versions
+### 14.5 Historique des versions
 
 | Version | Date | Changements |
 |---------|------|-------------|
 | 1.0 | Janvier 2026 | Version initiale |
+| 1.1 | Janvier 2026 | Ajout de captures d'écran et amélioration du contenu |
 
 ---
 
