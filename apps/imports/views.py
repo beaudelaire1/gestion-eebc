@@ -186,7 +186,7 @@ def _get_column_descriptions(import_type):
             'Date de naissance (JJ/MM/AAAA)', 'Genre (M ou F)', 'Adresse complète',
             'Ville de résidence', 'Code postal', 'Profession', 'Statut (actif/inactif/visiteur)',
             'Date d\'arrivée à l\'église', 'Baptisé (oui/non)', 'Date de baptême',
-            'Situation familiale', 'Site d\'appartenance', 'Notes diverses'
+            'Situation familiale', 'Notes diverses'
         ]
     elif import_type == 'children':
         return [
@@ -203,7 +203,7 @@ def _get_required_columns(import_type):
     """Retourne si les colonnes sont obligatoires."""
     if import_type == 'members':
         required = ['Oui', 'Oui', 'Non', 'Non', 'Non', 'Non', 'Non', 'Non', 'Non', 'Non',
-                   'Non', 'Non', 'Non', 'Non', 'Non', 'Non', 'Non']
+                   'Non', 'Non', 'Non', 'Non', 'Non', 'Non']
     elif import_type == 'children':
         required = ['Oui', 'Oui', 'Oui', 'Oui', 'Oui', 'Oui', 'Non', 'Non', 'Non', 'Non',
                    'Non', 'Non', 'Non', 'Non', 'Non', 'Non', 'Non']
@@ -217,7 +217,7 @@ def _get_column_formats(import_type):
         return [
             'Texte', 'Texte', 'Email', 'Téléphone', 'JJ/MM/AAAA', 'M ou F', 'Texte',
             'Texte', 'Texte', 'Texte', 'actif/inactif/visiteur', 'JJ/MM/AAAA',
-            'oui/non', 'JJ/MM/AAAA', 'Texte', 'Texte', 'Texte'
+            'oui/non', 'JJ/MM/AAAA', 'Texte', 'Texte'
         ]
     elif import_type == 'children':
         return [

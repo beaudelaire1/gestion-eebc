@@ -22,7 +22,8 @@ from .services import OptimizedBibleClubService
 @club_staff_required
 def bibleclub_home(request):
     """Page d'accueil du club biblique."""
-    today = date.today()
+    from datetime import date as date_class, timedelta
+    today = date_class.today()
     user = request.user
     
     # Récupérer les classes accessibles par l'utilisateur
@@ -45,9 +46,7 @@ def bibleclub_home(request):
         else:
             classes = BibleClass.objects.none()
     
-    # Prochain dimanche via le service
-    from datetime import date, timedelta
-    today = date.today()
+    # Prochain dimanche
     days_ahead = 6 - today.weekday()  # 6 = dimanche
     if days_ahead <= 0:  # Dimanche déjà passé cette semaine
         days_ahead += 7

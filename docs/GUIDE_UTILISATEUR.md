@@ -1,629 +1,1099 @@
-# Guide Utilisateur - Gestion EEBC
+# Guide Utilisateur Complet - Gestion EEBC
 
-## Système de Gestion de l'Église Évangélique Baptiste de Cabassou
+**Application de gestion pour l'Église Évangélique Baptiste de Cabassou**
 
-**Version 1.0.0**  
-**Dernière mise à jour : Janvier 2026**
+Version 1.0 | Janvier 2026
 
 ---
 
 ## Table des matières
 
 1. [Introduction](#1-introduction)
-2. [Premiers pas](#2-premiers-pas)
-3. [Tableau de bord](#3-tableau-de-bord)
-4. [Gestion des membres](#4-gestion-des-membres)
-5. [Club Biblique (École du dimanche)](#5-club-biblique)
-6. [Cultes et Planning](#6-cultes-et-planning)
-7. [Trésorerie et Finances](#7-trésorerie-et-finances)
-8. [Événements et Calendrier](#8-événements-et-calendrier)
-9. [Groupes et Départements](#9-groupes-et-départements)
-10. [Communication](#10-communication)
-11. [Import/Export de données](#11-importexport-de-données)
-12. [Site public](#12-site-public)
-13. [Administration](#13-administration)
-14. [FAQ et Dépannage](#14-faq-et-dépannage)
+2. [Connexion et Navigation](#2-connexion-et-navigation)
+3. [Module Membres](#3-module-membres)
+4. [Module Club Biblique](#4-module-club-biblique)
+5. [Module Cultes (Worship)](#5-module-cultes-worship)
+6. [Module Finance](#6-module-finance)
+7. [Module Événements](#7-module-événements)
+8. [Module Groupes](#8-module-groupes)
+9. [Module Départements](#9-module-départements)
+10. [Module Transport](#10-module-transport)
+11. [Module Inventaire](#11-module-inventaire)
+12. [Module Communication](#12-module-communication)
+13. [Annexes](#13-annexes)
 
 ---
 
 ## 1. Introduction
 
-### 1.1 Présentation du système
+### 1.1 Présentation de l'application
 
-Le système de Gestion EEBC est une application web complète conçue pour faciliter la gestion quotidienne de l'église. Il permet de :
-
-- Gérer les membres et leurs familles
-- Suivre les enfants du Club Biblique
+L'application Gestion EEBC est un système complet de gestion d'église conçu pour :
+- Gérer les membres et leur suivi pastoral
+- Organiser le club biblique des enfants
 - Planifier les cultes et les services
-- Gérer la trésorerie et les dons
-- Organiser les événements
-- Communiquer avec les membres
-- Générer des rapports et statistiques
+- Suivre les finances (dons, dîmes, dépenses)
+- Coordonner les événements et activités
+- Gérer les groupes et départements
+- Organiser le transport des fidèles
+- Inventorier le matériel de l'église
+- Communiquer avec les membres (emails, SMS, annonces)
 
-### 1.2 Accès au système
+### 1.2 Architecture multi-sites
 
-**URL de connexion :** `https://gestion-eebc.onrender.com`
+L'application supporte plusieurs sites d'église :
+- **Cabassou** (site principal) - ID membre : `EEBC-CAB-XXXX`
+- **Macouria** - ID membre : `EEBC-MAC-XXXX`
 
-Le système est accessible depuis :
-- Ordinateur (navigateur web)
-- Tablette
-- Smartphone (interface adaptée)
+Chaque membre, événement, transaction peut être associé à un site spécifique.
 
-### 1.3 Rôles utilisateurs
-
-| Rôle | Description | Accès |
-|------|-------------|-------|
-| **Administrateur** | Accès complet à toutes les fonctionnalités | Tout |
-| **Secrétariat** | Gestion des membres, événements, communication | Membres, Événements, Communication |
-| **Moniteur** | Gestion du Club Biblique | Club Biblique uniquement |
-| **Trésorier** | Gestion financière | Finances, Reçus fiscaux |
-| **Membre** | Consultation de son profil | Profil personnel |
 
 ---
 
-## 2. Premiers pas
+## 2. Connexion et Navigation
 
-### 2.1 Connexion
+### 2.1 Accès à l'application
 
-1. Accédez à l'URL du système
-2. Entrez votre **adresse email** et votre **mot de passe**
-3. Cliquez sur **Connexion**
+- **URL publique** : https://gestion-eebc.onrender.com
+- **URL locale** (développement) : http://localhost:8000
 
-> **Note :** Lors de votre première connexion, vous devrez changer votre mot de passe temporaire.
+### 2.2 Connexion
 
-### 2.2 Interface principale
+1. Accédez à la page de connexion
+2. Entrez votre nom d'utilisateur et mot de passe
+3. Cliquez sur "Se connecter"
+
+### 2.3 Interface principale
 
 L'interface se compose de :
+- **Barre supérieure** : Logo, recherche, notifications, profil utilisateur, mode nuit
+- **Menu latéral (sidebar)** : Navigation vers tous les modules
+- **Zone principale** : Contenu de la page active
+- **Tableau de bord** : Vue d'ensemble avec statistiques et raccourcis
 
-- **Barre latérale (sidebar)** : Navigation principale entre les modules
-- **Barre supérieure** : Notifications, profil utilisateur, mode sombre
-- **Zone de contenu** : Affichage des données et formulaires
+### 2.4 Mode nuit
 
-### 2.3 Mode sombre
-
-Cliquez sur l'icône 🌙 (lune) dans la barre supérieure pour activer le mode sombre. Le système mémorise votre préférence.
-
-### 2.4 Navigation mobile
-
-Sur smartphone ou tablette :
-1. Cliquez sur le bouton ☰ (menu hamburger) pour ouvrir le menu
-2. Naviguez dans les sections
-3. Cliquez sur ✕ ou en dehors du menu pour le fermer
+Un bouton dans la barre supérieure permet de basculer entre le mode clair et le mode sombre. La préférence est sauvegardée automatiquement.
 
 ---
 
-## 3. Tableau de bord
+## 3. Module Membres
 
 ### 3.1 Vue d'ensemble
 
-Le tableau de bord affiche :
+Le module Membres permet de gérer l'ensemble des personnes liées à l'église : membres actifs, visiteurs, personnes transférées.
 
-- **Statistiques clés** : Nombre de membres, enfants, événements à venir
-- **Graphiques** : Évolution des effectifs, répartition par statut
-- **Activité récente** : Dernières actions effectuées
-- **Alertes** : Anniversaires, absences répétées, tâches en attente
+### 3.2 Statuts des membres
 
-### 3.2 Widgets disponibles
-
-| Widget | Description |
+| Statut | Description |
 |--------|-------------|
-| Membres actifs | Nombre total de membres actifs |
-| Enfants inscrits | Effectif du Club Biblique |
-| Événements à venir | Prochains événements planifiés |
-| Dons du mois | Total des dons reçus ce mois |
-| Taux de présence | Moyenne de présence aux cultes |
+| **Actif** | Membre régulier participant à la vie de l'église |
+| **Inactif** | Membre ne participant plus régulièrement |
+| **Visiteur** | Personne en visite, pas encore membre |
+| **Transféré** | Membre ayant rejoint une autre église |
 
----
+### 3.3 Identifiant unique
 
-## 4. Gestion des membres
+Chaque membre reçoit un ID unique généré automatiquement :
+- Format : `EEBC-[SITE]-[XXXX]`
+- Exemple Cabassou : `EEBC-CAB-0042`
+- Exemple Macouria : `EEBC-MAC-0015`
 
-### 4.1 Liste des membres
+### 3.4 Informations du membre
 
-**Accès :** Menu → Gestion → Membres
+#### Identité
+- Prénom, Nom
+- Date de naissance (calcul automatique de l'âge)
+- Genre (Masculin/Féminin)
+- Photo de profil
 
-La liste affiche tous les membres avec :
-- Photo ou initiales
-- Nom et prénom
-- Statut (Actif, Inactif, Visiteur, En attente)
-- Téléphone et email
+#### Contact
+- Email
+- Téléphone
+- Adresse complète (rue, ville, code postal)
+- Numéro WhatsApp (optionnel)
+
+#### Situation personnelle
+- Situation familiale : Célibataire, Marié(e), Divorcé(e), Veuf/Veuve
+- Profession
+
+#### Vie spirituelle
+- Date d'arrivée à l'église
+- Baptisé(e) : Oui/Non
 - Date de baptême
+- Date de mariage (si applicable)
 
-#### Filtres disponibles
-- Par statut
-- Par site (Cabassou, Matoury)
-- Par genre
-- Par tranche d'âge
-- Baptisés / Non baptisés
+### 3.5 Gestion des familles
 
-#### Recherche
-Utilisez la barre de recherche pour trouver un membre par nom, prénom ou email.
+Les membres peuvent être regroupés en familles avec des rôles :
+- **Chef de famille** : Responsable principal
+- **Conjoint(e)** : Époux/Épouse
+- **Enfant** : Fils/Fille
+- **Parent** : Père/Mère du chef de famille
+- **Autre** : Autre lien familial
 
-### 4.2 Ajouter un membre
+### 3.6 Préférences de notification
 
-1. Cliquez sur **+ Nouveau membre**
-2. Remplissez les informations :
-   - **Identité** : Nom, prénom, date de naissance, genre
-   - **Contact** : Email, téléphone, adresse
-   - **Église** : Site, statut, date d'arrivée
-   - **Vie spirituelle** : Baptisé, date de baptême
-3. Cliquez sur **Enregistrer**
+Chaque membre peut choisir ses canaux de notification :
+- ☑️ Email
+- ☑️ SMS
+- ☑️ WhatsApp
 
-### 4.3 Modifier un membre
 
-1. Cliquez sur le membre dans la liste
-2. Cliquez sur **Modifier**
-3. Effectuez vos modifications
-4. Cliquez sur **Enregistrer**
+### 3.7 Module Pastoral CRM - Suivi des âmes
 
-### 4.4 Familles
+#### 3.7.1 Événements de vie (LifeEvent)
 
-**Accès :** Menu → Gestion → Familles
+Le système permet d'enregistrer les moments importants de la vie des membres :
 
-Regroupez les membres par famille pour :
-- Visualiser les liens familiaux
-- Envoyer des communications groupées
-- Générer des reçus fiscaux par foyer
+| Type d'événement | Description | Action pastorale |
+|------------------|-------------|------------------|
+| **Naissance** | Naissance d'un enfant | Visite de félicitations |
+| **Décès** | Décès du membre | Accompagnement famille |
+| **Mariage** | Célébration de mariage | Préparation au mariage |
+| **Baptême** | Baptême du membre | Suivi post-baptême |
+| **Hospitalisation** | Membre hospitalisé | Visite à l'hôpital |
+| **Deuil** | Perte d'un proche | Soutien et prière |
+| **Conversion** | Nouvelle conversion | Accompagnement spirituel |
+| **Anniversaire de mariage** | Célébration | Reconnaissance |
 
-#### Créer une famille
-1. Cliquez sur **+ Nouvelle famille**
-2. Nommez la famille
-3. Ajoutez les membres (chef de famille, conjoint, enfants)
-4. Enregistrez
+Chaque événement peut :
+- Être marqué comme nécessitant une visite pastorale
+- Être annoncé lors du culte dominical
+- Avoir une priorité (Haute, Normale, Basse)
+- Impliquer plusieurs membres (ex: mariage = 2 personnes)
 
-### 4.5 Carte des membres
+#### 3.7.2 Visites pastorales (VisitationLog)
 
-**Accès :** Menu → Gestion → Carte des membres
+Le journal des visites permet de suivre l'accompagnement des membres :
 
-Visualisez la répartition géographique des membres sur une carte interactive.
+**Types de visites :**
+- Visite à domicile
+- Visite à l'hôpital
+- Appel vidéo (Zoom/WhatsApp)
+- Appel téléphonique
+- Rencontre au bureau
 
-### 4.6 Événements de vie
+**Statuts :**
+- Planifié
+- À faire
+- Effectué
+- Annulé
+- Reporté
 
-Enregistrez les événements importants :
-- Baptêmes
-- Mariages
-- Naissances
-- Décès
-- Autres (consécration, etc.)
+**Informations enregistrées :**
+- Date prévue et date effective
+- Durée de la visite
+- Résumé de la visite
+- Sujets de prière
+- Suivi nécessaire (Oui/Non)
+- Notes de suivi
+- Confidentialité (visible uniquement par le pasteur principal)
+
+#### 3.7.3 Alertes automatiques
+
+Le système génère des alertes pour :
+- Membres non visités depuis plus de 6 mois (configurable)
+- Événements de vie nécessitant une visite
+- Anniversaires à venir
+- Membres inactifs depuis longtemps
 
 ---
 
-## 5. Club Biblique
+## 4. Module Club Biblique
+
+### 4.1 Vue d'ensemble
+
+Le module Club Biblique gère l'école du dimanche pour les enfants, incluant les classes, les moniteurs, les présences et le transport.
+
+### 4.2 Tranches d'âge (AgeGroup)
+
+Les enfants sont répartis par tranches d'âge :
+
+| Tranche | Âge | Couleur |
+|---------|-----|---------|
+| Petits | 3-5 ans | Bleu |
+| Moyens | 6-8 ans | Vert |
+| Grands | 9-12 ans | Orange |
+
+Chaque tranche a :
+- Un nom descriptif
+- Un âge minimum et maximum
+- Une couleur d'identification
+- Une description
+
+### 4.3 Classes (BibleClass)
+
+Chaque classe est associée à une tranche d'âge et peut avoir :
+- Une salle assignée
+- Une capacité maximale
+- Un ou plusieurs moniteurs
+- Une liste d'enfants inscrits
+
+### 4.4 Moniteurs (Monitor)
+
+Les moniteurs sont des adultes responsables des classes :
+- Lien avec un compte utilisateur
+- Classe assignée
+- Statut : Moniteur principal ou assistant
+- Téléphone de contact
+- Notes
+
+### 4.5 Enfants (Child)
+
+#### Informations de base
+- Prénom, Nom
+- Date de naissance (âge calculé automatiquement)
+- Genre
+- Photo
+- Classe assignée
+
+#### Contacts des parents
+- **Père** : Nom, Téléphone, Email
+- **Mère** : Nom, Téléphone, Email
+- **Contact d'urgence** : Nom, Téléphone
+
+#### Informations médicales
+- Allergies connues
+- Notes médicales importantes
+
+#### Transport
+- Besoin de transport : Oui/Non
+- Adresse de ramassage
+- Chauffeur assigné
+
+
+### 4.6 Sessions
+
+Une session représente une séance du club biblique (généralement un dimanche) :
+- Date de la session
+- Thème du jour
+- Notes
+- Statut : Active ou Annulée
+
+### 4.7 Gestion des présences (Attendance)
+
+#### Statuts de présence
+
+| Statut | Description |
+|--------|-------------|
+| **Présent** | L'enfant est présent |
+| **Absent** | L'enfant est absent (non notifié) |
+| **Absent (notifié)** | Absence signalée par les parents |
+| **En retard** | Arrivé après le début |
+| **Excusé** | Absence justifiée |
+
+#### Informations enregistrées
+- Heure d'arrivée (check-in)
+- Heure de départ (check-out)
+- Personne ayant récupéré l'enfant
+- Notes
+- Moniteur ayant enregistré la présence
+
+### 4.8 Alertes d'absence
+
+Le système envoie automatiquement des notifications :
+- **Après 1 absence** : Email aux parents pour signaler l'absence
+- **Après 3 absences consécutives** : Alerte au responsable du club biblique
+
+### 4.9 Pointage des chauffeurs (DriverCheckIn)
+
+Pour les enfants transportés, le système enregistre :
+- Heure de départ du chauffeur
+- Heure d'arrivée à l'église
+- Heure de départ pour le retour
+- Heure d'arrivée au domicile
+- Liste des enfants transportés
+- Notes éventuelles
+
+---
+
+## 5. Module Cultes (Worship)
 
 ### 5.1 Vue d'ensemble
 
-**Accès :** Menu → Club Biblique → Vue d'ensemble
+Le module Worship gère l'organisation des cultes : types de services, rôles assignés, planning mensuel et notifications automatiques.
 
-Statistiques du Club Biblique :
-- Nombre d'enfants inscrits
-- Répartition par classe d'âge
-- Taux de présence moyen
-- Alertes (absences répétées)
+### 5.2 Types de services (WorshipService)
 
-### 5.2 Gestion des enfants
-
-**Accès :** Menu → Club Biblique → Enfants
-
-#### Liste des enfants
-Affiche tous les enfants avec :
-- Photo
-- Nom et prénom
-- Âge et classe
-- Parents/responsables
-- Informations médicales (allergies)
-
-#### Ajouter un enfant
-1. Cliquez sur **+ Nouvel enfant**
-2. Remplissez :
-   - **Identité** : Nom, prénom, date de naissance, genre
-   - **Parents** : Père (nom, téléphone, email), Mère (nom, téléphone, email)
-   - **Contact d'urgence** : Nom et téléphone
-   - **Santé** : Allergies, notes médicales
-   - **Transport** : Besoin de transport, adresse de ramassage
-3. Enregistrez
-
-### 5.3 Classes
-
-**Accès :** Menu → Club Biblique → Classes
-
-Les classes sont organisées par tranche d'âge :
-- Petits (3-5 ans)
-- Moyens (6-8 ans)
-- Grands (9-12 ans)
-- Ados (13-17 ans)
-
-#### Gérer une classe
-- Voir les enfants inscrits
-- Assigner des moniteurs
-- Définir la salle
-
-### 5.4 Sessions et Appels
-
-**Accès :** Menu → Club Biblique → Sessions & Appels
-
-#### Créer une session
-1. Cliquez sur **+ Nouvelle session**
-2. Sélectionnez la date et la classe
-3. Enregistrez
-
-#### Faire l'appel
-1. Ouvrez la session
-2. Cochez les enfants présents
-3. Ajoutez des notes si nécessaire
-4. Validez l'appel
-
-> **Important :** Après 3 absences consécutives, une alerte est générée et un email peut être envoyé aux parents.
-
-### 5.5 Notifications automatiques
-
-Le système envoie automatiquement :
-- **Email d'absence** : Après chaque absence
-- **Email d'absences répétées** : Après 3 absences consécutives
-
----
-
-## 6. Cultes et Planning
-
-### 6.1 Liste des cultes
-
-**Accès :** Menu → Vie d'Église → Cultes
-
-Visualisez tous les cultes passés et à venir avec :
-- Date et heure
-- Type (Culte dominical, Prière, Étude biblique)
-- Prédicateur
-- Nombre de participants
-
-### 6.2 Planning mensuel
-
-**Accès :** Menu → Vie d'Église → Planning mensuel
-
-Le planning permet d'organiser les services pour chaque culte :
-- Accueil
-- Louange
-- Prédication
-- Sonorisation
-- Projection
-- Etc.
-
-#### Créer un planning
-1. Sélectionnez le mois
-2. Pour chaque culte, assignez les personnes aux rôles
-3. Cliquez sur **Envoyer les notifications** pour informer les personnes assignées
-
-### 6.3 Confirmation des rôles
-
-Les personnes assignées reçoivent un email avec :
-- Le rôle assigné
-- La date et l'heure
-- Des boutons pour **Confirmer** ou **Décliner**
-
----
-
-## 7. Trésorerie et Finances
-
-### 7.1 Tableau de bord financier
-
-**Accès :** Menu → Vie d'Église → Trésorerie
-
-Vue d'ensemble des finances :
-- Solde actuel
-- Revenus du mois
-- Dépenses du mois
-- Graphique d'évolution
-
-### 7.2 Transactions
-
-#### Enregistrer un don
-1. Cliquez sur **+ Nouvelle transaction**
-2. Type : **Don**
-3. Sélectionnez le donateur (membre ou anonyme)
-4. Montant et date
-5. Mode de paiement (Espèces, Chèque, Virement)
-6. Enregistrez
-
-#### Enregistrer une dépense
-1. Cliquez sur **+ Nouvelle transaction**
-2. Type : **Dépense**
-3. Catégorie (Fonctionnement, Missions, etc.)
-4. Montant, date, description
-5. Enregistrez
-
-### 7.3 Reçus fiscaux
-
-**Accès :** Menu → Vie d'Église → Reçus fiscaux
-
-#### Générer les reçus annuels
-1. Sélectionnez l'année fiscale
-2. Cliquez sur **Générer les reçus**
-3. Le système calcule le total des dons par donateur
-4. Les reçus sont générés en PDF
-
-#### Envoyer les reçus
-- **Par email** : Cliquez sur l'icône ✉️
-- **Télécharger** : Cliquez sur l'icône 📥
-
-### 7.4 Budgets
-
-**Accès :** Menu → Vie d'Église → Budgets
-
-Créez et suivez les budgets par catégorie :
-- Budget prévisionnel
-- Dépenses réelles
-- Écart
-
-### 7.5 Campagnes de dons
-
-**Accès :** Menu → Vie d'Église → Campagnes
-
-Créez des campagnes de collecte pour des projets spécifiques :
-- Objectif financier
-- Date de début et fin
-- Suivi des dons reçus
-- Barre de progression
-
----
-
-## 8. Événements et Calendrier
-
-### 8.1 Calendrier
-
-**Accès :** Menu → Principal → Calendrier
-
-Vue calendrier de tous les événements :
-- Vue mois, semaine, jour
-- Code couleur par type d'événement
-- Cliquez sur un événement pour voir les détails
-
-### 8.2 Créer un événement
-
-1. Cliquez sur **+ Nouvel événement**
-2. Remplissez :
-   - Titre et description
-   - Date et heure (début/fin)
-   - Lieu
-   - Type (Culte, Réunion, Sortie, etc.)
-   - Récurrence (si applicable)
-3. Enregistrez
-
-### 8.3 Inscriptions
-
-Pour les événements nécessitant une inscription :
-1. Activez l'option **Inscription requise**
-2. Définissez le nombre de places
-3. Les membres peuvent s'inscrire depuis le site public
-
----
-
-## 9. Groupes et Départements
-
-### 9.1 Groupes
-
-**Accès :** Menu → Gestion → Groupes
-
-Types de groupes :
-- Groupes de maison
-- Groupes de prière
-- Groupes d'étude biblique
-- Chorales
-
-#### Créer un groupe
-1. Cliquez sur **+ Nouveau groupe**
-2. Nom, description, type
-3. Responsable(s)
-4. Jour et lieu de réunion
-5. Ajoutez les membres
-
-### 9.2 Départements
-
-**Accès :** Menu → Gestion → Départements
-
-Départements de l'église :
-- Louange
-- Accueil
-- Jeunesse
-- Femmes
-- Hommes
-- Etc.
-
-Chaque département a :
-- Un responsable
-- Des membres
-- Un budget (optionnel)
-
----
-
-## 10. Communication
-
-### 10.1 Notifications
-
-**Accès :** Menu → Communication → Notifications
-
-Centre de notifications pour :
-- Alertes système
-- Rappels d'événements
-- Messages importants
-
-### 10.2 Annonces
-
-**Accès :** Menu → Communication → Annonces
-
-Créez des annonces pour l'église :
-- Titre et contenu
-- Date de publication
-- Épingler en haut (annonces importantes)
-- Publier sur le site public
-
-### 10.3 Historique des emails
-
-**Accès :** Menu → Communication → Historique emails
-
-Consultez tous les emails envoyés par le système :
-- Destinataire
-- Sujet
-- Date d'envoi
-- Statut (Envoyé, Échec)
-
----
-
-## 11. Import/Export de données
-
-### 11.1 Hub Import/Export
-
-**Accès :** Menu → Gestion → Imports & Exports
-
-### 11.2 Importer des données
-
-#### Importer des membres
-1. Téléchargez le modèle Excel
-2. Remplissez les données
-3. Uploadez le fichier
-4. Vérifiez l'aperçu
-5. Confirmez l'import
-
-#### Importer des enfants
-Même procédure avec le modèle spécifique aux enfants.
-
-### 11.3 Exporter des données
-
-Exportez en Excel :
-- Liste des membres
-- Liste des enfants
-- Transactions financières
-- Présences
-
----
-
-## 12. Site public
-
-### 12.1 Accès
-
-**URL :** `https://gestion-eebc.onrender.com/`
-
-Le site public permet aux visiteurs de :
-- Découvrir l'église
-- Voir les événements à venir
-- Lire les actualités
-- Contacter l'église
-- S'inscrire comme visiteur intéressé
-
-### 12.2 Pages disponibles
-
-| Page | Description |
+| Type | Description |
 |------|-------------|
-| Accueil | Présentation, slider, événements |
-| Nos Églises | Adresses, horaires, carte |
-| Événements | Liste des événements publics |
-| Actualités | Articles et annonces |
-| Contact | Formulaire de contact |
+| **Culte dominical** | Service du dimanche matin |
+| **Culte de semaine** | Réunion en semaine |
+| **Sainte Cène** | Service avec communion |
+| **Baptême** | Cérémonie de baptême |
+| **Mariage** | Cérémonie de mariage |
+| **Funérailles** | Service funèbre |
+| **Spécial** | Événement particulier |
 
-### 12.3 Formulaire de contact
+### 5.3 Informations du culte
 
-Quand un visiteur envoie un message :
-1. Le message est enregistré dans le système
-2. L'équipe reçoit une notification par email
-3. Le visiteur reçoit une confirmation
+- Lien avec un événement calendrier
+- Type de service
+- Thème du culte
+- Texte biblique (ex: Jean 3:16-21)
+- Titre de la prédication
+- Notes de prédication
+- Affluence prévue / réelle
+- Total des offrandes
+- Statut : Planning confirmé ou non
+
+### 5.4 Rôles de service (ServiceRole)
+
+#### Types de rôles disponibles
+
+| Rôle | Description |
+|------|-------------|
+| **Prédicateur** | Personne qui prêche |
+| **Dirigeant de culte** | Anime le culte |
+| **Choriste** | Membre de la chorale |
+| **Musicien** | Instrumentiste |
+| **Chef de chorale** | Dirige la chorale |
+| **Sonorisation** | Gère le son |
+| **Projection** | Gère les slides/vidéo |
+| **Accueil** | Accueille les visiteurs |
+| **Offrandes** | Collecte les offrandes |
+| **Lecture biblique** | Lit les textes |
+| **Prière** | Dirige la prière |
+| **Annonces** | Fait les annonces |
+| **Sainte Cène** | Service de communion |
+| **Responsable enfants** | Supervise le club biblique |
+| **Streaming** | Gère la diffusion en ligne |
+
+#### Statuts des assignations
+
+| Statut | Description |
+|--------|-------------|
+| **En attente** | Assignation non confirmée |
+| **Confirmé** | Le membre a accepté |
+| **Décliné** | Le membre a refusé |
+| **Remplacé** | Un remplaçant a été trouvé |
+
+
+### 5.5 Déroulement du culte (ServicePlanItem)
+
+Le système permet de créer une "Run Sheet" minute par minute :
+
+| Élément | Durée type |
+|---------|------------|
+| Accueil | 5 min |
+| Temps de louange | 20 min |
+| Prière | 5 min |
+| Lecture biblique | 5 min |
+| Annonces | 5 min |
+| Offrande | 10 min |
+| Prédication | 30 min |
+| Appel | 5 min |
+| Sainte Cène | 15 min |
+| Bénédiction | 5 min |
+
+Chaque élément contient :
+- Type d'élément
+- Titre/Description
+- Ordre dans le programme
+- Heure de début
+- Durée en minutes
+- Responsable
+- Notes techniques
+- Ressources nécessaires (micro, pupitre, écran...)
+
+### 5.6 Modèles de service (ServiceTemplate)
+
+Des modèles réutilisables permettent de créer rapidement des programmes :
+- "Culte dominical standard" (90 min)
+- "Service de baptême" (120 min)
+- "Culte de Sainte Cène" (100 min)
+
+### 5.7 Planning mensuel (MonthlySchedule)
+
+#### Création du planning
+
+1. Sélectionnez le mois et l'année
+2. Choisissez le site (Cabassou ou Macouria)
+3. Le système génère automatiquement les dimanches du mois
+4. Assignez les rôles pour chaque dimanche
+
+#### Statuts du planning
+
+| Statut | Description |
+|--------|-------------|
+| **Brouillon** | En cours de création |
+| **En cours de validation** | Envoyé pour approbation |
+| **Validé** | Approuvé par le responsable |
+| **Publié** | Visible par tous, notifications programmées |
+
+#### Configuration des notifications
+
+- **Jour de notification** : Choisir le jour de la semaine (ex: Mercredi)
+- **Jours avant le culte** : Nombre de jours d'avance (ex: 4 jours)
+- **Canaux** : Email, SMS, WhatsApp
+
+### 5.8 Cultes programmés (ScheduledService)
+
+Chaque dimanche du planning contient :
+- Date et heure de début
+- Thème et texte biblique
+- **Prédicateur**
+- **Dirigeant de culte**
+- **Chef de chorale**
+- **Choristes** (plusieurs personnes)
+- **Musiciens** (plusieurs personnes)
+- **Sonorisation**
+- **Projection**
+- Notes
+
+### 5.9 Système de confirmation par token (RoleAssignment)
+
+#### Fonctionnement
+
+1. Un membre est assigné à un rôle
+2. Le système génère un **token unique** (UUID)
+3. Un email est envoyé avec un lien de confirmation
+4. Le membre clique sur le lien (sans avoir besoin de se connecter)
+5. Il peut **accepter** ou **refuser** l'assignation
+6. En cas de refus, il peut suggérer un remplaçant
+
+#### Statuts
+
+| Statut | Description |
+|--------|-------------|
+| **En attente** | Notification envoyée, pas de réponse |
+| **Accepté** | Le membre a confirmé sa participation |
+| **Refusé** | Le membre a décliné |
+| **Expiré** | Délai de réponse dépassé |
+
+#### Expiration
+
+Les tokens expirent automatiquement 48h avant le culte (configurable via `ROLE_ASSIGNMENT_EXPIRY_HOURS`).
+
 
 ---
 
-## 13. Administration
+## 6. Module Finance
 
-### 13.1 Accès admin Django
+### 6.1 Vue d'ensemble
 
-**URL :** `/admin/`
+Le module Finance gère toutes les transactions financières de l'église : dons, dîmes, offrandes, dépenses, ainsi que les budgets et reçus fiscaux.
 
-L'interface d'administration avancée permet de :
-- Gérer tous les modèles de données
-- Configurer les paramètres du site
-- Gérer les utilisateurs et permissions
+### 6.2 Transactions financières (FinancialTransaction)
 
-### 13.2 Gestion des utilisateurs
+#### Types de transactions
 
-**Accès :** Menu → Gestion → Utilisateurs
+| Type | Direction | Description |
+|------|-----------|-------------|
+| **Don** | Entrée | Don ponctuel |
+| **Dîme** | Entrée | Dîme d'un membre |
+| **Offrande** | Entrée | Offrande du culte |
+| **Dépense** | Sortie | Achat ou paiement |
+| **Remboursement** | Sortie | Remboursement d'un membre |
+| **Transfert** | Neutre | Transfert entre comptes |
 
-#### Créer un utilisateur
-1. Cliquez sur **+ Nouvel utilisateur**
-2. Email, nom, prénom
-3. Rôle (Admin, Secrétariat, Moniteur, etc.)
-4. Le système envoie un email avec le mot de passe temporaire
+#### Méthodes de paiement
 
-#### Désactiver un utilisateur
-1. Ouvrez le profil utilisateur
-2. Décochez **Actif**
-3. Enregistrez
+- Espèces
+- Chèque
+- Virement bancaire
+- Carte bancaire
+- Paiement mobile
+- Autre
 
-### 13.3 Paramètres du site
+#### Statuts
 
-Dans l'admin Django → **Paramètres du site** :
-- Nom du site
-- Logo
-- Informations de contact
-- Réseaux sociaux
-- Texte du pied de page
+| Statut | Description |
+|--------|-------------|
+| **En attente** | Transaction non validée |
+| **Validé** | Transaction confirmée |
+| **Annulé** | Transaction annulée |
+
+#### Référence unique
+
+Chaque transaction reçoit une référence automatique : `TRX-YYYYMM-XXXX`
+Exemple : `TRX-202601-0042`
+
+### 6.3 Catégories financières (FinanceCategory)
+
+Les transactions sont classées par catégories :
+- **Revenus** : Dons généraux, Dîmes, Offrandes spéciales, Missions
+- **Dépenses** : Électricité, Eau, Fournitures, Entretien, Transport, Communication
+
+Chaque catégorie peut avoir :
+- Un budget annuel prévu
+- Des sous-catégories (catégorie parente)
+- Un statut actif/inactif
+
+### 6.4 Preuves de paiement (ReceiptProof)
+
+#### Types de documents
+
+- Reçu
+- Facture
+- Ticket de caisse
+- Relevé bancaire
+- Autre document
+
+#### Fonctionnalité OCR (préparée)
+
+Le système est préparé pour l'extraction automatique via OCR :
+- Upload d'une image du justificatif
+- Extraction automatique du montant
+- Extraction de la date
+- Score de confiance de l'extraction
+
+Statuts OCR : Non traité → En cours → Terminé/Échec
+
+### 6.5 Dons en ligne (OnlineDonation) - Stripe
+
+#### Configuration
+
+L'application supporte les dons en ligne via Stripe :
+- Dons ponctuels
+- Dons récurrents (mensuels ou annuels)
+
+#### Types de dons en ligne
+
+- Don général
+- Dîme
+- Offrande
+
+#### Processus
+
+1. Le donateur accède à la page de don
+2. Il choisit le montant et le type
+3. Il est redirigé vers Stripe pour le paiement
+4. Après paiement, une transaction est créée automatiquement
+5. Un email de confirmation est envoyé
+
+#### Informations enregistrées
+
+- ID Session Stripe
+- ID Payment Intent
+- ID Abonnement (pour dons récurrents)
+- Email et nom du donateur
+- Adresse IP (pour sécurité)
+
+
+### 6.6 Reçus fiscaux (TaxReceipt)
+
+#### Génération des reçus
+
+Les reçus fiscaux sont conformes à la réglementation française (article 200 du CGI) :
+- Numérotation unique : `RF-YYYY-XXXX` (ex: RF-2026-0001)
+- Année fiscale
+- Nom et adresse du donateur
+- Montant total des dons
+- Liste des transactions incluses
+
+#### Statuts
+
+| Statut | Description |
+|--------|-------------|
+| **Brouillon** | En cours de préparation |
+| **Émis** | Reçu généré |
+| **Envoyé** | Reçu envoyé au donateur |
+| **Annulé** | Reçu annulé |
+
+#### Envoi automatique
+
+Le système peut :
+- Générer le PDF du reçu
+- L'envoyer par email au donateur
+- Enregistrer la date d'envoi
+
+### 6.7 Système de budget
+
+#### Budgets (Budget)
+
+Chaque groupe ou département peut avoir un budget annuel :
+- Nom du budget
+- Année
+- Groupe ou Département concerné
+- Montant demandé
+- Montant approuvé
+
+#### Statuts du budget
+
+| Statut | Description |
+|--------|-------------|
+| **Brouillon** | En cours de création |
+| **Soumis** | Envoyé pour approbation |
+| **Approuvé** | Budget validé |
+| **Rejeté** | Budget refusé |
+| **Actif** | Budget en cours d'utilisation |
+| **Clôturé** | Année terminée |
+
+#### Lignes de budget (BudgetItem)
+
+Chaque budget est détaillé par catégories :
+- Catégorie (Événements, Matériel, Transport...)
+- Montant demandé
+- Montant approuvé
+- Description et justification
+- Priorité (1 = Très important, 5 = Peu important)
+
+#### Suivi en temps réel
+
+Le système calcule automatiquement :
+- **Montant dépensé** : Somme des transactions liées
+- **Montant restant** : Approuvé - Dépensé
+- **Pourcentage d'utilisation** : (Dépensé / Approuvé) × 100
+
+#### Approbation ligne par ligne
+
+Chaque ligne peut être :
+- En attente
+- Approuvée
+- Rejetée
+- Partiellement approuvée
+
+Avec commentaires et motif de refus si applicable.
 
 ---
 
-## 14. FAQ et Dépannage
+## 7. Module Événements
 
-### 14.1 Questions fréquentes
+### 7.1 Vue d'ensemble
 
-**Q : J'ai oublié mon mot de passe**  
-R : Cliquez sur "Mot de passe oublié" sur la page de connexion. Un email de réinitialisation vous sera envoyé.
+Le module Événements gère le calendrier de l'église : cultes, réunions, activités spéciales.
 
-**Q : Je ne vois pas certains menus**  
-R : Votre rôle utilisateur détermine les menus accessibles. Contactez un administrateur si vous avez besoin d'accès supplémentaires.
+### 7.2 Catégories d'événements (EventCategory)
 
-**Q : Comment changer ma photo de profil ?**  
-R : Allez dans votre profil (clic sur votre nom en haut à droite) → Modifier → Uploadez une photo.
+Chaque catégorie a :
+- Un nom
+- Une couleur (pour le calendrier)
+- Une icône
 
-**Q : Les emails ne sont pas envoyés**  
-R : Vérifiez que l'adresse email du destinataire est correcte. Consultez l'historique des emails pour voir le statut.
+Exemples : Culte, Réunion de prière, Jeunesse, Chorale, Formation...
 
-**Q : Comment exporter la liste des membres ?**  
-R : Menu → Imports & Exports → Exporter → Sélectionnez "Membres" → Télécharger Excel.
+### 7.3 Création d'un événement (Event)
 
-### 14.2 Problèmes courants
+#### Informations de base
 
-| Problème | Solution |
-|----------|----------|
-| Page blanche | Rafraîchissez la page (F5) |
-| Erreur 500 | Attendez quelques minutes et réessayez |
-| Données non sauvegardées | Vérifiez votre connexion internet |
-| Menu mobile ne s'ouvre pas | Rafraîchissez la page |
+- Titre
+- Description
+- Site (Cabassou, Macouria, ou global)
+- Catégorie
+- Image (optionnelle)
 
-### 14.3 Contact support
+#### Date et heure
 
-Pour toute assistance technique :
-- **Email :** contact@eglise-ebc.org
-- **Téléphone :** [Numéro à définir]
+- Date de début / Date de fin
+- Heure de début / Heure de fin
+- Option "Toute la journée"
+
+#### Lieu
+
+- Nom du lieu
+- Adresse complète
+
+### 7.4 Récurrence
+
+| Type | Description |
+|------|-------------|
+| **Aucune** | Événement unique |
+| **Quotidien** | Tous les jours |
+| **Hebdomadaire** | Chaque semaine |
+| **Bihebdomadaire** | Toutes les 2 semaines |
+| **Mensuel** | Chaque mois |
+| **Trimestriel** | Tous les 3 mois |
+| **Annuel** | Chaque année |
+
+Une date de fin de récurrence peut être définie.
+
+### 7.5 Visibilité
+
+| Niveau | Qui peut voir |
+|--------|---------------|
+| **Public** | Tout le monde (site public inclus) |
+| **Membres** | Membres connectés uniquement |
+| **Privé** | Organisateurs uniquement |
+
+
+### 7.6 Notifications automatiques
+
+#### Portée des notifications
+
+| Portée | Destinataires |
+|--------|---------------|
+| **Aucune** | Pas de notification |
+| **Organisateur** | Uniquement l'organisateur |
+| **Groupe** | Membres du groupe lié |
+| **Département** | Membres du département lié |
+| **Membres** | Tous les membres actifs |
+| **Tout le monde** | Tous les utilisateurs et membres |
+
+#### Configuration
+
+- **Jours avant** : Nombre de jours avant l'événement pour envoyer la notification
+- **Notification envoyée** : Indicateur de suivi
+
+### 7.7 Inscriptions (EventRegistration)
+
+Les membres peuvent s'inscrire aux événements :
+- Lien avec l'événement
+- Utilisateur inscrit
+- Date d'inscription
+- Notes
 
 ---
 
-## Annexes
+## 8. Module Groupes
 
-### A. Raccourcis clavier
+### 8.1 Vue d'ensemble
+
+Le module Groupes gère les différents groupes de l'église : jeunesse, chorale, groupes de prière, etc.
+
+### 8.2 Types de groupes
+
+| Type | Description |
+|------|-------------|
+| **Jeunesse** | Groupe des jeunes |
+| **Chorale** | Groupe de chant |
+| **Prière** | Groupe de prière |
+| **Étude** | Groupe d'étude biblique |
+| **Service** | Équipe de service |
+| **Autre** | Autre type |
+
+### 8.3 Informations du groupe (Group)
+
+- Nom et description
+- Site d'appartenance
+- Type de groupe
+- Responsable (utilisateur)
+- Liste des membres
+- Couleur et image
+
+### 8.4 Réunions récurrentes
+
+Configuration des réunions régulières :
+- **Jour** : Lundi à Dimanche
+- **Heure** : Heure de début
+- **Lieu** : Salle ou adresse
+- **Fréquence** : Hebdomadaire, Bihebdomadaire, Mensuel
+
+### 8.5 Réunions (GroupMeeting)
+
+Chaque réunion enregistre :
+- Date et heure
+- Lieu
+- Sujet/Thème
+- Notes
+- Nombre de participants
+- Statut : Active ou Annulée
+
+---
+
+## 9. Module Départements
+
+### 9.1 Vue d'ensemble
+
+Les départements représentent les ministères structurels de l'église.
+
+### 9.2 Structure d'un département (Department)
+
+- Nom et description
+- Site d'appartenance
+- Responsable (utilisateur)
+- Liste des membres
+- Statut : Actif/Inactif
+
+### 9.3 Exemples de départements
+
+- Département Louange
+- Département Accueil
+- Département Technique
+- Département Enfance
+- Département Social
+- Département Communication
+
+### 9.4 Différence Groupe vs Département
+
+| Aspect | Groupe | Département |
+|--------|--------|-------------|
+| **Nature** | Communauté d'intérêt | Structure organisationnelle |
+| **Réunions** | Régulières avec thèmes | Selon besoins |
+| **Budget** | Peut avoir un budget | Peut avoir un budget |
+| **Exemples** | Jeunesse, Chorale | Accueil, Technique |
+
+---
+
+## 10. Module Transport
+
+### 10.1 Vue d'ensemble
+
+Le module Transport gère les chauffeurs bénévoles et les demandes de transport pour les cultes et événements.
+
+### 10.2 Profils chauffeurs (DriverProfile)
+
+#### Informations du véhicule
+
+- Type de véhicule (Voiture, Minibus...)
+- Modèle
+- Immatriculation
+- Capacité (nombre de passagers)
+
+#### Disponibilité
+
+- Zone desservie (quartier/secteur)
+- Disponible le dimanche : Oui/Non
+- Disponible en semaine : Oui/Non
+- Statut général : Disponible/Indisponible
+
+
+### 10.3 Demandes de transport (TransportRequest)
+
+#### Création d'une demande
+
+- Nom du demandeur
+- Téléphone et email
+- Adresse de prise en charge
+- Date et heure de l'événement
+- Nom de l'événement
+- Nombre de passagers
+
+#### Statuts
+
+| Statut | Description |
+|--------|-------------|
+| **En attente** | Demande non traitée |
+| **Confirmé** | Chauffeur assigné |
+| **Effectué** | Transport réalisé |
+| **Annulé** | Demande annulée |
+
+### 10.4 Lien avec le Club Biblique
+
+Les enfants du club biblique peuvent être liés à un chauffeur :
+- Adresse de ramassage enregistrée
+- Chauffeur assigné
+- Pointage des heures de transport
+
+---
+
+## 11. Module Inventaire
+
+### 11.1 Vue d'ensemble
+
+Le module Inventaire permet de gérer le matériel et les équipements de l'église.
+
+### 11.2 Catégories (Category)
+
+Organisation du matériel par catégories :
+- Sonorisation
+- Mobilier
+- Informatique
+- Cuisine
+- Décoration
+- Instruments de musique
+- Etc.
+
+### 11.3 Équipements (Equipment)
+
+#### Informations de base
+
+- Nom et description
+- Catégorie
+- Quantité
+- Emplacement (salle, local...)
+- Photo
+
+#### État de l'équipement
+
+| État | Description |
+|------|-------------|
+| **Neuf** | Équipement neuf |
+| **Bon état** | Fonctionne parfaitement |
+| **État moyen** | Quelques signes d'usure |
+| **En maintenance** | En cours de réparation |
+| **Hors service** | Ne fonctionne plus |
+
+#### Informations d'achat
+
+- Date d'achat
+- Prix d'achat
+- Responsable de l'équipement
+
+### 11.4 Suppression logique (Soft Delete)
+
+Les équipements ne sont jamais supprimés définitivement :
+- **Supprimer** : Marque comme inactif (is_active = False)
+- **Restaurer** : Réactive l'équipement
+- Les équipements inactifs restent dans la base pour historique
+
+### 11.5 Alertes
+
+Le système signale automatiquement les équipements nécessitant attention :
+- État "En maintenance"
+- État "Hors service"
+
+---
+
+## 12. Module Communication
+
+### 12.1 Vue d'ensemble
+
+Le module Communication centralise tous les envois d'emails, SMS et notifications.
+
+### 12.2 Logs d'emails (EmailLog)
+
+Chaque email envoyé est enregistré :
+- Destinataire (email et nom)
+- Sujet
+- Corps du message
+- Statut : En attente → Envoyé → Ouvert → Cliqué
+- Date d'envoi
+- Message d'erreur (si échec)
+
+#### Tracking
+
+- Date d'ouverture
+- Date de clic
+- Token de désabonnement unique
+
+### 12.3 Logs SMS (SMSLog)
+
+Chaque SMS envoyé est enregistré :
+- Destinataire (téléphone et nom)
+- Message
+- Statut : En attente → Envoyé → Délivré
+- Coût (en centimes)
+- ID externe (Twilio)
+
+### 12.4 Préférences de désabonnement (UnsubscribePreference)
+
+Les destinataires peuvent se désabonner par type de notification :
+- Toutes les notifications
+- Événements
+- Cultes
+- Club Biblique
+- Finance
+- Suivi pastoral
+- Administratif
+
+### 12.5 Annonces (Announcement)
+
+#### Création d'une annonce
+
+- Titre et contenu
+- Priorité : Basse, Normale, Haute, Urgente
+- Visibilité : Public, Membres, Équipe
+- Date de début et de fin
+- Options de notification : Email, SMS
+- Épinglée : Oui/Non (reste en haut de liste)
+
+
+### 12.6 Notifications individuelles (Notification)
+
+Notifications dans l'application pour chaque utilisateur :
+- Titre et message
+- Type : Information, Avertissement, Succès, Erreur
+- Lien d'action (optionnel)
+- Statut : Lu/Non lu
+- Date de lecture
+
+### 12.7 Templates d'emails (EmailTemplate)
+
+#### Types de templates
+
+| Type | Usage |
+|------|-------|
+| **Notification d'événement** | Annonce d'un nouvel événement |
+| **Rappel d'événement** | Rappel avant l'événement |
+| **Événement annulé** | Annulation d'événement |
+| **Confirmation de transport** | Confirmation de prise en charge |
+| **Bienvenue** | Email de bienvenue |
+| **Réinitialisation mot de passe** | Lien de réinitialisation |
+| **Anniversaire** | Vœux d'anniversaire |
+| **Reçu de don** | Confirmation de don |
+| **Personnalisé** | Template libre |
+
+#### Variables disponibles
+
+Les templates supportent des variables Django :
+- `{{event.title}}` - Titre de l'événement
+- `{{recipient_name}}` - Nom du destinataire
+- `{{site_name}}` - Nom du site
+- `{{date}}` - Date formatée
+- Etc.
+
+### 12.8 Configuration email
+
+L'application utilise le serveur SMTP Hostinger :
+- **Serveur** : smtp.hostinger.com
+- **Port** : 465 (SSL)
+- **Email** : communication@eglise-ebc.org
+
+---
+
+## 13. Annexes
+
+### 13.1 Raccourcis clavier
 
 | Raccourci | Action |
 |-----------|--------|
-| `Ctrl + S` | Sauvegarder (dans les formulaires) |
-| `Esc` | Fermer une modale |
-| `←` `→` | Navigation dans le calendrier |
+| `Ctrl + S` | Sauvegarder |
+| `Ctrl + N` | Nouveau |
+| `Ctrl + F` | Rechercher |
+| `Esc` | Fermer modal |
 
-### B. Formats de fichiers acceptés
+### 13.2 Formats de données
 
-| Type | Formats |
-|------|---------|
-| Images | JPG, PNG, GIF (max 5 Mo) |
-| Documents | PDF, DOC, DOCX |
-| Import | XLSX, XLS, CSV |
+| Donnée | Format |
+|--------|--------|
+| Date | JJ/MM/AAAA |
+| Heure | HH:MM |
+| Téléphone | +594 XXX XXX XXX |
+| Montant | X XXX,XX € |
 
-### C. Navigateurs supportés
+### 13.3 Rôles utilisateurs
 
-- Google Chrome (recommandé)
-- Mozilla Firefox
-- Microsoft Edge
-- Safari
+| Rôle | Permissions |
+|------|-------------|
+| **Administrateur** | Accès complet |
+| **Pasteur** | Membres, Pastoral, Cultes |
+| **Secrétaire** | Membres, Événements, Communication |
+| **Trésorier** | Finance, Budgets |
+| **Moniteur** | Club Biblique |
+| **Responsable groupe** | Son groupe uniquement |
+
+### 13.4 Contact support
+
+- **Email** : contact@eglise-ebc.org
+- **Site web** : https://eglise-ebc.org
+
+### 13.5 Historique des versions
+
+| Version | Date | Changements |
+|---------|------|-------------|
+| 1.0 | Janvier 2026 | Version initiale |
 
 ---
 
-**© 2026 EEBC - Église Évangélique Baptiste de Cabassou**  
-**Tous droits réservés**
+## Export du document
+
+Ce guide peut être exporté en différents formats :
+
+### Export en PDF
+
+```bash
+# Avec Pandoc
+pandoc docs/GUIDE_UTILISATEUR.md -o GUIDE_UTILISATEUR.pdf --pdf-engine=xelatex
+
+# Ou via un convertisseur en ligne comme:
+# - https://md2pdf.netlify.app/
+# - https://www.markdowntopdf.com/
+```
+
+### Export en DOCX
+
+```bash
+# Avec Pandoc
+pandoc docs/GUIDE_UTILISATEUR.md -o GUIDE_UTILISATEUR.docx
+
+# Ou via un convertisseur en ligne comme:
+# - https://cloudconvert.com/md-to-docx
+# - https://www.zamzar.com/convert/md-to-docx/
+```
+
+---
+
+*Document généré automatiquement - Gestion EEBC v1.0*
+*© 2026 Église Évangélique Baptiste de Cabassou*

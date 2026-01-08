@@ -283,7 +283,8 @@ def export_members_to_excel():
     """Exporte tous les membres actifs vers un fichier Excel."""
     from apps.members.models import Member
     
-    members = Member.objects.filter(is_active=True).order_by('last_name', 'first_name')
+    # Le modèle Member utilise 'status' au lieu de 'is_active'
+    members = Member.objects.filter(status=Member.Status.ACTIF).order_by('last_name', 'first_name')
     
     export_data = []
     for member in members:
