@@ -469,11 +469,14 @@ class AccountsService:
             html_message = render_to_string('accounts/emails/user_invitation.html', context)
             plain_message = strip_tags(html_message)
             
+            # Utiliser l'email Hostinger si configuré, sinon DEFAULT_FROM_EMAIL
+            from_email = getattr(settings, 'HOSTINGER_EMAIL_HOST_USER', None) or settings.DEFAULT_FROM_EMAIL
+            
             # Envoi de l'email
             send_mail(
                 subject=f"Invitation à rejoindre {context['site_name']}",
                 message=plain_message,
-                from_email=settings.DEFAULT_FROM_EMAIL,
+                from_email=from_email,
                 recipient_list=[user.email],
                 html_message=html_message,
                 fail_silently=False,
@@ -482,7 +485,9 @@ class AccountsService:
             return True
             
         except Exception as e:
-            print(f"Erreur lors de l'envoi de l'email d'invitation: {e}")
+            import logging
+            logger = logging.getLogger(__name__)
+            logger.error(f"Erreur lors de l'envoi de l'email d'invitation à {user.email}: {e}")
             return False
     
     @classmethod

@@ -300,7 +300,7 @@ elif _email_backend == 'file':
 else:
     EMAIL_BACKEND = _email_backend
 
-DEFAULT_FROM_EMAIL = os.environ.get('DEFAULT_FROM_EMAIL', 'noreply@eebc-guyane.org')
+DEFAULT_FROM_EMAIL = os.environ.get('DEFAULT_FROM_EMAIL', '') or os.environ.get('HOSTINGER_EMAIL_HOST_USER', 'noreply@eglise-ebc.org')
 
 # Configuration SMTP standard (Gmail, Outlook, etc.)
 EMAIL_HOST = os.environ.get('EMAIL_HOST', 'smtp.gmail.com')
