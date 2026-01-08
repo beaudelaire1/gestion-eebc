@@ -1178,7 +1178,7 @@ L'application utilise le serveur SMTP Hostinger :
 1. Consultez ce guide utilisateur
 2. Contactez votre administrateur système
 3. Envoyez un email à : contact@eglise-ebc.org
-4. Appelez le support technique (heures ouvrables)
+4. Appelez le support technique : +594 694 XX XX XX (Lundi-Vendredi, 9h-17h)
 
 **En cas de problème technique :**
 - Essayez d'abord de vous déconnecter et reconnecter

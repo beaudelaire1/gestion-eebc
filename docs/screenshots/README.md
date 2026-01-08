@@ -20,7 +20,7 @@ Ce dossier contient les captures d'écran utilisées dans le guide utilisateur d
 - **Format** : PNG
 - **Résolution** : Variable (adaptée à la taille de la page)
 - **Date de capture** : Janvier 2026
-- **Version de l'application** : 1.1
+- **Version de l'application** : Synchronisée avec la version du guide utilisateur
 
 ## Mise à jour
 
