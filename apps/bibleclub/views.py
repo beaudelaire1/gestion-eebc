@@ -5,7 +5,7 @@ from django.http import JsonResponse
 from django.utils import timezone
 from django.db.models import Count, Q
 from django.core.paginator import Paginator
-from datetime import date, timedelta
+from datetime import date, timedelta, datetime
 
 from .models import AgeGroup, BibleClass, Child, Session, Attendance, Monitor, DriverCheckIn
 from .forms import ChildForm, ChildSearchForm
@@ -22,8 +22,7 @@ from .services import OptimizedBibleClubService
 @club_staff_required
 def bibleclub_home(request):
     """Page d'accueil du club biblique."""
-    from datetime import date as date_class, timedelta
-    today = date_class.today()
+    today = date.today()
     user = request.user
     
     # Récupérer les classes accessibles par l'utilisateur
@@ -427,7 +426,6 @@ def take_attendance(request, session_pk, class_pk):
                 )
                 attendance.status = data['status']
                 if data.get('check_in_time'):
-                    from datetime import datetime
                     attendance.check_in_time = datetime.strptime(data['check_in_time'], '%H:%M').time()
                 attendance.notes = data.get('notes', '')
                 attendance.save()
@@ -532,7 +530,6 @@ def create_session(request):
         
         if session_date:
             # Créer la session
-            from datetime import datetime
             session_date_obj = datetime.strptime(session_date, '%Y-%m-%d').date()
             
             session, created = Session.objects.get_or_create(
