@@ -19,6 +19,9 @@ urlpatterns = [
     path('health/', include('apps.core.health_urls')),
     path('healthz/', include('apps.core.health_urls')),
     
+    # API REST pour application mobile
+    path('api/v1/', include('apps.api.urls')),
+    
     # Confirmation des rôles (accessible sans connexion)
     path('worship/confirm/<uuid:token>/', confirm_role, name='public_confirm_role'),
     path('worship/decline/<uuid:token>/', decline_role, name='public_decline_role'),

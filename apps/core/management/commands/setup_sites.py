@@ -25,7 +25,8 @@ class Command(BaseCommand):
 Étude biblique: Mercredi 19h00
 Réunion de prière: Vendredi 19h00
 Groupe de jeunes: Samedi 16h00-18h00
-Club biblique: Dimanche 15h00-16h30''',
+Club biblique: Samedi 15h00-16h30
+Chorale: Samedi 17h30''',
                 'is_main_site': True,
                 'is_active': True,
                 # Coordonnées GPS exactes: 4°55'08.2"N 52°18'49.3"W
@@ -46,7 +47,7 @@ Club biblique: Dimanche 15h00-16h30''',
                 'address': 'Macouria',
                 'city': 'Macouria',
                 'postal_code': '97355',
-                'worship_schedule': 'Dimanche 10h00',
+                'worship_schedule': 'Culte: Dimanche 9h30',
                 'is_main_site': False,
                 'is_active': True,
                 'latitude': 4.9167,

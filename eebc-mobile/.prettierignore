@@ -1,0 +1,23 @@
+# Dependencies
+node_modules/
+
+# Build outputs
+.expo/
+dist/
+web-build/
+
+# Generated files
+*.lock
+package-lock.json
+
+# Assets
+*.png
+*.jpg
+*.jpeg
+*.gif
+*.svg
+*.ico
+
+# Other
+.git/
+coverage/

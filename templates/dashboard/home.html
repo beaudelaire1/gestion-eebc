@@ -25,13 +25,13 @@
     
     /* Stat Cards Premium */
     .stat-card-premium {
-        background: var(--eebc-white);
+        background: var(--bg-card);
         border-radius: 20px;
         padding: 1.75rem;
         position: relative;
         overflow: hidden;
-        border: none;
-        box-shadow: 0 10px 40px rgba(10, 54, 255, 0.08);
+        border: 1px solid var(--border-color);
+        box-shadow: var(--shadow-lg);
         transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
     }
     
@@ -42,7 +42,7 @@
         left: 0;
         right: 0;
         height: 5px;
-        background: var(--card-accent, var(--eebc-primary));
+        background: var(--accent-primary);
     }
     
     .stat-card-premium::after {
@@ -926,6 +926,42 @@ document.addEventListener('DOMContentLoaded', function() {
             bar.style.width = width;
         }, 500);
     });
+});
+
+// Theme Demo Section
+document.addEventListener('DOMContentLoaded', function() {
+    // Ajouter un raccourci clavier pour ouvrir le sélecteur de thème
+    document.addEventListener('keydown', function(e) {
+        if (e.ctrlKey && e.shiftKey && e.key === 'T') {
+            e.preventDefault();
+            if (window.themeManager) {
+                window.themeManager.showThemeSelector();
+            }
+        }
+    });
+    
+    // Afficher une notification de bienvenue pour les thèmes
+    setTimeout(function() {
+        if (localStorage.getItem('eebc-theme-welcome') !== 'shown') {
+            const notification = document.createElement('div');
+            notification.className = 'theme-notification';
+            notification.innerHTML = `
+                <div class="theme-notification__content">
+                    <i class="bi bi-palette me-2"></i>
+                    Nouveau ! Cliquez sur l'icône thème pour découvrir 7 modes différents
+                </div>
+            `;
+            document.body.appendChild(notification);
+            
+            setTimeout(() => notification.classList.add('theme-notification--visible'), 100);
+            setTimeout(() => {
+                notification.classList.remove('theme-notification--visible');
+                setTimeout(() => notification.remove(), 300);
+            }, 5000);
+            
+            localStorage.setItem('eebc-theme-welcome', 'shown');
+        }
+    }, 2000);
 });
 </script>
 {% endblock %}

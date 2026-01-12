@@ -20,7 +20,7 @@ class AgeGroup(models.Model):
         ordering = ['min_age']
         constraints = [
             models.CheckConstraint(
-                condition=models.Q(min_age__lt=models.F('max_age')),
+                check=models.Q(min_age__lt=models.F('max_age')),
                 name='min_age_less_than_max_age'
             )
         ]

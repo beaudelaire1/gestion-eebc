@@ -1,0 +1,509 @@
+/* =============================================================================
+   STYLES PUBLICS EEBC - Pages publiques avec thème fixe
+   ============================================================================= */
+
+/* Variables CSS fixes pour les pages publiques */
+:root {
+    --public-primary: #0A36FF;
+    --public-secondary: #1e3a5f;
+    --public-accent: #f8b500;
+    --public-success: #198754;
+    --public-info: #0dcaf0;
+    --public-warning: #ffc107;
+    --public-danger: #dc3545;
+    --public-light: #f8f9fa;
+    --public-dark: #212529;
+    --public-bg-primary: #ffffff;
+    --public-bg-secondary: #f8f9fa;
+    --public-bg-tertiary: #e9ecef;
+    --public-text-primary: #212529;
+    --public-text-secondary: #6c757d;
+    --public-border-color: #dee2e6;
+    --public-border-light: #e9ecef;
+    --public-shadow-sm: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+    --public-shadow-md: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
+    --public-shadow-lg: 0 1rem 3rem rgba(0, 0, 0, 0.175);
+}
+
+/* =============================================================================
+   BANDE VERSET BIBLIQUE
+   ============================================================================= */
+
+.bible-verse-banner {
+    background: linear-gradient(135deg, #0A36FF 0%, #3D5FFF 100%);
+    border-radius: 16px;
+    padding: 0;
+    overflow: hidden;
+    box-shadow: 0 8px 32px rgba(10, 54, 255, 0.2);
+    position: relative;
+}
+
+.bible-verse-banner::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><defs><pattern id="cross" x="0" y="0" width="20" height="20" patternUnits="userSpaceOnUse"><path d="M10 0v20M0 10h20" stroke="rgba(255,255,255,0.1)" stroke-width="0.5" fill="none"/></pattern></defs><rect width="100" height="100" fill="url(%23cross)"/></svg>');
+    opacity: 0.3;
+    pointer-events: none;
+}
+
+.verse-content {
+    display: flex;
+    align-items: center;
+    padding: 2rem;
+    position: relative;
+    z-index: 1;
+}
+
+.verse-icon {
+    flex-shrink: 0;
+    width: 60px;
+    height: 60px;
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-right: 1.5rem;
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+}
+
+.verse-icon i {
+    font-size: 1.5rem;
+    color: white;
+}
+
+.verse-text {
+    flex: 1;
+    color: white;
+}
+
+.verse-quote {
+    font-size: 1.1rem;
+    font-weight: 500;
+    line-height: 1.6;
+    margin: 0 0 0.5rem 0;
+    font-style: italic;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+}
+
+.verse-reference {
+    font-size: 0.9rem;
+    font-weight: 600;
+    margin: 0;
+    opacity: 0.9;
+    text-align: right;
+}
+
+/* Animation d'entrée */
+.bible-verse-banner {
+    animation: slideInFromTop 0.8s ease-out;
+}
+
+@keyframes slideInFromTop {
+    from {
+        opacity: 0;
+        transform: translateY(-20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Effet hover */
+.bible-verse-banner:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 12px 40px rgba(10, 54, 255, 0.3);
+    transition: all 0.3s ease;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .verse-content {
+        padding: 1.5rem;
+        flex-direction: column;
+        text-align: center;
+    }
+    
+    .verse-icon {
+        margin-right: 0;
+        margin-bottom: 1rem;
+    }
+    
+    .verse-quote {
+        font-size: 1rem;
+    }
+    
+    .verse-reference {
+        text-align: center;
+    }
+}
+
+/* =============================================================================
+   INFORMATIONS CLUB BIBLIQUE ET HORAIRES ORGANISÉS
+   ============================================================================= */
+
+.club-biblique-info {
+    background: linear-gradient(135deg, #10B981 0%, #22C55E 100%);
+    border-radius: 12px;
+    padding: 1.5rem;
+    color: white;
+    margin-bottom: 1rem;
+    position: relative;
+    overflow: hidden;
+}
+
+.club-biblique-info::before {
+    content: '';
+    position: absolute;
+    top: -50%;
+    right: -50%;
+    width: 100%;
+    height: 100%;
+    background: radial-gradient(circle, rgba(255, 255, 255, 0.1) 0%, transparent 70%);
+    pointer-events: none;
+}
+
+.club-biblique-info h5 {
+    color: white;
+    font-weight: 700;
+    margin-bottom: 1rem;
+    display: flex;
+    align-items: center;
+}
+
+.club-biblique-info h5 i {
+    margin-right: 0.5rem;
+    font-size: 1.2rem;
+}
+
+.club-biblique-info .info-item {
+    display: flex;
+    align-items: center;
+    margin-bottom: 0.75rem;
+    position: relative;
+    z-index: 1;
+}
+
+.club-biblique-info .info-item:last-child {
+    margin-bottom: 0;
+}
+
+.club-biblique-info .info-item i {
+    width: 20px;
+    margin-right: 0.75rem;
+    opacity: 0.9;
+}
+
+.club-biblique-info .info-item span {
+    font-weight: 500;
+}
+
+/* =============================================================================
+   HORAIRES ORGANISÉS POUR LES SITES
+   ============================================================================= */
+
+.schedule-organized {
+    background: linear-gradient(135deg, var(--public-bg-secondary) 0%, var(--public-bg-primary) 100%);
+    border-radius: 16px;
+    padding: 1.5rem;
+    margin-top: 1rem;
+    border: 1px solid var(--public-border-color);
+    box-shadow: var(--public-shadow-md);
+    position: relative;
+    overflow: hidden;
+}
+
+.schedule-organized::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background: linear-gradient(90deg, var(--public-primary) 0%, var(--public-info) 50%, var(--public-success) 100%);
+}
+
+.schedule-title {
+    color: var(--public-text-primary);
+    font-weight: 600;
+    margin-bottom: 1.25rem;
+    display: flex;
+    align-items: center;
+    font-size: 1rem;
+    background: linear-gradient(135deg, var(--public-bg-secondary) 0%, var(--public-bg-tertiary) 100%);
+    padding: 0.75rem 1rem;
+    border-radius: 8px;
+    border-left: 4px solid var(--public-primary);
+}
+
+.schedule-title i {
+    color: var(--public-primary);
+    margin-right: 0.5rem;
+    font-size: 1.1rem;
+}
+
+.activity-item {
+    display: flex;
+    align-items: center;
+    margin-bottom: 1rem;
+    padding: 0.75rem;
+    background: var(--public-bg-primary);
+    border-radius: 8px;
+    border: 1px solid var(--public-border-light);
+    transition: all 0.3s ease;
+}
+
+.activity-item:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--public-shadow-lg);
+    border-color: var(--public-primary);
+}
+
+.activity-item:last-child {
+    margin-bottom: 0;
+}
+
+.activity-icon {
+    width: 40px;
+    height: 40px;
+    background: var(--public-primary);
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-right: 1rem;
+    flex-shrink: 0;
+}
+
+.activity-icon i {
+    color: white;
+    font-size: 1.1rem;
+}
+
+.activity-details {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+}
+
+.activity-details strong {
+    color: var(--public-text-primary);
+    font-weight: 600;
+    font-size: 0.95rem;
+    margin-bottom: 0.25rem;
+}
+
+.activity-details span {
+    color: var(--public-text-secondary);
+    font-size: 0.875rem;
+    font-weight: 500;
+}
+
+/* Affichage simple pour Macouria */
+.simple-schedule {
+    margin-top: 1rem;
+}
+
+.simple-schedule .activity-item {
+    background: linear-gradient(135deg, var(--public-bg-tertiary) 0%, var(--public-bg-primary) 100%);
+    border: 1px solid var(--public-border-color);
+    border-left: 4px solid var(--public-primary);
+}
+
+.simple-schedule .activity-icon {
+    background: linear-gradient(135deg, var(--public-primary) 0%, var(--public-info) 100%);
+    box-shadow: 0 4px 12px rgba(10, 54, 255, 0.3);
+}
+
+/* Couleurs spécifiques pour chaque activité avec dégradés harmonieux */
+.activity-item:nth-child(1) .activity-icon {
+    background: linear-gradient(135deg, var(--public-primary) 0%, var(--public-info) 100%);
+    box-shadow: 0 4px 12px rgba(10, 54, 255, 0.3);
+}
+
+.activity-item:nth-child(2) .activity-icon {
+    background: linear-gradient(135deg, var(--public-success) 0%, #22c55e 100%);
+    box-shadow: 0 4px 12px rgba(25, 135, 84, 0.3);
+}
+
+.activity-item:nth-child(3) .activity-icon {
+    background: linear-gradient(135deg, var(--public-warning) 0%, #f59e0b 100%);
+    box-shadow: 0 4px 12px rgba(255, 193, 7, 0.3);
+}
+
+.activity-item:nth-child(4) .activity-icon {
+    background: linear-gradient(135deg, var(--public-info) 0%, #06b6d4 100%);
+    box-shadow: 0 4px 12px rgba(13, 202, 240, 0.3);
+}
+
+.activity-item:nth-child(5) .activity-icon {
+    background: linear-gradient(135deg, var(--public-danger) 0%, #ef4444 100%);
+    box-shadow: 0 4px 12px rgba(220, 53, 69, 0.3);
+}
+
+.activity-item:nth-child(6) .activity-icon {
+    background: linear-gradient(135deg, #8b5cf6 0%, #a855f7 100%);
+    box-shadow: 0 4px 12px rgba(139, 92, 246, 0.3);
+}
+
+/* Effets de couleur au survol */
+.activity-item:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--public-shadow-lg);
+    border-color: var(--public-primary);
+}
+
+.activity-item:nth-child(1):hover {
+    border-color: var(--public-primary);
+    background: linear-gradient(135deg, var(--public-bg-primary) 0%, rgba(10, 54, 255, 0.05) 100%);
+}
+
+.activity-item:nth-child(2):hover {
+    border-color: var(--public-success);
+    background: linear-gradient(135deg, var(--public-bg-primary) 0%, rgba(25, 135, 84, 0.05) 100%);
+}
+
+.activity-item:nth-child(3):hover {
+    border-color: var(--public-warning);
+    background: linear-gradient(135deg, var(--public-bg-primary) 0%, rgba(255, 193, 7, 0.05) 100%);
+}
+
+.activity-item:nth-child(4):hover {
+    border-color: var(--public-info);
+    background: linear-gradient(135deg, var(--public-bg-primary) 0%, rgba(13, 202, 240, 0.05) 100%);
+}
+
+.activity-item:nth-child(5):hover {
+    border-color: var(--public-danger);
+    background: linear-gradient(135deg, var(--public-bg-primary) 0%, rgba(220, 53, 69, 0.05) 100%);
+}
+
+.activity-item:nth-child(6):hover {
+    border-color: #8b5cf6;
+    background: linear-gradient(135deg, var(--public-bg-primary) 0%, rgba(139, 92, 246, 0.05) 100%);
+}
+
+/* Animation de pulsation subtile pour les icônes */
+.activity-icon {
+    animation: iconPulse 3s ease-in-out infinite;
+}
+
+@keyframes iconPulse {
+    0%, 100% {
+        transform: scale(1);
+    }
+    50% {
+        transform: scale(1.05);
+    }
+}
+
+.activity-item:hover .activity-icon {
+    animation: none;
+    transform: scale(1.1);
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .schedule-organized .row {
+        margin: 0;
+    }
+    
+    .schedule-organized .col-md-6 {
+        padding: 0;
+        margin-bottom: 1rem;
+    }
+    
+    .schedule-organized .col-md-6:last-child {
+        margin-bottom: 0;
+    }
+    
+    .activity-item {
+        padding: 1rem;
+    }
+    
+    .activity-icon {
+        width: 35px;
+        height: 35px;
+        margin-right: 0.75rem;
+    }
+    
+    .activity-details strong {
+        font-size: 0.9rem;
+    }
+    
+    .activity-details span {
+        font-size: 0.8rem;
+    }
+}
+
+/* Animations d'entrée */
+.activity-item {
+    animation: slideInUp 0.5s ease-out;
+}
+
+.activity-item:nth-child(1) { animation-delay: 0.1s; }
+.activity-item:nth-child(2) { animation-delay: 0.2s; }
+.activity-item:nth-child(3) { animation-delay: 0.3s; }
+.activity-item:nth-child(4) { animation-delay: 0.4s; }
+.activity-item:nth-child(5) { animation-delay: 0.5s; }
+
+@keyframes slideInUp {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* =============================================================================
+   AMÉLIORATIONS GÉNÉRALES PAGES PUBLIQUES
+   ============================================================================= */
+
+/* Cartes avec effet glassmorphism */
+.glass-card {
+    background: rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 16px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+}
+
+/* Boutons avec effet de brillance */
+.btn-shine {
+    position: relative;
+    overflow: hidden;
+}
+
+.btn-shine::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+    transition: left 0.5s;
+}
+
+.btn-shine:hover::before {
+    left: 100%;
+}
+
+/* Animations pour les éléments de contact */
+.contact-info-item {
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.contact-info-item:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}

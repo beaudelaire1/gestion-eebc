@@ -1,0 +1,403 @@
+/* =============================================================================
+   THEME OVERRIDES - Application intelligente des variables CSS de thème
+   ============================================================================= */
+
+/* Force l'application des variables de thème de manière adaptative */
+body {
+    background: var(--bg-secondary) !important;
+    color: var(--text-primary) !important;
+}
+
+/* Main Content - Utilise les variables du thème actuel */
+.main-content {
+    background: var(--bg-secondary) !important;
+    color: var(--text-primary) !important;
+}
+
+/* Top Bar - Utilise les variables du thème actuel */
+.top-bar {
+    background: var(--bg-card) !important;
+    border-bottom: 1px solid var(--border-color) !important;
+    color: var(--text-primary) !important;
+}
+
+/* Sidebar Navigation - Utilise les variables du thème actuel */
+.nav-section__title {
+    color: var(--text-muted) !important;
+}
+
+.sidebar .nav-link {
+    color: var(--text-secondary) !important;
+}
+
+.sidebar .nav-link:hover {
+    background: var(--bg-hover) !important;
+    color: var(--accent-primary) !important;
+}
+
+.sidebar .nav-link--active {
+    color: var(--accent-primary) !important;
+}
+
+/* Buttons - Utilise les variables du thème actuel */
+.sidebar-toggle {
+    background: var(--bg-hover) !important;
+    border: 1px solid var(--border-color) !important;
+    color: var(--text-secondary) !important;
+}
+
+.sidebar-toggle:hover {
+    background: var(--accent-primary) !important;
+    color: var(--text-inverse) !important;
+}
+
+.btn-outline-secondary {
+    border: 1px solid var(--border-color) !important;
+    color: var(--text-secondary) !important;
+    background: transparent !important;
+}
+
+.btn-outline-secondary:hover {
+    background: var(--bg-hover) !important;
+    border-color: var(--accent-primary) !important;
+    color: var(--accent-primary) !important;
+}
+
+.btn-primary {
+    background: var(--accent-primary) !important;
+    border-color: var(--accent-primary) !important;
+    color: var(--text-inverse) !important;
+}
+
+.btn-secondary {
+    background: var(--bg-tertiary) !important;
+    border-color: var(--border-color) !important;
+    color: var(--text-primary) !important;
+}
+
+/* Cards - Utilise les variables du thème actuel */
+.card {
+    background: var(--bg-card) !important;
+    border: 1px solid var(--border-color) !important;
+    color: var(--text-primary) !important;
+}
+
+.card__header {
+    background: var(--bg-card) !important;
+    border-bottom: 1px solid var(--border-light) !important;
+}
+
+.card__title, .card-title {
+    color: var(--text-primary) !important;
+}
+
+.card-text, .card-body {
+    color: var(--text-primary) !important;
+}
+
+/* Stat Cards - Utilise les variables du thème actuel */
+.stat-card {
+    background: var(--bg-card) !important;
+    border: 1px solid var(--border-color) !important;
+    color: var(--text-primary) !important;
+}
+
+.stat-card:hover {
+    border-color: var(--accent-primary) !important;
+}
+
+.stat-card__value {
+    color: var(--text-primary) !important;
+}
+
+.stat-card__label {
+    color: var(--text-secondary) !important;
+}
+
+/* Tables - Utilise les variables du thème actuel */
+.table {
+    --bs-table-bg: var(--bg-card) !important;
+    --bs-table-color: var(--text-primary) !important;
+    --bs-table-border-color: var(--border-color) !important;
+    color: var(--text-primary) !important;
+}
+
+.table th {
+    color: var(--text-primary) !important;
+    background: var(--bg-secondary) !important;
+}
+
+.table td {
+    color: var(--text-primary) !important;
+}
+
+.table__header {
+    background: var(--bg-secondary) !important;
+    color: var(--text-primary) !important;
+}
+
+/* User Button - Utilise les variables du thème actuel */
+.user-btn {
+    background: var(--bg-hover) !important;
+    border: 1px solid var(--border-color) !important;
+    color: var(--text-primary) !important;
+}
+
+.user-btn:hover {
+    background: var(--bg-tertiary) !important;
+    border-color: var(--border-strong) !important;
+    color: var(--text-primary) !important;
+}
+
+/* Theme Toggle Button */
+.theme-toggle {
+    background: var(--bg-hover) !important;
+    border: 1px solid var(--border-color) !important;
+    color: var(--text-secondary) !important;
+    width: 40px;
+    height: 40px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+}
+
+.theme-toggle:hover {
+    background: var(--accent-primary) !important;
+    color: var(--text-inverse) !important;
+    transform: scale(1.05);
+}
+
+/* Page Header - Utilise les variables du thème actuel */
+.page-title {
+    color: var(--text-primary) !important;
+}
+
+.page-subtitle {
+    color: var(--text-muted) !important;
+}
+
+/* Dropdown Menus - Utilise les variables du thème actuel */
+.dropdown-menu {
+    background: var(--bg-card) !important;
+    border: 1px solid var(--border-color) !important;
+    box-shadow: var(--shadow-lg) !important;
+}
+
+.dropdown-item {
+    color: var(--text-primary) !important;
+}
+
+.dropdown-item:hover {
+    background: var(--bg-hover) !important;
+    color: var(--accent-primary) !important;
+}
+
+/* Forms - Utilise les variables du thème actuel */
+.form-control {
+    background: var(--bg-card) !important;
+    border: 1px solid var(--border-color) !important;
+    color: var(--text-primary) !important;
+}
+
+.form-control::placeholder {
+    color: var(--text-muted) !important;
+}
+
+.form-control:focus {
+    background: var(--bg-card) !important;
+    border-color: var(--accent-primary) !important;
+    color: var(--text-primary) !important;
+    box-shadow: 0 0 0 0.2rem rgba(13, 110, 253, 0.25) !important;
+}
+
+.form-label {
+    color: var(--text-primary) !important;
+}
+
+.form-text {
+    color: var(--text-muted) !important;
+}
+
+/* Classes Bootstrap - Utilise les variables du thème actuel */
+.text-muted {
+    color: var(--text-muted) !important;
+}
+
+.text-secondary {
+    color: var(--text-secondary) !important;
+}
+
+.text-primary {
+    color: var(--accent-primary) !important;
+}
+
+.text-dark {
+    color: var(--text-primary) !important;
+}
+
+.text-light {
+    color: var(--text-secondary) !important;
+}
+
+/* Badges - Utilise les variables du thème actuel */
+.badge {
+    background: var(--accent-primary) !important;
+    color: var(--text-inverse) !important;
+}
+
+.badge-secondary {
+    background: var(--bg-tertiary) !important;
+    color: var(--text-primary) !important;
+}
+
+/* Alerts - Utilise les variables du thème actuel */
+.alert {
+    background: var(--bg-card) !important;
+    border: 1px solid var(--border-color) !important;
+    color: var(--text-primary) !important;
+}
+
+/* Modals - Utilise les variables du thème actuel */
+.modal-content {
+    background: var(--bg-card) !important;
+    border: 1px solid var(--border-color) !important;
+    color: var(--text-primary) !important;
+}
+
+.modal-header {
+    border-bottom: 1px solid var(--border-color) !important;
+    background: var(--bg-card) !important;
+}
+
+.modal-title {
+    color: var(--text-primary) !important;
+}
+
+.modal-body {
+    color: var(--text-primary) !important;
+}
+
+.modal-footer {
+    border-top: 1px solid var(--border-color) !important;
+    background: var(--bg-card) !important;
+}
+
+/* Pagination - Utilise les variables du thème actuel */
+.page-link {
+    background: var(--bg-card) !important;
+    border: 1px solid var(--border-color) !important;
+    color: var(--text-primary) !important;
+}
+
+.page-link:hover {
+    background: var(--bg-hover) !important;
+    border-color: var(--accent-primary) !important;
+    color: var(--accent-primary) !important;
+}
+
+.page-item.active .page-link {
+    background: var(--accent-primary) !important;
+    border-color: var(--accent-primary) !important;
+    color: var(--text-inverse) !important;
+}
+
+/* Breadcrumbs - Utilise les variables du thème actuel */
+.breadcrumb {
+    background: var(--bg-secondary) !important;
+}
+
+.breadcrumb-item {
+    color: var(--text-secondary) !important;
+}
+
+.breadcrumb-item a {
+    color: var(--accent-primary) !important;
+}
+
+.breadcrumb-item.active {
+    color: var(--text-secondary) !important;
+}
+
+/* List Groups - Utilise les variables du thème actuel */
+.list-group-item {
+    background: var(--bg-card) !important;
+    border: 1px solid var(--border-color) !important;
+    color: var(--text-primary) !important;
+}
+
+.list-group-item:hover {
+    background: var(--bg-hover) !important;
+}
+
+/* Progress Bars - Utilise les variables du thème actuel */
+.progress {
+    background: var(--bg-tertiary) !important;
+}
+
+.progress-bar {
+    background: var(--accent-primary) !important;
+}
+
+/* Navs and Tabs - Utilise les variables du thème actuel */
+.nav-tabs {
+    border-bottom: 1px solid var(--border-color) !important;
+}
+
+.nav-tabs .nav-link {
+    color: var(--text-secondary) !important;
+    border: 1px solid transparent !important;
+}
+
+.nav-tabs .nav-link:hover {
+    border-color: var(--border-color) !important;
+    color: var(--accent-primary) !important;
+}
+
+.nav-tabs .nav-link.active {
+    background: var(--bg-card) !important;
+    border-color: var(--border-color) var(--border-color) var(--bg-card) !important;
+    color: var(--text-primary) !important;
+}
+
+.tab-content {
+    background: var(--bg-card) !important;
+    border: 1px solid var(--border-color) !important;
+    border-top: none !important;
+    color: var(--text-primary) !important;
+}
+
+/* Liens - Utilise les variables du thème actuel */
+a {
+    color: var(--accent-primary) !important;
+}
+
+a:hover {
+    color: var(--accent-primary) !important;
+    opacity: 0.8;
+}
+
+/* Titres - Utilise les variables du thème actuel */
+h1, h2, h3, h4, h5, h6 {
+    color: var(--text-primary) !important;
+}
+
+/* Texte général - Utilise les variables du thème actuel */
+p, span, div:not(.sidebar):not(.top-bar):not(.card), label, small {
+    color: var(--text-primary) !important;
+}
+
+/* Classes utilitaires Bootstrap - Utilise les variables du thème actuel */
+.fw-bold, .fw-normal {
+    color: inherit !important;
+}
+
+.fs-1, .fs-2, .fs-3, .fs-4, .fs-5, .fs-6 {
+    color: inherit !important;
+}
+
+/* Icônes Bootstrap - Hérite de la couleur du parent */
+.bi {
+    color: inherit !important;
+}

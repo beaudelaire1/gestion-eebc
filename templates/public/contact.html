@@ -130,13 +130,93 @@
                         <div class="{% if not forloop.last %}mb-4 pb-4 border-bottom{% endif %}">
                             <h5><i class="bi bi-church text-primary me-2"></i>{{ site.name }}</h5>
                             {% if site.address %}
-                            <p class="mb-1"><i class="bi bi-geo-alt me-2 text-muted"></i>{{ site.address }}, {{ site.city }}</p>
+                            <p class="mb-3"><i class="bi bi-geo-alt me-2 text-muted"></i>{{ site.address }}, {{ site.city }}</p>
                             {% endif %}
+                            
                             {% if site.worship_schedule %}
-                            <p class="mb-1"><i class="bi bi-clock me-2 text-muted"></i>{{ site.worship_schedule }}</p>
+                                {% if site.code == 'CAB' %}
+                                    <!-- Mise en forme structurée pour Cayenne -->
+                                    <div class="schedule-organized">
+                                        <h6 class="schedule-title"><i class="bi bi-calendar-week me-2"></i>Horaires des activités</h6>
+                                        <div class="row">
+                                            <div class="col-md-6">
+                                                <div class="activity-item">
+                                                    <div class="activity-icon">
+                                                        <i class="bi bi-church"></i>
+                                                    </div>
+                                                    <div class="activity-details">
+                                                        <strong>Culte</strong>
+                                                        <span>Dimanche 9h30-12h00</span>
+                                                    </div>
+                                                </div>
+                                                <div class="activity-item">
+                                                    <div class="activity-icon">
+                                                        <i class="bi bi-book"></i>
+                                                    </div>
+                                                    <div class="activity-details">
+                                                        <strong>Étude biblique</strong>
+                                                        <span>Mercredi 19h00</span>
+                                                    </div>
+                                                </div>
+                                                <div class="activity-item">
+                                                    <div class="activity-icon">
+                                                        <i class="bi bi-heart"></i>
+                                                    </div>
+                                                    <div class="activity-details">
+                                                        <strong>Réunion de prière</strong>
+                                                        <span>Vendredi 19h00</span>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div class="col-md-6">
+                                                <div class="activity-item">
+                                                    <div class="activity-icon">
+                                                        <i class="bi bi-people"></i>
+                                                    </div>
+                                                    <div class="activity-details">
+                                                        <strong>Groupe de jeunes</strong>
+                                                        <span>Samedi 16h00-18h00</span>
+                                                    </div>
+                                                </div>
+                                                <div class="activity-item">
+                                                    <div class="activity-icon">
+                                                        <i class="bi bi-mortarboard"></i>
+                                                    </div>
+                                                    <div class="activity-details">
+                                                        <strong>Club biblique</strong>
+                                                        <span>Samedi 15h00-16h30</span>
+                                                    </div>
+                                                </div>
+                                                <div class="activity-item">
+                                                    <div class="activity-icon">
+                                                        <i class="bi bi-music-note-beamed"></i>
+                                                    </div>
+                                                    <div class="activity-details">
+                                                        <strong>Chorale</strong>
+                                                        <span>Samedi 17h30</span>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                {% else %}
+                                    <!-- Affichage simple pour Macouria -->
+                                    <div class="simple-schedule">
+                                        <div class="activity-item">
+                                            <div class="activity-icon">
+                                                <i class="bi bi-church"></i>
+                                            </div>
+                                            <div class="activity-details">
+                                                <strong>Culte</strong>
+                                                <span>Dimanche 9h30</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                {% endif %}
                             {% endif %}
+                            
                             {% if site.phone %}
-                            <p class="mb-0"><i class="bi bi-telephone me-2 text-muted"></i>{{ site.phone }}</p>
+                            <p class="mb-0 mt-3"><i class="bi bi-telephone me-2 text-muted"></i>{{ site.phone }}</p>
                             {% endif %}
                         </div>
                         {% endfor %}

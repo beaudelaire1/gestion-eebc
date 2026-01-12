@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{% block title %}Gestion EEBC{% endblock %}</title>
+    <title>{% block title %}EEBC{% endblock %}</title>
     
     <!-- Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -29,19 +29,34 @@
     <!-- Components CSS -->
     <link rel="stylesheet" href="{% static 'css/components.css' %}">
     
-    <!-- Dark Mode CSS -->
+    <!-- Themes CSS -->
+    <link rel="stylesheet" href="{% static 'css/themes.css' %}">
+    
+    <!-- Theme Selector CSS -->
+    <link rel="stylesheet" href="{% static 'css/theme-selector.css' %}">
+    
+    <!-- Animated Verse Banner CSS -->
+    <link rel="stylesheet" href="{% static 'css/animated-verse-banner.css' %}">
+    
+    <!-- Dark Mode CSS (Legacy support) -->
     <link rel="stylesheet" href="{% static 'css/dark-mode.css' %}">
+    
+    <!-- Theme Overrides CSS (Force theme application) -->
+    <link rel="stylesheet" href="{% static 'css/theme-overrides.css' %}">
     
     {% block extra_css %}{% endblock %}
     
     <!-- Theme initialization (prevent flash) -->
     <script>
         (function() {
-            const theme = localStorage.getItem('theme') || 
-                         (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+            const theme = localStorage.getItem('eebc-theme') || 
+                         (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'darkly' : 'default');
             document.documentElement.setAttribute('data-theme', theme);
         })();
     </script>
+    
+    <!-- Theme Fix Script (temporary) -->
+    <script src="{% static 'js/theme-fix.js' %}"></script>
 </head>
 <body>
     <!-- Sidebar Overlay (mobile) -->
@@ -222,10 +237,9 @@
             </div>
             
             <div class="d-flex align-items-center gap-3">
-                <!-- Theme Toggle -->
-                <button class="theme-toggle" id="themeToggle" onclick="toggleTheme()" title="Changer le thème">
-                    <i class="bi bi-moon-fill"></i>
-                    <i class="bi bi-sun-fill"></i>
+                <!-- Theme Selector -->
+                <button class="theme-toggle" id="themeToggle" onclick="toggleThemeSelector()" title="Choisir un thème">
+                    <i class="bi bi-sun"></i>
                 </button>
                 
                 <!-- Notifications -->
@@ -432,6 +446,17 @@
     
     <!-- Form Validation System -->
     <script src="{% static 'js/form-validation.js' %}"></script>
+    
+    <!-- Theme Manager System -->
+    <script src="{% static 'js/theme-manager.js' %}"></script>
+    
+    <!-- Animated Verse Banner System -->
+    <script src="{% static 'js/animated-verse-banner.js' %}"></script>
+    
+    <!-- Theme Test System (Development only) -->
+    {% if debug %}
+    <script src="{% static 'js/theme-test.js' %}"></script>
+    {% endif %}
     
     {% block extra_js %}{% endblock %}
     

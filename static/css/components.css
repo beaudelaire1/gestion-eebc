@@ -3,9 +3,10 @@
    ======================================== */
 
 /* ========================================
-   CSS Variables (Design Tokens)
+   CSS Variables (Design Tokens) - Updated for Theme System
    ======================================== */
 :root {
+    /* Legacy EEBC colors - will be overridden by theme system */
     --eebc-primary: #0A36FF;
     --eebc-primary-dark: #0829CC;
     --eebc-primary-light: #3D5FFF;
@@ -34,9 +35,9 @@
 }
 
 body {
-    background: var(--eebc-gray-50);
+    background: var(--bg-secondary);
     min-height: 100vh;
-    color: var(--eebc-black);
+    color: var(--text-primary);
 }
 
 /* ========================================
@@ -45,15 +46,15 @@ body {
 
 /* Sidebar Component */
 .sidebar {
-    background: var(--eebc-white);
-    border-right: 1px solid var(--eebc-gray-200);
+    background: var(--bg-card);
+    border-right: 1px solid var(--border-color);
     height: 100vh;
     position: fixed;
     width: 280px;
     z-index: 1000;
     display: flex;
     flex-direction: column;
-    box-shadow: 4px 0 20px rgba(11, 15, 25, 0.05);
+    box-shadow: var(--shadow-lg);
     transition: transform 0.3s ease;
 }
 
@@ -63,9 +64,9 @@ body {
 
 .sidebar__brand {
     padding: 1.5rem;
-    border-bottom: 1px solid var(--eebc-gray-200);
-    background: var(--eebc-primary);
-    color: var(--eebc-white);
+    border-bottom: 1px solid var(--border-color);
+    background: var(--bg-accent);
+    color: var(--text-inverse);
     flex-shrink: 0;
 }
 
@@ -73,13 +74,13 @@ body {
     font-weight: 700;
     letter-spacing: -0.5px;
     margin: 0;
-    color: var(--eebc-white);
+    color: var(--text-inverse);
 }
 
 .sidebar__brand-subtitle {
     opacity: 0.85;
     font-size: 0.75rem;
-    color: var(--eebc-white);
+    color: var(--text-inverse);
 }
 
 .sidebar__content {
@@ -91,7 +92,7 @@ body {
 /* Navigation Components */
 .nav-section {
     padding: 1rem 0;
-    border-bottom: 1px solid var(--eebc-gray-100);
+    border-bottom: 1px solid var(--border-light);
 }
 
 .nav-section:last-child {
@@ -144,7 +145,8 @@ body {
 .main-content {
     margin-left: 280px;
     min-height: 100vh;
-    background: var(--eebc-gray-50);
+    background: var(--bg-secondary);
+    color: var(--text-primary);
     transition: margin-left 0.3s ease;
 }
 
@@ -154,28 +156,30 @@ body {
 
 /* Top Bar Component */
 .top-bar {
-    background: var(--eebc-white);
-    border-bottom: 1px solid var(--eebc-gray-200);
+    background: var(--bg-card);
+    border-bottom: 1px solid var(--border-color);
+    color: var(--text-primary);
     padding: 1rem 2rem;
     position: sticky;
     top: 0;
     z-index: 999;
-    box-shadow: 0 2px 10px rgba(11, 15, 25, 0.03);
+    box-shadow: var(--shadow-sm);
     display: flex;
     align-items: center;
     justify-content: space-between;
 }
 
 .sidebar-toggle {
-    background: var(--eebc-gray-100);
-    border: none;
+    background: var(--bg-hover);
+    border: 1px solid var(--border-color);
     width: 40px;
     height: 40px;
     border-radius: 10px;
     display: flex;
     align-items: center;
     justify-content: center;
-    color: var(--eebc-gray-600);
+    color: var(--text-secondary);
+    transition: all 0.2s ease;
     transition: all 0.2s ease;
     cursor: pointer;
 }

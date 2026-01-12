@@ -37,3 +37,7 @@ django-cors-headers>=4.2.0
 # API et HTTP (pour Hostinger)
 requests>=2.31.0
 urllib3>=2.0.0
+
+# REST API pour application mobile
+djangorestframework>=3.14.0
+djangorestframework-simplejwt>=5.3.0

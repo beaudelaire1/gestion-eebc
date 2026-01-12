@@ -1,0 +1,827 @@
+/* =============================================================================
+   EEBC THEMES SYSTEM - Thèmes Bootswatch et personnalisés
+   ============================================================================= */
+
+/* =============================================================================
+   DEFAULT THEME (Bootstrap standard)
+   ============================================================================= */
+:root,
+[data-theme="default"] {
+    /* Background Colors */
+    --bg-primary: #ffffff;
+    --bg-secondary: #f8f9fa;
+    --bg-tertiary: #e9ecef;
+    --bg-card: #ffffff;
+    --bg-hover: #f8f9fa;
+    --bg-accent: #0d6efd;
+    
+    /* Text Colors */
+    --text-primary: #212529;
+    --text-secondary: #6c757d;
+    --text-muted: #adb5bd;
+    --text-inverse: #ffffff;
+    
+    /* Border Colors */
+    --border-color: #dee2e6;
+    --border-light: #e9ecef;
+    --border-strong: #adb5bd;
+    
+    /* Brand Colors */
+    --accent-primary: #0d6efd;
+    --accent-success: #198754;
+    --accent-warning: #ffc107;
+    --accent-danger: #dc3545;
+    --accent-info: #0dcaf0;
+    
+    /* Shadows */
+    --shadow-sm: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+    --shadow-md: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
+    --shadow-lg: 0 1rem 3rem rgba(0, 0, 0, 0.175);
+    --shadow-xl: 0 2rem 4rem rgba(0, 0, 0, 0.2);
+    
+    --theme-name: "Default";
+}
+
+/* =============================================================================
+   CERULEAN THEME
+   ============================================================================= */
+[data-theme="cerulean"] {
+    --bg-primary: #ffffff;
+    --bg-secondary: #f8f9fa;
+    --bg-tertiary: #e9ecef;
+    --bg-card: #ffffff;
+    --bg-hover: #f1f8ff;
+    --bg-accent: #2FA4E7;
+    
+    --text-primary: #033C73;
+    --text-secondary: #6c757d;
+    --text-muted: #adb5bd;
+    --text-inverse: #ffffff;
+    
+    --border-color: #dee2e6;
+    --border-light: #e9ecef;
+    --border-strong: #2FA4E7;
+    
+    --accent-primary: #2FA4E7;
+    --accent-success: #73A839;
+    --accent-warning: #DD5600;
+    --accent-danger: #C71C22;
+    --accent-info: #033C73;
+    
+    --shadow-sm: 0 0.125rem 0.25rem rgba(47, 164, 231, 0.075);
+    --shadow-md: 0 0.5rem 1rem rgba(47, 164, 231, 0.15);
+    --shadow-lg: 0 1rem 3rem rgba(47, 164, 231, 0.175);
+    --shadow-xl: 0 2rem 4rem rgba(47, 164, 231, 0.2);
+    
+    --theme-name: "Cerulean";
+}
+
+/* =============================================================================
+   COSMO THEME
+   ============================================================================= */
+[data-theme="cosmo"] {
+    --bg-primary: #ffffff;
+    --bg-secondary: #f8f9fa;
+    --bg-tertiary: #e9ecef;
+    --bg-card: #ffffff;
+    --bg-hover: #f1f8ff;
+    --bg-accent: #2780E3;
+    
+    --text-primary: #373A3C;
+    --text-secondary: #6c757d;
+    --text-muted: #adb5bd;
+    --text-inverse: #ffffff;
+    
+    --border-color: #dee2e6;
+    --border-light: #e9ecef;
+    --border-strong: #2780E3;
+    
+    --accent-primary: #2780E3;
+    --accent-success: #5CB85C;
+    --accent-warning: #F0AD4E;
+    --accent-danger: #D9534F;
+    --accent-info: #5BC0DE;
+    
+    --shadow-sm: 0 0.125rem 0.25rem rgba(39, 128, 227, 0.075);
+    --shadow-md: 0 0.5rem 1rem rgba(39, 128, 227, 0.15);
+    --shadow-lg: 0 1rem 3rem rgba(39, 128, 227, 0.175);
+    --shadow-xl: 0 2rem 4rem rgba(39, 128, 227, 0.2);
+    
+    --theme-name: "Cosmo";
+}
+
+/* =============================================================================
+   FLATLY THEME
+   ============================================================================= */
+[data-theme="flatly"] {
+    --bg-primary: #ffffff;
+    --bg-secondary: #ecf0f1;
+    --bg-tertiary: #bdc3c7;
+    --bg-card: #ffffff;
+    --bg-hover: #ecf0f1;
+    --bg-accent: #18BC9C;
+    
+    --text-primary: #2C3E50;
+    --text-secondary: #7b8a8b;
+    --text-muted: #95a5a6;
+    --text-inverse: #ffffff;
+    
+    --border-color: #dee2e6;
+    --border-light: #ecf0f1;
+    --border-strong: #18BC9C;
+    
+    --accent-primary: #18BC9C;
+    --accent-success: #18BC9C;
+    --accent-warning: #F39C12;
+    --accent-danger: #E74C3C;
+    --accent-info: #3498DB;
+    
+    --shadow-sm: 0 0.125rem 0.25rem rgba(24, 188, 156, 0.075);
+    --shadow-md: 0 0.5rem 1rem rgba(24, 188, 156, 0.15);
+    --shadow-lg: 0 1rem 3rem rgba(24, 188, 156, 0.175);
+    --shadow-xl: 0 2rem 4rem rgba(24, 188, 156, 0.2);
+    
+    --theme-name: "Flatly";
+}
+
+/* =============================================================================
+   JOURNAL THEME
+   ============================================================================= */
+[data-theme="journal"] {
+    --bg-primary: #ffffff;
+    --bg-secondary: #f8f9fa;
+    --bg-tertiary: #e9ecef;
+    --bg-card: #ffffff;
+    --bg-hover: #fff5f5;
+    --bg-accent: #EB6864;
+    
+    --text-primary: #212529;
+    --text-secondary: #6c757d;
+    --text-muted: #adb5bd;
+    --text-inverse: #ffffff;
+    
+    --border-color: #dee2e6;
+    --border-light: #e9ecef;
+    --border-strong: #EB6864;
+    
+    --accent-primary: #EB6864;
+    --accent-success: #22B24C;
+    --accent-warning: #F57C00;
+    --accent-danger: #C62828;
+    --accent-info: #369;
+    
+    --shadow-sm: 0 0.125rem 0.25rem rgba(235, 104, 100, 0.075);
+    --shadow-md: 0 0.5rem 1rem rgba(235, 104, 100, 0.15);
+    --shadow-lg: 0 1rem 3rem rgba(235, 104, 100, 0.175);
+    --shadow-xl: 0 2rem 4rem rgba(235, 104, 100, 0.2);
+    
+    --theme-name: "Journal";
+}
+
+/* =============================================================================
+   LITERA THEME
+   ============================================================================= */
+[data-theme="litera"] {
+    --bg-primary: #ffffff;
+    --bg-secondary: #f8f9fa;
+    --bg-tertiary: #e9ecef;
+    --bg-card: #ffffff;
+    --bg-hover: #f1f8ff;
+    --bg-accent: #4582EC;
+    
+    --text-primary: #212529;
+    --text-secondary: #6c757d;
+    --text-muted: #adb5bd;
+    --text-inverse: #ffffff;
+    
+    --border-color: #dee2e6;
+    --border-light: #e9ecef;
+    --border-strong: #4582EC;
+    
+    --accent-primary: #4582EC;
+    --accent-success: #02B875;
+    --accent-warning: #F0AD4E;
+    --accent-danger: #D9534F;
+    --accent-info: #17A2B8;
+    
+    --shadow-sm: 0 0.125rem 0.25rem rgba(69, 130, 236, 0.075);
+    --shadow-md: 0 0.5rem 1rem rgba(69, 130, 236, 0.15);
+    --shadow-lg: 0 1rem 3rem rgba(69, 130, 236, 0.175);
+    --shadow-xl: 0 2rem 4rem rgba(69, 130, 236, 0.2);
+    
+    --theme-name: "Litera";
+}
+
+/* =============================================================================
+   LUMEN THEME
+   ============================================================================= */
+[data-theme="lumen"] {
+    --bg-primary: #ffffff;
+    --bg-secondary: #f8f9fa;
+    --bg-tertiary: #e9ecef;
+    --bg-card: #ffffff;
+    --bg-hover: #f1f8ff;
+    --bg-accent: #158CBA;
+    
+    --text-primary: #555;
+    --text-secondary: #777;
+    --text-muted: #999;
+    --text-inverse: #ffffff;
+    
+    --border-color: #dee2e6;
+    --border-light: #e9ecef;
+    --border-strong: #158CBA;
+    
+    --accent-primary: #158CBA;
+    --accent-success: #28A745;
+    --accent-warning: #FFC107;
+    --accent-danger: #DC3545;
+    --accent-info: #17A2B8;
+    
+    --shadow-sm: 0 0.125rem 0.25rem rgba(21, 140, 186, 0.075);
+    --shadow-md: 0 0.5rem 1rem rgba(21, 140, 186, 0.15);
+    --shadow-lg: 0 1rem 3rem rgba(21, 140, 186, 0.175);
+    --shadow-xl: 0 2rem 4rem rgba(21, 140, 186, 0.2);
+    
+    --theme-name: "Lumen";
+}
+
+/* =============================================================================
+   LUX THEME
+   ============================================================================= */
+[data-theme="lux"] {
+    --bg-primary: #ffffff;
+    --bg-secondary: #f8f9fa;
+    --bg-tertiary: #DFDFDF;
+    --bg-card: #ffffff;
+    --bg-hover: #f5f5f5;
+    --bg-accent: #1A1A1A;
+    
+    --text-primary: #1A1A1A;
+    --text-secondary: #6c757d;
+    --text-muted: #adb5bd;
+    --text-inverse: #ffffff;
+    
+    --border-color: #DFDFDF;
+    --border-light: #e9ecef;
+    --border-strong: #1A1A1A;
+    
+    --accent-primary: #1A1A1A;
+    --accent-success: #28A745;
+    --accent-warning: #FFC107;
+    --accent-danger: #DC3545;
+    --accent-info: #17A2B8;
+    
+    --shadow-sm: 0 0.125rem 0.25rem rgba(26, 26, 26, 0.075);
+    --shadow-md: 0 0.5rem 1rem rgba(26, 26, 26, 0.15);
+    --shadow-lg: 0 1rem 3rem rgba(26, 26, 26, 0.175);
+    --shadow-xl: 0 2rem 4rem rgba(26, 26, 26, 0.2);
+    
+    --theme-name: "Lux";
+}
+
+/* =============================================================================
+   MATERIA THEME
+   ============================================================================= */
+[data-theme="materia"] {
+    --bg-primary: #ffffff;
+    --bg-secondary: #f8f9fa;
+    --bg-tertiary: #e9ecef;
+    --bg-card: #ffffff;
+    --bg-hover: #f1f8ff;
+    --bg-accent: #2196F3;
+    
+    --text-primary: #212529;
+    --text-secondary: #6c757d;
+    --text-muted: #adb5bd;
+    --text-inverse: #ffffff;
+    
+    --border-color: #dee2e6;
+    --border-light: #e9ecef;
+    --border-strong: #2196F3;
+    
+    --accent-primary: #2196F3;
+    --accent-success: #4CAF50;
+    --accent-warning: #FF9800;
+    --accent-danger: #F44336;
+    --accent-info: #009688;
+    
+    --shadow-sm: 0 0.125rem 0.25rem rgba(33, 150, 243, 0.075);
+    --shadow-md: 0 0.5rem 1rem rgba(33, 150, 243, 0.15);
+    --shadow-lg: 0 1rem 3rem rgba(33, 150, 243, 0.175);
+    --shadow-xl: 0 2rem 4rem rgba(33, 150, 243, 0.2);
+    
+    --theme-name: "Materia";
+}
+
+/* =============================================================================
+   MINTY THEME
+   ============================================================================= */
+[data-theme="minty"] {
+    --bg-primary: #ffffff;
+    --bg-secondary: #f8f9fa;
+    --bg-tertiary: #e9ecef;
+    --bg-card: #ffffff;
+    --bg-hover: #f8fff8;
+    --bg-accent: #78C2AD;
+    
+    --text-primary: #5A5A5A;
+    --text-secondary: #6c757d;
+    --text-muted: #adb5bd;
+    --text-inverse: #ffffff;
+    
+    --border-color: #dee2e6;
+    --border-light: #e9ecef;
+    --border-strong: #78C2AD;
+    
+    --accent-primary: #78C2AD;
+    --accent-success: #78C2AD;
+    --accent-warning: #F3969A;
+    --accent-danger: #FF6B6B;
+    --accent-info: #6CC3D0;
+    
+    --shadow-sm: 0 0.125rem 0.25rem rgba(120, 194, 173, 0.075);
+    --shadow-md: 0 0.5rem 1rem rgba(120, 194, 173, 0.15);
+    --shadow-lg: 0 1rem 3rem rgba(120, 194, 173, 0.175);
+    --shadow-xl: 0 2rem 4rem rgba(120, 194, 173, 0.2);
+    
+    --theme-name: "Minty";
+}
+
+/* =============================================================================
+   PULSE THEME
+   ============================================================================= */
+[data-theme="pulse"] {
+    --bg-primary: #ffffff;
+    --bg-secondary: #f8f9fa;
+    --bg-tertiary: #e9ecef;
+    --bg-card: #ffffff;
+    --bg-hover: #faf8ff;
+    --bg-accent: #593196;
+    
+    --text-primary: #444;
+    --text-secondary: #6c757d;
+    --text-muted: #adb5bd;
+    --text-inverse: #ffffff;
+    
+    --border-color: #dee2e6;
+    --border-light: #e9ecef;
+    --border-strong: #593196;
+    
+    --accent-primary: #593196;
+    --accent-success: #13B955;
+    --accent-warning: #F57C00;
+    --accent-danger: #E53E3E;
+    --accent-info: #A537FD;
+    
+    --shadow-sm: 0 0.125rem 0.25rem rgba(89, 49, 150, 0.075);
+    --shadow-md: 0 0.5rem 1rem rgba(89, 49, 150, 0.15);
+    --shadow-lg: 0 1rem 3rem rgba(89, 49, 150, 0.175);
+    --shadow-xl: 0 2rem 4rem rgba(89, 49, 150, 0.2);
+    
+    --theme-name: "Pulse";
+}
+
+/* =============================================================================
+   SANDSTONE THEME
+   ============================================================================= */
+[data-theme="sandstone"] {
+    --bg-primary: #ffffff;
+    --bg-secondary: #f8f9fa;
+    --bg-tertiary: #e9ecef;
+    --bg-card: #ffffff;
+    --bg-hover: #fffaf5;
+    --bg-accent: #93C54B;
+    
+    --text-primary: #8E8C84;
+    --text-secondary: #6c757d;
+    --text-muted: #adb5bd;
+    --text-inverse: #ffffff;
+    
+    --border-color: #dee2e6;
+    --border-light: #e9ecef;
+    --border-strong: #93C54B;
+    
+    --accent-primary: #93C54B;
+    --accent-success: #93C54B;
+    --accent-warning: #DD5600;
+    --accent-danger: #F47C3C;
+    --accent-info: #29ABE0;
+    
+    --shadow-sm: 0 0.125rem 0.25rem rgba(147, 197, 75, 0.075);
+    --shadow-md: 0 0.5rem 1rem rgba(147, 197, 75, 0.15);
+    --shadow-lg: 0 1rem 3rem rgba(147, 197, 75, 0.175);
+    --shadow-xl: 0 2rem 4rem rgba(147, 197, 75, 0.2);
+    
+    --theme-name: "Sandstone";
+}
+
+/* =============================================================================
+   SIMPLEX THEME
+   ============================================================================= */
+[data-theme="simplex"] {
+    --bg-primary: #ffffff;
+    --bg-secondary: #f7f7f9;
+    --bg-tertiary: #e9ecef;
+    --bg-card: #ffffff;
+    --bg-hover: #fff5f5;
+    --bg-accent: #D9230F;
+    
+    --text-primary: #212529;
+    --text-secondary: #6c757d;
+    --text-muted: #adb5bd;
+    --text-inverse: #ffffff;
+    
+    --border-color: #dee2e6;
+    --border-light: #e9ecef;
+    --border-strong: #D9230F;
+    
+    --accent-primary: #D9230F;
+    --accent-success: #469408;
+    --accent-warning: #FF8800;
+    --accent-danger: #D9230F;
+    --accent-info: #029ACF;
+    
+    --shadow-sm: 0 0.125rem 0.25rem rgba(217, 35, 15, 0.075);
+    --shadow-md: 0 0.5rem 1rem rgba(217, 35, 15, 0.15);
+    --shadow-lg: 0 1rem 3rem rgba(217, 35, 15, 0.175);
+    --shadow-xl: 0 2rem 4rem rgba(217, 35, 15, 0.2);
+    
+    --theme-name: "Simplex";
+}
+
+/* =============================================================================
+   SKETCHY THEME
+   ============================================================================= */
+[data-theme="sketchy"] {
+    --bg-primary: #ffffff;
+    --bg-secondary: #f8f9fa;
+    --bg-tertiary: #e9ecef;
+    --bg-card: #ffffff;
+    --bg-hover: #f8f9fa;
+    --bg-accent: #333;
+    
+    --text-primary: #333;
+    --text-secondary: #6c757d;
+    --text-muted: #adb5bd;
+    --text-inverse: #ffffff;
+    
+    --border-color: #333;
+    --border-light: #dee2e6;
+    --border-strong: #333;
+    
+    --accent-primary: #333;
+    --accent-success: #28A745;
+    --accent-warning: #FFC107;
+    --accent-danger: #DC3545;
+    --accent-info: #17A2B8;
+    
+    --shadow-sm: 0 0.125rem 0.25rem rgba(51, 51, 51, 0.075);
+    --shadow-md: 0 0.5rem 1rem rgba(51, 51, 51, 0.15);
+    --shadow-lg: 0 1rem 3rem rgba(51, 51, 51, 0.175);
+    --shadow-xl: 0 2rem 4rem rgba(51, 51, 51, 0.2);
+    
+    --theme-name: "Sketchy";
+}
+
+/* =============================================================================
+   SPACELAB THEME
+   ============================================================================= */
+[data-theme="spacelab"] {
+    --bg-primary: #ffffff;
+    --bg-secondary: #f8f9fa;
+    --bg-tertiary: #e9ecef;
+    --bg-card: #ffffff;
+    --bg-hover: #f1f8ff;
+    --bg-accent: #446E9B;
+    
+    --text-primary: #333;
+    --text-secondary: #6c757d;
+    --text-muted: #adb5bd;
+    --text-inverse: #ffffff;
+    
+    --border-color: #dee2e6;
+    --border-light: #e9ecef;
+    --border-strong: #446E9B;
+    
+    --accent-primary: #446E9B;
+    --accent-success: #3CB521;
+    --accent-warning: #D47500;
+    --accent-danger: #CD0200;
+    --accent-info: #3399F3;
+    
+    --shadow-sm: 0 0.125rem 0.25rem rgba(68, 110, 155, 0.075);
+    --shadow-md: 0 0.5rem 1rem rgba(68, 110, 155, 0.15);
+    --shadow-lg: 0 1rem 3rem rgba(68, 110, 155, 0.175);
+    --shadow-xl: 0 2rem 4rem rgba(68, 110, 155, 0.2);
+    
+    --theme-name: "Spacelab";
+}
+
+/* =============================================================================
+   UNITED THEME
+   ============================================================================= */
+[data-theme="united"] {
+    --bg-primary: #ffffff;
+    --bg-secondary: #f8f9fa;
+    --bg-tertiary: #e9ecef;
+    --bg-card: #ffffff;
+    --bg-hover: #fff8f5;
+    --bg-accent: #DD4814;
+    
+    --text-primary: #333;
+    --text-secondary: #6c757d;
+    --text-muted: #AEA79F;
+    --text-inverse: #ffffff;
+    
+    --border-color: #dee2e6;
+    --border-light: #e9ecef;
+    --border-strong: #DD4814;
+    
+    --accent-primary: #DD4814;
+    --accent-success: #38B44A;
+    --accent-warning: #EFB73E;
+    --accent-danger: #DF382C;
+    --accent-info: #772953;
+    
+    --shadow-sm: 0 0.125rem 0.25rem rgba(221, 72, 20, 0.075);
+    --shadow-md: 0 0.5rem 1rem rgba(221, 72, 20, 0.15);
+    --shadow-lg: 0 1rem 3rem rgba(221, 72, 20, 0.175);
+    --shadow-xl: 0 2rem 4rem rgba(221, 72, 20, 0.2);
+    
+    --theme-name: "United";
+}
+
+/* =============================================================================
+   YETI THEME
+   ============================================================================= */
+[data-theme="yeti"] {
+    --bg-primary: #ffffff;
+    --bg-secondary: #f8f9fa;
+    --bg-tertiary: #e9ecef;
+    --bg-card: #ffffff;
+    --bg-hover: #f1f8ff;
+    --bg-accent: #008CBA;
+    
+    --text-primary: #333;
+    --text-secondary: #6c757d;
+    --text-muted: #adb5bd;
+    --text-inverse: #ffffff;
+    
+    --border-color: #dee2e6;
+    --border-light: #e9ecef;
+    --border-strong: #008CBA;
+    
+    --accent-primary: #008CBA;
+    --accent-success: #5CB85C;
+    --accent-warning: #F0AD4E;
+    --accent-danger: #D9534F;
+    --accent-info: #5BC0DE;
+    
+    --shadow-sm: 0 0.125rem 0.25rem rgba(0, 140, 186, 0.075);
+    --shadow-md: 0 0.5rem 1rem rgba(0, 140, 186, 0.15);
+    --shadow-lg: 0 1rem 3rem rgba(0, 140, 186, 0.175);
+    --shadow-xl: 0 2rem 4rem rgba(0, 140, 186, 0.2);
+    
+    --theme-name: "Yeti";
+}
+
+/* =============================================================================
+   THÈMES SOMBRES
+   ============================================================================= */
+
+/* DARKLY THEME */
+[data-theme="darkly"] {
+    --bg-primary: #222;
+    --bg-secondary: #303030;
+    --bg-tertiary: #444;
+    --bg-card: #303030;
+    --bg-hover: #444;
+    --bg-accent: #375A7F;
+    
+    --text-primary: #ffffff;
+    --text-secondary: #adb5bd;
+    --text-muted: #6c757d;
+    --text-inverse: #222;
+    
+    --border-color: #444;
+    --border-light: #555;
+    --border-strong: #375A7F;
+    
+    --accent-primary: #375A7F;
+    --accent-success: #00BC8C;
+    --accent-warning: #F39C12;
+    --accent-danger: #E74C3C;
+    --accent-info: #3498DB;
+    
+    --shadow-sm: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.3);
+    --shadow-md: 0 0.5rem 1rem rgba(0, 0, 0, 0.4);
+    --shadow-lg: 0 1rem 3rem rgba(0, 0, 0, 0.5);
+    --shadow-xl: 0 2rem 4rem rgba(0, 0, 0, 0.6);
+    
+    --theme-name: "Darkly";
+}
+
+/* CYBORG THEME */
+[data-theme="cyborg"] {
+    --bg-primary: #060606;
+    --bg-secondary: #222;
+    --bg-tertiary: #333;
+    --bg-card: #222;
+    --bg-hover: #333;
+    --bg-accent: #2A9FD6;
+    
+    --text-primary: #888;
+    --text-secondary: #adb5bd;
+    --text-muted: #6c757d;
+    --text-inverse: #060606;
+    
+    --border-color: #333;
+    --border-light: #444;
+    --border-strong: #2A9FD6;
+    
+    --accent-primary: #2A9FD6;
+    --accent-success: #77B300;
+    --accent-warning: #FF8800;
+    --accent-danger: #CC0000;
+    --accent-info: #9933CC;
+    
+    --shadow-sm: 0 0.125rem 0.25rem rgba(42, 159, 214, 0.3);
+    --shadow-md: 0 0.5rem 1rem rgba(42, 159, 214, 0.4);
+    --shadow-lg: 0 1rem 3rem rgba(42, 159, 214, 0.5);
+    --shadow-xl: 0 2rem 4rem rgba(42, 159, 214, 0.6);
+    
+    --theme-name: "Cyborg";
+}
+
+/* SLATE THEME */
+[data-theme="slate"] {
+    --bg-primary: #272B30;
+    --bg-secondary: #3A3F44;
+    --bg-tertiary: #52575C;
+    --bg-card: #3A3F44;
+    --bg-hover: #52575C;
+    --bg-accent: #5A6268;
+    
+    --text-primary: #C8C8C8;
+    --text-secondary: #adb5bd;
+    --text-muted: #7A8288;
+    --text-inverse: #272B30;
+    
+    --border-color: #52575C;
+    --border-light: #5A6268;
+    --border-strong: #5A6268;
+    
+    --accent-primary: #5A6268;
+    --accent-success: #62C462;
+    --accent-warning: #F89406;
+    --accent-danger: #EE5F5B;
+    --accent-info: #5BC0DE;
+    
+    --shadow-sm: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.3);
+    --shadow-md: 0 0.5rem 1rem rgba(0, 0, 0, 0.4);
+    --shadow-lg: 0 1rem 3rem rgba(0, 0, 0, 0.5);
+    --shadow-xl: 0 2rem 4rem rgba(0, 0, 0, 0.6);
+    
+    --theme-name: "Slate";
+}
+
+/* SOLAR THEME */
+[data-theme="solar"] {
+    --bg-primary: #002B36;
+    --bg-secondary: #073642;
+    --bg-tertiary: #586E75;
+    --bg-card: #073642;
+    --bg-hover: #586E75;
+    --bg-accent: #B58900;
+    
+    --text-primary: #839496;
+    --text-secondary: #93A1A1;
+    --text-muted: #657B83;
+    --text-inverse: #002B36;
+    
+    --border-color: #586E75;
+    --border-light: #657B83;
+    --border-strong: #B58900;
+    
+    --accent-primary: #B58900;
+    --accent-success: #859900;
+    --accent-warning: #CB4B16;
+    --accent-danger: #DC322F;
+    --accent-info: #268BD2;
+    
+    --shadow-sm: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.3);
+    --shadow-md: 0 0.5rem 1rem rgba(0, 0, 0, 0.4);
+    --shadow-lg: 0 1rem 3rem rgba(0, 0, 0, 0.5);
+    --shadow-xl: 0 2rem 4rem rgba(0, 0, 0, 0.6);
+    
+    --theme-name: "Solar";
+}
+
+/* SUPERHERO THEME */
+[data-theme="superhero"] {
+    --bg-primary: #2B3E50;
+    --bg-secondary: #4E5D6C;
+    --bg-tertiary: #5A6B7D;
+    --bg-card: #4E5D6C;
+    --bg-hover: #5A6B7D;
+    --bg-accent: #DF691A;
+    
+    --text-primary: #EBEBEB;
+    --text-secondary: #adb5bd;
+    --text-muted: #7A8288;
+    --text-inverse: #2B3E50;
+    
+    --border-color: #5A6B7D;
+    --border-light: #6C7B8A;
+    --border-strong: #DF691A;
+    
+    --accent-primary: #DF691A;
+    --accent-success: #5CB85C;
+    --accent-warning: #F0AD4E;
+    --accent-danger: #D9534F;
+    --accent-info: #5BC0DE;
+    
+    --shadow-sm: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.3);
+    --shadow-md: 0 0.5rem 1rem rgba(0, 0, 0, 0.4);
+    --shadow-lg: 0 1rem 3rem rgba(0, 0, 0, 0.5);
+    --shadow-xl: 0 2rem 4rem rgba(0, 0, 0, 0.6);
+    
+    --theme-name: "Superhero";
+}
+
+/* =============================================================================
+   THEME TRANSITIONS
+   ============================================================================= */
+* {
+    transition: background-color 0.3s ease, 
+                color 0.3s ease, 
+                border-color 0.3s ease, 
+                box-shadow 0.3s ease;
+}
+
+/* =============================================================================
+   THEME-SPECIFIC COMPONENT OVERRIDES
+   ============================================================================= */
+
+/* Neon Theme Glow Effects */
+[data-theme="neon"] .btn-primary,
+[data-theme="neony"] .btn-primary {
+    box-shadow: 0 0 10px rgba(0, 255, 136, 0.5);
+}
+
+[data-theme="neon"] .btn-primary:hover,
+[data-theme="neony"] .btn-primary:hover {
+    box-shadow: 0 0 20px rgba(0, 255, 136, 0.7);
+}
+
+[data-theme="neon"] .card,
+[data-theme="neony"] .card {
+    border: 1px solid var(--accent-primary);
+    box-shadow: 0 0 5px rgba(0, 255, 136, 0.2);
+}
+
+/* Flat Theme - Remove shadows and rounded corners */
+[data-theme="flat"] .card,
+[data-theme="flatty"] .card {
+    border-radius: 0;
+    box-shadow: none;
+    border: 1px solid var(--border-color);
+}
+
+[data-theme="flat"] .btn,
+[data-theme="flatty"] .btn {
+    border-radius: 0;
+    box-shadow: none;
+}
+
+[data-theme="flat"] .sidebar,
+[data-theme="flatty"] .sidebar {
+    border-radius: 0;
+    box-shadow: none;
+}
+
+/* Ocean Theme - Wave-like borders */
+[data-theme="ocean"] .card::before,
+[data-theme="oceany"] .card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background: linear-gradient(90deg, var(--accent-primary), var(--accent-info));
+    border-radius: 10px 10px 0 0;
+}
+
+/* Sunset Theme - Gradient backgrounds */
+[data-theme="sunset"] .sidebar__brand,
+[data-theme="sunsety"] .sidebar__brand {
+    background: linear-gradient(135deg, var(--accent-primary), var(--accent-warning));
+}
+
+/* Forest Theme - Natural borders */
+[data-theme="forest"] .card,
+[data-theme="foresty"] .card {
+    border-left: 4px solid var(--accent-primary);
+}

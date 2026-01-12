@@ -1,0 +1,17 @@
+# Dependencies
+node_modules/
+
+# Build outputs
+.expo/
+dist/
+web-build/
+
+# Config files
+babel.config.js
+metro.config.js
+
+# Generated files
+*.lock
+
+# Coverage
+coverage/
