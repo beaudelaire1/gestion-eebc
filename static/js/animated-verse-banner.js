@@ -85,61 +85,60 @@ class AnimatedVerseBanner {
     }
 
     createBanner() {
-        // Supprimer la bannière existante si elle existe
-        const existingBanner = document.getElementById('animated-verse-banner');
-        if (existingBanner) {
-            existingBanner.remove();
-        }
-
-        // Créer la nouvelle bannière
-        this.bannerElement = document.createElement('div');
-        this.bannerElement.id = 'animated-verse-banner';
-        this.bannerElement.className = 'animated-verse-banner';
+        // Chercher la bannière existante dans le HTML
+        this.bannerElement = document.querySelector('.animated-verse-banner');
         
-        const fullText = `${this.currentVerse.text} — ${this.currentVerse.reference}`;
+        if (!this.bannerElement) {
+            // Si aucune bannière n'existe, en créer une (fallback)
+            this.bannerElement = document.createElement('div');
+            this.bannerElement.className = 'animated-verse-banner';
+            
+            // Insérer au début du premier formulaire trouvé
+            const form = document.querySelector('form[method="post"]');
+            if (form) {
+                form.parentNode.insertBefore(this.bannerElement, form);
+            }
+        }
+        
+        // Mettre à jour le contenu de la bannière existante
+        this.updateBannerContent();
+    }
+    
+    updateBannerContent() {
+        if (!this.bannerElement) return;
         
         this.bannerElement.innerHTML = `
-            <div class="verse-scroll-container">
-                <div class="verse-scroll-text">${fullText}</div>
+            <div class="verse-content">
+                <div class="verse-icon">
+                    <i class="bi bi-book"></i>
+                </div>
+                <div class="verse-text">
+                    <p class="verse-quote">${this.currentVerse.text}</p>
+                    <p class="verse-reference">${this.currentVerse.reference}</p>
+                </div>
             </div>
         `;
-
-        // Insérer la bannière au début du formulaire de contact
-        const contactForm = document.querySelector('.col-lg-7 .card');
-        if (contactForm) {
-            contactForm.parentNode.insertBefore(this.bannerElement, contactForm);
-        }
     }
 
     startAnimation() {
-        const scrollText = this.bannerElement.querySelector('.verse-scroll-text');
-        if (scrollText) {
-            // Calculer la largeur du texte pour l'animation
-            const textWidth = scrollText.scrollWidth;
-            const containerWidth = this.bannerElement.offsetWidth;
+        // Animation d'entrée simple - pas besoin d'animation de défilement
+        if (this.bannerElement) {
+            this.bannerElement.style.opacity = '0';
+            this.bannerElement.style.transform = 'translateY(-10px)';
             
-            // Définir la durée de l'animation basée sur la longueur du texte
-            const duration = Math.max(15, textWidth / 50); // Minimum 15s, ajusté selon la longueur
-            
-            scrollText.style.animationDuration = `${duration}s`;
-            scrollText.classList.add('scrolling');
+            setTimeout(() => {
+                this.bannerElement.style.transition = 'all 0.6s ease-out';
+                this.bannerElement.style.opacity = '1';
+                this.bannerElement.style.transform = 'translateY(0)';
+            }, 100);
         }
     }
 
     // Changer de verset (peut être appelé périodiquement)
     changeVerse() {
         this.selectRandomVerse();
-        const scrollText = this.bannerElement.querySelector('.verse-scroll-text');
-        if (scrollText) {
-            const fullText = `${this.currentVerse.text} — ${this.currentVerse.reference}`;
-            scrollText.textContent = fullText;
-            
-            // Redémarrer l'animation
-            scrollText.classList.remove('scrolling');
-            setTimeout(() => {
-                this.startAnimation();
-            }, 100);
-        }
+        this.updateBannerContent();
+        this.startAnimation();
     }
 
     // Méthode pour changer de verset périodiquement
@@ -152,8 +151,8 @@ class AnimatedVerseBanner {
 
 // Initialiser la bannière quand le DOM est chargé
 document.addEventListener('DOMContentLoaded', function() {
-    // Vérifier si nous sommes sur la page de contact
-    if (window.location.pathname.includes('/contact/') || document.querySelector('form[method="post"]')) {
+    // Vérifier s'il y a une bannière de verset sur la page
+    if (document.querySelector('.animated-verse-banner')) {
         const verseBanner = new AnimatedVerseBanner();
         
         // Changer de verset toutes les 2 minutes

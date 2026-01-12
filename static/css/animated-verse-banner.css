@@ -1,92 +1,151 @@
 /* =============================================================================
-   BANDE DE VERSET ANIMÉE - 15px de hauteur avec texte défilant
+   BANDE DE VERSET ANIMÉE - Bannière avec contenu de verset
    ============================================================================= */
 
 .animated-verse-banner {
-    height: 25px;
-    background: linear-gradient(90deg, #0A36FF 0%, #3D5FFF 50%, #0A36FF 100%);
-    background-size: 200% 100%;
-    animation: gradientShift 3s ease-in-out infinite;
+    background: linear-gradient(135deg, #0A36FF 0%, #3D5FFF 100%);
+    border-radius: 12px;
+    padding: 0;
     overflow: hidden;
+    box-shadow: 0 4px 20px rgba(10, 54, 255, 0.3);
     position: relative;
-    margin-bottom: 1rem;
-    border-radius: 2px;
-    box-shadow: 0 2px 8px rgba(10, 54, 255, 0.3);
+    margin-bottom: 1.5rem;
+    min-height: 80px;
 }
 
-.verse-scroll-container {
-    height: 100%;
-    width: 100%;
-    position: relative;
-    overflow: hidden;
-}
-
-.verse-scroll-text {
-    position: absolute;
-    top: 50%;
-    left: 100%;
-    transform: translateY(-50%);
-    white-space: nowrap;
-    color: white;
-    font-size: 12px;
-    font-weight: 500;
-    font-family: 'Poppins', sans-serif;
-    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
-    line-height: 1;
-    padding: 0 20px;
-}
-
-.verse-scroll-text.scrolling {
-    animation: scrollText linear infinite;
-}
-
-/* Animation du dégradé de fond */
-@keyframes gradientShift {
-    0%, 100% {
-        background-position: 0% 50%;
-    }
-    50% {
-        background-position: 100% 50%;
-    }
-}
-
-/* Animation du texte défilant */
-@keyframes scrollText {
-    0% {
-        left: 100%;
-    }
-    100% {
-        left: -100%;
-    }
-}
-
-/* Effet de brillance qui passe sur la bande */
 .animated-verse-banner::before {
     content: '';
     position: absolute;
     top: 0;
-    left: -100%;
-    width: 100%;
-    height: 100%;
-    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.4), transparent);
-    animation: shine 4s ease-in-out infinite;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><defs><pattern id="cross" x="0" y="0" width="20" height="20" patternUnits="userSpaceOnUse"><path d="M10 0v20M0 10h20" stroke="rgba(255,255,255,0.1)" stroke-width="0.5" fill="none"/></pattern></defs><rect width="100" height="100" fill="url(%23cross)"/></svg>');
+    opacity: 0.3;
+    pointer-events: none;
 }
 
-@keyframes shine {
-    0% {
-        left: -100%;
+.verse-content {
+    display: flex;
+    align-items: center;
+    padding: 1.5rem;
+    position: relative;
+    z-index: 1;
+}
+
+.verse-icon {
+    flex-shrink: 0;
+    width: 50px;
+    height: 50px;
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-right: 1rem;
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+}
+
+.verse-icon i {
+    font-size: 1.2rem;
+    color: white;
+}
+
+.verse-text {
+    flex: 1;
+    color: white;
+}
+
+.verse-quote {
+    font-size: 1rem;
+    font-weight: 500;
+    line-height: 1.5;
+    margin: 0 0 0.25rem 0;
+    font-style: italic;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+}
+
+.verse-reference {
+    font-size: 0.85rem;
+    font-weight: 600;
+    margin: 0;
+    opacity: 0.9;
+    text-align: right;
+}
+
+/* Animation d'entrée */
+.animated-verse-banner {
+    animation: slideInFromTop 0.6s ease-out;
+}
+
+@keyframes slideInFromTop {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
     }
-    50% {
-        left: 100%;
-    }
-    100% {
-        left: 100%;
+    to {
+        opacity: 1;
+        transform: translateY(0);
     }
 }
 
-/* Variations pour les différents thèmes */
+/* Effet hover */
+.animated-verse-banner:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 30px rgba(10, 54, 255, 0.4);
+    transition: all 0.3s ease;
+}
 
-/* Thème sombre */
+/* Responsive */
+@media (max-width: 768px) {
+    .animated-verse-banner {
+        margin-bottom: 1rem;
+        min-height: 70px;
+    }
+    
+    .verse-content {
+        padding: 1rem;
+        flex-direction: row;
+        text-align: left;
+    }
+    
+    .verse-icon {
+        width: 40px;
+        height: 40px;
+        margin-right: 0.75rem;
+    }
+    
+    .verse-icon i {
+        font-size: 1rem;
+    }
+    
+    .verse-quote {
+        font-size: 0.9rem;
+    }
+    
+    .verse-reference {
+        font-size: 0.8rem;
+        text-align: right;
+    }
+}
+
+@media (max-width: 480px) {
+    .verse-content {
+        padding: 0.75rem;
+    }
+    
+    .verse-icon {
+        width: 35px;
+        height: 35px;
+    }
+    
+    .verse-quote {
+        font-size: 0.85rem;
+    }
+}
+
+/* Variations pour les thèmes sombres */
 [data-theme="dark"] .animated-verse-banner,
 [data-theme="darky"] .animated-verse-banner,
 [data-theme="darkly"] .animated-verse-banner,
@@ -94,179 +153,6 @@
 [data-theme="slate"] .animated-verse-banner,
 [data-theme="solar"] .animated-verse-banner,
 [data-theme="superhero"] .animated-verse-banner {
-    background: linear-gradient(90deg, #3b82f6 0%, #1d4ed8 50%, #3b82f6 100%);
-    box-shadow: 0 2px 8px rgba(59, 130, 246, 0.4);
-}
-
-/* Thème néon */
-[data-theme="neon"] .animated-verse-banner,
-[data-theme="neony"] .animated-verse-banner {
-    background: linear-gradient(90deg, #00ff88 0%, #39ff14 50%, #00ff88 100%);
-    box-shadow: 0 2px 8px rgba(0, 255, 136, 0.5);
-}
-
-[data-theme="neon"] .animated-verse-banner::before,
-[data-theme="neony"] .animated-verse-banner::before {
-    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.6), transparent);
-}
-
-/* Thème océan */
-[data-theme="ocean"] .animated-verse-banner,
-[data-theme="oceany"] .animated-verse-banner {
-    background: linear-gradient(90deg, #0077be 0%, #4682b4 50%, #0077be 100%);
-    box-shadow: 0 2px 8px rgba(0, 119, 190, 0.4);
-}
-
-/* Thème coucher de soleil */
-[data-theme="sunset"] .animated-verse-banner,
-[data-theme="sunsety"] .animated-verse-banner {
-    background: linear-gradient(90deg, #ff6b35 0%, #ffa500 50%, #ff6b35 100%);
-    box-shadow: 0 2px 8px rgba(255, 107, 53, 0.4);
-}
-
-/* Thème forêt */
-[data-theme="forest"] .animated-verse-banner,
-[data-theme="foresty"] .animated-verse-banner {
-    background: linear-gradient(90deg, #228b22 0%, #32cd32 50%, #228b22 100%);
-    box-shadow: 0 2px 8px rgba(34, 139, 34, 0.4);
-}
-
-/* Thèmes Bootswatch spécifiques */
-
-/* Cerulean */
-[data-theme="cerulean"] .animated-verse-banner {
-    background: linear-gradient(90deg, #2FA4E7 0%, #033C73 50%, #2FA4E7 100%);
-    box-shadow: 0 2px 8px rgba(47, 164, 231, 0.4);
-}
-
-/* Cosmo */
-[data-theme="cosmo"] .animated-verse-banner {
-    background: linear-gradient(90deg, #2780E3 0%, #373A3C 50%, #2780E3 100%);
-    box-shadow: 0 2px 8px rgba(39, 128, 227, 0.4);
-}
-
-/* Flatly */
-[data-theme="flatly"] .animated-verse-banner {
-    background: linear-gradient(90deg, #18BC9C 0%, #3498DB 50%, #18BC9C 100%);
-    box-shadow: 0 2px 8px rgba(24, 188, 156, 0.4);
-}
-
-/* Journal */
-[data-theme="journal"] .animated-verse-banner {
-    background: linear-gradient(90deg, #EB6864 0%, #22B24C 50%, #EB6864 100%);
-    box-shadow: 0 2px 8px rgba(235, 104, 100, 0.4);
-}
-
-/* Litera */
-[data-theme="litera"] .animated-verse-banner {
-    background: linear-gradient(90deg, #4582EC 0%, #212529 50%, #4582EC 100%);
-    box-shadow: 0 2px 8px rgba(69, 130, 236, 0.4);
-}
-
-/* Lumen */
-[data-theme="lumen"] .animated-verse-banner {
-    background: linear-gradient(90deg, #158CBA 0%, #555 50%, #158CBA 100%);
-    box-shadow: 0 2px 8px rgba(21, 140, 186, 0.4);
-}
-
-/* Lux */
-[data-theme="lux"] .animated-verse-banner {
-    background: linear-gradient(90deg, #1A1A1A 0%, #DFDFDF 50%, #1A1A1A 100%);
-    box-shadow: 0 2px 8px rgba(26, 26, 26, 0.4);
-}
-
-/* Materia */
-[data-theme="materia"] .animated-verse-banner {
-    background: linear-gradient(90deg, #2196F3 0%, #009688 50%, #2196F3 100%);
-    box-shadow: 0 2px 8px rgba(33, 150, 243, 0.4);
-}
-
-/* Minty */
-[data-theme="minty"] .animated-verse-banner {
-    background: linear-gradient(90deg, #78C2AD 0%, #F3969A 50%, #78C2AD 100%);
-    box-shadow: 0 2px 8px rgba(120, 194, 173, 0.4);
-}
-
-/* Pulse */
-[data-theme="pulse"] .animated-verse-banner {
-    background: linear-gradient(90deg, #593196 0%, #A537FD 50%, #593196 100%);
-    box-shadow: 0 2px 8px rgba(89, 49, 150, 0.4);
-}
-
-/* Sandstone */
-[data-theme="sandstone"] .animated-verse-banner {
-    background: linear-gradient(90deg, #93C54B 0%, #F47C3C 50%, #93C54B 100%);
-    box-shadow: 0 2px 8px rgba(147, 197, 75, 0.4);
-}
-
-/* Simplex */
-[data-theme="simplex"] .animated-verse-banner {
-    background: linear-gradient(90deg, #D9230F 0%, #469408 50%, #D9230F 100%);
-    box-shadow: 0 2px 8px rgba(217, 35, 15, 0.4);
-}
-
-/* Sketchy */
-[data-theme="sketchy"] .animated-verse-banner {
-    background: linear-gradient(90deg, #333 0%, #fff 50%, #333 100%);
-    box-shadow: 0 2px 8px rgba(51, 51, 51, 0.4);
-    border: 1px solid #333;
-}
-
-/* Spacelab */
-[data-theme="spacelab"] .animated-verse-banner {
-    background: linear-gradient(90deg, #446E9B 0%, #3CB521 50%, #446E9B 100%);
-    box-shadow: 0 2px 8px rgba(68, 110, 155, 0.4);
-}
-
-/* United */
-[data-theme="united"] .animated-verse-banner {
-    background: linear-gradient(90deg, #DD4814 0%, #AEA79F 50%, #DD4814 100%);
-    box-shadow: 0 2px 8px rgba(221, 72, 20, 0.4);
-}
-
-/* Yeti */
-[data-theme="yeti"] .animated-verse-banner {
-    background: linear-gradient(90deg, #008CBA 0%, #5CB85C 50%, #008CBA 100%);
-    box-shadow: 0 2px 8px rgba(0, 140, 186, 0.4);
-}
-
-/* Responsive - Ajustements pour mobile */
-@media (max-width: 768px) {
-    .verse-scroll-text {
-        font-size: 9px;
-        padding: 0 10px;
-    }
-}
-
-@media (max-width: 480px) {
-    .verse-scroll-text {
-        font-size: 8px;
-        padding: 0 5px;
-    }
-}
-
-/* Animation plus lente sur mobile pour une meilleure lisibilité */
-@media (max-width: 768px) {
-    .verse-scroll-text.scrolling {
-        animation-duration: 25s !important;
-    }
-}
-
-/* Pause de l'animation au survol */
-.animated-verse-banner:hover .verse-scroll-text.scrolling {
-    animation-play-state: paused;
-}
-
-/* Effet de pulsation subtile */
-.animated-verse-banner {
-    animation: gradientShift 3s ease-in-out infinite, pulse 2s ease-in-out infinite alternate;
-}
-
-@keyframes pulse {
-    0% {
-        box-shadow: 0 2px 8px rgba(10, 54, 255, 0.3);
-    }
-    100% {
-        box-shadow: 0 2px 12px rgba(10, 54, 255, 0.5);
-    }
+    background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
+    box-shadow: 0 4px 20px rgba(59, 130, 246, 0.3);
 }
