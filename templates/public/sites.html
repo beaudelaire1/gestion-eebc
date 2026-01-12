@@ -45,7 +45,89 @@
                                 <h5 class="text-primary mb-3">
                                     <i class="bi bi-clock me-2"></i>Horaires
                                 </h5>
-                                <p>{{ site.worship_schedule|default:'Dimanche matin'|linebreaksbr }}</p>
+                                {% if site.worship_schedule %}
+                                    {% if site.code == 'CAB' %}
+                                        <!-- Mise en forme structurée pour Cayenne -->
+                                        <div class="schedule-organized">
+                                            <h6 class="schedule-title"><i class="bi bi-calendar-week me-2"></i>Activités</h6>
+                                            <div class="row">
+                                                <div class="col-md-6">
+                                                    <div class="activity-item">
+                                                        <div class="activity-icon">
+                                                            <i class="bi bi-church"></i>
+                                                        </div>
+                                                        <div class="activity-details">
+                                                            <strong>Culte</strong>
+                                                            <span>Dimanche 9h30-12h00</span>
+                                                        </div>
+                                                    </div>
+                                                    <div class="activity-item">
+                                                        <div class="activity-icon">
+                                                            <i class="bi bi-book"></i>
+                                                        </div>
+                                                        <div class="activity-details">
+                                                            <strong>Étude biblique</strong>
+                                                            <span>Mercredi 19h00</span>
+                                                        </div>
+                                                    </div>
+                                                    <div class="activity-item">
+                                                        <div class="activity-icon">
+                                                            <i class="bi bi-heart"></i>
+                                                        </div>
+                                                        <div class="activity-details">
+                                                            <strong>Réunion de prière</strong>
+                                                            <span>Vendredi 19h00</span>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                <div class="col-md-6">
+                                                    <div class="activity-item">
+                                                        <div class="activity-icon">
+                                                            <i class="bi bi-people"></i>
+                                                        </div>
+                                                        <div class="activity-details">
+                                                            <strong>Groupe de jeunes</strong>
+                                                            <span>Samedi 16h00-18h00</span>
+                                                        </div>
+                                                    </div>
+                                                    <div class="activity-item">
+                                                        <div class="activity-icon">
+                                                            <i class="bi bi-mortarboard"></i>
+                                                        </div>
+                                                        <div class="activity-details">
+                                                            <strong>Club biblique</strong>
+                                                            <span>Samedi 15h00-16h30</span>
+                                                        </div>
+                                                    </div>
+                                                    <div class="activity-item">
+                                                        <div class="activity-icon">
+                                                            <i class="bi bi-music-note-beamed"></i>
+                                                        </div>
+                                                        <div class="activity-details">
+                                                            <strong>Chorale</strong>
+                                                            <span>Samedi 17h30-19h30</span>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    {% else %}
+                                        <!-- Affichage simple pour Macouria -->
+                                        <div class="simple-schedule">
+                                            <div class="activity-item">
+                                                <div class="activity-icon">
+                                                    <i class="bi bi-church"></i>
+                                                </div>
+                                                <div class="activity-details">
+                                                    <strong>Culte</strong>
+                                                    <span>Dimanche 9h30</span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    {% endif %}
+                                {% else %}
+                                    <p>Dimanche matin</p>
+                                {% endif %}
                             </div>
                         </div>
                         

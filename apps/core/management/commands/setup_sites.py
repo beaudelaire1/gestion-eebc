@@ -26,7 +26,7 @@ class Command(BaseCommand):
 Réunion de prière: Vendredi 19h00
 Groupe de jeunes: Samedi 16h00-18h00
 Club biblique: Samedi 15h00-16h30
-Chorale: Samedi 17h30''',
+Chorale: Samedi 17h30-19h30''',
                 'is_main_site': True,
                 'is_active': True,
                 # Coordonnées GPS exactes: 4°55'08.2"N 52°18'49.3"W
