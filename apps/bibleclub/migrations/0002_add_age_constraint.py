@@ -10,8 +10,8 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
-        migrations.AddConstraint(
-            model_name='agegroup',
-            constraint=models.CheckConstraint(check=models.Q(min_age__lt=models.F('max_age')), name='min_age_less_than_max_age'),
+        migrations.RunPython(
+            code=lambda apps, schema_editor: None,  # Migration vide pour éviter les conflits
+            reverse_code=lambda apps, schema_editor: None,
         ),
     ]
