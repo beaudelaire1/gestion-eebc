@@ -1,147 +1,86 @@
 /* =============================================================================
-   BANDE DE VERSET ANIMÉE - Bannière avec contenu de verset
+   BANDE DE VERSET ANIMÉE - 25px de hauteur avec texte défilant
    ============================================================================= */
 
 .animated-verse-banner {
-    background: linear-gradient(135deg, #0A36FF 0%, #3D5FFF 100%);
-    border-radius: 12px;
-    padding: 0;
+    height: 25px;
+    background: linear-gradient(90deg, #0A36FF 0%, #3D5FFF 50%, #0A36FF 100%);
+    background-size: 200% 100%;
+    animation: gradientShift 3s ease-in-out infinite;
     overflow: hidden;
-    box-shadow: 0 4px 20px rgba(10, 54, 255, 0.3);
     position: relative;
-    margin-bottom: 1.5rem;
-    min-height: 80px;
+    margin-bottom: 1rem;
+    border-radius: 2px;
+    box-shadow: 0 2px 8px rgba(10, 54, 255, 0.3);
 }
 
+.verse-scroll-container {
+    height: 100%;
+    width: 100%;
+    position: relative;
+    overflow: hidden;
+}
+
+.verse-scroll-text {
+    position: absolute;
+    top: 50%;
+    left: 100%;
+    transform: translateY(-50%);
+    white-space: nowrap;
+    color: white;
+    font-size: 12px;
+    font-weight: 500;
+    font-family: 'Poppins', sans-serif;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+    line-height: 1;
+    padding: 0 20px;
+}
+
+.verse-scroll-text.scrolling {
+    animation: scrollText linear infinite;
+}
+
+/* Animation du dégradé de fond */
+@keyframes gradientShift {
+    0%, 100% {
+        background-position: 0% 50%;
+    }
+    50% {
+        background-position: 100% 50%;
+    }
+}
+
+/* Animation du texte défilant */
+@keyframes scrollText {
+    0% {
+        left: 100%;
+    }
+    100% {
+        left: -100%;
+    }
+}
+
+/* Effet de brillance qui passe sur la bande */
 .animated-verse-banner::before {
     content: '';
     position: absolute;
     top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><defs><pattern id="cross" x="0" y="0" width="20" height="20" patternUnits="userSpaceOnUse"><path d="M10 0v20M0 10h20" stroke="rgba(255,255,255,0.1)" stroke-width="0.5" fill="none"/></pattern></defs><rect width="100" height="100" fill="url(%23cross)"/></svg>');
-    opacity: 0.3;
-    pointer-events: none;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.4), transparent);
+    animation: shine 4s ease-in-out infinite;
 }
 
-.verse-content {
-    display: flex;
-    align-items: center;
-    padding: 1.5rem;
-    position: relative;
-    z-index: 1;
-}
-
-.verse-icon {
-    flex-shrink: 0;
-    width: 50px;
-    height: 50px;
-    background: rgba(255, 255, 255, 0.2);
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    margin-right: 1rem;
-    backdrop-filter: blur(10px);
-    border: 1px solid rgba(255, 255, 255, 0.3);
-}
-
-.verse-icon i {
-    font-size: 1.2rem;
-    color: white;
-}
-
-.verse-text {
-    flex: 1;
-    color: white;
-}
-
-.verse-quote {
-    font-size: 1rem;
-    font-weight: 500;
-    line-height: 1.5;
-    margin: 0 0 0.25rem 0;
-    font-style: italic;
-    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
-}
-
-.verse-reference {
-    font-size: 0.85rem;
-    font-weight: 600;
-    margin: 0;
-    opacity: 0.9;
-    text-align: right;
-}
-
-/* Animation d'entrée */
-.animated-verse-banner {
-    animation: slideInFromTop 0.6s ease-out;
-}
-
-@keyframes slideInFromTop {
-    from {
-        opacity: 0;
-        transform: translateY(-10px);
+@keyframes shine {
+    0% {
+        left: -100%;
     }
-    to {
-        opacity: 1;
-        transform: translateY(0);
+    50% {
+        left: 100%;
     }
-}
-
-/* Effet hover */
-.animated-verse-banner:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 8px 30px rgba(10, 54, 255, 0.4);
-    transition: all 0.3s ease;
-}
-
-/* Responsive */
-@media (max-width: 768px) {
-    .animated-verse-banner {
-        margin-bottom: 1rem;
-        min-height: 70px;
-    }
-    
-    .verse-content {
-        padding: 1rem;
-        flex-direction: row;
-        text-align: left;
-    }
-    
-    .verse-icon {
-        width: 40px;
-        height: 40px;
-        margin-right: 0.75rem;
-    }
-    
-    .verse-icon i {
-        font-size: 1rem;
-    }
-    
-    .verse-quote {
-        font-size: 0.9rem;
-    }
-    
-    .verse-reference {
-        font-size: 0.8rem;
-        text-align: right;
-    }
-}
-
-@media (max-width: 480px) {
-    .verse-content {
-        padding: 0.75rem;
-    }
-    
-    .verse-icon {
-        width: 35px;
-        height: 35px;
-    }
-    
-    .verse-quote {
-        font-size: 0.85rem;
+    100% {
+        left: 100%;
     }
 }
 
@@ -153,6 +92,47 @@
 [data-theme="slate"] .animated-verse-banner,
 [data-theme="solar"] .animated-verse-banner,
 [data-theme="superhero"] .animated-verse-banner {
-    background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
-    box-shadow: 0 4px 20px rgba(59, 130, 246, 0.3);
+    background: linear-gradient(90deg, #3b82f6 0%, #1d4ed8 50%, #3b82f6 100%);
+    box-shadow: 0 2px 8px rgba(59, 130, 246, 0.4);
+}
+
+/* Responsive - Ajustements pour mobile */
+@media (max-width: 768px) {
+    .verse-scroll-text {
+        font-size: 10px;
+        padding: 0 15px;
+    }
+}
+
+@media (max-width: 480px) {
+    .verse-scroll-text {
+        font-size: 9px;
+        padding: 0 10px;
+    }
+}
+
+/* Animation plus lente sur mobile pour une meilleure lisibilité */
+@media (max-width: 768px) {
+    .verse-scroll-text.scrolling {
+        animation-duration: 25s !important;
+    }
+}
+
+/* Pause de l'animation au survol */
+.animated-verse-banner:hover .verse-scroll-text.scrolling {
+    animation-play-state: paused;
+}
+
+/* Effet de pulsation subtile */
+.animated-verse-banner {
+    animation: gradientShift 3s ease-in-out infinite, pulse 2s ease-in-out infinite alternate;
+}
+
+@keyframes pulse {
+    0% {
+        box-shadow: 0 2px 8px rgba(10, 54, 255, 0.3);
+    }
+    100% {
+        box-shadow: 0 2px 12px rgba(10, 54, 255, 0.5);
+    }
 }

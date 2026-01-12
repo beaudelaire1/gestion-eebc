@@ -100,37 +100,34 @@ class AnimatedVerseBanner {
             }
         }
         
-        // Mettre à jour le contenu de la bannière existante
+        // Mettre à jour le contenu de la bannière existante avec le texte défilant
         this.updateBannerContent();
     }
     
     updateBannerContent() {
         if (!this.bannerElement) return;
         
+        const fullText = `${this.currentVerse.text} — ${this.currentVerse.reference}`;
+        
         this.bannerElement.innerHTML = `
-            <div class="verse-content">
-                <div class="verse-icon">
-                    <i class="bi bi-book"></i>
-                </div>
-                <div class="verse-text">
-                    <p class="verse-quote">${this.currentVerse.text}</p>
-                    <p class="verse-reference">${this.currentVerse.reference}</p>
-                </div>
+            <div class="verse-scroll-container">
+                <div class="verse-scroll-text">${fullText}</div>
             </div>
         `;
     }
 
     startAnimation() {
-        // Animation d'entrée simple - pas besoin d'animation de défilement
-        if (this.bannerElement) {
-            this.bannerElement.style.opacity = '0';
-            this.bannerElement.style.transform = 'translateY(-10px)';
+        const scrollText = this.bannerElement.querySelector('.verse-scroll-text');
+        if (scrollText) {
+            // Calculer la largeur du texte pour l'animation
+            const textWidth = scrollText.scrollWidth;
+            const containerWidth = this.bannerElement.offsetWidth;
             
-            setTimeout(() => {
-                this.bannerElement.style.transition = 'all 0.6s ease-out';
-                this.bannerElement.style.opacity = '1';
-                this.bannerElement.style.transform = 'translateY(0)';
-            }, 100);
+            // Définir la durée de l'animation basée sur la longueur du texte
+            const duration = Math.max(15, textWidth / 50); // Minimum 15s, ajusté selon la longueur
+            
+            scrollText.style.animationDuration = `${duration}s`;
+            scrollText.classList.add('scrolling');
         }
     }
 
@@ -138,7 +135,15 @@ class AnimatedVerseBanner {
     changeVerse() {
         this.selectRandomVerse();
         this.updateBannerContent();
-        this.startAnimation();
+        
+        // Redémarrer l'animation
+        const scrollText = this.bannerElement.querySelector('.verse-scroll-text');
+        if (scrollText) {
+            scrollText.classList.remove('scrolling');
+            setTimeout(() => {
+                this.startAnimation();
+            }, 100);
+        }
     }
 
     // Méthode pour changer de verset périodiquement
