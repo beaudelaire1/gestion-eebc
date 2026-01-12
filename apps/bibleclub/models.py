@@ -18,23 +18,12 @@ class AgeGroup(models.Model):
         verbose_name = "Tranche d'âge"
         verbose_name_plural = "Tranches d'âge"
         ordering = ['min_age']
-        constraints = []
-        
-        # Compatibilité Django - utiliser condition= pour Django 4.2+ et check= pour les versions antérieures
-        try:
-            # Essayer d'abord avec condition= (Django 4.2+)
-            constraint = models.CheckConstraint(
+        constraints = [
+            models.CheckConstraint(
                 condition=models.Q(min_age__lt=models.F('max_age')),
                 name='min_age_less_than_max_age'
             )
-            constraints.append(constraint)
-        except TypeError:
-            # Si ça échoue, utiliser check= (Django < 4.2)
-            constraint = models.CheckConstraint(
-                check=models.Q(min_age__lt=models.F('max_age')),
-                name='min_age_less_than_max_age'
-            )
-            constraints.append(constraint)
+        ]
     
     def __str__(self):
         return f"{self.name} ({self.min_age}-{self.max_age} ans)"
