@@ -12,6 +12,6 @@ class Migration(migrations.Migration):
     operations = [
         migrations.AddConstraint(
             model_name='agegroup',
-            constraint=models.CheckConstraint(condition=models.Q(min_age__lt=models.F('max_age')), name='min_age_less_than_max_age'),
+            constraint=models.CheckConstraint(check=models.Q(min_age__lt=models.F('max_age')), name='min_age_less_than_max_age'),
         ),
     ]
