@@ -2,48 +2,40 @@
 
 {% block title %}Événements - EEBC{% endblock %}
 {% block page_title %}Événements{% endblock %}
-{% block page_subtitle %}Tous les événements à venir{% endblock %}
+{% block page_subtitle %}{% if show_past %}Tous les événements{% else %}Événements à venir{% endif %}{% endblock %}
 
 {% block content %}
 <div class="d-flex justify-content-between align-items-center mb-4">
     <div>
         <!-- Filters -->
-        <div class="btn-group">
-            <a href="{% url 'events:list' %}" class="btn {% if not request.GET.category %}btn-primary{% else %}btn-outline-light{% endif %}">
+        <div class="btn-group me-2">
+            <a href="{% url 'events:list' %}" class="btn {% if not request.GET.category %}btn-primary{% else %}btn-outline-secondary{% endif %}">
                 Tous
             </a>
             {% for category in categories %}
-            <a href="?category={{ category.pk }}" class="btn {% if request.GET.category == category.pk|stringformat:'s' %}btn-primary{% else %}btn-outline-light{% endif %}">
+            <a href="?category={{ category.pk }}{% if show_past %}&show_past=1{% endif %}" 
+               class="btn {% if request.GET.category == category.pk|stringformat:'s' %}btn-primary{% else %}btn-outline-secondary{% endif %}">
                 {{ category.name }}
             </a>
             {% endfor %}
         </div>
+        
+        <!-- Toggle passés -->
+        <div class="btn-group">
+            <a href="{% url 'events:list' %}{% if request.GET.category %}?category={{ request.GET.category }}{% endif %}" 
+               class="btn {% if not show_past %}btn-info{% else %}btn-outline-secondary{% endif %}">
+                À venir
+            </a>
+            <a href="?show_past=1{% if request.GET.category %}&category={{ request.GET.category }}{% endif %}" 
+               class="btn {% if show_past %}btn-info{% else %}btn-outline-secondary{% endif %}">
+                Tous
+            </a>
+        </div>
     </div>
     <div class="d-flex gap-2">
-        <a href="{% url 'events:list_advanced' %}" class="btn btn-outline-secondary">
-            <i class="bi bi-funnel me-2"></i>Recherche avancée
+        <a href="{% url 'events:calendar' %}" class="btn btn-outline-secondary">
+            <i class="bi bi-calendar3 me-2"></i>Calendrier
         </a>
-        <!-- Boutons d'export -->
-        <div class="dropdown">
-            <button class="btn btn-outline-secondary dropdown-toggle" type="button" 
-                    data-bs-toggle="dropdown" aria-expanded="false" title="Exporter">
-                <i class="bi bi-download"></i>
-            </button>
-            <ul class="dropdown-menu dropdown-menu-end">
-                <li>
-                    <a class="dropdown-item" href="{% url 'exports:events_excel' %}?upcoming=1{% if request.GET.category %}&category_id={{ request.GET.category }}{% endif %}">
-                        <i class="bi bi-file-earmark-excel text-success me-2"></i>
-                        Exporter Excel
-                    </a>
-                </li>
-                <li>
-                    <a class="dropdown-item" href="{% url 'exports:events_print' %}?upcoming=1{% if request.GET.category %}&category_id={{ request.GET.category }}{% endif %}" target="_blank">
-                        <i class="bi bi-file-earmark-pdf text-danger me-2"></i>
-                        Exporter PDF
-                    </a>
-                </li>
-            </ul>
-        </div>
         {% if user.role == 'admin' or user.role == 'secretariat' %}
             <a href="{% url 'events:create' %}" class="btn btn-primary">
                 <i class="bi bi-plus-lg me-2"></i>Nouvel événement

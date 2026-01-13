@@ -5,12 +5,16 @@
 {% block page_subtitle %}Suivi des emails envoyés ({{ total_count }} au total){% endblock %}
 
 {% block page_actions %}
-<a href="{% url 'communication:email_logs_clear_old' %}" class="btn btn-outline-warning">
-    <i class="bi bi-trash me-1"></i> Nettoyer les anciens logs
-</a>
+<form method="post" action="{% url 'communication:email_logs_clear_old' %}" style="display: inline;">
+    {% csrf_token %}
+    <button type="submit" class="btn btn-outline-warning" onclick="return confirm('Supprimer les logs de plus de 30 jours ?')">
+        <i class="bi bi-trash me-1"></i> Nettoyer les anciens logs
+    </button>
+</form>
 {% endblock %}
 
 {% block content %}
+{% csrf_token %}
 <div class="card border-0 shadow-sm">
     <div class="card-body p-0">
         <div class="table-responsive">
@@ -26,7 +30,7 @@
                 </thead>
                 <tbody>
                     {% for log in logs %}
-                    <tr>
+                    <tr id="log-row-{{ log.pk }}">
                         <td>{{ log.created_at|date:"d/m/Y H:i" }}</td>
                         <td>
                             {{ log.recipient_name|default:"" }}<br>
@@ -47,11 +51,14 @@
                             {% endif %}
                         </td>
                         <td>
-                            <button class="btn btn-sm btn-outline-danger" 
-                                    onclick="deleteEmailLog({{ log.pk }})"
-                                    title="Supprimer ce log">
-                                <i class="bi bi-trash"></i>
-                            </button>
+                            <form method="post" action="{% url 'communication:email_log_delete' log.pk %}" style="display: inline;">
+                                {% csrf_token %}
+                                <button type="submit" class="btn btn-sm btn-outline-danger" 
+                                        onclick="return confirm('Supprimer ce log ?')"
+                                        title="Supprimer ce log">
+                                    <i class="bi bi-trash"></i>
+                                </button>
+                            </form>
                         </td>
                     </tr>
                     {% empty %}
@@ -66,26 +73,4 @@
         </div>
     </div>
 </div>
-
-<script>
-function deleteEmailLog(logId) {
-    if (confirm('Êtes-vous sûr de vouloir supprimer ce log d\'email ?')) {
-        fetch(`/app/communication/logs/email/${logId}/delete/`, {
-            method: 'POST',
-            headers: {
-                'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
-                'Content-Type': 'application/json',
-            },
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                location.reload();
-            } else {
-                alert('Erreur lors de la suppression');
-            }
-        });
-    }
-}
-</script>
 {% endblock %}

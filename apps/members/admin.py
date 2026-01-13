@@ -2,6 +2,7 @@ from django.contrib import admin
 from django.utils.html import format_html
 from django.urls import reverse
 from django import forms
+from django.db.models import Q
 from .models import Member, LifeEvent, VisitationLog
 
 
@@ -234,7 +235,7 @@ class VisitationLogAdmin(admin.ModelAdmin):
         if not request.user.is_superuser:
             # Les non-superusers ne voient pas les visites confidentielles des autres
             qs = qs.filter(
-                models.Q(is_confidential=False) | 
-                models.Q(visitor=request.user)
+                Q(is_confidential=False) | 
+                Q(visitor=request.user)
             )
         return qs

@@ -118,12 +118,22 @@ def events_json(request):
 
 @login_required
 def event_list(request):
-    """Liste des événements à venir."""
+    """Liste des événements."""
     today = date.today()
-    events = Event.objects.filter(
-        start_date__gte=today,
-        is_cancelled=False
-    ).select_related('category', 'organizer')
+    
+    # Par défaut, afficher les événements à venir, mais permettre de voir tous
+    show_past = request.GET.get('show_past', '0') == '1'
+    
+    if show_past:
+        events = Event.objects.all()
+    else:
+        events = Event.objects.filter(start_date__gte=today)
+    
+    # Ne pas filtrer les annulés pour les admins
+    if not (hasattr(request.user, 'role') and request.user.role in ['admin', 'secretariat']):
+        events = events.filter(is_cancelled=False)
+    
+    events = events.select_related('category').order_by('start_date', 'start_time')
     
     # Filtrer par catégorie
     category = request.GET.get('category')
@@ -135,6 +145,7 @@ def event_list(request):
     context = {
         'events': events,
         'categories': categories,
+        'show_past': show_past,
     }
     return render(request, 'events/event_list.html', context)
 
