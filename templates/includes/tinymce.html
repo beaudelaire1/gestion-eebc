@@ -1,10 +1,10 @@
 {% comment %}
-TinyMCE Editor Integration avec clé API
+TinyMCE Editor Integration - Version Self-Hosted (sans restriction de domaine)
 Usage: {% include 'includes/tinymce.html' with selector='.tinymce-editor' %}
 {% endcomment %}
 
-<!-- TinyMCE Cloud avec clé API -->
-<script src="https://cdn.tiny.cloud/1/6qr0im1d33wizm1ytimh1kpwbugqeb8r4fq1gebb03rme6hv/tinymce/6/tinymce.min.js" referrerpolicy="origin"></script>
+<!-- TinyMCE Self-Hosted via CDN jsDelivr (gratuit, sans clé API) -->
+<script src="https://cdn.jsdelivr.net/npm/tinymce@6/tinymce.min.js" referrerpolicy="origin"></script>
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {

@@ -212,5 +212,5 @@ class AnnouncementAdmin(admin.ModelAdmin):
     date_hierarchy = 'created_at'
     
     class Media:
-        js = ('https://cdn.tiny.cloud/1/6qr0im1d33wizm1ytimh1kpwbugqeb8r4fq1gebb03rme6hv/tinymce/6/tinymce.min.js',)
+        js = ('https://cdn.jsdelivr.net/npm/tinymce@6/tinymce.min.js',)
 

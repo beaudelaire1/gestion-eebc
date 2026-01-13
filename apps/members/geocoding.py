@@ -28,6 +28,10 @@ def geocode_address(address, city="", postal_code="", country="Guyane française
     if not address and not city:
         return None
     
+    # Nettoyer le code postal (enlever .0 si présent)
+    if postal_code:
+        postal_code = str(postal_code).replace('.0', '').strip()
+    
     # Construire la requête
     query_parts = []
     if address:
