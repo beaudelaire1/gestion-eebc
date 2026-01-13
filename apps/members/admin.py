@@ -33,7 +33,7 @@ class MemberAdmin(admin.ModelAdmin):
     ordering = ['last_name', 'first_name']
     date_hierarchy = 'date_joined'
     list_per_page = 25
-    autocomplete_fields = ['user', 'site', 'family']
+    raw_id_fields = ['user', 'site', 'family']  # Remplace autocomplete_fields
     
     fieldsets = (
         ('Identification', {
@@ -136,7 +136,7 @@ class LifeEventAdmin(admin.ModelAdmin):
     search_fields = ['title', 'description', 'primary_member__first_name', 
                      'primary_member__last_name']
     date_hierarchy = 'event_date'
-    autocomplete_fields = ['primary_member', 'related_members']
+    raw_id_fields = ['primary_member', 'related_members']  # Remplace autocomplete_fields
     
     fieldsets = (
         ('Événement', {
@@ -196,7 +196,7 @@ class VisitationLogAdmin(admin.ModelAdmin):
     list_filter = ['status', 'visit_type', 'follow_up_needed', 'is_confidential', 'visit_date']
     search_fields = ['member__first_name', 'member__last_name', 'summary', 'prayer_requests']
     date_hierarchy = 'visit_date'
-    autocomplete_fields = ['member', 'visitor', 'life_event']
+    raw_id_fields = ['member', 'visitor', 'life_event']  # Remplace autocomplete_fields
     
     fieldsets = (
         ('Visite', {

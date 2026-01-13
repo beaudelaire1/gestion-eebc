@@ -119,10 +119,12 @@ class MemberForm(forms.ModelForm):
         self.fields['date_of_birth'].required = False
         self.fields['baptism_date'].required = False
         self.fields['wedding_date'].required = False
+        self.fields['gender'].required = False
         
         # Ajouter des choix vides
         self.fields['family'].empty_label = "Aucune famille"
         self.fields['site'].empty_label = "Sélectionner un site"
+        self.fields['gender'].empty_label = "Non spécifié"
         
         # Filtrer les familles actives
         self.fields['family'].queryset = Family.objects.filter(is_active=True)

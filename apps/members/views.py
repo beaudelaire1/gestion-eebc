@@ -133,6 +133,11 @@ def member_edit(request, pk):
             member = form.save()
             messages.success(request, f"Membre {member.full_name} modifié avec succès.")
             return redirect('members:detail', pk=member.pk)
+        else:
+            # Afficher les erreurs de validation
+            for field, errors in form.errors.items():
+                for error in errors:
+                    messages.error(request, f"{field}: {error}")
     else:
         form = MemberForm(instance=member)
     
