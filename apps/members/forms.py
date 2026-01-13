@@ -120,6 +120,7 @@ class MemberForm(forms.ModelForm):
         self.fields['baptism_date'].required = False
         self.fields['wedding_date'].required = False
         self.fields['gender'].required = False
+        self.fields['email'].required = False  # Email optionnel
         
         # Ajouter des choix vides
         self.fields['family'].empty_label = "Aucune famille"
@@ -157,10 +158,7 @@ class MemberForm(forms.ModelForm):
         if birth_date and baptism_date and baptism_date < birth_date:
             raise ValidationError("La date de baptême ne peut pas être antérieure à la date de naissance.")
         
-        # Si baptisé, la date de baptême est requise
-        is_baptized = cleaned_data.get('is_baptized')
-        if is_baptized and not baptism_date:
-            self.add_error('baptism_date', "La date de baptême est requise si le membre est baptisé.")
+        # Date de baptême optionnelle même si baptisé (supprimé la validation obligatoire)
         
         # Vérifier le numéro WhatsApp si les notifications WhatsApp sont activées
         notify_whatsapp = cleaned_data.get('notify_by_whatsapp')

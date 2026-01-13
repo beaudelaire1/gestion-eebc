@@ -38,6 +38,20 @@
                 </div>
                 {% endif %}
                 
+                <!-- Identifiant membre (affiché si modification) -->
+                {% if member and member.member_id %}
+                <div class="alert alert-info mb-4">
+                    <div class="d-flex align-items-center">
+                        <i class="bi bi-person-badge fs-4 me-3"></i>
+                        <div>
+                            <strong>Identifiant membre :</strong>
+                            <span class="badge bg-primary fs-6 ms-2">{{ member.member_id }}</span>
+                            <small class="d-block text-muted mt-1">Cet identifiant est généré automatiquement et ne peut pas être modifié.</small>
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+                
                 <!-- Informations personnelles -->
                 <div class="row mb-4">
                     <div class="col-12">
