@@ -124,3 +124,37 @@ def department_members(request, pk):
         'current_members': department.members.all()
     })
 
+
+@login_required
+@role_required('admin', 'secretariat')
+def department_delete(request, pk):
+    """
+    Supprimer un département (soft delete).
+    Requirements: 12.5
+    """
+    department = get_object_or_404(Department, pk=pk)
+    
+    # Vérifier s'il y a des membres assignés
+    members_count = department.members.count()
+    
+    if request.method == 'POST':
+        department_name = department.name
+        
+        # Soft delete - marquer comme inactif
+        department.is_active = False
+        department.save()
+        
+        # Les membres restent dans le système mais ne sont plus assignés au département
+        if members_count > 0:
+            department.members.clear()
+            messages.info(request, f'{members_count} membre(s) retiré(s) du département.')
+        
+        messages.success(request, f'Département "{department_name}" supprimé avec succès.')
+        return redirect('departments:list')
+    
+    context = {
+        'department': department,
+        'members_count': members_count,
+    }
+    return render(request, 'departments/department_delete_confirm.html', context)
+

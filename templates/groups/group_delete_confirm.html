@@ -1,0 +1,68 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Supprimer le groupe {{ group.name }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row justify-content-center">
+        <div class="col-md-8 col-lg-6">
+            <div class="card border-danger">
+                <div class="card-header bg-danger text-white">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-exclamation-triangle"></i> Confirmer la suppression
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="alert alert-warning">
+                        <i class="fas fa-warning"></i>
+                        <strong>Attention !</strong> Cette action marquera le groupe comme inactif.
+                    </div>
+
+                    <p>Êtes-vous sûr de vouloir supprimer le groupe <strong>"{{ group.name }}"</strong> ?</p>
+
+                    {% if meetings_count > 0 %}
+                        <div class="alert alert-info">
+                            <i class="fas fa-info-circle"></i>
+                            Ce groupe a <strong>{{ meetings_count }} réunion{{ meetings_count|pluralize }}</strong> enregistrée{{ meetings_count|pluralize }}.
+                            {% if future_meetings_count > 0 %}
+                                <br><strong>{{ future_meetings_count }}</strong> réunion{{ future_meetings_count|pluralize }} {{ future_meetings_count|pluralize:"est,sont" }} programmée{{ future_meetings_count|pluralize }} dans le futur.
+                            {% endif %}
+                        </div>
+                    {% endif %}
+
+                    <form method="post" id="deleteForm">
+                        {% csrf_token %}
+                        
+                        {% if future_meetings_count > 0 %}
+                            <div class="form-check mb-3">
+                                <input class="form-check-input" type="checkbox" id="cancel_future_meetings" name="cancel_future_meetings">
+                                <label class="form-check-label" for="cancel_future_meetings">
+                                    Annuler également les {{ future_meetings_count }} réunion{{ future_meetings_count|pluralize }} future{{ future_meetings_count|pluralize }}
+                                </label>
+                            </div>
+                        {% endif %}
+
+                        <div class="alert alert-secondary">
+                            <small>
+                                <i class="fas fa-info-circle"></i>
+                                <strong>Note :</strong> Le groupe sera marqué comme inactif mais les données historiques seront conservées.
+                                Les membres ne seront pas supprimés du système.
+                            </small>
+                        </div>
+                    </form>
+
+                    <div class="d-flex justify-content-between">
+                        <a href="{% url 'groups:detail' group.pk %}" class="btn btn-secondary">
+                            <i class="fas fa-arrow-left"></i> Annuler
+                        </a>
+                        <button type="submit" form="deleteForm" class="btn btn-danger">
+                            <i class="fas fa-trash"></i> Confirmer la suppression
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

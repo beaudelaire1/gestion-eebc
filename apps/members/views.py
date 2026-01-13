@@ -378,9 +378,12 @@ def visit_complete(request, pk):
 
 
 @login_required
-@role_required('admin', 'secretariat', 'encadrant')
+@role_required('admin', 'pasteur', 'ancien', 'diacre')
 def members_needing_visit(request):
-    """Liste des membres nécessitant une visite (pas visités depuis 6 mois)."""
+    """Liste des membres nécessitant une visite (pas visités depuis 6 mois).
+    
+    Réservé aux pasteurs, anciens et diacres.
+    """
     members = []
     six_months_ago = date.today() - timedelta(days=180)
     

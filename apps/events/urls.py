@@ -16,4 +16,10 @@ urlpatterns = [
     path('<int:pk>/cancel/', views.event_cancel, name='cancel'),
     path('<int:pk>/duplicate/', views.event_duplicate, name='duplicate'),
     path('upcoming/', views.upcoming_events_partial, name='upcoming'),
+    
+    # Catégories d'événements
+    path('categories/', views.category_list, name='category_list'),
+    path('categories/create/', views.category_create, name='category_create'),
+    path('categories/<int:pk>/edit/', views.category_update, name='category_update'),
+    path('categories/<int:pk>/delete/', views.category_delete, name='category_delete'),
 ]

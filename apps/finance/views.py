@@ -9,7 +9,7 @@ from django.http import JsonResponse
 from datetime import date, timedelta
 from decimal import Decimal
 
-from .models import FinancialTransaction, FinanceCategory, ReceiptProof, BudgetLine
+from .models import FinancialTransaction, FinanceCategory, ReceiptProof, BudgetLine, BudgetCategory, Budget, BudgetItem, BudgetRequest
 from .forms import TransactionForm, ProofUploadForm
 from .services import TransactionService, BudgetService
 from apps.core.permissions import role_required
@@ -693,3 +693,154 @@ def receipt_process_ocr(request, pk):
         messages.error(request, f"Erreur lors du lancement de l'OCR : {e}")
     
     return redirect('finance:receipt_proof_list')
+
+# =============================================================================
+# CRUD POUR LES CATÉGORIES DE BUDGET - OPÉRATIONS MANQUANTES
+# =============================================================================
+
+@login_required
+@role_required('admin', 'finance')
+def budget_category_list(request):
+    """Liste des catégories de budget."""
+    categories = BudgetCategory.objects.filter(is_active=True).order_by('name')
+    
+    # Statistiques d'utilisation
+    for category in categories:
+        category.budgets_count = Budget.objects.filter(items__category=category).distinct().count()
+        category.requests_count = BudgetRequest.objects.filter(category=category).count()
+        category.total_usage = category.budgets_count + category.requests_count
+    
+    context = {
+        'categories': categories,
+        'total_categories': categories.count(),
+    }
+    
+    return render(request, 'finance/budget_category_list.html', context)
+
+
+@login_required
+@role_required('admin', 'finance')
+def budget_category_create(request):
+    """Créer une nouvelle catégorie de budget."""
+    if request.method == 'POST':
+        name = request.POST.get('name', '').strip()
+        description = request.POST.get('description', '').strip()
+        color = request.POST.get('color', '#0A36FF')
+        
+        if not name:
+            messages.error(request, 'Le nom de la catégorie est requis.')
+        else:
+            # Vérifier l'unicité
+            if BudgetCategory.objects.filter(name__iexact=name, is_active=True).exists():
+                messages.error(request, f'Une catégorie "{name}" existe déjà.')
+            else:
+                try:
+                    category = BudgetCategory.objects.create(
+                        name=name,
+                        description=description,
+                        color=color,
+                        is_active=True
+                    )
+                    
+                    messages.success(request, f'Catégorie "{category.name}" créée avec succès.')
+                    return redirect('finance:budget_category_list')
+                except Exception as e:
+                    messages.error(request, f'Erreur lors de la création : {e}')
+    
+    context = {
+        'title': 'Nouvelle catégorie de budget',
+        'submit_text': 'Créer la catégorie'
+    }
+    return render(request, 'finance/budget_category_form.html', context)
+
+
+@login_required
+@role_required('admin', 'finance')
+def budget_category_update(request, pk):
+    """Modifier une catégorie de budget."""
+    category = get_object_or_404(BudgetCategory, pk=pk)
+    
+    if request.method == 'POST':
+        name = request.POST.get('name', '').strip()
+        description = request.POST.get('description', '').strip()
+        color = request.POST.get('color', '#0A36FF')
+        is_active = 'is_active' in request.POST
+        
+        if not name:
+            messages.error(request, 'Le nom de la catégorie est requis.')
+        else:
+            # Vérifier l'unicité (exclure la catégorie actuelle)
+            if BudgetCategory.objects.filter(name__iexact=name, is_active=True).exclude(pk=pk).exists():
+                messages.error(request, f'Une catégorie "{name}" existe déjà.')
+            else:
+                try:
+                    category.name = name
+                    category.description = description
+                    category.color = color
+                    category.is_active = is_active
+                    category.save()
+                    
+                    messages.success(request, f'Catégorie "{category.name}" modifiée avec succès.')
+                    return redirect('finance:budget_category_list')
+                except Exception as e:
+                    messages.error(request, f'Erreur lors de la modification : {e}')
+    
+    context = {
+        'category': category,
+        'title': f'Modifier {category.name}',
+        'submit_text': 'Enregistrer les modifications'
+    }
+    return render(request, 'finance/budget_category_form.html', context)
+
+
+@login_required
+@role_required('admin', 'finance')
+def budget_category_delete(request, pk):
+    """Supprimer une catégorie de budget (soft delete)."""
+    category = get_object_or_404(BudgetCategory, pk=pk)
+    
+    # Vérifier s'il y a des éléments liés
+    budget_items_count = BudgetItem.objects.filter(category=category).count()
+    budget_requests_count = BudgetRequest.objects.filter(category=category).count()
+    
+    if request.method == 'POST':
+        action = request.POST.get('action')
+        
+        if action == 'reassign' and (budget_items_count > 0 or budget_requests_count > 0):
+            new_category_id = request.POST.get('new_category')
+            if new_category_id:
+                try:
+                    new_category = BudgetCategory.objects.get(pk=new_category_id, is_active=True)
+                    
+                    # Réassigner les éléments de budget
+                    if budget_items_count > 0:
+                        BudgetItem.objects.filter(category=category).update(category=new_category)
+                        messages.info(request, f'{budget_items_count} élément(s) de budget réassigné(s) à "{new_category.name}".')
+                    
+                    # Réassigner les demandes de budget
+                    if budget_requests_count > 0:
+                        BudgetRequest.objects.filter(category=category).update(category=new_category)
+                        messages.info(request, f'{budget_requests_count} demande(s) de budget réassignée(s) à "{new_category.name}".')
+                        
+                except BudgetCategory.DoesNotExist:
+                    messages.error(request, 'Catégorie de réassignation invalide.')
+                    return redirect('finance:budget_category_delete', pk=pk)
+        
+        # Soft delete de la catégorie
+        category_name = category.name
+        category.is_active = False
+        category.save()
+        
+        messages.success(request, f'Catégorie "{category_name}" supprimée avec succès.')
+        return redirect('finance:budget_category_list')
+    
+    # Autres catégories pour réassignation
+    other_categories = BudgetCategory.objects.filter(is_active=True).exclude(pk=pk)
+    
+    context = {
+        'category': category,
+        'budget_items_count': budget_items_count,
+        'budget_requests_count': budget_requests_count,
+        'other_categories': other_categories,
+    }
+    return render(request, 'finance/budget_category_delete_confirm.html', context)

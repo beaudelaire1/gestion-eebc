@@ -1,0 +1,52 @@
+{% extends 'base.html' %}
+
+{% block title %}Nettoyer les logs d'emails - {{ settings.site_name|default:'EEBC' }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row justify-content-center">
+        <div class="col-md-6">
+            <div class="card border-warning">
+                <div class="card-header bg-warning text-dark">
+                    <h5 class="card-title mb-0">
+                        <i class="bi bi-trash me-2"></i>Nettoyer les anciens logs
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="alert alert-info">
+                        <i class="bi bi-info-circle me-2"></i>
+                        Cette action supprimera tous les logs d'emails de plus de 30 jours.
+                    </div>
+                    
+                    {% if old_logs_count > 0 %}
+                        <p>
+                            <strong>{{ old_logs_count }}</strong> log(s) d'email(s) seront supprimés.
+                        </p>
+                        
+                        <p class="text-muted">
+                            Cette action permet de libérer de l'espace en supprimant les anciens logs
+                            tout en conservant les logs récents pour le suivi.
+                        </p>
+                        
+                        <form method="post" class="d-inline">
+                            {% csrf_token %}
+                            <button type="submit" class="btn btn-warning">
+                                <i class="bi bi-trash me-1"></i>Supprimer les anciens logs
+                            </button>
+                        </form>
+                    {% else %}
+                        <div class="alert alert-success">
+                            <i class="bi bi-check-circle me-2"></i>
+                            Aucun ancien log à supprimer. Tous les logs sont récents (moins de 30 jours).
+                        </div>
+                    {% endif %}
+                    
+                    <a href="{% url 'communication:email_logs' %}" class="btn btn-outline-secondary {% if old_logs_count > 0 %}ms-2{% endif %}">
+                        <i class="bi bi-arrow-left me-1"></i>Retour aux logs
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

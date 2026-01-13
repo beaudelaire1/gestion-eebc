@@ -1,0 +1,41 @@
+{% extends 'base.html' %}
+
+{% block title %}Supprimer élément - {{ template.name }}{% endblock %}
+{% block page_title %}Supprimer l'élément{% endblock %}
+{% block page_subtitle %}{{ template.name }}{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-6">
+        <div class="card border-danger">
+            <div class="card-header bg-danger text-white">
+                <h5 class="mb-0">
+                    <i class="bi bi-exclamation-triangle me-2"></i>
+                    Confirmation de suppression
+                </h5>
+            </div>
+            <div class="card-body">
+                <p>Êtes-vous sûr de vouloir supprimer cet élément du modèle ?</p>
+                
+                <div class="alert alert-info">
+                    <strong>Élément à supprimer :</strong><br>
+                    <span class="badge bg-secondary me-2">{{ item.get_item_type_display }}</span>
+                    {% if item.title %}{{ item.title }}{% else %}Sans titre{% endif %}
+                    <br>
+                    <small class="text-muted">Durée : {{ item.duration_minutes }} minutes</small>
+                </div>
+                
+                <form method="post" class="d-inline">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-danger me-2">
+                        <i class="bi bi-trash me-2"></i>Confirmer la suppression
+                    </button>
+                    <a href="{% url 'worship:template_detail' template.pk %}" class="btn btn-secondary">
+                        Annuler
+                    </a>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

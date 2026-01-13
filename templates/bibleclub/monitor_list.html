@@ -1,0 +1,183 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Moniteurs du club biblique{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <div>
+                    <h1 class="h3 mb-0">Moniteurs du club biblique</h1>
+                    <p class="text-muted">Gérer l'équipe d'encadrement</p>
+                </div>
+                <a href="{% url 'bibleclub:monitor_create' %}" class="btn btn-primary">
+                    <i class="fas fa-plus"></i> Nouveau moniteur
+                </a>
+            </div>
+
+            {% if messages %}
+                {% for message in messages %}
+                    <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                        {{ message }}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                    </div>
+                {% endfor %}
+            {% endif %}
+
+            <!-- Statistiques -->
+            <div class="row mb-4">
+                <div class="col-md-4">
+                    <div class="card bg-primary text-white">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between">
+                                <div>
+                                    <h4 class="mb-0">{{ total_monitors }}</h4>
+                                    <p class="mb-0">Total moniteurs</p>
+                                </div>
+                                <i class="fas fa-users fa-2x opacity-75"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="card bg-success text-white">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between">
+                                <div>
+                                    <h4 class="mb-0">{{ active_monitors }}</h4>
+                                    <p class="mb-0">Actifs</p>
+                                </div>
+                                <i class="fas fa-check-circle fa-2x opacity-75"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="card bg-info text-white">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between">
+                                <div>
+                                    <h4 class="mb-0">{{ monitors_with_class }}</h4>
+                                    <p class="mb-0">Avec classe assignée</p>
+                                </div>
+                                <i class="fas fa-chalkboard-teacher fa-2x opacity-75"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-users"></i> 
+                        {{ total_monitors }} moniteur{{ total_monitors|pluralize }}
+                    </h5>
+                </div>
+                <div class="card-body">
+                    {% if monitors %}
+                        <div class="table-responsive">
+                            <table class="table table-hover">
+                                <thead>
+                                    <tr>
+                                        <th>Moniteur</th>
+                                        <th>Classe assignée</th>
+                                        <th>Rôle</th>
+                                        <th>Statut</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for monitor in monitors %}
+                                        <tr>
+                                            <td>
+                                                <div class="d-flex align-items-center">
+                                                    <div class="avatar me-3">
+                                                        {{ monitor.user.first_name|slice:":1"|upper }}{{ monitor.user.last_name|slice:":1"|upper }}
+                                                    </div>
+                                                    <div>
+                                                        <strong>{{ monitor.user.get_full_name }}</strong>
+                                                        <br><small class="text-muted">{{ monitor.user.email }}</small>
+                                                    </div>
+                                                </div>
+                                            </td>
+                                            <td>
+                                                {% if monitor.bible_class %}
+                                                    <span class="badge bg-primary">
+                                                        {{ monitor.bible_class.name }}
+                                                    </span>
+                                                    {% if monitor.bible_class.age_group %}
+                                                        <br><small class="text-muted">{{ monitor.bible_class.age_group.name }}</small>
+                                                    {% endif %}
+                                                {% else %}
+                                                    <span class="text-muted">Aucune classe</span>
+                                                {% endif %}
+                                            </td>
+                                            <td>
+                                                <span class="badge bg-secondary">
+                                                    {{ monitor.role|capfirst }}
+                                                </span>
+                                            </td>
+                                            <td>
+                                                {% if monitor.is_active %}
+                                                    <span class="badge bg-success">Actif</span>
+                                                {% else %}
+                                                    <span class="badge bg-danger">Inactif</span>
+                                                {% endif %}
+                                            </td>
+                                            <td>
+                                                <div class="btn-group btn-group-sm" role="group">
+                                                    <a href="{% url 'bibleclub:monitor_update' monitor.pk %}" 
+                                                       class="btn btn-outline-primary" title="Modifier">
+                                                        <i class="fas fa-edit"></i>
+                                                    </a>
+                                                    <a href="{% url 'bibleclub:monitor_delete' monitor.pk %}" 
+                                                       class="btn btn-outline-danger" title="Supprimer">
+                                                        <i class="fas fa-trash"></i>
+                                                    </a>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    {% else %}
+                        <div class="text-center py-5">
+                            <i class="fas fa-users fa-3x text-muted mb-3"></i>
+                            <h5 class="text-muted">Aucun moniteur</h5>
+                            <p class="text-muted">Ajoutez votre premier moniteur pour commencer.</p>
+                            <a href="{% url 'bibleclub:monitor_create' %}" class="btn btn-primary">
+                                <i class="fas fa-plus"></i> Ajouter un moniteur
+                            </a>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <div class="mt-3">
+                <a href="{% url 'bibleclub:home' %}" class="btn btn-secondary">
+                    <i class="fas fa-arrow-left"></i> Retour au club biblique
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.avatar {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-weight: bold;
+    font-size: 14px;
+}
+</style>
+{% endblock %}

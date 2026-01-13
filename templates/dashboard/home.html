@@ -493,33 +493,33 @@
 
 <!-- Quick Actions -->
 <div class="quick-actions animate-in delay-5">
-    <a href="{% url 'bibleclub:create_session' %}" class="quick-action">
+    <a href="{% url 'communication:announcement_create' %}" class="quick-action">
         <div class="action-icon" style="background: linear-gradient(135deg, #0A36FF 0%, #3b82f6 100%);">
+            <i class="bi bi-megaphone"></i>
+        </div>
+        <div>
+            <div class="action-text">Nouvelle annonce</div>
+            <div class="action-desc">Publier une annonce</div>
+        </div>
+    </a>
+    
+    <a href="{% url 'events:create' %}" class="quick-action">
+        <div class="action-icon" style="background: linear-gradient(135deg, #10B981 0%, #059669 100%);">
+            <i class="bi bi-calendar-plus"></i>
+        </div>
+        <div>
+            <div class="action-text">Nouvel événement</div>
+            <div class="action-desc">Créer un événement</div>
+        </div>
+    </a>
+    
+    <a href="{% url 'bibleclub:create_session' %}" class="quick-action">
+        <div class="action-icon" style="background: linear-gradient(135deg, #8B5CF6 0%, #7C3AED 100%);">
             <i class="bi bi-plus-lg"></i>
         </div>
         <div>
             <div class="action-text">Nouvelle session</div>
             <div class="action-desc">Créer un appel</div>
-        </div>
-    </a>
-    
-    <a href="{% url 'finance:dashboard' %}" class="quick-action">
-        <div class="action-icon" style="background: linear-gradient(135deg, #10B981 0%, #059669 100%);">
-            <i class="bi bi-cash-coin"></i>
-        </div>
-        <div>
-            <div class="action-text">Trésorerie</div>
-            <div class="action-desc">Finance & Dons</div>
-        </div>
-    </a>
-    
-    <a href="{% url 'worship:service_list' %}" class="quick-action">
-        <div class="action-icon" style="background: linear-gradient(135deg, #8B5CF6 0%, #7C3AED 100%);">
-            <i class="bi bi-calendar-check"></i>
-        </div>
-        <div>
-            <div class="action-text">Cultes</div>
-            <div class="action-desc">Planning liturgique</div>
         </div>
     </a>
     
@@ -801,7 +801,8 @@
         </div>
     </div>
     
-    <!-- Pastoral CRM Card -->
+    <!-- Pastoral CRM Card (réservé aux pasteurs, anciens et diacres) -->
+    {% if user.can_view_member_alerts %}
     <div class="col-lg-4">
         <div class="modern-card">
             <div class="card-header">
@@ -883,6 +884,7 @@
             </div>
         </div>
     </div>
+    {% endif %}
 </div>
 {% endblock %}
 

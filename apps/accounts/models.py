@@ -12,6 +12,9 @@ class User(AbstractUser):
     
     class Role(models.TextChoices):
         ADMIN = 'admin', 'Administrateur'
+        PASTEUR = 'pasteur', 'Pasteur'
+        ANCIEN = 'ancien', 'Ancien'
+        DIACRE = 'diacre', 'Diacre'
         RESPONSABLE_CLUB = 'responsable_club', 'Responsable Club Biblique'
         MONITEUR = 'moniteur', 'Moniteur'
         CHAUFFEUR = 'chauffeur', 'Chauffeur'
@@ -21,11 +24,11 @@ class User(AbstractUser):
         ENCADRANT = 'encadrant', 'Encadrant'
         MEMBRE = 'membre', 'Membre'
     
-    role = models.CharField(
-        max_length=20,
-        choices=Role.choices,
+    # Changer role en TextField pour permettre plusieurs rôles séparés par des virgules
+    role = models.TextField(
         default=Role.MEMBRE,
-        verbose_name="Rôle"
+        verbose_name="Rôles",
+        help_text="Rôles séparés par des virgules (ex: pasteur,ancien)"
     )
     phone = models.CharField(
         max_length=20,
@@ -116,25 +119,79 @@ class User(AbstractUser):
     def __str__(self):
         return f"{self.get_full_name() or self.username}"
     
+    def get_roles_list(self):
+        """Retourne la liste des rôles de l'utilisateur."""
+        if not self.role:
+            return [self.Role.MEMBRE]
+        return [role.strip() for role in self.role.split(',') if role.strip()]
+    
+    def has_role(self, role):
+        """Vérifie si l'utilisateur a un rôle spécifique."""
+        return role in self.get_roles_list()
+    
+    def add_role(self, role):
+        """Ajoute un rôle à l'utilisateur."""
+        roles = self.get_roles_list()
+        if role not in roles:
+            roles.append(role)
+            self.role = ','.join(roles)
+            self.save(update_fields=['role'])
+    
+    def remove_role(self, role):
+        """Supprime un rôle de l'utilisateur."""
+        roles = self.get_roles_list()
+        if role in roles:
+            roles.remove(role)
+            self.role = ','.join(roles) if roles else self.Role.MEMBRE
+            self.save(update_fields=['role'])
+    
+    def get_role_display(self):
+        """Retourne l'affichage des rôles."""
+        roles = self.get_roles_list()
+        role_labels = []
+        for role in roles:
+            for choice_value, choice_label in self.Role.choices:
+                if choice_value == role:
+                    role_labels.append(choice_label)
+                    break
+        return ', '.join(role_labels)
+    
     @property
     def is_admin(self):
-        return self.role == self.Role.ADMIN or self.is_superuser
+        return self.has_role(self.Role.ADMIN) or self.is_superuser
+    
+    @property
+    def is_pasteur(self):
+        return self.has_role(self.Role.PASTEUR) or self.is_admin
+    
+    @property
+    def is_ancien(self):
+        return self.has_role(self.Role.ANCIEN) or self.is_pasteur
+    
+    @property
+    def is_diacre(self):
+        return self.has_role(self.Role.DIACRE) or self.is_ancien
     
     @property
     def is_responsable_club(self):
-        return self.role == self.Role.RESPONSABLE_CLUB or self.is_admin
+        return self.has_role(self.Role.RESPONSABLE_CLUB) or self.is_admin
     
     @property
     def is_moniteur(self):
-        return self.role == self.Role.MONITEUR or self.is_responsable_club
+        return self.has_role(self.Role.MONITEUR) or self.is_responsable_club
     
     @property
     def is_chauffeur(self):
-        return self.role == self.Role.CHAUFFEUR or self.is_admin
+        return self.has_role(self.Role.CHAUFFEUR) or self.is_admin
     
     @property
     def is_responsable_groupe(self):
-        return self.role == self.Role.RESPONSABLE_GROUPE or self.is_admin
+        return self.has_role(self.Role.RESPONSABLE_GROUPE) or self.is_admin
+    
+    @property
+    def can_view_member_alerts(self):
+        """Vérifie si l'utilisateur peut voir les alertes de membres non visités."""
+        return (self.is_pasteur or self.is_ancien or self.is_diacre or self.is_admin)
     
     # =========================================================================
     # MÉTHODES 2FA

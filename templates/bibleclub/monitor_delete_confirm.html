@@ -1,0 +1,65 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Supprimer le moniteur {{ monitor.user.get_full_name }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row justify-content-center">
+        <div class="col-md-8 col-lg-6">
+            <div class="card border-danger">
+                <div class="card-header bg-danger text-white">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-exclamation-triangle"></i> Confirmer la suppression
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="alert alert-warning">
+                        <i class="fas fa-warning"></i>
+                        <strong>Attention !</strong> Cette action marquera le moniteur comme inactif.
+                    </div>
+
+                    <p>Êtes-vous sûr de vouloir supprimer le moniteur <strong>"{{ monitor.user.get_full_name }}"</strong> ?</p>
+
+                    <div class="card mb-3">
+                        <div class="card-body">
+                            <h6 class="card-title">{{ monitor.user.get_full_name }}</h6>
+                            <p class="card-text">
+                                <i class="fas fa-envelope"></i> {{ monitor.user.email }}<br>
+                                <i class="fas fa-user-tag"></i> {{ monitor.role|capfirst }}<br>
+                                {% if monitor.bible_class %}
+                                    <i class="fas fa-chalkboard-teacher"></i> Classe : {{ monitor.bible_class.name }}
+                                    {% if monitor.bible_class.age_group %} ({{ monitor.bible_class.age_group.name }}){% endif %}
+                                {% else %}
+                                    <i class="fas fa-chalkboard-teacher"></i> Aucune classe assignée
+                                {% endif %}
+                            </p>
+                        </div>
+                    </div>
+
+                    <form method="post" id="deleteForm">
+                        {% csrf_token %}
+                        
+                        <div class="alert alert-secondary">
+                            <small>
+                                <i class="fas fa-info-circle"></i>
+                                <strong>Note :</strong> Le moniteur sera marqué comme inactif mais les données historiques seront conservées.
+                                L'utilisateur restera dans le système et pourra être réassigné plus tard.
+                            </small>
+                        </div>
+                    </form>
+
+                    <div class="d-flex justify-content-between">
+                        <a href="{% url 'bibleclub:monitor_list' %}" class="btn btn-secondary">
+                            <i class="fas fa-arrow-left"></i> Annuler
+                        </a>
+                        <button type="submit" form="deleteForm" class="btn btn-danger">
+                            <i class="fas fa-trash"></i> Confirmer la suppression
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

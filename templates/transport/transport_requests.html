@@ -75,6 +75,11 @@
                                             <i class="bi bi-pencil me-2"></i>Modifier
                                         </a>
                                     </li>
+                                    <li>
+                                        <a class="dropdown-item text-danger" href="{% url 'transport:request_delete' request.pk %}">
+                                            <i class="bi bi-trash me-2"></i>Supprimer
+                                        </a>
+                                    </li>
                                     {% if user.role in 'admin,secretariat,responsable_groupe' and request.status == 'pending' %}
                                     <li><hr class="dropdown-divider"></li>
                                     <li>

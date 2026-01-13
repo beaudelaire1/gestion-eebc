@@ -33,6 +33,12 @@ urlpatterns = [
     path('budgets/<int:budget_id>/submit/', budget_views.budget_submit, name='budget_submit'),
     path('budgets/<int:budget_id>/edit/', budget_views.budget_edit, name='budget_edit'),
     
+    # Catégories de budget
+    path('budget-categories/', views.budget_category_list, name='budget_category_list'),
+    path('budget-categories/create/', views.budget_category_create, name='budget_category_create'),
+    path('budget-categories/<int:pk>/edit/', views.budget_category_update, name='budget_category_update'),
+    path('budget-categories/<int:pk>/delete/', views.budget_category_delete, name='budget_category_delete'),
+    
     # Export et impression des budgets
     path('budgets/<int:budget_id>/export-excel/', budget_views.budget_export_excel, name='budget_export_excel'),
     path('budgets/<int:budget_id>/print/', budget_views.budget_print_view, name='budget_print'),

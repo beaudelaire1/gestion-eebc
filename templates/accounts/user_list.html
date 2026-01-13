@@ -102,6 +102,7 @@
                                             
                                             <button type="button" 
                                                     class="btn btn-outline-secondary"
+                                                    onclick="window.location.href='{% url 'accounts:user_detail' user.id %}'"
                                                     title="Voir le profil">
                                                 <i class="bi bi-eye"></i>
                                             </button>
@@ -109,7 +110,8 @@
                                             {% if user != request.user %}
                                                 <button type="button" 
                                                         class="btn btn-outline-danger"
-                                                        title="Désactiver">
+                                                        onclick="window.location.href='{% url 'accounts:user_delete' user.id %}'"
+                                                        title="Supprimer">
                                                     <i class="bi bi-person-x"></i>
                                                 </button>
                                             {% endif %}

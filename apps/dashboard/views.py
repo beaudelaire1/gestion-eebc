@@ -152,8 +152,8 @@ def home(request):
             'link': f'/campaigns/{campaign.id}/'
         })
     
-    # Alerte visites pastorales
-    if pastoral_stats['members_needing_visit'] > 5:
+    # Alerte visites pastorales (réservée aux pasteurs, anciens et diacres)
+    if pastoral_stats['members_needing_visit'] > 5 and request.user.can_view_member_alerts:
         alerts.append({
             'type': 'info',
             'icon': 'house-heart',

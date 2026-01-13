@@ -24,9 +24,8 @@ ALLOWED_HOSTS = os.environ.get('ALLOWED_HOSTS', 'localhost,127.0.0.1').split(','
 # APPLICATIONS
 # =============================================================================
 INSTALLED_APPS = [
-    # Jazzmin - doit être AVANT django.contrib.admin
+    # Interface d'administration améliorée avec Jazzmin
     'jazzmin',
-    
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -378,6 +377,7 @@ JAZZMIN_UI_TWEAKS = {
     "theme": "default",
     "actions_sticky_top": True,
 }
+
 JAZZMIN_USER_THEME_CHOICES = {
     "default": "Default",
     "darkly": "Darkly",
@@ -385,7 +385,6 @@ JAZZMIN_USER_THEME_CHOICES = {
     "litera": "Litera",
     "solar": "Solar",
     "yeti": "Yeti",
-
 }
 
 # =============================================================================

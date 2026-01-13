@@ -10,9 +10,14 @@
         <div class="card">
             <div class="card-header d-flex justify-content-between align-items-center">
                 <h5 class="mb-0">Informations du chauffeur</h5>
-                <a href="{% url 'transport:driver_update' driver.pk %}" class="btn btn-outline-primary btn-sm">
-                    <i class="bi bi-pencil me-1"></i>Modifier
-                </a>
+                <div class="d-flex gap-2">
+                    <a href="{% url 'transport:driver_update' driver.pk %}" class="btn btn-outline-primary btn-sm">
+                        <i class="bi bi-pencil me-1"></i>Modifier
+                    </a>
+                    <a href="{% url 'transport:driver_delete' driver.pk %}" class="btn btn-outline-danger btn-sm">
+                        <i class="bi bi-trash me-1"></i>Supprimer
+                    </a>
+                </div>
             </div>
             <div class="card-body">
                 <div class="row">

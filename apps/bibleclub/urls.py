@@ -7,9 +7,18 @@ urlpatterns = [
     path('', views.bibleclub_home, name='home'),
     path('chart-data/', views.attendance_chart_data, name='attendance_chart_data'),
     
-    # Classes
+    # Classes - CRUD complet
     path('classes/', views.class_list, name='class_list'),
+    path('classes/create/', views.bible_class_create, name='bible_class_create'),
     path('classes/<int:pk>/', views.class_detail, name='class_detail'),
+    path('classes/<int:pk>/edit/', views.bible_class_update, name='bible_class_update'),
+    path('classes/<int:pk>/delete/', views.bible_class_delete, name='bible_class_delete'),
+    
+    # Moniteurs - CRUD complet
+    path('monitors/', views.monitor_list, name='monitor_list'),
+    path('monitors/create/', views.monitor_create, name='monitor_create'),
+    path('monitors/<int:pk>/edit/', views.monitor_update, name='monitor_update'),
+    path('monitors/<int:pk>/delete/', views.monitor_delete, name='monitor_delete'),
     
     # Enfants
     path('children/', views.children_list, name='children_list'),

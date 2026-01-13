@@ -1,0 +1,110 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{{ title }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row justify-content-center">
+        <div class="col-md-8 col-lg-6">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-chalkboard-teacher"></i> {{ title }}
+                    </h5>
+                </div>
+                <div class="card-body">
+                    {% if messages %}
+                        {% for message in messages %}
+                            <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                                {{ message }}
+                                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                            </div>
+                        {% endfor %}
+                    {% endif %}
+
+                    <form method="post">
+                        {% csrf_token %}
+                        
+                        <div class="mb-3">
+                            <label for="name" class="form-label">Nom de la classe *</label>
+                            <input type="text" 
+                                   class="form-control" 
+                                   id="name" 
+                                   name="name" 
+                                   value="{{ bible_class.name|default:'' }}"
+                                   required
+                                   maxlength="100"
+                                   placeholder="Ex: Petits (3-6 ans), Moyens (7-10 ans)...">
+                            <div class="form-text">Le nom doit être unique.</div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="age_group" class="form-label">Tranche d'âge</label>
+                            <select class="form-select" id="age_group" name="age_group">
+                                <option value="">Aucune tranche d'âge spécifique</option>
+                                {% for age_group in age_groups %}
+                                    <option value="{{ age_group.pk }}" 
+                                            {% if bible_class.age_group_id == age_group.pk %}selected{% endif %}>
+                                        {{ age_group.name }} ({{ age_group.min_age }}-{{ age_group.max_age }} ans)
+                                    </option>
+                                {% endfor %}
+                            </select>
+                            <div class="form-text">Optionnel - Associer à une tranche d'âge prédéfinie.</div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="description" class="form-label">Description</label>
+                            <textarea class="form-control" 
+                                      id="description" 
+                                      name="description" 
+                                      rows="3"
+                                      maxlength="500"
+                                      placeholder="Description de la classe, activités, objectifs...">{{ bible_class.description|default:'' }}</textarea>
+                            <div class="form-text">Optionnel - Maximum 500 caractères</div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="max_capacity" class="form-label">Capacité maximale</label>
+                            <input type="number" 
+                                   class="form-control" 
+                                   id="max_capacity" 
+                                   name="max_capacity" 
+                                   value="{{ bible_class.max_capacity|default:'' }}"
+                                   min="1"
+                                   max="100"
+                                   placeholder="Ex: 15">
+                            <div class="form-text">Optionnel - Nombre maximum d'enfants dans cette classe.</div>
+                        </div>
+
+                        {% if bible_class %}
+                            <div class="mb-3">
+                                <div class="form-check">
+                                    <input class="form-check-input" 
+                                           type="checkbox" 
+                                           id="is_active" 
+                                           name="is_active"
+                                           {% if bible_class.is_active %}checked{% endif %}>
+                                    <label class="form-check-label" for="is_active">
+                                        Classe active
+                                    </label>
+                                </div>
+                                <div class="form-text">Décochez pour désactiver temporairement la classe.</div>
+                            </div>
+                        {% endif %}
+
+                        <div class="d-flex justify-content-between">
+                            <a href="{% url 'bibleclub:class_list' %}" class="btn btn-secondary">
+                                <i class="fas fa-arrow-left"></i> Annuler
+                            </a>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-save"></i> {{ submit_text }}
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

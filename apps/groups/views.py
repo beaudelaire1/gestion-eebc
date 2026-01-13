@@ -309,3 +309,82 @@ def groups_dashboard(request):
     
     return render(request, 'groups/dashboard.html', context)
 
+
+# =============================================================================
+# OPÉRATIONS DE SUPPRESSION MANQUANTES
+# =============================================================================
+
+@login_required
+@role_required('admin', 'secretariat', 'responsable_groupe')
+def group_delete(request, pk):
+    """Supprimer un groupe (soft delete)."""
+    group = get_object_or_404(Group, pk=pk)
+    
+    # Vérifier si l'utilisateur peut supprimer ce groupe
+    if (request.user.role == 'responsable_groupe' and 
+        group.leader != request.user and 
+        request.user.role != 'admin'):
+        messages.error(request, "Vous ne pouvez supprimer que vos propres groupes.")
+        return redirect('groups:detail', pk=pk)
+    
+    # Vérifier s'il y a des réunions liées
+    meetings_count = group.meetings.count()
+    future_meetings_count = group.meetings.filter(
+        date__gte=timezone.now().date(),
+        is_cancelled=False
+    ).count()
+    
+    if request.method == 'POST':
+        group_name = group.name
+        
+        # Soft delete - marquer comme inactif
+        group.is_active = False
+        group.save()
+        
+        # Optionnellement annuler les réunions futures
+        if request.POST.get('cancel_future_meetings') == 'on':
+            future_meetings = group.meetings.filter(
+                date__gte=timezone.now().date(),
+                is_cancelled=False
+            )
+            future_meetings.update(is_cancelled=True)
+            messages.info(request, f'{future_meetings_count} réunion(s) future(s) annulée(s).')
+        
+        messages.success(request, f'Groupe "{group_name}" supprimé avec succès.')
+        return redirect('groups:list')
+    
+    context = {
+        'group': group,
+        'meetings_count': meetings_count,
+        'future_meetings_count': future_meetings_count,
+    }
+    return render(request, 'groups/group_delete_confirm.html', context)
+
+
+@login_required
+@role_required('admin', 'secretariat', 'responsable_groupe')
+def meeting_delete(request, group_pk, meeting_pk):
+    """Supprimer une réunion."""
+    group = get_object_or_404(Group, pk=group_pk)
+    meeting = get_object_or_404(GroupMeeting, pk=meeting_pk, group=group)
+    
+    # Vérifier si l'utilisateur peut supprimer cette réunion
+    if (request.user.role == 'responsable_groupe' and 
+        group.leader != request.user and 
+        request.user.role != 'admin'):
+        messages.error(request, "Vous ne pouvez supprimer que les réunions de vos propres groupes.")
+        return redirect('groups:detail', pk=group_pk)
+    
+    if request.method == 'POST':
+        meeting_date = meeting.date
+        meeting.delete()
+        
+        messages.success(request, f'Réunion du {meeting_date.strftime("%d/%m/%Y")} supprimée avec succès.')
+        return redirect('groups:detail', pk=group.pk)
+    
+    context = {
+        'group': group,
+        'meeting': meeting,
+    }
+    return render(request, 'groups/meeting_delete_confirm.html', context)
+

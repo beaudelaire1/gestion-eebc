@@ -611,3 +611,302 @@ def my_class_children(request):
         'children': children,
         'bible_class': monitor.bible_class,
     })
+
+
+# =============================================================================
+# CRUD POUR LES CLASSES BIBLIQUES - OPÉRATIONS MANQUANTES
+# =============================================================================
+
+@login_required
+@club_admin_required
+def bible_class_create(request):
+    """Créer une nouvelle classe biblique."""
+    if request.method == 'POST':
+        name = request.POST.get('name', '').strip()
+        age_group_id = request.POST.get('age_group')
+        description = request.POST.get('description', '').strip()
+        max_capacity = request.POST.get('max_capacity')
+        
+        if not name:
+            messages.error(request, 'Le nom de la classe est requis.')
+        else:
+            # Vérifier l'unicité
+            if BibleClass.objects.filter(name__iexact=name, is_active=True).exists():
+                messages.error(request, f'Une classe "{name}" existe déjà.')
+            else:
+                try:
+                    age_group = AgeGroup.objects.get(pk=age_group_id) if age_group_id else None
+                    
+                    bible_class = BibleClass.objects.create(
+                        name=name,
+                        age_group=age_group,
+                        description=description,
+                        max_capacity=int(max_capacity) if max_capacity else None,
+                        is_active=True
+                    )
+                    
+                    messages.success(request, f'Classe "{bible_class.name}" créée avec succès.')
+                    return redirect('bibleclub:class_detail', pk=bible_class.pk)
+                except Exception as e:
+                    messages.error(request, f'Erreur lors de la création : {e}')
+    
+    age_groups = AgeGroup.objects.all().order_by('min_age')
+    
+    context = {
+        'age_groups': age_groups,
+        'title': 'Nouvelle classe biblique',
+        'submit_text': 'Créer la classe'
+    }
+    return render(request, 'bibleclub/bible_class_form.html', context)
+
+
+@login_required
+@club_admin_required
+def bible_class_update(request, pk):
+    """Modifier une classe biblique."""
+    bible_class = get_object_or_404(BibleClass, pk=pk)
+    
+    if request.method == 'POST':
+        name = request.POST.get('name', '').strip()
+        age_group_id = request.POST.get('age_group')
+        description = request.POST.get('description', '').strip()
+        max_capacity = request.POST.get('max_capacity')
+        is_active = 'is_active' in request.POST
+        
+        if not name:
+            messages.error(request, 'Le nom de la classe est requis.')
+        else:
+            # Vérifier l'unicité (exclure la classe actuelle)
+            if BibleClass.objects.filter(name__iexact=name, is_active=True).exclude(pk=pk).exists():
+                messages.error(request, f'Une classe "{name}" existe déjà.')
+            else:
+                try:
+                    age_group = AgeGroup.objects.get(pk=age_group_id) if age_group_id else None
+                    
+                    bible_class.name = name
+                    bible_class.age_group = age_group
+                    bible_class.description = description
+                    bible_class.max_capacity = int(max_capacity) if max_capacity else None
+                    bible_class.is_active = is_active
+                    bible_class.save()
+                    
+                    messages.success(request, f'Classe "{bible_class.name}" modifiée avec succès.')
+                    return redirect('bibleclub:class_detail', pk=bible_class.pk)
+                except Exception as e:
+                    messages.error(request, f'Erreur lors de la modification : {e}')
+    
+    age_groups = AgeGroup.objects.all().order_by('min_age')
+    
+    context = {
+        'bible_class': bible_class,
+        'age_groups': age_groups,
+        'title': f'Modifier {bible_class.name}',
+        'submit_text': 'Enregistrer les modifications'
+    }
+    return render(request, 'bibleclub/bible_class_form.html', context)
+
+
+@login_required
+@club_admin_required
+def bible_class_delete(request, pk):
+    """Supprimer une classe biblique (soft delete)."""
+    bible_class = get_object_or_404(BibleClass, pk=pk)
+    
+    # Vérifier s'il y a des enfants ou moniteurs liés
+    children_count = bible_class.children.filter(is_active=True).count()
+    monitors_count = bible_class.monitors.filter(is_active=True).count()
+    
+    if request.method == 'POST':
+        action = request.POST.get('action')
+        
+        if action == 'reassign' and (children_count > 0 or monitors_count > 0):
+            new_class_id = request.POST.get('new_class')
+            if new_class_id:
+                try:
+                    new_class = BibleClass.objects.get(pk=new_class_id, is_active=True)
+                    
+                    # Réassigner les enfants
+                    if children_count > 0:
+                        bible_class.children.filter(is_active=True).update(bible_class=new_class)
+                        messages.info(request, f'{children_count} enfant(s) réassigné(s) à "{new_class.name}".')
+                    
+                    # Réassigner les moniteurs
+                    if monitors_count > 0:
+                        bible_class.monitors.filter(is_active=True).update(bible_class=new_class)
+                        messages.info(request, f'{monitors_count} moniteur(s) réassigné(s) à "{new_class.name}".')
+                        
+                except BibleClass.DoesNotExist:
+                    messages.error(request, 'Classe de réassignation invalide.')
+                    return redirect('bibleclub:bible_class_delete', pk=pk)
+        
+        # Soft delete de la classe
+        class_name = bible_class.name
+        bible_class.is_active = False
+        bible_class.save()
+        
+        messages.success(request, f'Classe "{class_name}" supprimée avec succès.')
+        return redirect('bibleclub:class_list')
+    
+    # Autres classes pour réassignation
+    other_classes = BibleClass.objects.filter(is_active=True).exclude(pk=pk)
+    
+    context = {
+        'bible_class': bible_class,
+        'children_count': children_count,
+        'monitors_count': monitors_count,
+        'other_classes': other_classes,
+    }
+    return render(request, 'bibleclub/bible_class_delete_confirm.html', context)
+
+
+# =============================================================================
+# CRUD POUR LES MONITEURS - OPÉRATIONS MANQUANTES
+# =============================================================================
+
+@login_required
+@club_admin_required
+def monitor_list(request):
+    """Liste des moniteurs."""
+    monitors = Monitor.objects.filter(is_active=True).select_related(
+        'user', 'bible_class', 'bible_class__age_group'
+    ).order_by('user__last_name', 'user__first_name')
+    
+    # Statistiques
+    total_monitors = monitors.count()
+    active_monitors = monitors.filter(is_active=True).count()
+    monitors_with_class = monitors.exclude(bible_class__isnull=True).count()
+    
+    context = {
+        'monitors': monitors,
+        'total_monitors': total_monitors,
+        'active_monitors': active_monitors,
+        'monitors_with_class': monitors_with_class,
+    }
+    
+    return render(request, 'bibleclub/monitor_list.html', context)
+
+
+@login_required
+@club_admin_required
+def monitor_create(request):
+    """Créer un nouveau moniteur."""
+    if request.method == 'POST':
+        user_id = request.POST.get('user')
+        bible_class_id = request.POST.get('bible_class')
+        role = request.POST.get('role', 'moniteur')
+        
+        if not user_id:
+            messages.error(request, 'Vous devez sélectionner un utilisateur.')
+        else:
+            try:
+                from django.contrib.auth import get_user_model
+                User = get_user_model()
+                
+                user = User.objects.get(pk=user_id)
+                bible_class = BibleClass.objects.get(pk=bible_class_id) if bible_class_id else None
+                
+                # Vérifier si l'utilisateur n'est pas déjà moniteur
+                if Monitor.objects.filter(user=user, is_active=True).exists():
+                    messages.error(request, f'{user.get_full_name()} est déjà moniteur.')
+                else:
+                    monitor = Monitor.objects.create(
+                        user=user,
+                        bible_class=bible_class,
+                        role=role,
+                        is_active=True
+                    )
+                    
+                    messages.success(request, f'Moniteur {user.get_full_name()} créé avec succès.')
+                    return redirect('bibleclub:monitor_list')
+                    
+            except Exception as e:
+                messages.error(request, f'Erreur lors de la création : {e}')
+    
+    # Utilisateurs disponibles (pas encore moniteurs)
+    from django.contrib.auth import get_user_model
+    User = get_user_model()
+    
+    existing_monitor_users = Monitor.objects.filter(is_active=True).values_list('user_id', flat=True)
+    available_users = User.objects.filter(is_active=True).exclude(
+        id__in=existing_monitor_users
+    ).order_by('last_name', 'first_name')
+    
+    bible_classes = BibleClass.objects.filter(is_active=True).order_by('name')
+    
+    role_choices = [
+        ('moniteur', 'Moniteur'),
+        ('assistant', 'Assistant'),
+        ('responsable', 'Responsable'),
+    ]
+    
+    context = {
+        'available_users': available_users,
+        'bible_classes': bible_classes,
+        'role_choices': role_choices,
+        'title': 'Nouveau moniteur',
+        'submit_text': 'Créer le moniteur'
+    }
+    return render(request, 'bibleclub/monitor_form.html', context)
+
+
+@login_required
+@club_admin_required
+def monitor_update(request, pk):
+    """Modifier un moniteur."""
+    monitor = get_object_or_404(Monitor, pk=pk)
+    
+    if request.method == 'POST':
+        bible_class_id = request.POST.get('bible_class')
+        role = request.POST.get('role', 'moniteur')
+        is_active = 'is_active' in request.POST
+        
+        try:
+            bible_class = BibleClass.objects.get(pk=bible_class_id) if bible_class_id else None
+            
+            monitor.bible_class = bible_class
+            monitor.role = role
+            monitor.is_active = is_active
+            monitor.save()
+            
+            messages.success(request, f'Moniteur {monitor.user.get_full_name()} modifié avec succès.')
+            return redirect('bibleclub:monitor_list')
+            
+        except Exception as e:
+            messages.error(request, f'Erreur lors de la modification : {e}')
+    
+    bible_classes = BibleClass.objects.filter(is_active=True).order_by('name')
+    
+    role_choices = [
+        ('moniteur', 'Moniteur'),
+        ('assistant', 'Assistant'),
+        ('responsable', 'Responsable'),
+    ]
+    
+    context = {
+        'monitor': monitor,
+        'bible_classes': bible_classes,
+        'role_choices': role_choices,
+        'title': f'Modifier {monitor.user.get_full_name()}',
+        'submit_text': 'Enregistrer les modifications'
+    }
+    return render(request, 'bibleclub/monitor_form.html', context)
+
+
+@login_required
+@club_admin_required
+def monitor_delete(request, pk):
+    """Supprimer un moniteur (soft delete)."""
+    monitor = get_object_or_404(Monitor, pk=pk)
+    
+    if request.method == 'POST':
+        monitor_name = monitor.user.get_full_name()
+        monitor.is_active = False
+        monitor.save()
+        
+        messages.success(request, f'Moniteur {monitor_name} supprimé avec succès.')
+        return redirect('bibleclub:monitor_list')
+    
+    context = {
+        'monitor': monitor,
+    }
+    return render(request, 'bibleclub/monitor_delete_confirm.html', context)

@@ -4,6 +4,7 @@ from django.contrib.auth.password_validation import validate_password
 from django.core.exceptions import ValidationError
 from apps.core.forms import EnhancedForm
 from apps.core.validators import phone_validator
+from .widgets import MultipleRoleField
 
 User = get_user_model()
 
@@ -47,9 +48,10 @@ class UserCreationByTeamForm(EnhancedForm):
         })
     )
     
-    role = forms.ChoiceField(
-        choices=User.Role.choices,
-        label="Rôle"
+    roles = MultipleRoleField(
+        label="Rôles",
+        help_text="Sélectionnez un ou plusieurs rôles pour cet utilisateur",
+        required=True
     )
     
     def clean_email(self):
@@ -73,6 +75,12 @@ class UserCreationByTeamForm(EnhancedForm):
         if len(last_name) < 2:
             raise ValidationError("Le nom de famille doit contenir au moins 2 caractères.")
         return last_name.upper()
+    
+    def clean_roles(self):
+        roles = self.cleaned_data.get('roles', [])
+        if not roles:
+            raise ValidationError("Au moins un rôle doit être sélectionné.")
+        return roles
 
 
 class FirstLoginPasswordChangeForm(EnhancedForm):

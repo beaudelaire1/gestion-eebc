@@ -816,3 +816,142 @@ def event_list_advanced(request):
     if request.htmx:
         return render(request, 'events/partials/event_list_content.html', context)
     return render(request, 'events/event_list_advanced.html', context)
+
+
+# =============================================================================
+# CRUD POUR LES CATÉGORIES D'ÉVÉNEMENTS
+# =============================================================================
+
+@login_required
+@role_required('admin', 'secretariat')
+def category_list(request):
+    """Liste des catégories d'événements."""
+    categories = EventCategory.objects.all().order_by('name')
+    
+    # Statistiques d'utilisation
+    for category in categories:
+        category.events_count = category.events.count()
+        category.upcoming_events_count = category.events.filter(
+            start_date__gte=date.today(),
+            is_cancelled=False
+        ).count()
+    
+    context = {
+        'categories': categories,
+        'total_categories': categories.count(),
+    }
+    
+    return render(request, 'events/category_list.html', context)
+
+
+@login_required
+@role_required('admin', 'secretariat')
+def category_create(request):
+    """Créer une nouvelle catégorie d'événement."""
+    if request.method == 'POST':
+        name = request.POST.get('name', '').strip()
+        color = request.POST.get('color', '#007bff')
+        description = request.POST.get('description', '').strip()
+        
+        if not name:
+            messages.error(request, 'Le nom de la catégorie est requis.')
+        else:
+            # Vérifier l'unicité
+            if EventCategory.objects.filter(name__iexact=name).exists():
+                messages.error(request, f'Une catégorie "{name}" existe déjà.')
+            else:
+                category = EventCategory.objects.create(
+                    name=name,
+                    color=color,
+                    description=description
+                )
+                messages.success(request, f'Catégorie "{category.name}" créée avec succès.')
+                return redirect('events:category_list')
+    
+    context = {
+        'title': 'Nouvelle catégorie',
+        'submit_text': 'Créer la catégorie'
+    }
+    return render(request, 'events/category_form.html', context)
+
+
+@login_required
+@role_required('admin', 'secretariat')
+def category_update(request, pk):
+    """Modifier une catégorie d'événement."""
+    category = get_object_or_404(EventCategory, pk=pk)
+    
+    if request.method == 'POST':
+        name = request.POST.get('name', '').strip()
+        color = request.POST.get('color', '#007bff')
+        description = request.POST.get('description', '').strip()
+        
+        if not name:
+            messages.error(request, 'Le nom de la catégorie est requis.')
+        else:
+            # Vérifier l'unicité (exclure la catégorie actuelle)
+            if EventCategory.objects.filter(name__iexact=name).exclude(pk=pk).exists():
+                messages.error(request, f'Une catégorie "{name}" existe déjà.')
+            else:
+                category.name = name
+                category.color = color
+                category.description = description
+                category.save()
+                
+                messages.success(request, f'Catégorie "{category.name}" modifiée avec succès.')
+                return redirect('events:category_list')
+    
+    context = {
+        'category': category,
+        'title': f'Modifier {category.name}',
+        'submit_text': 'Enregistrer les modifications'
+    }
+    return render(request, 'events/category_form.html', context)
+
+
+@login_required
+@role_required('admin', 'secretariat')
+def category_delete(request, pk):
+    """Supprimer une catégorie d'événement."""
+    category = get_object_or_404(EventCategory, pk=pk)
+    
+    # Vérifier s'il y a des événements liés
+    events_count = category.events.count()
+    
+    if request.method == 'POST':
+        if events_count > 0:
+            # Demander confirmation pour la réassignation
+            reassign_to_id = request.POST.get('reassign_to')
+            if reassign_to_id:
+                try:
+                    new_category = EventCategory.objects.get(pk=reassign_to_id)
+                    category.events.update(category=new_category)
+                    messages.success(
+                        request, 
+                        f'{events_count} événement(s) réassigné(s) à "{new_category.name}".'
+                    )
+                except EventCategory.DoesNotExist:
+                    messages.error(request, 'Catégorie de réassignation invalide.')
+                    return redirect('events:category_delete', pk=pk)
+            else:
+                # Supprimer la catégorie des événements (mettre à null)
+                category.events.update(category=None)
+                messages.warning(
+                    request, 
+                    f'{events_count} événement(s) n\'ont plus de catégorie.'
+                )
+        
+        category_name = category.name
+        category.delete()
+        messages.success(request, f'Catégorie "{category_name}" supprimée avec succès.')
+        return redirect('events:category_list')
+    
+    # Autres catégories pour réassignation
+    other_categories = EventCategory.objects.exclude(pk=pk)
+    
+    context = {
+        'category': category,
+        'events_count': events_count,
+        'other_categories': other_categories,
+    }
+    return render(request, 'events/category_delete_confirm.html', context)

@@ -362,7 +362,7 @@ class AccountsService:
         first_name: str,
         last_name: str,
         email: str,
-        role: str,
+        roles: list,  # Maintenant une liste de rôles
         created_by: User,
         phone: str = '',
         send_email: bool = True
@@ -374,7 +374,7 @@ class AccountsService:
             first_name: Prénom
             last_name: Nom
             email: Email
-            role: Rôle (User.Role)
+            roles: Liste des rôles (User.Role)
             created_by: Utilisateur qui crée le compte
             phone: Téléphone (optionnel)
             send_email: Envoyer l'email d'invitation (défaut: True)
@@ -388,6 +388,9 @@ class AccountsService:
             username = cls.generate_username(first_name, last_name)
             password = cls.generate_password()
             
+            # Convertir la liste de rôles en chaîne
+            role_string = ','.join(roles) if roles else User.Role.MEMBRE
+            
             # Créer l'utilisateur
             user = User.objects.create_user(
                 username=username,
@@ -395,7 +398,7 @@ class AccountsService:
                 first_name=first_name,
                 last_name=last_name,
                 password=password,
-                role=role,
+                role=role_string,
                 phone=phone,
                 created_by_team=True,
                 created_by=created_by,
@@ -456,12 +459,16 @@ class AccountsService:
             True si l'email a été envoyé, False sinon
         """
         try:
+            # Générer un token pour le changement de mot de passe direct
+            token = AuthenticationService.generate_password_change_token(user)
+            
             context = {
                 'user': user,
                 'username': username,
                 'password': password,
                 'created_by': created_by,
                 'login_url': f"{getattr(settings, 'SITE_URL', '')}/accounts/login/",
+                'password_change_url': f"{getattr(settings, 'SITE_URL', '')}/accounts/first-login-password-change/?token={token}",
                 'site_name': getattr(settings, 'SITE_NAME', 'EEBC'),
             }
             

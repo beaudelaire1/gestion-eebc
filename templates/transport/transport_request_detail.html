@@ -14,6 +14,9 @@
                     <a href="{% url 'transport:request_update' transport_request.pk %}" class="btn btn-outline-primary btn-sm">
                         <i class="bi bi-pencil me-1"></i>Modifier
                     </a>
+                    <a href="{% url 'transport:request_delete' transport_request.pk %}" class="btn btn-outline-danger btn-sm">
+                        <i class="bi bi-trash me-1"></i>Supprimer
+                    </a>
                     {% if user.role in 'admin,secretariat,responsable_groupe' %}
                     <a href="{% url 'transport:assign_driver' transport_request.pk %}" class="btn btn-outline-success btn-sm">
                         <i class="bi bi-person-plus me-1"></i>Assigner chauffeur

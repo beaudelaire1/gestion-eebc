@@ -1,0 +1,129 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ template.name }} - Modèles de Service{% endblock %}
+{% block page_title %}{{ template.name }}{% endblock %}
+{% block page_subtitle %}{{ template.get_service_type_display }} - {{ template.estimated_duration }} minutes{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between mb-4">
+    <div>
+        <a href="{% url 'worship:template_list' %}" class="btn btn-outline-secondary">
+            <i class="bi bi-arrow-left me-2"></i>Retour à la liste
+        </a>
+    </div>
+    <div>
+        <a href="{% url 'worship:template_item_create' template.pk %}" class="btn btn-success me-2">
+            <i class="bi bi-plus-lg me-2"></i>Ajouter un élément
+        </a>
+        <a href="{% url 'worship:template_update' template.pk %}" class="btn btn-primary me-2">
+            <i class="bi bi-pencil me-2"></i>Modifier
+        </a>
+        <a href="{% url 'worship:template_delete' template.pk %}" class="btn btn-outline-danger">
+            <i class="bi bi-trash me-2"></i>Supprimer
+        </a>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">Déroulement du service</h5>
+            </div>
+            <div class="card-body">
+                {% if items %}
+                <div class="table-responsive">
+                    <table class="table table-sm">
+                        <thead>
+                            <tr>
+                                <th>Ordre</th>
+                                <th>Type</th>
+                                <th>Titre</th>
+                                <th>Durée</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for item in items %}
+                            <tr>
+                                <td>{{ item.order }}</td>
+                                <td>
+                                    <span class="badge bg-secondary">{{ item.get_item_type_display }}</span>
+                                </td>
+                                <td>{{ item.title|default:"-" }}</td>
+                                <td>{{ item.duration_minutes }} min</td>
+                                <td>
+                                    <a href="{% url 'worship:template_item_update' item.pk %}" 
+                                       class="btn btn-sm btn-outline-primary">
+                                        <i class="bi bi-pencil"></i>
+                                    </a>
+                                    <a href="{% url 'worship:template_item_delete' item.pk %}" 
+                                       class="btn btn-sm btn-outline-danger">
+                                        <i class="bi bi-trash"></i>
+                                    </a>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                        <tfoot>
+                            <tr class="table-info">
+                                <td colspan="3"><strong>Durée totale</strong></td>
+                                <td><strong>{{ total_duration }} min</strong></td>
+                                <td></td>
+                            </tr>
+                        </tfoot>
+                    </table>
+                </div>
+                {% else %}
+                <div class="text-center py-4 text-muted">
+                    <i class="bi bi-list-ul fs-1 d-block mb-3"></i>
+                    Aucun élément dans ce modèle
+                    <br><br>
+                    <a href="{% url 'worship:template_item_create' template.pk %}" class="btn btn-success">
+                        Ajouter le premier élément
+                    </a>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-header">
+                <h6 class="mb-0">Informations</h6>
+            </div>
+            <div class="card-body">
+                <dl class="row">
+                    <dt class="col-sm-5">Type:</dt>
+                    <dd class="col-sm-7">{{ template.get_service_type_display }}</dd>
+                    
+                    <dt class="col-sm-5">Durée:</dt>
+                    <dd class="col-sm-7">{{ template.estimated_duration }} minutes</dd>
+                    
+                    <dt class="col-sm-5">Éléments:</dt>
+                    <dd class="col-sm-7">{{ items.count }}</dd>
+                    
+                    <dt class="col-sm-5">Statut:</dt>
+                    <dd class="col-sm-7">
+                        {% if template.is_active %}
+                        <span class="badge bg-success">Actif</span>
+                        {% else %}
+                        <span class="badge bg-secondary">Inactif</span>
+                        {% endif %}
+                    </dd>
+                    
+                    <dt class="col-sm-5">Créé:</dt>
+                    <dd class="col-sm-7">{{ template.created_at|date:"d/m/Y H:i" }}</dd>
+                </dl>
+                
+                {% if template.description %}
+                <hr>
+                <h6>Description</h6>
+                <p class="text-muted">{{ template.description }}</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

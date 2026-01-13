@@ -5,10 +5,21 @@
 {% block page_subtitle %}Gestion des classes par tranche d'âge{% endblock %}
 
 {% block content %}
-<div class="d-flex justify-content-end mb-4">
-    <a href="{% url 'admin:bibleclub_bibleclass_add' %}" class="btn btn-primary">
-        <i class="bi bi-plus-lg me-2"></i>Nouvelle classe
-    </a>
+<div class="d-flex justify-content-between mb-4">
+    <div>
+        {% if is_admin %}
+        <a href="{% url 'bibleclub:monitor_list' %}" class="btn btn-outline-primary me-2">
+            <i class="bi bi-people me-2"></i>Gérer les moniteurs
+        </a>
+        {% endif %}
+    </div>
+    <div>
+        {% if is_admin %}
+        <a href="{% url 'bibleclub:bible_class_create' %}" class="btn btn-primary">
+            <i class="bi bi-plus-lg me-2"></i>Nouvelle classe
+        </a>
+        {% endif %}
+    </div>
 </div>
 
 <div class="row g-4">
@@ -46,9 +57,14 @@
                 <a href="{% url 'bibleclub:class_detail' bible_class.pk %}" class="btn btn-outline-light btn-sm flex-grow-1">
                     <i class="bi bi-eye me-1"></i>Détails
                 </a>
-                <a href="{% url 'admin:bibleclub_bibleclass_change' bible_class.pk %}" class="btn btn-outline-light btn-sm">
+                {% if is_admin %}
+                <a href="{% url 'bibleclub:bible_class_update' bible_class.pk %}" class="btn btn-outline-light btn-sm">
                     <i class="bi bi-pencil"></i>
                 </a>
+                <a href="{% url 'bibleclub:bible_class_delete' bible_class.pk %}" class="btn btn-outline-danger btn-sm">
+                    <i class="bi bi-trash"></i>
+                </a>
+                {% endif %}
             </div>
         </div>
     </div>
@@ -59,7 +75,7 @@
                 <i class="bi bi-collection fs-1 d-block mb-3"></i>
                 Aucune classe configurée
                 <br><br>
-                <a href="{% url 'admin:bibleclub_bibleclass_add' %}" class="btn btn-primary">
+                <a href="{% url 'bibleclub:bible_class_create' %}" class="btn btn-primary">
                     Créer une classe
                 </a>
             </div>

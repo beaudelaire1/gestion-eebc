@@ -1,0 +1,125 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{{ title }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row justify-content-center">
+        <div class="col-md-8 col-lg-6">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-user-plus"></i> {{ title }}
+                    </h5>
+                </div>
+                <div class="card-body">
+                    {% if messages %}
+                        {% for message in messages %}
+                            <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                                {{ message }}
+                                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                            </div>
+                        {% endfor %}
+                    {% endif %}
+
+                    <form method="post">
+                        {% csrf_token %}
+                        
+                        {% if not monitor %}
+                            <div class="mb-3">
+                                <label for="user" class="form-label">Utilisateur *</label>
+                                <select class="form-select" id="user" name="user" required>
+                                    <option value="">Choisir un utilisateur...</option>
+                                    {% for user in available_users %}
+                                        <option value="{{ user.pk }}">
+                                            {{ user.get_full_name }} ({{ user.email }})
+                                        </option>
+                                    {% endfor %}
+                                </select>
+                                <div class="form-text">
+                                    Seuls les utilisateurs qui ne sont pas encore moniteurs sont affichés.
+                                </div>
+                            </div>
+                        {% else %}
+                            <div class="mb-3">
+                                <label class="form-label">Utilisateur</label>
+                                <div class="form-control-plaintext">
+                                    <strong>{{ monitor.user.get_full_name }}</strong>
+                                    <br><small class="text-muted">{{ monitor.user.email }}</small>
+                                </div>
+                            </div>
+                        {% endif %}
+
+                        <div class="mb-3">
+                            <label for="bible_class" class="form-label">Classe assignée</label>
+                            <select class="form-select" id="bible_class" name="bible_class">
+                                <option value="">Aucune classe (moniteur général)</option>
+                                {% for bible_class in bible_classes %}
+                                    <option value="{{ bible_class.pk }}" 
+                                            {% if monitor.bible_class_id == bible_class.pk %}selected{% endif %}>
+                                        {{ bible_class.name }}
+                                        {% if bible_class.age_group %} - {{ bible_class.age_group.name }}{% endif %}
+                                    </option>
+                                {% endfor %}
+                            </select>
+                            <div class="form-text">
+                                Optionnel - Classe dont ce moniteur sera responsable.
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="role" class="form-label">Rôle</label>
+                            <select class="form-select" id="role" name="role">
+                                {% for role_value, role_label in role_choices %}
+                                    <option value="{{ role_value }}" 
+                                            {% if monitor.role == role_value %}selected{% endif %}>
+                                        {{ role_label }}
+                                    </option>
+                                {% endfor %}
+                            </select>
+                            <div class="form-text">
+                                Définit le niveau de responsabilité du moniteur.
+                            </div>
+                        </div>
+
+                        {% if monitor %}
+                            <div class="mb-3">
+                                <div class="form-check">
+                                    <input class="form-check-input" 
+                                           type="checkbox" 
+                                           id="is_active" 
+                                           name="is_active"
+                                           {% if monitor.is_active %}checked{% endif %}>
+                                    <label class="form-check-label" for="is_active">
+                                        Moniteur actif
+                                    </label>
+                                </div>
+                                <div class="form-text">Décochez pour désactiver temporairement ce moniteur.</div>
+                            </div>
+                        {% endif %}
+
+                        <div class="d-flex justify-content-between">
+                            <a href="{% url 'bibleclub:monitor_list' %}" class="btn btn-secondary">
+                                <i class="fas fa-arrow-left"></i> Annuler
+                            </a>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-save"></i> {{ submit_text }}
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            {% if not available_users and not monitor %}
+                <div class="alert alert-warning mt-3">
+                    <i class="fas fa-exclamation-triangle"></i>
+                    <strong>Aucun utilisateur disponible</strong><br>
+                    Tous les utilisateurs actifs sont déjà moniteurs. 
+                    Vous devez d'abord créer de nouveaux utilisateurs ou désactiver des moniteurs existants.
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

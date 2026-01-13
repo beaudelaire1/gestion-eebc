@@ -1,0 +1,67 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ title }} - Modèles de Service{% endblock %}
+{% block page_title %}{{ title }}{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-body">
+                <form method="post">
+                    {% csrf_token %}
+                    
+                    <div class="mb-3">
+                        <label for="item_type" class="form-label">Type d'élément *</label>
+                        <select class="form-select" id="item_type" name="item_type" required>
+                            <option value="">Sélectionner un type</option>
+                            {% for value, label in item_types %}
+                            <option value="{{ value }}" {% if item.item_type == value %}selected{% endif %}>
+                                {{ label }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="title" class="form-label">Titre/Description</label>
+                        <input type="text" class="form-control" id="title" name="title" 
+                               value="{{ item.title|default:'' }}" 
+                               placeholder="Ex: Chant d'ouverture, Prière d'intercession...">
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="duration_minutes" class="form-label">Durée (minutes) *</label>
+                                <input type="number" class="form-control" id="duration_minutes" name="duration_minutes" 
+                                       value="{{ item.duration_minutes|default:5 }}" min="1" max="120" required>
+                            </div>
+                        </div>
+                        {% if item %}
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="order" class="form-label">Ordre</label>
+                                <input type="number" class="form-control" id="order" name="order" 
+                                       value="{{ item.order }}" min="1">
+                            </div>
+                        </div>
+                        {% endif %}
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="notes" class="form-label">Notes</label>
+                        <textarea class="form-control" id="notes" name="notes" rows="3" 
+                                  placeholder="Instructions techniques, ressources nécessaires...">{{ item.notes|default:'' }}</textarea>
+                    </div>
+                    
+                    <div class="d-flex gap-2">
+                        <button type="submit" class="btn btn-primary">{{ submit_text }}</button>
+                        <a href="{% url 'worship:template_detail' template.pk %}" class="btn btn-secondary">Annuler</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

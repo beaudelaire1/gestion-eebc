@@ -2,7 +2,13 @@
 
 {% block title %}Logs emails{% endblock %}
 {% block page_title %}Historique des emails{% endblock %}
-{% block page_subtitle %}Suivi des emails envoyés{% endblock %}
+{% block page_subtitle %}Suivi des emails envoyés ({{ total_count }} au total){% endblock %}
+
+{% block page_actions %}
+<a href="{% url 'communication:email_logs_clear_old' %}" class="btn btn-outline-warning">
+    <i class="bi bi-trash me-1"></i> Nettoyer les anciens logs
+</a>
+{% endblock %}
 
 {% block content %}
 <div class="card border-0 shadow-sm">
@@ -15,6 +21,7 @@
                         <th>Destinataire</th>
                         <th>Sujet</th>
                         <th>Statut</th>
+                        <th>Actions</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -33,12 +40,23 @@
                             <span class="badge bg-warning">En attente</span>
                             {% elif log.status == 'failed' %}
                             <span class="badge bg-danger" title="{{ log.error_message }}">Échec</span>
+                            {% elif log.status == 'opened' %}
+                            <span class="badge bg-info">Ouvert</span>
+                            {% elif log.status == 'clicked' %}
+                            <span class="badge bg-primary">Cliqué</span>
                             {% endif %}
+                        </td>
+                        <td>
+                            <button class="btn btn-sm btn-outline-danger" 
+                                    onclick="deleteEmailLog({{ log.pk }})"
+                                    title="Supprimer ce log">
+                                <i class="bi bi-trash"></i>
+                            </button>
                         </td>
                     </tr>
                     {% empty %}
                     <tr>
-                        <td colspan="4" class="text-center py-4 text-muted">
+                        <td colspan="5" class="text-center py-4 text-muted">
                             Aucun email envoyé
                         </td>
                     </tr>
@@ -48,4 +66,26 @@
         </div>
     </div>
 </div>
+
+<script>
+function deleteEmailLog(logId) {
+    if (confirm('Êtes-vous sûr de vouloir supprimer ce log d\'email ?')) {
+        fetch(`/app/communication/logs/email/${logId}/delete/`, {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+                'Content-Type': 'application/json',
+            },
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                location.reload();
+            } else {
+                alert('Erreur lors de la suppression');
+            }
+        });
+    }
+}
+</script>
 {% endblock %}

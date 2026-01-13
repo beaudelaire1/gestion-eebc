@@ -132,7 +132,7 @@ def create_user_view(request):
                 first_name=form.cleaned_data['first_name'],
                 last_name=form.cleaned_data['last_name'],
                 email=form.cleaned_data['email'],
-                role=form.cleaned_data['role'],
+                roles=form.cleaned_data['roles'],  # Maintenant une liste
                 phone=form.cleaned_data.get('phone', ''),
                 created_by=request.user
             )
@@ -239,3 +239,173 @@ def profile_view(request):
         return redirect('accounts:profile')
     
     return render(request, 'accounts/profile.html')
+
+
+# =============================================================================
+# CRUD COMPLET POUR LES UTILISATEURS - OPÉRATIONS MANQUANTES
+# =============================================================================
+
+@login_required
+def user_detail_view(request, user_id):
+    """Détail d'un utilisateur."""
+    if not (request.user.is_admin or request.user.role in ['admin', 'secretariat']):
+        messages.error(request, 'Vous n\'avez pas les permissions pour voir cette page.')
+        return redirect('dashboard:home')
+    
+    user = get_object_or_404(User, id=user_id)
+    
+    # Statistiques de l'utilisateur
+    stats = {
+        'last_login': user.last_login,
+        'date_joined': user.date_joined,
+        'is_active': user.is_active,
+        'must_change_password': user.must_change_password,
+        'roles_count': len(user.roles) if user.roles else 0,
+    }
+    
+    context = {
+        'user_detail': user,  # Renommé pour éviter conflit avec request.user
+        'stats': stats,
+    }
+    
+    return render(request, 'accounts/user_detail.html', context)
+
+
+@login_required
+def user_update_view(request, user_id):
+    """Modifier un utilisateur."""
+    if not (request.user.is_admin or request.user.role in ['admin', 'secretariat']):
+        messages.error(request, 'Vous n\'avez pas les permissions pour voir cette page.')
+        return redirect('dashboard:home')
+    
+    user = get_object_or_404(User, id=user_id)
+    
+    if request.method == 'POST':
+        # Récupérer les données du formulaire
+        first_name = request.POST.get('first_name', '').strip()
+        last_name = request.POST.get('last_name', '').strip()
+        email = request.POST.get('email', '').strip()
+        phone = request.POST.get('phone', '').strip()
+        roles = request.POST.getlist('roles')
+        is_active = 'is_active' in request.POST
+        
+        # Validation
+        if not first_name or not last_name or not email:
+            messages.error(request, 'Les champs prénom, nom et email sont requis.')
+        elif User.objects.filter(email=email).exclude(id=user_id).exists():
+            messages.error(request, 'Un utilisateur avec cet email existe déjà.')
+        else:
+            # Mettre à jour l'utilisateur
+            user.first_name = first_name
+            user.last_name = last_name
+            user.email = email
+            user.phone = phone
+            user.roles = roles
+            user.is_active = is_active
+            user.save()
+            
+            messages.success(request, f'Utilisateur {user.get_full_name()} modifié avec succès.')
+            return redirect('accounts:user_detail', user_id=user.id)
+    
+    # Choix de rôles disponibles
+    role_choices = [
+        ('admin', 'Administrateur'),
+        ('secretariat', 'Secrétariat'),
+        ('pasteur', 'Pasteur'),
+        ('ancien', 'Ancien'),
+        ('diacre', 'Diacre'),
+        ('responsable_groupe', 'Responsable de groupe'),
+        ('finance', 'Finance'),
+        ('encadrant', 'Encadrant'),
+    ]
+    
+    context = {
+        'user_detail': user,
+        'role_choices': role_choices,
+        'title': f'Modifier {user.get_full_name()}',
+        'submit_text': 'Enregistrer les modifications'
+    }
+    
+    return render(request, 'accounts/user_form.html', context)
+
+
+@login_required
+def user_delete_view(request, user_id):
+    """Supprimer un utilisateur (désactivation)."""
+    if not (request.user.is_admin or request.user.role in ['admin', 'secretariat']):
+        messages.error(request, 'Vous n\'avez pas les permissions pour voir cette page.')
+        return redirect('dashboard:home')
+    
+    user = get_object_or_404(User, id=user_id)
+    
+    # Empêcher l'auto-suppression
+    if user.id == request.user.id:
+        messages.error(request, 'Vous ne pouvez pas supprimer votre propre compte.')
+        return redirect('accounts:user_list')
+    
+    # Empêcher la suppression du dernier admin
+    if user.is_admin:
+        admin_count = User.objects.filter(is_admin=True, is_active=True).count()
+        if admin_count <= 1:
+            messages.error(request, 'Impossible de supprimer le dernier administrateur actif.')
+            return redirect('accounts:user_detail', user_id=user_id)
+    
+    if request.method == 'POST':
+        action = request.POST.get('action')
+        user_name = user.get_full_name()
+        
+        if action == 'deactivate':
+            # Désactivation (soft delete)
+            user.is_active = False
+            user.save()
+            messages.success(request, f'Utilisateur {user_name} désactivé avec succès.')
+        elif action == 'delete':
+            # Suppression définitive (à utiliser avec précaution)
+            user.delete()
+            messages.success(request, f'Utilisateur {user_name} supprimé définitivement.')
+        
+        return redirect('accounts:user_list')
+    
+    # Vérifier les dépendances
+    dependencies = []
+    
+    # Vérifier si l'utilisateur a créé des membres
+    if hasattr(user, 'created_members'):
+        created_members_count = user.created_members.count()
+        if created_members_count > 0:
+            dependencies.append(f'{created_members_count} membre(s) créé(s)')
+    
+    # Vérifier si l'utilisateur est responsable de groupes
+    if hasattr(user, 'led_groups'):
+        led_groups_count = user.led_groups.filter(is_active=True).count()
+        if led_groups_count > 0:
+            dependencies.append(f'{led_groups_count} groupe(s) dirigé(s)')
+    
+    context = {
+        'user_detail': user,
+        'dependencies': dependencies,
+        'is_last_admin': user.is_admin and User.objects.filter(is_admin=True, is_active=True).count() <= 1,
+    }
+    
+    return render(request, 'accounts/user_delete_confirm.html', context)
+
+
+@login_required
+def user_activate_view(request, user_id):
+    """Réactiver un utilisateur désactivé."""
+    if not (request.user.is_admin or request.user.role in ['admin', 'secretariat']):
+        return JsonResponse({'success': False, 'error': 'Permissions insuffisantes'})
+    
+    user = get_object_or_404(User, id=user_id)
+    
+    if request.method == 'POST':
+        user.is_active = True
+        user.save()
+        
+        if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+            return JsonResponse({'success': True, 'message': f'Utilisateur {user.get_full_name()} réactivé'})
+        else:
+            messages.success(request, f'Utilisateur {user.get_full_name()} réactivé avec succès.')
+            return redirect('accounts:user_detail', user_id=user_id)
+    
+    return JsonResponse({'success': False, 'error': 'Méthode non autorisée'})

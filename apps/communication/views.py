@@ -94,7 +94,8 @@ def announcements_list(request):
     
     # Toutes les annonces pour les admins
     all_announcements = None
-    if request.user.is_staff:
+    # Utiliser le système de rôles du projet
+    if request.user.is_admin or request.user.role in ['admin', 'secretariat']:
         all_announcements = Announcement.objects.all().order_by('-created_at')
     
     context = {
@@ -108,7 +109,8 @@ def announcements_list(request):
 @login_required
 def announcement_create(request):
     """Créer une annonce."""
-    if not request.user.is_staff:
+    # Utiliser le système de rôles du projet au lieu de is_staff
+    if not (request.user.is_admin or request.user.role in ['admin', 'secretariat']):
         messages.error(request, "Vous n'avez pas la permission de créer des annonces.")
         return redirect('communication:announcements')
     
@@ -116,21 +118,37 @@ def announcement_create(request):
         title = request.POST.get('title')
         content = request.POST.get('content')
         is_pinned = 'is_pinned' in request.POST
-        start_date = request.POST.get('start_date') or None
-        end_date = request.POST.get('end_date') or None
+        start_date = request.POST.get('start_date')
+        end_date = request.POST.get('end_date')
         
-        announcement = Announcement.objects.create(
-            title=title,
-            content=content,
-            is_pinned=is_pinned,
-            start_date=start_date,
-            end_date=end_date,
-            author=request.user,
-            is_active=True
-        )
+        # Préparer les données pour la création
+        announcement_data = {
+            'title': title,
+            'content': content,
+            'is_pinned': is_pinned,
+            'created_by': request.user,
+            'is_active': True
+        }
         
-        messages.success(request, f"Annonce '{title}' créée avec succès.")
-        return redirect('communication:announcements')
+        # Gérer les dates optionnelles
+        if start_date:
+            from django.utils.dateparse import parse_date
+            parsed_start = parse_date(start_date)
+            if parsed_start:
+                announcement_data['start_date'] = parsed_start
+        
+        if end_date:
+            from django.utils.dateparse import parse_date
+            parsed_end = parse_date(end_date)
+            if parsed_end:
+                announcement_data['end_date'] = parsed_end
+        
+        try:
+            announcement = Announcement.objects.create(**announcement_data)
+            messages.success(request, f"Annonce '{title}' créée avec succès.")
+            return redirect('communication:announcements')
+        except Exception as e:
+            messages.error(request, f"Erreur lors de la création : {e}")
     
     return render(request, 'communication/announcement_create.html')
 
@@ -140,6 +158,75 @@ def announcement_detail(request, pk):
     """Détail d'une annonce."""
     announcement = get_object_or_404(Announcement, pk=pk)
     return render(request, 'communication/announcement_detail.html', {'announcement': announcement})
+
+
+@login_required
+def announcement_edit(request, pk):
+    """Modifier une annonce."""
+    # Utiliser le système de rôles du projet
+    if not (request.user.is_admin or request.user.role in ['admin', 'secretariat']):
+        messages.error(request, "Vous n'avez pas la permission de modifier des annonces.")
+        return redirect('communication:announcements')
+    
+    announcement = get_object_or_404(Announcement, pk=pk)
+    
+    if request.method == 'POST':
+        announcement.title = request.POST.get('title')
+        announcement.content = request.POST.get('content')
+        announcement.is_pinned = 'is_pinned' in request.POST
+        announcement.is_active = 'is_active' in request.POST
+        
+        start_date = request.POST.get('start_date')
+        end_date = request.POST.get('end_date')
+        
+        if start_date:
+            announcement.start_date = start_date
+        if end_date:
+            announcement.end_date = end_date
+        
+        announcement.save()
+        
+        messages.success(request, f"Annonce '{announcement.title}' modifiée avec succès.")
+        return redirect('communication:announcement_detail', pk=announcement.pk)
+    
+    return render(request, 'communication/announcement_edit.html', {'announcement': announcement})
+
+
+@login_required
+def announcement_delete(request, pk):
+    """Supprimer une annonce."""
+    # Utiliser le système de rôles du projet
+    if not (request.user.is_admin or request.user.role in ['admin', 'secretariat']):
+        messages.error(request, "Vous n'avez pas la permission de supprimer des annonces.")
+        return redirect('communication:announcements')
+    
+    announcement = get_object_or_404(Announcement, pk=pk)
+    
+    if request.method == 'POST':
+        title = announcement.title
+        announcement.delete()
+        messages.success(request, f"Annonce '{title}' supprimée avec succès.")
+        return redirect('communication:announcements')
+    
+    return render(request, 'communication/announcement_delete.html', {'announcement': announcement})
+
+
+@login_required
+def announcement_toggle_active(request, pk):
+    """Activer/désactiver une annonce."""
+    if not request.user.is_staff:
+        return JsonResponse({'success': False, 'error': 'Permission refusée'})
+    
+    announcement = get_object_or_404(Announcement, pk=pk)
+    announcement.is_active = not announcement.is_active
+    announcement.save()
+    
+    status = "activée" if announcement.is_active else "désactivée"
+    messages.success(request, f"Annonce '{announcement.title}' {status}.")
+    
+    if request.headers.get('HX-Request'):
+        return JsonResponse({'success': True, 'is_active': announcement.is_active})
+    return redirect('communication:announcements')
 
 
 @login_required
@@ -158,10 +245,56 @@ def email_logs(request):
     
     context = {
         'logs': logs[:200],
-        'statuses': EmailLog.Status.choices if hasattr(EmailLog, 'Status') else [],
+        'statuses': EmailLog.Status.choices,
+        'total_count': EmailLog.objects.count(),
     }
     
     return render(request, 'communication/email_logs.html', context)
+
+
+@login_required
+def email_log_delete(request, pk):
+    """Supprimer un log d'email."""
+    if not request.user.is_staff:
+        return JsonResponse({'success': False, 'error': 'Permission refusée'})
+    
+    log = get_object_or_404(EmailLog, pk=pk)
+    
+    if request.method == 'POST':
+        log.delete()
+        messages.success(request, "Log d'email supprimé avec succès.")
+        
+        if request.headers.get('HX-Request'):
+            return JsonResponse({'success': True})
+        return redirect('communication:email_logs')
+    
+    return render(request, 'communication/email_log_delete.html', {'log': log})
+
+
+@login_required
+def email_logs_clear_old(request):
+    """Supprimer les anciens logs d'emails (plus de 30 jours)."""
+    if not request.user.is_staff:
+        return JsonResponse({'success': False, 'error': 'Permission refusée'})
+    
+    if request.method == 'POST':
+        from datetime import timedelta
+        cutoff_date = timezone.now() - timedelta(days=30)
+        deleted_count = EmailLog.objects.filter(created_at__lt=cutoff_date).count()
+        EmailLog.objects.filter(created_at__lt=cutoff_date).delete()
+        
+        messages.success(request, f"{deleted_count} anciens logs d'emails supprimés.")
+        
+        if request.headers.get('HX-Request'):
+            return JsonResponse({'success': True, 'deleted_count': deleted_count})
+        return redirect('communication:email_logs')
+    
+    # Compter les logs anciens
+    from datetime import timedelta
+    cutoff_date = timezone.now() - timedelta(days=30)
+    old_logs_count = EmailLog.objects.filter(created_at__lt=cutoff_date).count()
+    
+    return render(request, 'communication/email_logs_clear.html', {'old_logs_count': old_logs_count})
 
 
 @login_required
@@ -175,9 +308,29 @@ def sms_logs(request):
     
     context = {
         'logs': logs[:200],
+        'total_count': SMSLog.objects.count(),
     }
     
     return render(request, 'communication/sms_logs.html', context)
+
+
+@login_required
+def sms_log_delete(request, pk):
+    """Supprimer un log de SMS."""
+    if not request.user.is_staff:
+        return JsonResponse({'success': False, 'error': 'Permission refusée'})
+    
+    log = get_object_or_404(SMSLog, pk=pk)
+    
+    if request.method == 'POST':
+        log.delete()
+        messages.success(request, "Log de SMS supprimé avec succès.")
+        
+        if request.headers.get('HX-Request'):
+            return JsonResponse({'success': True})
+        return redirect('communication:sms_logs')
+    
+    return render(request, 'communication/sms_log_delete.html', {'log': log})
 
 
 def send_notification(user, title, message, notification_type='info', link=''):

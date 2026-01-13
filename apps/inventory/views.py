@@ -194,3 +194,177 @@ def equipment_delete(request, pk):
     }
     return render(request, 'inventory/equipment_delete_confirm.html', context)
 
+
+# =============================================================================
+# CRUD POUR LES CATÉGORIES D'ÉQUIPEMENT
+# =============================================================================
+
+@login_required
+@role_required('admin', 'secretariat')
+def category_list(request):
+    """Liste des catégories d'équipement."""
+    categories = Category.objects.all().order_by('name')
+    
+    # Statistiques d'utilisation
+    for category in categories:
+        category.equipment_count = category.equipment_set.filter(is_deleted=False).count()
+        category.active_equipment_count = category.equipment_set.filter(
+            is_deleted=False,
+            condition__in=[Equipment.Condition.EXCELLENT, Equipment.Condition.GOOD]
+        ).count()
+    
+    context = {
+        'categories': categories,
+        'total_categories': categories.count(),
+    }
+    
+    return render(request, 'inventory/category_list.html', context)
+
+
+@login_required
+@role_required('admin', 'secretariat')
+def category_create(request):
+    """Créer une nouvelle catégorie d'équipement."""
+    if request.method == 'POST':
+        name = request.POST.get('name', '').strip()
+        description = request.POST.get('description', '').strip()
+        
+        if not name:
+            messages.error(request, 'Le nom de la catégorie est requis.')
+        else:
+            # Vérifier l'unicité
+            if Category.objects.filter(name__iexact=name).exists():
+                messages.error(request, f'Une catégorie "{name}" existe déjà.')
+            else:
+                category = Category.objects.create(
+                    name=name,
+                    description=description
+                )
+                
+                # Logger la création
+                AuditLog.log_from_request(
+                    request=request,
+                    action=AuditLog.Action.CREATE,
+                    model_name='Category',
+                    object_id=category.pk,
+                    object_repr=str(category),
+                    extra_data={'category_name': category.name}
+                )
+                
+                messages.success(request, f'Catégorie "{category.name}" créée avec succès.')
+                return redirect('inventory:category_list')
+    
+    context = {
+        'title': 'Nouvelle catégorie',
+        'submit_text': 'Créer la catégorie'
+    }
+    return render(request, 'inventory/category_form.html', context)
+
+
+@login_required
+@role_required('admin', 'secretariat')
+def category_update(request, pk):
+    """Modifier une catégorie d'équipement."""
+    category = get_object_or_404(Category, pk=pk)
+    
+    if request.method == 'POST':
+        name = request.POST.get('name', '').strip()
+        description = request.POST.get('description', '').strip()
+        
+        if not name:
+            messages.error(request, 'Le nom de la catégorie est requis.')
+        else:
+            # Vérifier l'unicité (exclure la catégorie actuelle)
+            if Category.objects.filter(name__iexact=name).exclude(pk=pk).exists():
+                messages.error(request, f'Une catégorie "{name}" existe déjà.')
+            else:
+                old_name = category.name
+                category.name = name
+                category.description = description
+                category.save()
+                
+                # Logger la modification
+                AuditLog.log_from_request(
+                    request=request,
+                    action=AuditLog.Action.UPDATE,
+                    model_name='Category',
+                    object_id=category.pk,
+                    object_repr=str(category),
+                    changes={
+                        'name': {'old': old_name, 'new': name}
+                    } if old_name != name else {},
+                    extra_data={'category_name': category.name}
+                )
+                
+                messages.success(request, f'Catégorie "{category.name}" modifiée avec succès.')
+                return redirect('inventory:category_list')
+    
+    context = {
+        'category': category,
+        'title': f'Modifier {category.name}',
+        'submit_text': 'Enregistrer les modifications'
+    }
+    return render(request, 'inventory/category_form.html', context)
+
+
+@login_required
+@role_required('admin', 'secretariat')
+def category_delete(request, pk):
+    """Supprimer une catégorie d'équipement."""
+    category = get_object_or_404(Category, pk=pk)
+    
+    # Vérifier s'il y a des équipements liés
+    equipment_count = category.equipment_set.filter(is_deleted=False).count()
+    
+    if request.method == 'POST':
+        if equipment_count > 0:
+            # Demander confirmation pour la réassignation
+            reassign_to_id = request.POST.get('reassign_to')
+            if reassign_to_id:
+                try:
+                    new_category = Category.objects.get(pk=reassign_to_id)
+                    category.equipment_set.filter(is_deleted=False).update(category=new_category)
+                    messages.success(
+                        request, 
+                        f'{equipment_count} équipement(s) réassigné(s) à "{new_category.name}".'
+                    )
+                except Category.DoesNotExist:
+                    messages.error(request, 'Catégorie de réassignation invalide.')
+                    return redirect('inventory:category_delete', pk=pk)
+            else:
+                # Supprimer la catégorie des équipements (mettre à null)
+                category.equipment_set.filter(is_deleted=False).update(category=None)
+                messages.warning(
+                    request, 
+                    f'{equipment_count} équipement(s) n\'ont plus de catégorie.'
+                )
+        
+        category_name = category.name
+        
+        # Logger la suppression
+        AuditLog.log_from_request(
+            request=request,
+            action=AuditLog.Action.DELETE,
+            model_name='Category',
+            object_id=category.pk,
+            object_repr=category_name,
+            extra_data={
+                'category_name': category_name,
+                'equipment_count': equipment_count
+            }
+        )
+        
+        category.delete()
+        messages.success(request, f'Catégorie "{category_name}" supprimée avec succès.')
+        return redirect('inventory:category_list')
+    
+    # Autres catégories pour réassignation
+    other_categories = Category.objects.exclude(pk=pk)
+    
+    context = {
+        'category': category,
+        'equipment_count': equipment_count,
+        'other_categories': other_categories,
+    }
+    return render(request, 'inventory/category_delete_confirm.html', context)
+

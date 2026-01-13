@@ -4,6 +4,7 @@ from django.contrib import messages
 from django.core.mail import send_mail
 from django.conf import settings
 from django.template.loader import render_to_string
+from datetime import date
 from apps.core.permissions import role_required
 from .models import DriverProfile, TransportRequest
 from .forms import DriverProfileForm, TransportRequestForm, DriverAssignmentForm
@@ -338,4 +339,127 @@ L'équipe transport de l'EEBC
     except Exception as e:
         print(f"Erreur lors de l'envoi de l'email pour la demande {transport_request.pk}: {str(e)}")
         raise e
+
+
+# =============================================================================
+# OPÉRATIONS DE SUPPRESSION MANQUANTES - TRANSPORT
+# =============================================================================
+
+@login_required
+@role_required('admin', 'secretariat', 'responsable_groupe')
+def driver_delete(request, pk):
+    """Supprimer un profil chauffeur."""
+    driver = get_object_or_404(DriverProfile, pk=pk)
+    
+    # Vérifier s'il y a des demandes de transport liées
+    active_requests = driver.transport_requests.filter(
+        status__in=['pending', 'confirmed'],
+        event_date__gte=date.today()
+    )
+    
+    if request.method == 'POST':
+        driver_name = driver.user.get_full_name()
+        
+        if active_requests.exists():
+            # Demander confirmation pour la réassignation
+            action = request.POST.get('action')
+            if action == 'reassign':
+                # Réassigner les demandes à un autre chauffeur
+                new_driver_id = request.POST.get('new_driver')
+                if new_driver_id:
+                    try:
+                        new_driver = DriverProfile.objects.get(pk=new_driver_id)
+                        active_requests.update(driver=new_driver)
+                        messages.success(
+                            request, 
+                            f'{active_requests.count()} demande(s) réassignée(s) à {new_driver.user.get_full_name()}.'
+                        )
+                    except DriverProfile.DoesNotExist:
+                        messages.error(request, 'Chauffeur de réassignation invalide.')
+                        return redirect('transport:driver_delete', pk=pk)
+            elif action == 'unassign':
+                # Désassigner les demandes (remettre à null)
+                active_requests.update(driver=None, status='pending')
+                messages.warning(
+                    request, 
+                    f'{active_requests.count()} demande(s) remise(s) en attente d\'assignation.'
+                )
+        
+        driver.delete()
+        messages.success(request, f'Chauffeur "{driver_name}" supprimé avec succès.')
+        return redirect('transport:drivers')
+    
+    # Autres chauffeurs pour réassignation
+    other_drivers = DriverProfile.objects.exclude(pk=pk).filter(is_available=True)
+    
+    context = {
+        'driver': driver,
+        'active_requests': active_requests,
+        'active_requests_count': active_requests.count(),
+        'other_drivers': other_drivers,
+    }
+    return render(request, 'transport/driver_delete_confirm.html', context)
+
+
+@login_required
+@role_required('admin', 'secretariat', 'responsable_groupe')
+def transport_request_delete(request, pk):
+    """Supprimer une demande de transport."""
+    transport_request = get_object_or_404(TransportRequest, pk=pk)
+    
+    if request.method == 'POST':
+        requester_name = transport_request.requester_name
+        event_date = transport_request.event_date
+        
+        # Envoyer un email d'annulation si la demande était confirmée
+        if transport_request.status == 'confirmed' and transport_request.requester_email:
+            try:
+                send_cancellation_email(transport_request)
+                messages.info(request, 'Email d\'annulation envoyé au demandeur.')
+            except Exception as e:
+                messages.warning(request, f'Demande supprimée mais erreur lors de l\'envoi de l\'email: {e}')
+        
+        transport_request.delete()
+        messages.success(request, f'Demande de transport de {requester_name} pour le {event_date.strftime("%d/%m/%Y")} supprimée.')
+        return redirect('transport:requests')
+    
+    context = {
+        'transport_request': transport_request,
+    }
+    return render(request, 'transport/transport_request_delete_confirm.html', context)
+
+
+def send_cancellation_email(transport_request):
+    """Envoyer un email d'annulation au demandeur."""
+    subject = f'Annulation de transport - {transport_request.event_date.strftime("%d/%m/%Y")}'
+    
+    context = {
+        'transport_request': transport_request,
+    }
+    
+    # Générer le contenu HTML
+    html_message = render_to_string('transport/emails/transport_cancellation.html', context)
+    
+    # Version texte simple
+    text_message = f"""
+Bonjour {transport_request.requester_name},
+
+Nous vous informons que votre demande de transport pour le {transport_request.event_date.strftime('%d/%m/%Y')} à {transport_request.event_time.strftime('%H:%M')} a été annulée.
+
+Si vous avez des questions, n'hésitez pas à nous contacter.
+
+Cordialement,
+L'équipe transport de l'EEBC
+    """.strip()
+    
+    from_email = getattr(settings, 'DEFAULT_FROM_EMAIL', 'noreply@eebc.org')
+    
+    send_mail(
+        subject=subject,
+        message=text_message,
+        from_email=from_email,
+        recipient_list=[transport_request.requester_email],
+        html_message=html_message,
+        fail_silently=False
+    )
 

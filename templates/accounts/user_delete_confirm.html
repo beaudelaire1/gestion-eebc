@@ -1,0 +1,107 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Supprimer {{ user_detail.get_full_name }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row justify-content-center">
+        <div class="col-md-8 col-lg-6">
+            <div class="card border-danger">
+                <div class="card-header bg-danger text-white">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-exclamation-triangle"></i> Confirmer la suppression
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="alert alert-warning">
+                        <i class="fas fa-warning"></i>
+                        <strong>Attention !</strong> Cette action aura des conséquences importantes.
+                    </div>
+
+                    <p>Que voulez-vous faire avec l'utilisateur <strong>"{{ user_detail.get_full_name }}"</strong> ?</p>
+
+                    <div class="card mb-3">
+                        <div class="card-body">
+                            <h6 class="card-title">{{ user_detail.get_full_name }}</h6>
+                            <p class="card-text">
+                                <i class="fas fa-envelope"></i> {{ user_detail.email }}<br>
+                                {% if user_detail.phone %}
+                                    <i class="fas fa-phone"></i> {{ user_detail.phone }}<br>
+                                {% endif %}
+                                <i class="fas fa-user-tag"></i> 
+                                {% if user_detail.roles %}
+                                    {% for role in user_detail.roles %}{{ role|capfirst }}{% if not forloop.last %}, {% endif %}{% endfor %}
+                                {% else %}
+                                    Aucun rôle
+                                {% endif %}
+                            </p>
+                        </div>
+                    </div>
+
+                    {% if dependencies %}
+                        <div class="alert alert-info">
+                            <i class="fas fa-info-circle"></i>
+                            <strong>Dépendances détectées :</strong>
+                            <ul class="mb-0 mt-2">
+                                {% for dependency in dependencies %}
+                                    <li>{{ dependency }}</li>
+                                {% endfor %}
+                            </ul>
+                        </div>
+                    {% endif %}
+
+                    {% if is_last_admin %}
+                        <div class="alert alert-danger">
+                            <i class="fas fa-ban"></i>
+                            <strong>Impossible !</strong> Cet utilisateur est le dernier administrateur actif. 
+                            Vous devez d'abord créer un autre administrateur.
+                        </div>
+                    {% else %}
+                        <form method="post" id="deleteForm">
+                            {% csrf_token %}
+                            
+                            <div class="mb-3">
+                                <label class="form-label">Choisissez une action :</label>
+                                
+                                <div class="form-check mb-2">
+                                    <input class="form-check-input" type="radio" name="action" id="deactivate" value="deactivate" checked>
+                                    <label class="form-check-label" for="deactivate">
+                                        <strong>Désactiver le compte</strong> (recommandé)
+                                    </label>
+                                    <div class="form-text ms-4">
+                                        L'utilisateur ne pourra plus se connecter mais ses données seront conservées.
+                                        Le compte peut être réactivé plus tard.
+                                    </div>
+                                </div>
+                                
+                                <div class="form-check">
+                                    <input class="form-check-input" type="radio" name="action" id="delete" value="delete">
+                                    <label class="form-check-label" for="delete">
+                                        <strong class="text-danger">Supprimer définitivement</strong>
+                                    </label>
+                                    <div class="form-text ms-4 text-danger">
+                                        <strong>Irréversible !</strong> Toutes les données de l'utilisateur seront perdues.
+                                        Les références à cet utilisateur dans d'autres modules seront cassées.
+                                    </div>
+                                </div>
+                            </div>
+                        </form>
+                    {% endif %}
+
+                    <div class="d-flex justify-content-between">
+                        <a href="{% url 'accounts:user_detail' user_detail.id %}" class="btn btn-secondary">
+                            <i class="fas fa-arrow-left"></i> Annuler
+                        </a>
+                        {% if not is_last_admin %}
+                            <button type="submit" form="deleteForm" class="btn btn-danger">
+                                <i class="fas fa-trash"></i> Confirmer l'action
+                            </button>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

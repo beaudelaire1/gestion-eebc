@@ -87,6 +87,9 @@
                     <a href="{% url 'transport:driver_update' driver.pk %}" class="btn btn-outline-light btn-sm">
                         <i class="bi bi-pencil me-1"></i>Modifier
                     </a>
+                    <a href="{% url 'transport:driver_delete' driver.pk %}" class="btn btn-outline-danger btn-sm">
+                        <i class="bi bi-trash me-1"></i>Supprimer
+                    </a>
                 </div>
             </div>
         </div>
