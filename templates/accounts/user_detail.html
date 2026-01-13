@@ -1,0 +1,254 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{{ user_detail.get_full_name }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <div>
+                    <h1 class="h3 mb-0">{{ user_detail.get_full_name }}</h1>
+                    <p class="text-muted">Détail de l'utilisateur</p>
+                </div>
+                <div class="btn-group" role="group">
+                    <a href="{% url 'accounts:user_update' user_detail.id %}" class="btn btn-primary">
+                        <i class="fas fa-edit"></i> Modifier
+                    </a>
+                    {% if not user_detail.is_active %}
+                        <button type="button" class="btn btn-success" onclick="activateUser({{ user_detail.id }})">
+                            <i class="fas fa-check"></i> Réactiver
+                        </button>
+                    {% endif %}
+                    <a href="{% url 'accounts:user_delete' user_detail.id %}" class="btn btn-danger">
+                        <i class="fas fa-trash"></i> Supprimer
+                    </a>
+                </div>
+            </div>
+
+            {% if messages %}
+                {% for message in messages %}
+                    <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                        {{ message }}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                    </div>
+                {% endfor %}
+            {% endif %}
+
+            <div class="row">
+                <div class="col-md-8">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5 class="card-title mb-0">
+                                <i class="fas fa-user"></i> Informations personnelles
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label class="form-label text-muted">Prénom</label>
+                                        <p class="fw-bold">{{ user_detail.first_name|default:"Non renseigné" }}</p>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label class="form-label text-muted">Nom</label>
+                                        <p class="fw-bold">{{ user_detail.last_name|default:"Non renseigné" }}</p>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label class="form-label text-muted">Email</label>
+                                        <p class="fw-bold">
+                                            <i class="fas fa-envelope text-muted me-2"></i>
+                                            {{ user_detail.email }}
+                                        </p>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="mb-3">
+                                        <label class="form-label text-muted">Téléphone</label>
+                                        <p class="fw-bold">
+                                            <i class="fas fa-phone text-muted me-2"></i>
+                                            {{ user_detail.phone|default:"Non renseigné" }}
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label text-muted">Nom d'utilisateur</label>
+                                <p class="fw-bold">{{ user_detail.username }}</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-md-4">
+                    <div class="card">
+                        <div class="card-header">
+                            <h5 class="card-title mb-0">
+                                <i class="fas fa-info-circle"></i> Statut
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="mb-3">
+                                <label class="form-label text-muted">État du compte</label>
+                                <p>
+                                    {% if user_detail.is_active %}
+                                        <span class="badge bg-success">Actif</span>
+                                    {% else %}
+                                        <span class="badge bg-danger">Inactif</span>
+                                    {% endif %}
+                                </p>
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label class="form-label text-muted">Rôles</label>
+                                <p>
+                                    {% if user_detail.roles %}
+                                        {% for role in user_detail.roles %}
+                                            <span class="badge bg-primary me-1">{{ role|capfirst }}</span>
+                                        {% endfor %}
+                                    {% else %}
+                                        <span class="text-muted">Aucun rôle assigné</span>
+                                    {% endif %}
+                                </p>
+                            </div>
+
+                            {% if user_detail.is_admin %}
+                                <div class="mb-3">
+                                    <span class="badge bg-warning">
+                                        <i class="fas fa-crown"></i> Administrateur
+                                    </span>
+                                </div>
+                            {% endif %}
+
+                            {% if stats.must_change_password %}
+                                <div class="mb-3">
+                                    <span class="badge bg-info">
+                                        <i class="fas fa-key"></i> Doit changer son mot de passe
+                                    </span>
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <div class="card mt-3">
+                        <div class="card-header">
+                            <h5 class="card-title mb-0">
+                                <i class="fas fa-clock"></i> Activité
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="mb-3">
+                                <label class="form-label text-muted">Dernière connexion</label>
+                                <p class="fw-bold">
+                                    {% if stats.last_login %}
+                                        {{ stats.last_login|date:"d/m/Y H:i" }}
+                                    {% else %}
+                                        <span class="text-muted">Jamais connecté</span>
+                                    {% endif %}
+                                </p>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label text-muted">Compte créé</label>
+                                <p class="fw-bold">{{ stats.date_joined|date:"d/m/Y H:i" }}</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="card mt-3">
+                        <div class="card-header">
+                            <h5 class="card-title mb-0">
+                                <i class="fas fa-tools"></i> Actions
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="d-grid gap-2">
+                                <button type="button" class="btn btn-outline-primary btn-sm" onclick="resendInvitation({{ user_detail.id }})">
+                                    <i class="fas fa-envelope"></i> Renvoyer invitation
+                                </button>
+                                <button type="button" class="btn btn-outline-warning btn-sm" onclick="resetPassword({{ user_detail.id }})">
+                                    <i class="fas fa-key"></i> Réinitialiser mot de passe
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="mt-3">
+                <a href="{% url 'accounts:user_list' %}" class="btn btn-secondary">
+                    <i class="fas fa-arrow-left"></i> Retour à la liste
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function activateUser(userId) {
+    if (confirm('Êtes-vous sûr de vouloir réactiver cet utilisateur ?')) {
+        fetch(`/app/accounts/users/${userId}/activate/`, {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+                'X-Requested-With': 'XMLHttpRequest'
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                location.reload();
+            } else {
+                alert('Erreur: ' + data.error);
+            }
+        });
+    }
+}
+
+function resendInvitation(userId) {
+    if (confirm('Renvoyer l\'email d\'invitation à cet utilisateur ?')) {
+        fetch(`/app/accounts/resend-invitation/${userId}/`, {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+                'X-Requested-With': 'XMLHttpRequest'
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert('Email d\'invitation envoyé avec succès');
+            } else {
+                alert('Erreur: ' + data.error);
+            }
+        });
+    }
+}
+
+function resetPassword(userId) {
+    if (confirm('Réinitialiser le mot de passe de cet utilisateur ?')) {
+        fetch(`/app/accounts/reset-password/${userId}/`, {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value,
+                'X-Requested-With': 'XMLHttpRequest'
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert('Mot de passe réinitialisé et email envoyé');
+            } else {
+                alert('Erreur: ' + data.error);
+            }
+        });
+    }
+}
+</script>
+{% endblock %}
