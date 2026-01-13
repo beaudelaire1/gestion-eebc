@@ -6,7 +6,7 @@ from django.utils import timezone
 class AgeGroup(models.Model):
     """
     Tranche d'âge pour le club biblique.
-    Ex: 3-5 ans, 6-8 ans, 9-12 ans
+    Ex : 3-5 ans, 6-8 ans, 9-12 ans
     """
     name = models.CharField(max_length=50, verbose_name="Nom de la tranche")
     min_age = models.PositiveIntegerField(verbose_name="Âge minimum")
