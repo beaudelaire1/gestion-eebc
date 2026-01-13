@@ -205,15 +205,25 @@
             const status = document.getElementById('filter-status').value;
             const city = document.getElementById('filter-city').value;
             
-            let url = '/admin/members/map/data/?';
+            let url = '{% url "admin_members_map_data" %}?';
             if (site) url += 'site=' + site + '&';
             if (status) url += 'status=' + status + '&';
             if (city) url += 'city=' + encodeURIComponent(city);
             
             console.log('Fetching:', url);
             
-            fetch(url)
-                .then(r => r.json())
+            fetch(url, {
+                credentials: 'same-origin',
+                headers: {
+                    'Accept': 'application/json',
+                }
+            })
+                .then(r => {
+                    if (!r.ok) {
+                        throw new Error('HTTP ' + r.status);
+                    }
+                    return r.json();
+                })
                 .then(data => {
                     console.log('Data:', data);
                     
@@ -269,9 +279,16 @@
                         // Ajouter les sites aux bounds
                         data.sites.forEach(s => bounds.extend([s.lat, s.lng]));
                         map.fitBounds(bounds, {padding: [50, 50]});
+                    } else if (data.sites.length > 0) {
+                        // Si pas de membres mais des sites, centrer sur les sites
+                        const bounds = L.latLngBounds(data.sites.map(s => [s.lat, s.lng]));
+                        map.fitBounds(bounds, {padding: [50, 50]});
                     }
                 })
-                .catch(err => console.error('Error:', err));
+                .catch(err => {
+                    console.error('Erreur chargement carte:', err);
+                    alert('Erreur lors du chargement des données de la carte: ' + err.message);
+                });
         }
     </script>
 </body>

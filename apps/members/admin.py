@@ -77,9 +77,12 @@ class MemberAdmin(admin.ModelAdmin):
                 '<img src="{}" style="width: 40px; height: 40px; border-radius: 50%; object-fit: cover; border: 2px solid #0A36FF;" />',
                 obj.photo.url
             )
+        initials = '?'
+        if obj.first_name and obj.last_name:
+            initials = obj.first_name[0].upper() + obj.last_name[0].upper()
         return format_html(
             '<div style="width: 40px; height: 40px; border-radius: 50%; background: linear-gradient(135deg, #0A36FF 0%, #3b82f6 100%); display: flex; align-items: center; justify-content: center; color: white; font-weight: bold; font-size: 14px;">{}</div>',
-            obj.first_name[0].upper() + obj.last_name[0].upper() if obj.first_name and obj.last_name else '?'
+            initials
         )
     
     @admin.display(description='Aperçu photo')
@@ -89,9 +92,12 @@ class MemberAdmin(admin.ModelAdmin):
                 '<img src="{}" style="max-width: 200px; max-height: 200px; border-radius: 10px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);" />',
                 obj.photo.url
             )
+        initials = '?'
+        if obj.first_name and obj.last_name:
+            initials = obj.first_name[0].upper() + obj.last_name[0].upper()
         return format_html(
             '<div style="width: 150px; height: 150px; border-radius: 10px; background: linear-gradient(135deg, #0A36FF 0%, #3b82f6 100%); display: flex; align-items: center; justify-content: center; color: white; font-weight: bold; font-size: 48px;">{}</div>',
-            obj.first_name[0].upper() + obj.last_name[0].upper() if obj.first_name and obj.last_name else '?'
+            initials
         )
 
 
@@ -119,8 +125,8 @@ class LifeEventInline(admin.TabularInline):
     max_num = 5
 
 
-# Ajouter les inlines au MemberAdmin existant
-MemberAdmin.inlines = [LifeEventInline, VisitationLogInline]
+# Ajouter les inlines au MemberAdmin existant (désactivé temporairement)
+# MemberAdmin.inlines = [LifeEventInline, VisitationLogInline]
 
 
 @admin.register(LifeEvent)
