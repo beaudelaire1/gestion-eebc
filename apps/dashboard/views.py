@@ -1,6 +1,7 @@
 from django.shortcuts import render, redirect
 from django.contrib.auth.decorators import login_required
 from django.db.models import Count, Sum, Q
+from django.urls import reverse
 from datetime import date, timedelta
 
 
@@ -159,7 +160,7 @@ def home(request):
             'icon': 'house-heart',
             'title': 'Visites pastorales',
             'message': f"{pastoral_stats['members_needing_visit']} membres n'ont pas été visités depuis plus de 6 mois.",
-            'link': '/admin/members/visitationlog/'
+            'link': reverse('members:members_needing_visit')
         })
     
     # Alerte rôles non confirmés

@@ -5,6 +5,12 @@
 {% block page_subtitle %}Fiche membre{% endblock %}
 
 {% block content %}
+<div class="d-flex justify-content-start mb-3">
+    <a href="{% url 'members:list' %}" class="btn btn-outline-secondary">
+        <i class="bi bi-arrow-left me-2"></i>Retour à la liste
+    </a>
+</div>
+
 <div class="row g-4">
     <div class="col-lg-4">
         <div class="card mb-4">

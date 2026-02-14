@@ -39,6 +39,9 @@ DEBUG = False
 # APPLICATIONS
 # =============================================================================
 INSTALLED_APPS = [
+    # Thème admin Django (doit être avant django.contrib.admin)
+    'jazzmin',
+
     # Interface d'administration Django standard
     'django.contrib.admin',
     'django.contrib.auth',

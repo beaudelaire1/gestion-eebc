@@ -5,6 +5,12 @@
 {% block page_subtitle %}{{ bible_class.age_group.min_age }}-{{ bible_class.age_group.max_age }} ans{% endblock %}
 
 {% block content %}
+<div class="d-flex justify-content-start mb-3">
+    <a href="{% url 'bibleclub:class_list' %}" class="btn btn-outline-secondary">
+        <i class="bi bi-arrow-left me-2"></i>Retour à la liste
+    </a>
+</div>
+
 <div class="row g-4">
     <!-- Info Card -->
     <div class="col-lg-4">
