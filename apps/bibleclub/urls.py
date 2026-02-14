@@ -41,5 +41,11 @@ urlpatterns = [
     
     # API HTMX
     path('api/my-class-children/', views.my_class_children, name='my_class_children'),
+    
+    # Configuration - Tranches d'âge
+    path('config/age-groups/', views.age_group_list, name='age_group_list'),
+    path('config/age-groups/create/', views.age_group_create, name='age_group_create'),
+    path('config/age-groups/<int:pk>/edit/', views.age_group_update, name='age_group_update'),
+    path('config/age-groups/<int:pk>/delete/', views.age_group_delete, name='age_group_delete'),
 ]
 

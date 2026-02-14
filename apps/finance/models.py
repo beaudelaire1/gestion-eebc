@@ -14,6 +14,20 @@ from django.core.validators import MinValueValidator
 from decimal import Decimal
 
 
+class NotDeletedManager(models.Manager):
+    """Manager qui exclut les soft-deleted par défaut."""
+    
+    def get_queryset(self):
+        return super().get_queryset().filter(is_deleted=False)
+
+
+class AllTransactionsManager(models.Manager):
+    """Manager qui inclut les soft-deleted (admin only)."""
+    
+    def get_queryset(self):
+        return super().get_queryset()
+
+
 class FinancialTransaction(models.Model):
     """
     Transaction financière de l'église.
@@ -42,6 +56,10 @@ class FinancialTransaction(models.Model):
         EN_ATTENTE = 'en_attente', 'En attente'
         VALIDE = 'valide', 'Validé'
         ANNULE = 'annule', 'Annulé'
+    
+    # Managers
+    objects = NotDeletedManager()  # Par défaut, exclure les soft-deleted
+    all_objects = AllTransactionsManager()  # Include soft-deleted
     
     # Informations principales
     reference = models.CharField(
@@ -162,14 +180,39 @@ class FinancialTransaction(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     
+    # Soft-delete (audit trail)
+    is_deleted = models.BooleanField(
+        default=False,
+        verbose_name="Supprimé",
+        help_text="Soft-delete : les données restent en BD pour l'audit"
+    )
+    deleted_at = models.DateTimeField(
+        null=True,
+        blank=True,
+        verbose_name="Date de suppression"
+    )
+    deleted_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='deleted_transactions',
+        verbose_name="Supprimé par"
+    )
+    
     class Meta:
         verbose_name = "Transaction"
         verbose_name_plural = "Transactions"
         ordering = ['-transaction_date', '-created_at']
         indexes = [
-            models.Index(fields=['transaction_date']),
-            models.Index(fields=['transaction_type']),
-            models.Index(fields=['status']),
+            models.Index(fields=['transaction_date'], name='fin_trans_date_idx'),
+            models.Index(fields=['transaction_type'], name='fin_trans_type_idx'),
+            models.Index(fields=['status'], name='fin_trans_status_idx'),
+            models.Index(fields=['member'], name='fin_trans_member_idx'),
+            models.Index(fields=['category'], name='fin_trans_category_idx'),
+            models.Index(fields=['is_deleted'], name='fin_trans_deleted_idx'),
+            models.Index(fields=['transaction_date', 'status'], name='fin_trans_date_status_idx'),
+            models.Index(fields=['member', 'transaction_date'], name='fin_trans_memb_date_idx'),
         ]
     
     def __str__(self):
@@ -207,6 +250,41 @@ class FinancialTransaction(models.Model):
         if self.is_income:
             return self.amount
         return -self.amount
+    
+    def soft_delete(self, user):
+        """
+        Soft-delete : marquer comme supprimé sans détruire les données.
+        Permet l'audit et la récupération en cas d'erreur.
+        """
+        from django.utils import timezone
+        
+        self.is_deleted = True
+        self.deleted_at = timezone.now()
+        self.deleted_by = user
+        self.save(update_fields=['is_deleted', 'deleted_at', 'deleted_by', 'updated_at'])
+    
+    def restore(self):
+        """Restaurer une transaction supprimée."""
+        from django.utils import timezone
+        
+        self.is_deleted = False
+        self.deleted_at = None
+        self.deleted_by = None
+        self.save(update_fields=['is_deleted', 'deleted_at', 'deleted_by', 'updated_at'])
+    
+    def delete(self, *args, **kwargs):
+        """
+        Surcharger delete() pour faire un soft-delete par défaut.
+        Utiliser hard_delete() pour vraiment supprimer.
+        """
+        raise NotImplementedError(
+            "Utiliser soft_delete(user) pour les transactions. "
+            "Utiliser hard_delete() pour vraiment supprimer."
+        )
+    
+    def hard_delete(self, *args, **kwargs):
+        """Hard-delete : vraiment supprimer de la DB (admin seulement)."""
+        super().delete(*args, **kwargs)
 
 
 class FinanceCategory(models.Model):
@@ -405,6 +483,11 @@ class BudgetLine(models.Model):
         verbose_name_plural = "Lignes budgétaires"
         unique_together = ['category', 'year', 'month']
         ordering = ['-year', 'month', 'category__name']
+        indexes = [
+            models.Index(fields=['year'], name='budgetline_year_idx'),
+            models.Index(fields=['category'], name='budgetline_category_idx'),
+            models.Index(fields=['year', 'month'], name='budgetline_year_month_idx'),
+        ]
     
     def __str__(self):
         period = f"{self.year}"

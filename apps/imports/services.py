@@ -1,3 +1,4 @@
+import re
 import pandas as pd
 from datetime import datetime, date
 from django.utils import timezone
@@ -8,6 +9,39 @@ from apps.bibleclub.models import Child, BibleClass, AgeGroup
 from .models import ImportLog
 
 
+# ── Constantes de validation ──────────────────────────────────────────
+EMAIL_REGEX = re.compile(r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$')
+PHONE_REGEX = re.compile(r'^[\d\s\-\+\(\)]{10,20}$')
+POSTAL_CODE_REGEX = re.compile(r'^\d{5}$')
+
+
+def validate_email(value: str) -> str:
+    """Valide et normalise une adresse email."""
+    value = str(value).strip().lower()
+    if not EMAIL_REGEX.match(value):
+        raise ValidationError(f"Adresse email invalide : {value}")
+    return value
+
+
+def validate_phone(value: str) -> str:
+    """Valide et normalise un numéro de téléphone."""
+    value = str(value).strip()
+    digits_only = re.sub(r'[^\d+]', '', value)
+    if len(digits_only) < 10:
+        raise ValidationError(f"Numéro de téléphone trop court : {value}")
+    if not PHONE_REGEX.match(value):
+        raise ValidationError(f"Format de téléphone invalide : {value}")
+    return value
+
+
+def validate_postal_code(value: str) -> str:
+    """Valide un code postal (5 chiffres)."""
+    value = str(value).strip()
+    if value and not POSTAL_CODE_REGEX.match(value):
+        raise ValidationError(f"Code postal invalide (5 chiffres attendus) : {value}")
+    return value
+
+
 class ExcelImportService:
     """Service pour l'import de données depuis des fichiers Excel."""
     
@@ -15,6 +49,7 @@ class ExcelImportService:
         self.import_log = import_log
         self.errors = []
         self.successes = []
+        self.warnings = []
     
     def process_import(self):
         """Traite l'import selon le type."""
@@ -66,54 +101,119 @@ class ExcelImportService:
                 self.import_log.save()
     
     def _process_member_row(self, row, column_mapping, row_number):
-        """Traite une ligne de membre."""
+        """Traite une ligne de membre avec validations avancées."""
         member_data = {}
+        row_warnings = []
         
         for excel_col, model_field in column_mapping.items():
             if excel_col in row and pd.notna(row[excel_col]):
                 value = row[excel_col]
                 
+                # ── Dates ──
                 if model_field in ['date_of_birth', 'date_joined', 'baptism_date']:
                     if isinstance(value, str):
-                        try:
-                            value = datetime.strptime(value, '%d/%m/%Y').date()
-                        except ValueError:
+                        for fmt in ('%d/%m/%Y', '%Y-%m-%d', '%d-%m-%Y', '%d.%m.%Y'):
                             try:
-                                value = datetime.strptime(value, '%Y-%m-%d').date()
+                                value = datetime.strptime(value.strip(), fmt).date()
+                                break
                             except ValueError:
-                                raise ValidationError(f"Format de date invalide: {value}")
+                                continue
+                        else:
+                            raise ValidationError(f"Format de date invalide: {value}")
                     elif hasattr(value, 'date'):
                         value = value.date()
+                    
+                    # Validation de cohérence
+                    if model_field == 'date_of_birth' and value > date.today():
+                        raise ValidationError(f"Date de naissance dans le futur: {value}")
+                    if model_field == 'baptism_date' and value > date.today():
+                        raise ValidationError(f"Date de baptême dans le futur: {value}")
                 
+                # ── Genre ──
                 elif model_field == 'gender':
-                    value = value.upper()
+                    value = str(value).strip().upper()
+                    gender_mapping = {'MASCULIN': 'M', 'FÉMININ': 'F', 'FEMININ': 'F', 'HOMME': 'M', 'FEMME': 'F', 'H': 'M'}
+                    value = gender_mapping.get(value, value)
                     if value not in ['M', 'F']:
-                        raise ValidationError(f"Genre invalide: {value}")
+                        raise ValidationError(f"Genre invalide: {value} (M ou F attendu)")
                 
+                # ── Booléen : baptisé ──
                 elif model_field == 'is_baptized':
                     if isinstance(value, str):
-                        value = value.lower() in ['oui', 'yes', 'true', '1', 'vrai']
+                        value = value.strip().lower() in ['oui', 'yes', 'true', '1', 'vrai']
                     else:
                         value = bool(value)
                 
+                # ── Statut ──
                 elif model_field == 'status':
                     status_mapping = {
                         'actif': Member.Status.ACTIF,
                         'inactif': Member.Status.INACTIF,
                         'visiteur': Member.Status.VISITEUR,
-                        'transfere': Member.Status.TRANSFERE
+                        'transfere': Member.Status.TRANSFERE,
+                        'transferé': Member.Status.TRANSFERE,
                     }
-                    value = status_mapping.get(value.lower(), Member.Status.ACTIF)
+                    value = status_mapping.get(str(value).strip().lower(), Member.Status.ACTIF)
+                
+                # ── Email ──
+                elif model_field == 'email':
+                    value = str(value).strip()
+                    if value:
+                        value = validate_email(value)
+                
+                # ── Téléphone ──
+                elif model_field == 'phone':
+                    value = str(value).strip()
+                    if value:
+                        try:
+                            value = validate_phone(value)
+                        except ValidationError:
+                            row_warnings.append(f"Format téléphone douteux: {value}")
+                
+                # ── Code postal ──
+                elif model_field == 'postal_code':
+                    value = str(value).strip()
+                    if value:
+                        try:
+                            value = validate_postal_code(value)
+                        except ValidationError:
+                            row_warnings.append(f"Code postal invalide ignoré: {value}")
+                            continue
+                
+                # ── Nettoyage texte générique ──
+                elif isinstance(value, str):
+                    value = value.strip()
                 
                 member_data[model_field] = value
         
+        # Champs obligatoires
         if not member_data.get('first_name') or not member_data.get('last_name'):
             raise ValidationError("Prénom et nom obligatoires")
         
-        existing_member = Member.objects.filter(
-            first_name__iexact=member_data['first_name'],
-            last_name__iexact=member_data['last_name']
-        ).first()
+        # Détection de doublon par nom + date de naissance (plus fiable)
+        first_name = member_data['first_name']
+        last_name = member_data['last_name']
+        
+        existing_member = None
+        
+        # Priorité 1 : doublon par email (le plus fiable)
+        if member_data.get('email'):
+            existing_member = Member.objects.filter(email__iexact=member_data['email']).first()
+        
+        # Priorité 2 : doublon par nom + date de naissance  
+        if not existing_member and member_data.get('date_of_birth'):
+            existing_member = Member.objects.filter(
+                first_name__iexact=first_name,
+                last_name__iexact=last_name,
+                date_of_birth=member_data['date_of_birth']
+            ).first()
+        
+        # Priorité 3 : doublon par nom seul (moins fiable)
+        if not existing_member:
+            existing_member = Member.objects.filter(
+                first_name__iexact=first_name,
+                last_name__iexact=last_name
+            ).first()
         
         if existing_member:
             for field, value in member_data.items():
@@ -123,6 +223,10 @@ class ExcelImportService:
         else:
             member = Member.objects.create(**member_data)
             self.successes.append(f"Ligne {row_number}: {member.full_name} créé")
+        
+        # Ajouter les avertissements
+        for w in row_warnings:
+            self.warnings.append(f"Ligne {row_number}: {w}")
     
     def _import_children(self):
         """Importe les enfants depuis un fichier Excel."""
@@ -156,8 +260,9 @@ class ExcelImportService:
                 self.import_log.save()
     
     def _process_child_row(self, row, column_mapping, row_number):
-        """Traite une ligne d'enfant."""
+        """Traite une ligne d'enfant avec validations avancées."""
         child_data = {}
+        row_warnings = []
         
         for excel_col, model_field in column_mapping.items():
             if excel_col in row and pd.notna(row[excel_col]):
@@ -165,26 +270,58 @@ class ExcelImportService:
                 
                 if model_field == 'date_of_birth':
                     if isinstance(value, str):
-                        try:
-                            value = datetime.strptime(value, '%d/%m/%Y').date()
-                        except ValueError:
+                        for fmt in ('%d/%m/%Y', '%Y-%m-%d', '%d-%m-%Y', '%d.%m.%Y'):
                             try:
-                                value = datetime.strptime(value, '%Y-%m-%d').date()
+                                value = datetime.strptime(value.strip(), fmt).date()
+                                break
                             except ValueError:
-                                raise ValidationError(f"Format de date invalide: {value}")
+                                continue
+                        else:
+                            raise ValidationError(f"Format de date invalide: {value}")
                     elif hasattr(value, 'date'):
                         value = value.date()
+                    
+                    # Vérifier que la date est cohérente pour un enfant
+                    if value > date.today():
+                        raise ValidationError(f"Date de naissance dans le futur: {value}")
+                    age = (date.today() - value).days // 365
+                    if age > 18:
+                        row_warnings.append(f"Âge > 18 ans ({age} ans) — vérifier la date de naissance")
                 
                 elif model_field == 'gender':
-                    value = value.upper()
+                    value = str(value).strip().upper()
+                    gender_mapping = {'MASCULIN': 'M', 'FÉMININ': 'F', 'FEMININ': 'F', 'GARÇON': 'M', 'GARCON': 'M', 'FILLE': 'F'}
+                    value = gender_mapping.get(value, value)
                     if value not in ['M', 'F']:
                         raise ValidationError(f"Genre invalide: {value}")
                 
                 elif model_field == 'needs_transport':
                     if isinstance(value, str):
-                        value = value.lower() in ['oui', 'yes', 'true', '1', 'vrai']
+                        value = value.strip().lower() in ['oui', 'yes', 'true', '1', 'vrai']
                     else:
                         value = bool(value)
+                
+                # Validation email parent
+                elif model_field in ['father_email', 'mother_email']:
+                    value = str(value).strip()
+                    if value:
+                        try:
+                            value = validate_email(value)
+                        except ValidationError:
+                            row_warnings.append(f"Email parent invalide ignoré: {value}")
+                            continue
+                
+                # Validation téléphone parent
+                elif model_field in ['father_phone', 'mother_phone', 'emergency_phone']:
+                    value = str(value).strip()
+                    if value:
+                        try:
+                            value = validate_phone(value)
+                        except ValidationError:
+                            row_warnings.append(f"Téléphone douteux: {value}")
+                
+                elif isinstance(value, str):
+                    value = value.strip()
                 
                 child_data[model_field] = value
         
@@ -221,7 +358,14 @@ class ExcelImportService:
     def _finalize_import(self):
         """Finalise l'import et met à jour les logs."""
         self.import_log.error_log = '\n'.join(self.errors)
-        self.import_log.success_log = '\n'.join(self.successes)
+        
+        # Ajouter les avertissements au log de succès
+        success_parts = self.successes[:]
+        if self.warnings:
+            success_parts.append('\n--- Avertissements ---')
+            success_parts.extend(self.warnings)
+        
+        self.import_log.success_log = '\n'.join(success_parts)
         self.import_log.completed_at = timezone.now()
         
         if self.import_log.error_rows == 0:

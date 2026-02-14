@@ -144,3 +144,51 @@ def campaign_progress_api(request, pk):
     
     return JsonResponse(data)
 
+
+@login_required
+@role_required('admin', 'finance')
+def campaign_delete(request, pk):
+    """Supprimer une campagne (soft delete)."""
+    campaign = get_object_or_404(Campaign, pk=pk)
+    
+    # Vérifier l'activité
+    donations_count = campaign.donations.count()
+    
+    if request.method == 'POST':
+        campaign.is_active = False
+        campaign.save()
+        messages.success(request, f'La campagne "{campaign.name}" a été supprimée (archivée) avec succès.')
+        return redirect('campaigns:list')
+    
+    context = {
+        'campaign': campaign,
+        'donations_count': donations_count,
+    }
+    return render(request, 'campaigns/campaign_delete_confirm.html', context)
+
+
+@login_required
+@role_required('admin', 'finance')
+def donation_cancel(request, pk):
+    """Annuler un don."""
+    donation = get_object_or_404(Donation, pk=pk)
+    campaign = donation.campaign
+    
+    if request.method == 'POST':
+        if not donation.is_cancelled:
+            donation.is_cancelled = True
+            donation.save()
+            messages.success(request, f'Le don de {donation.amount}€ a été annulé avec succès.')
+        else:
+            donation.is_cancelled = False
+            donation.save()
+            messages.success(request, f'Le don de {donation.amount}€ a été réactivé avec succès.')
+            
+        return redirect('campaigns:detail', pk=campaign.pk)
+    
+    context = {
+        'donation': donation,
+        'campaign': campaign,
+    }
+    return render(request, 'campaigns/donation_cancel_confirm.html', context)
+

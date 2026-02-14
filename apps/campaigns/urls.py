@@ -11,5 +11,7 @@ urlpatterns = [
     path('<int:pk>/donate/', views.campaign_donate, name='donate'),
     path('donate/', views.campaign_donate, name='donate_general'),
     path('<int:pk>/progress/', views.campaign_progress_api, name='progress_api'),
+    path('<int:pk>/delete/', views.campaign_delete, name='delete'),
+    path('donations/<int:pk>/cancel/', views.donation_cancel, name='donation_cancel'),
 ]
 

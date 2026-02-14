@@ -1,0 +1,91 @@
+{% extends 'base.html' %}
+
+{% block title %}Gestion des Tranches d'Âge - Club Biblique{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-md-8">
+        <h2 class="mb-0"><i class="bi bi-diagram-3 me-2"></i>Tranches d'Âge</h2>
+        <p class="text-muted">Configuration des groupes d'âge pour le club biblique.</p>
+    </div>
+    <div class="col-md-4 text-end">
+        <a href="{% url 'bibleclub:age_group_create' %}" class="btn btn-primary">
+            <i class="bi bi-plus-lg me-2"></i>Nouvelle tranche
+        </a>
+    </div>
+</div>
+
+<div class="card border-0 shadow-sm">
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th style="width: 20px;"></th>
+                        <th>Nom</th>
+                        <th>Tranche d'âge</th>
+                        <th>Classes actives</th>
+                        <th>Description</th>
+                        <th class="text-end">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for group in age_groups %}
+                    <tr>
+                        <td>
+                            <div class="rounded-circle"
+                                style="width: 15px; height: 15px; background-color: {{ group.color }};"
+                                title="{{ group.color }}"></div>
+                        </td>
+                        <td class="fw-medium">{{ group.name }}</td>
+                        <td>
+                            <span class="badge bg-light text-dark border">
+                                {{ group.min_age }} - {{ group.max_age }} ans
+                            </span>
+                        </td>
+                        <td>
+                            {% with count=group.classes.count %}
+                            {% if count > 0 %}
+                            <span class="badge bg-info">{{ count }} classe(s)</span>
+                            {% else %}
+                            <span class="text-muted small">Aucune</span>
+                            {% endif %}
+                            {% endwith %}
+                        </td>
+                        <td class="text-muted small text-truncate" style="max-width: 200px;">
+                            {{ group.description }}
+                        </td>
+                        <div class="text-nowrap text-end">
+                            <a href="{% url 'bibleclub:age_group_update' group.pk %}"
+                                class="btn btn-sm btn-outline-primary" title="Modifier">
+                                <i class="bi bi-pencil"></i>
+                            </a>
+                            <a href="{% url 'bibleclub:age_group_delete' group.pk %}"
+                                class="btn btn-sm btn-outline-danger" title="Supprimer">
+                                <i class="bi bi-trash"></i>
+                            </a>
+                        </div>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="6" class="text-center py-5 text-muted">
+                            <i class="bi bi-diagram-3 fs-1 d-block mb-3"></i>
+                            Aucune tranche d'âge configurée.<br>
+                            <a href="{% url 'bibleclub:age_group_create' %}" class="fw-bold text-primary">Commencez par
+                                en créer une</a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<div class="mt-4">
+    <a href="{% url 'bibleclub:home' %}" class="btn btn-outline-secondary">
+        <i class="bi bi-arrow-left me-2"></i>Retour au tableau de bord
+    </a>
+</div>
+{% endblock %}

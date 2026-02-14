@@ -1,67 +1,71 @@
 {% load static %}
 <!DOCTYPE html>
 <html lang="fr">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}EEBC{% endblock %}</title>
-    
+
     <!-- Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
-    
+    <link
+        href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap"
+        rel="stylesheet">
+
     <!-- Bootstrap 5 -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
-    
+
     <!-- Bootstrap Icons -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" rel="stylesheet">
-    
+
     <!-- HTMX -->
     <script src="https://unpkg.com/htmx.org@1.9.10"></script>
-    
+
     <!-- Chart.js -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.min.js"></script>
-    
+
     <!-- Skeleton Loaders -->
     <link rel="stylesheet" href="{% static 'css/skeletons.css' %}">
-    
+
     <!-- Components CSS -->
     <link rel="stylesheet" href="{% static 'css/components.css' %}">
-    
+
     <!-- Themes CSS -->
     <link rel="stylesheet" href="{% static 'css/themes.css' %}">
-    
+
     <!-- Theme Selector CSS -->
     <link rel="stylesheet" href="{% static 'css/theme-selector.css' %}">
-    
+
     <!-- Animated Verse Banner CSS -->
     <link rel="stylesheet" href="{% static 'css/animated-verse-banner.css' %}">
-    
+
     <!-- Dark Mode CSS (Legacy support) -->
     <link rel="stylesheet" href="{% static 'css/dark-mode.css' %}">
-    
+
     <!-- Theme Overrides CSS (Force theme application) -->
     <link rel="stylesheet" href="{% static 'css/theme-overrides.css' %}">
-    
+
     {% block extra_css %}{% endblock %}
-    
+
     <!-- Theme initialization (prevent flash) -->
     <script>
-        (function() {
-            const theme = localStorage.getItem('eebc-theme') || 
-                         (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'darkly' : 'default');
+        (function () {
+            const theme = localStorage.getItem('eebc-theme') ||
+                (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'darkly' : 'default');
             document.documentElement.setAttribute('data-theme', theme);
         })();
     </script>
-    
+
     <!-- Theme Fix Script (temporary) -->
     <script src="{% static 'js/theme-fix.js' %}"></script>
 </head>
+
 <body>
     <!-- Sidebar Overlay (mobile) -->
     <div class="sidebar-overlay" id="sidebarOverlay" onclick="closeSidebar()"></div>
-    
+
     <!-- Sidebar -->
     <nav class="sidebar" id="sidebar">
         <button class="sidebar-close" onclick="closeSidebar()">
@@ -71,17 +75,19 @@
             <h4 class="sidebar__brand-title"><i class="bi bi-book-half me-2"></i>EEBC</h4>
             <small class="sidebar__brand-subtitle">Système de Gestion</small>
         </div>
-        
+
         <!-- Scrollable Sidebar Content -->
         <div class="sidebar__content">
             <div class="nav-section">
                 <div class="nav-section__title">Principal</div>
                 <nav class="nav flex-column">
-                    <a class="nav-link {% if request.resolver_match.url_name == 'home' %}nav-link--active{% endif %}" href="{% url 'dashboard:home' %}">
+                    <a class="nav-link {% if request.resolver_match.url_name == 'home' %}nav-link--active{% endif %}"
+                        href="{% url 'dashboard:home' %}">
                         <i class="bi bi-grid-1x2-fill nav-link__icon"></i>
                         <span>Tableau de bord</span>
                     </a>
-                    <a class="nav-link {% if 'events' in request.path %}nav-link--active{% endif %}" href="{% url 'events:calendar' %}">
+                    <a class="nav-link {% if 'events' in request.path %}nav-link--active{% endif %}"
+                        href="{% url 'events:calendar' %}">
                         <i class="bi bi-calendar3 nav-link__icon"></i>
                         <span>Calendrier</span>
                     </a>
@@ -91,137 +97,187 @@
                     </a>
                 </nav>
             </div>
-            
+
             <div class="nav-section">
                 <div class="nav-section__title">Club Biblique</div>
                 <nav class="nav flex-column">
-                    <a class="nav-link {% if request.path == '/bibleclub/' %}nav-link--active{% endif %}" href="{% url 'bibleclub:home' %}">
+                    <a class="nav-link {% if request.path == '/bibleclub/' %}nav-link--active{% endif %}"
+                        href="{% url 'bibleclub:home' %}">
                         <i class="bi bi-mortarboard-fill nav-link__icon"></i>
                         <span>Vue d'ensemble</span>
                     </a>
-                    <a class="nav-link {% if 'children' in request.path %}nav-link--active{% endif %}" href="{% url 'bibleclub:children_list' %}">
+                    <a class="nav-link {% if 'children' in request.path %}nav-link--active{% endif %}"
+                        href="{% url 'bibleclub:children_list' %}">
                         <i class="bi bi-people-fill nav-link__icon"></i>
                         <span>Enfants</span>
                     </a>
-                    <a class="nav-link {% if 'classes' in request.path %}nav-link--active{% endif %}" href="{% url 'bibleclub:class_list' %}">
+                    <a class="nav-link {% if 'classes' in request.path %}nav-link--active{% endif %}"
+                        href="{% url 'bibleclub:class_list' %}">
                         <i class="bi bi-collection-fill nav-link__icon"></i>
                         <span>Classes</span>
                     </a>
-                    <a class="nav-link {% if 'sessions' in request.path %}nav-link--active{% endif %}" href="{% url 'bibleclub:session_list' %}">
+                    <a class="nav-link {% if 'sessions' in request.path %}nav-link--active{% endif %}"
+                        href="{% url 'bibleclub:session_list' %}">
                         <i class="bi bi-clipboard-check-fill nav-link__icon"></i>
                         <span>Sessions & Appels</span>
                     </a>
                 </nav>
             </div>
-            
+
             <div class="nav-section">
                 <div class="nav-section__title">Vie d'Église</div>
                 <nav class="nav flex-column">
-                    <a class="nav-link {% if 'worship' in request.path and 'planning' not in request.path %}nav-link--active{% endif %}" href="{% url 'worship:service_list' %}">
+                    <a class="nav-link {% if 'worship' in request.path and 'planning' not in request.path %}nav-link--active{% endif %}"
+                        href="{% url 'worship:service_list' %}">
                         <i class="bi bi-calendar-check-fill nav-link__icon"></i>
                         <span>Cultes</span>
                     </a>
-                    <a class="nav-link {% if 'planning' in request.path %}nav-link--active{% endif %}" href="{% url 'worship:schedule_list' %}">
+                    <a class="nav-link {% if 'planning' in request.path %}nav-link--active{% endif %}"
+                        href="{% url 'worship:schedule_list' %}">
                         <i class="bi bi-calendar-month nav-link__icon"></i>
                         <span>Planning mensuel</span>
                     </a>
-                    <a class="nav-link {% if request.path == '/app/finance/' %}nav-link--active{% endif %}" href="{% url 'finance:dashboard' %}">
+                    <a class="nav-link {% if request.path == '/app/finance/' %}nav-link--active{% endif %}"
+                        href="{% url 'finance:dashboard' %}">
                         <i class="bi bi-cash-coin nav-link__icon"></i>
                         <span>Trésorerie</span>
                     </a>
-                    <a class="nav-link {% if 'tax-receipts' in request.path %}nav-link--active{% endif %}" href="{% url 'finance:tax_receipt_list' %}">
+                    <a class="nav-link {% if 'tax-receipts' in request.path %}nav-link--active{% endif %}"
+                        href="{% url 'finance:tax_receipt_list' %}">
                         <i class="bi bi-receipt nav-link__icon"></i>
                         <span>Reçus fiscaux</span>
                     </a>
-                    <a class="nav-link {% if 'budgets' in request.path %}nav-link--active{% endif %}" href="{% url 'finance:budget_dashboard' %}">
+                    <a class="nav-link {% if 'budgets' in request.path %}nav-link--active{% endif %}"
+                        href="{% url 'finance:budget_dashboard' %}">
                         <i class="bi bi-pie-chart nav-link__icon"></i>
                         <span>Budgets</span>
                     </a>
-                    <a class="nav-link {% if 'campaigns' in request.path %}nav-link--active{% endif %}" href="{% url 'campaigns:list' %}">
+                    <a class="nav-link {% if 'campaigns' in request.path %}nav-link--active{% endif %}"
+                        href="{% url 'campaigns:list' %}">
                         <i class="bi bi-graph-up-arrow nav-link__icon"></i>
                         <span>Campagnes</span>
                     </a>
                 </nav>
             </div>
-            
+
             <div class="nav-section">
                 <div class="nav-section__title">Gestion</div>
                 <nav class="nav flex-column">
-                    <a class="nav-link {% if request.path == '/app/members/' %}nav-link--active{% endif %}" href="{% url 'members:list' %}">
+                    <a class="nav-link {% if request.path == '/app/members/' %}nav-link--active{% endif %}"
+                        href="{% url 'members:list' %}">
                         <i class="bi bi-person-badge-fill nav-link__icon"></i>
                         <span>Membres</span>
                     </a>
-                    <a class="nav-link {% if 'members/map' in request.path %}nav-link--active{% endif %}" href="{% url 'members:map' %}">
+                    <a class="nav-link {% if 'members/map' in request.path %}nav-link--active{% endif %}"
+                        href="{% url 'members:map' %}">
                         <i class="bi bi-geo-alt-fill nav-link__icon"></i>
                         <span>Carte des membres</span>
                     </a>
-                    <a class="nav-link {% if 'families' in request.path %}nav-link--active{% endif %}" href="{% url 'members:family_list' %}">
+                    <a class="nav-link {% if 'families' in request.path %}nav-link--active{% endif %}"
+                        href="{% url 'members:family_list' %}">
                         <i class="bi bi-house-heart nav-link__icon"></i>
                         <span>Familles</span>
                     </a>
-                    <a class="nav-link {% if 'life-events' in request.path %}nav-link--active{% endif %}" href="{% url 'members:life_events' %}">
+                    <a class="nav-link {% if 'life-events' in request.path %}nav-link--active{% endif %}"
+                        href="{% url 'members:life_events' %}">
                         <i class="bi bi-heart-fill nav-link__icon"></i>
                         <span>Événements de vie</span>
                     </a>
-                    <a class="nav-link {% if 'visits' in request.path %}nav-link--active{% endif %}" href="{% url 'members:visits' %}">
+                    <a class="nav-link {% if 'visits' in request.path %}nav-link--active{% endif %}"
+                        href="{% url 'members:visits' %}">
                         <i class="bi bi-house-heart-fill nav-link__icon"></i>
                         <span>Visites pastorales</span>
                     </a>
-                    <a class="nav-link {% if 'groups' in request.path %}nav-link--active{% endif %}" href="{% url 'groups:list' %}">
+                    <a class="nav-link {% if 'groups' in request.path %}nav-link--active{% endif %}"
+                        href="{% url 'groups:list' %}">
                         <i class="bi bi-diagram-3-fill nav-link__icon"></i>
                         <span>Groupes</span>
                     </a>
-                    <a class="nav-link {% if 'departments' in request.path %}nav-link--active{% endif %}" href="{% url 'departments:list' %}">
+                    <a class="nav-link {% if 'departments' in request.path %}nav-link--active{% endif %}"
+                        href="{% url 'departments:list' %}">
                         <i class="bi bi-building nav-link__icon"></i>
                         <span>Départements</span>
                     </a>
-                    <a class="nav-link {% if 'imports' in request.path %}nav-link--active{% endif %}" href="{% url 'imports:hub' %}">
+                    <a class="nav-link {% if 'imports' in request.path %}nav-link--active{% endif %}"
+                        href="{% url 'imports:hub' %}">
                         <i class="bi bi-upload nav-link__icon"></i>
                         <span>Imports & Exports</span>
                     </a>
                     {% if request.user.is_admin or request.user.role == 'admin' or request.user.role == 'secretariat' %}
-                    <a class="nav-link {% if 'accounts/users' in request.path %}nav-link--active{% endif %}" href="{% url 'accounts:user_list' %}">
+                    <a class="nav-link {% if 'accounts/users' in request.path %}nav-link--active{% endif %}"
+                        href="{% url 'accounts:user_list' %}">
                         <i class="bi bi-people nav-link__icon"></i>
                         <span>Utilisateurs</span>
                     </a>
                     {% endif %}
                 </nav>
             </div>
-            
+
             <div class="nav-section">
                 <div class="nav-section__title">Ressources</div>
                 <nav class="nav flex-column">
-                    <a class="nav-link {% if 'transport' in request.path %}nav-link--active{% endif %}" href="{% url 'transport:drivers' %}">
+                    <a class="nav-link {% if 'transport' in request.path %}nav-link--active{% endif %}"
+                        href="{% url 'transport:drivers' %}">
                         <i class="bi bi-truck nav-link__icon"></i>
                         <span>Transport</span>
                     </a>
-                    <a class="nav-link {% if 'inventory' in request.path %}nav-link--active{% endif %}" href="{% url 'inventory:list' %}">
+                    <a class="nav-link {% if 'inventory' in request.path %}nav-link--active{% endif %}"
+                        href="{% url 'inventory:list' %}">
                         <i class="bi bi-box-seam-fill nav-link__icon"></i>
                         <span>Inventaire</span>
                     </a>
                 </nav>
             </div>
-            
+
             <div class="nav-section">
                 <div class="nav-section__title">Communication</div>
                 <nav class="nav flex-column">
-                    <a class="nav-link {% if 'notifications' in request.path %}nav-link--active{% endif %}" href="{% url 'communication:notifications' %}">
+                    <a class="nav-link {% if 'notifications' in request.path %}nav-link--active{% endif %}"
+                        href="{% url 'communication:notifications' %}">
                         <i class="bi bi-bell-fill nav-link__icon"></i>
                         <span>Notifications</span>
                     </a>
-                    <a class="nav-link {% if 'announcements' in request.path %}nav-link--active{% endif %}" href="{% url 'communication:announcements' %}">
+                    <a class="nav-link {% if 'announcements' in request.path %}nav-link--active{% endif %}"
+                        href="{% url 'communication:announcements' %}">
                         <i class="bi bi-megaphone-fill nav-link__icon"></i>
                         <span>Annonces</span>
                     </a>
-                    <a class="nav-link {% if 'email-logs' in request.path %}nav-link--active{% endif %}" href="{% url 'communication:email_logs' %}">
+                    <a class="nav-link {% if 'email-logs' in request.path %}nav-link--active{% endif %}"
+                        href="{% url 'communication:email_logs' %}">
                         <i class="bi bi-envelope-fill nav-link__icon"></i>
                         <span>Historique emails</span>
                     </a>
                 </nav>
             </div>
+
+            <div class="nav-section">
+                <div class="nav-section__title">Site Web (CMS)</div>
+                <nav class="nav flex-column">
+                    <a class="nav-link {% if 'cms/news' in request.path %}nav-link--active{% endif %}"
+                        href="{% url 'public_cms:news_list' %}">
+                        <i class="bi bi-newspaper nav-link__icon"></i>
+                        <span>Actualités</span>
+                    </a>
+                    <a class="nav-link {% if 'cms/pages' in request.path %}nav-link--active{% endif %}"
+                        href="{% url 'public_cms:page_list' %}">
+                        <i class="bi bi-file-earmark-text nav-link__icon"></i>
+                        <span>Pages</span>
+                    </a>
+                    <a class="nav-link {% if 'cms/testimonies' in request.path %}nav-link--active{% endif %}"
+                        href="{% url 'public_cms:testimony_list' %}">
+                        <i class="bi bi-chat-quote nav-link__icon"></i>
+                        <span>Témoignages</span>
+                    </a>
+                    <a class="nav-link {% if 'cms/schedules' in request.path %}nav-link--active{% endif %}"
+                        href="{% url 'public_cms:schedule_list' %}">
+                        <i class="bi bi-clock nav-link__icon"></i>
+                        <span>Horaires</span>
+                    </a>
+                </nav>
+            </div>
         </div>
     </nav>
-    
+
     <!-- Main Content -->
     <main class="main-content">
         <!-- Top Bar -->
@@ -235,23 +291,25 @@
                     <small class="text-muted page-subtitle">{% block page_subtitle %}{% endblock %}</small>
                 </div>
             </div>
-            
+
             <div class="d-flex align-items-center gap-3">
                 <!-- Theme Selector -->
                 <button class="theme-toggle" id="themeToggle" onclick="toggleThemeSelector()" title="Choisir un thème">
                     <i class="bi bi-sun"></i>
                 </button>
-                
+
                 <!-- Notifications -->
                 <div class="position-relative">
-                    <a href="{% url 'communication:notifications' %}" class="btn btn-outline-secondary position-relative">
+                    <a href="{% url 'communication:notifications' %}"
+                        class="btn btn-outline-secondary position-relative">
                         <i class="bi bi-bell"></i>
                     </a>
                 </div>
-                
+
                 <!-- User Menu -->
                 <div class="dropdown">
-                    <button class="btn user-btn dropdown-toggle d-flex align-items-center gap-2" type="button" data-bs-toggle="dropdown">
+                    <button class="btn user-btn dropdown-toggle d-flex align-items-center gap-2" type="button"
+                        data-bs-toggle="dropdown">
                         <div class="avatar avatar--sm">
                             {{ request.user.first_name|slice:":1"|upper }}{{ request.user.last_name|slice:":1"|upper }}
                         </div>
@@ -259,19 +317,22 @@
                     </button>
                     <ul class="dropdown-menu dropdown-menu-end">
                         <li><a class="dropdown-item" href="{% url 'accounts:profile' %}">
-                            <i class="bi bi-person me-2"></i>Mon profil
-                        </a></li>
+                                <i class="bi bi-person me-2"></i>Mon profil
+                            </a></li>
                         <li><a class="dropdown-item" href="{% url 'public:home' %}" target="_blank">
-                            <i class="bi bi-globe me-2"></i>Site public
-                        </a></li>
+                                <i class="bi bi-globe me-2"></i>Site public
+                            </a></li>
                         <li><a class="dropdown-item" href="{% url 'admin:index' %}">
-                            <i class="bi bi-gear me-2"></i>Administration
-                        </a></li>
-                        <li><hr class="dropdown-divider"></li>
+                                <i class="bi bi-gear me-2"></i>Administration
+                            </a></li>
+                        <li>
+                            <hr class="dropdown-divider">
+                        </li>
                         <li>
                             <form method="post" action="{% url 'accounts:logout' %}" class="d-inline m-0">
                                 {% csrf_token %}
-                                <button type="submit" class="dropdown-item text-danger" style="border: none; background: none; width: 100%; text-align: left; padding: 0.375rem 1rem;">
+                                <button type="submit" class="dropdown-item text-danger"
+                                    style="border: none; background: none; width: 100%; text-align: left; padding: 0.375rem 1rem;">
                                     <i class="bi bi-box-arrow-right me-2"></i>Déconnexion
                                 </button>
                             </form>
@@ -280,7 +341,7 @@
                 </div>
             </div>
         </div>
-        
+
         <!-- Content -->
         <div class="p-4">
             <!-- Messages -->
@@ -288,46 +349,47 @@
             <div class="mb-4">
                 {% for message in messages %}
                 <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
-                    <i class="bi bi-{% if message.tags == 'success' %}check-circle{% elif message.tags == 'warning' %}exclamation-triangle{% elif message.tags == 'error' %}x-circle{% else %}info-circle{% endif %} me-2"></i>
+                    <i
+                        class="bi bi-{% if message.tags == 'success' %}check-circle{% elif message.tags == 'warning' %}exclamation-triangle{% elif message.tags == 'error' %}x-circle{% else %}info-circle{% endif %} me-2"></i>
                     {{ message }}
                     <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
                 </div>
                 {% endfor %}
             </div>
             {% endif %}
-            
+
             {% block content %}{% endblock %}
         </div>
     </main>
-    
+
     <!-- Toast Container -->
     {% include 'components/toast_container.html' %}
-    
+
     <!-- Bootstrap JS -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
-    
+
     <!-- Theme Toggle Script -->
     <script>
         function toggleTheme() {
             const html = document.documentElement;
             const currentTheme = html.getAttribute('data-theme');
             const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
-            
+
             html.setAttribute('data-theme', newTheme);
             localStorage.setItem('theme', newTheme);
-            
+
             // Update Chart.js colors if charts exist
             updateChartsTheme(newTheme);
         }
-        
+
         function updateChartsTheme(theme) {
             if (typeof Chart !== 'undefined') {
                 const textColor = theme === 'dark' ? '#f1f5f9' : '#333';
                 const gridColor = theme === 'dark' ? '#334155' : '#e5e7eb';
-                
+
                 Chart.defaults.color = textColor;
                 Chart.defaults.borderColor = gridColor;
-                
+
                 // Update all existing charts
                 Object.values(Chart.instances).forEach(chart => {
                     if (chart.options.scales) {
@@ -343,7 +405,7 @@
                 });
             }
         }
-        
+
         // Listen for system theme changes
         window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', (e) => {
             if (!localStorage.getItem('theme')) {
@@ -353,44 +415,44 @@
             }
         });
     </script>
-    
+
     <!-- HTMX Config -->
     <script>
         document.body.addEventListener('htmx:configRequest', (event) => {
             event.detail.headers['X-CSRFToken'] = '{{ csrf_token }}';
         });
-        
+
         // Détection mobile
         function isMobile() {
             return window.innerWidth < 992;
         }
-        
+
         // Ouvrir le sidebar (mobile)
         function openSidebar() {
             const sidebar = document.getElementById('sidebar');
             const overlay = document.getElementById('sidebarOverlay');
-            
+
             sidebar.classList.add('sidebar--show');
             overlay.classList.add('sidebar-overlay--show');
             document.body.style.overflow = 'hidden';
         }
-        
+
         // Fermer le sidebar (mobile)
         function closeSidebar() {
             const sidebar = document.getElementById('sidebar');
             const overlay = document.getElementById('sidebarOverlay');
-            
+
             sidebar.classList.remove('sidebar--show');
             overlay.classList.remove('sidebar-overlay--show');
             document.body.style.overflow = '';
         }
-        
+
         // Toggle sidebar (desktop: collapse, mobile: show/hide)
         function toggleSidebar() {
             const sidebar = document.getElementById('sidebar');
             const mainContent = document.querySelector('.main-content');
             const toggleBtn = document.getElementById('sidebarToggle');
-            
+
             if (isMobile()) {
                 // Mobile: ouvrir/fermer
                 if (sidebar.classList.contains('sidebar--show')) {
@@ -402,7 +464,7 @@
                 // Desktop: collapse/expand
                 sidebar.classList.toggle('sidebar--collapsed');
                 mainContent.classList.toggle('main-content--expanded');
-                
+
                 const icon = toggleBtn.querySelector('i');
                 if (sidebar.classList.contains('sidebar--collapsed')) {
                     icon.className = 'bi bi-layout-sidebar-inset';
@@ -413,9 +475,9 @@
                 }
             }
         }
-        
+
         // Restaurer l'état du sidebar au chargement
-        document.addEventListener('DOMContentLoaded', function() {
+        document.addEventListener('DOMContentLoaded', function () {
             // Desktop: restaurer l'état collapsed
             if (!isMobile()) {
                 const isCollapsed = localStorage.getItem('sidebarCollapsed') === 'true';
@@ -423,7 +485,7 @@
                     const sidebar = document.getElementById('sidebar');
                     const mainContent = document.querySelector('.main-content');
                     const toggleBtn = document.getElementById('sidebarToggle');
-                    
+
                     sidebar.classList.add('sidebar--collapsed');
                     mainContent.classList.add('main-content--expanded');
                     if (toggleBtn) {
@@ -431,47 +493,48 @@
                     }
                 }
             }
-            
+
             // Fermer le sidebar mobile lors du redimensionnement vers desktop
-            window.addEventListener('resize', function() {
+            window.addEventListener('resize', function () {
                 if (!isMobile()) {
                     closeSidebar();
                 }
             });
         });
     </script>
-    
+
     <!-- Toast Notification System -->
     <script src="{% static 'js/toasts.js' %}"></script>
-    
+
     <!-- Form Validation System -->
     <script src="{% static 'js/form-validation.js' %}"></script>
-    
+
     <!-- Theme Manager System -->
     <script src="{% static 'js/theme-manager.js' %}"></script>
-    
+
     <!-- Animated Verse Banner System -->
     <script src="{% static 'js/animated-verse-banner.js' %}"></script>
-    
+
     <!-- Theme Test System (Development only) -->
     {% if debug %}
     <script src="{% static 'js/theme-test.js' %}"></script>
     {% endif %}
-    
+
     {% block extra_js %}{% endblock %}
-    
+
     <!-- Toast Container -->
     <div id="toast-container" class="toast-container position-fixed top-0 end-0 p-3" style="z-index: 9999;"></div>
-    
+
     <!-- Django Messages Container (hidden, converted to toasts) -->
     <div class="django-messages" style="display: none;">
         {% if messages %}
-            {% for message in messages %}
-                <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
-                    {{ message }}
-                </div>
-            {% endfor %}
+        {% for message in messages %}
+        <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+            {{ message }}
+        </div>
+        {% endfor %}
         {% endif %}
     </div>
 </body>
+
 </html>

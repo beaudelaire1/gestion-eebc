@@ -9,20 +9,20 @@
     --bg-tertiary: #334155;
     --bg-card: #1e293b;
     --bg-hover: #334155;
-    
+
     --text-primary: #f1f5f9;
     --text-secondary: #94a3b8;
     --text-muted: #64748b;
-    
+
     --border-color: #334155;
     --border-light: #475569;
-    
+
     --accent-primary: #3b82f6;
     --accent-success: #22c55e;
     --accent-warning: #f59e0b;
     --accent-danger: #ef4444;
     --accent-info: #06b6d4;
-    
+
     --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.3);
     --shadow-md: 0 4px 6px rgba(0, 0, 0, 0.4);
     --shadow-lg: 0 10px 15px rgba(0, 0, 0, 0.5);
@@ -53,7 +53,9 @@
 }
 
 [data-theme="dark"] .nav-section__title {
-    color: var(--text-muted);
+    color: #60a5fa;
+    background: linear-gradient(135deg, rgba(59, 130, 246, 0.15) 0%, rgba(96, 165, 250, 0.08) 100%);
+    border-left-color: #60a5fa;
 }
 
 [data-theme="dark"] .nav-link {
@@ -531,10 +533,10 @@ body,
 .modal-content,
 .alert,
 .nav-link {
-    transition: background-color 0.3s ease, 
-                color 0.3s ease, 
-                border-color 0.3s ease,
-                box-shadow 0.3s ease;
+    transition: background-color 0.3s ease,
+        color 0.3s ease,
+        border-color 0.3s ease,
+        box-shadow 0.3s ease;
 }
 
 /* Chart.js Dark Mode */

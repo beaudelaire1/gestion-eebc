@@ -799,52 +799,37 @@ def monitor_create(request):
             messages.error(request, 'Vous devez sélectionner un utilisateur.')
         else:
             try:
-                from django.contrib.auth import get_user_model
-                User = get_user_model()
-                
-                user = User.objects.get(pk=user_id)
-                bible_class = BibleClass.objects.get(pk=bible_class_id) if bible_class_id else None
-                
-                # Vérifier si l'utilisateur n'est pas déjà moniteur
-                if Monitor.objects.filter(user=user, is_active=True).exists():
-                    messages.error(request, f'{user.get_full_name()} est déjà moniteur.')
+                # Vérifier si l'utilisateur est déjà moniteur
+                if Monitor.objects.filter(user_id=user_id).exists():
+                    messages.error(request, 'Cet utilisateur est déjà moniteur.')
                 else:
+                    bible_class = BibleClass.objects.get(pk=bible_class_id) if bible_class_id else None
+                    
                     monitor = Monitor.objects.create(
-                        user=user,
+                        user_id=user_id,
                         bible_class=bible_class,
-                        role=role,
+                        is_lead=(role == 'responsable'),
                         is_active=True
                     )
                     
-                    messages.success(request, f'Moniteur {user.get_full_name()} créé avec succès.')
+                    messages.success(request, f'Moniteur {monitor.user.get_full_name()} ajouté avec succès.')
                     return redirect('bibleclub:monitor_list')
-                    
             except Exception as e:
                 messages.error(request, f'Erreur lors de la création : {e}')
     
-    # Utilisateurs disponibles (pas encore moniteurs)
+    # Utilisateurs non moniteurs (pour le select)
     from django.contrib.auth import get_user_model
     User = get_user_model()
+    existing_monitors = Monitor.objects.values_list('user_id', flat=True)
+    users = User.objects.exclude(pk__in=existing_monitors).order_by('last_name', 'first_name')
     
-    existing_monitor_users = Monitor.objects.filter(is_active=True).values_list('user_id', flat=True)
-    available_users = User.objects.filter(is_active=True).exclude(
-        id__in=existing_monitor_users
-    ).order_by('last_name', 'first_name')
-    
-    bible_classes = BibleClass.objects.filter(is_active=True).order_by('name')
-    
-    role_choices = [
-        ('moniteur', 'Moniteur'),
-        ('assistant', 'Assistant'),
-        ('responsable', 'Responsable'),
-    ]
+    classes = BibleClass.objects.filter(is_active=True)
     
     context = {
-        'available_users': available_users,
-        'bible_classes': bible_classes,
-        'role_choices': role_choices,
-        'title': 'Nouveau moniteur',
-        'submit_text': 'Créer le moniteur'
+        'users': users,
+        'classes': classes,
+        'title': 'Ajouter un moniteur',
+        'submit_text': 'Ajouter'
     }
     return render(request, 'bibleclub/monitor_form.html', context)
 
@@ -857,37 +842,31 @@ def monitor_update(request, pk):
     
     if request.method == 'POST':
         bible_class_id = request.POST.get('bible_class')
-        role = request.POST.get('role', 'moniteur')
+        role = request.POST.get('role')
+        phone = request.POST.get('phone', '')
         is_active = 'is_active' in request.POST
         
         try:
             bible_class = BibleClass.objects.get(pk=bible_class_id) if bible_class_id else None
             
             monitor.bible_class = bible_class
-            monitor.role = role
+            monitor.is_lead = (role == 'responsable')
+            monitor.phone = phone
             monitor.is_active = is_active
             monitor.save()
             
             messages.success(request, f'Moniteur {monitor.user.get_full_name()} modifié avec succès.')
             return redirect('bibleclub:monitor_list')
-            
         except Exception as e:
             messages.error(request, f'Erreur lors de la modification : {e}')
     
-    bible_classes = BibleClass.objects.filter(is_active=True).order_by('name')
-    
-    role_choices = [
-        ('moniteur', 'Moniteur'),
-        ('assistant', 'Assistant'),
-        ('responsable', 'Responsable'),
-    ]
+    classes = BibleClass.objects.filter(is_active=True)
     
     context = {
         'monitor': monitor,
-        'bible_classes': bible_classes,
-        'role_choices': role_choices,
+        'classes': classes,
         'title': f'Modifier {monitor.user.get_full_name()}',
-        'submit_text': 'Enregistrer les modifications'
+        'submit_text': 'Enregistrer'
     }
     return render(request, 'bibleclub/monitor_form.html', context)
 
@@ -895,18 +874,108 @@ def monitor_update(request, pk):
 @login_required
 @club_admin_required
 def monitor_delete(request, pk):
-    """Supprimer un moniteur (soft delete)."""
+    """Supprimer (désactiver) un moniteur."""
     monitor = get_object_or_404(Monitor, pk=pk)
     
     if request.method == 'POST':
-        monitor_name = monitor.user.get_full_name()
         monitor.is_active = False
         monitor.save()
-        
-        messages.success(request, f'Moniteur {monitor_name} supprimé avec succès.')
+        messages.success(request, f'Moniteur {monitor.user.get_full_name()} désactivé.')
         return redirect('bibleclub:monitor_list')
-    
+        
     context = {
         'monitor': monitor,
+        'title': f'Désactiver {monitor.user.get_full_name()}'
     }
     return render(request, 'bibleclub/monitor_delete_confirm.html', context)
+
+
+# =============================================================================
+# CRUD POUR LES TRANCHES D'ÂGE (CONFIGURATION)
+# =============================================================================
+
+@login_required
+@club_admin_required
+def age_group_list(request):
+    """Liste des tranches d'âge."""
+    age_groups = AgeGroup.objects.all().order_by('min_age')
+    
+    context = {
+        'age_groups': age_groups,
+        'is_admin': True,
+    }
+    return render(request, 'bibleclub/age_group_list.html', context)
+
+
+@login_required
+@club_admin_required
+def age_group_create(request):
+    """Créer une tranche d'âge."""
+    if request.method == 'POST':
+        name = request.POST.get('name')
+        min_age = request.POST.get('min_age')
+        max_age = request.POST.get('max_age')
+        description = request.POST.get('description', '')
+        color = request.POST.get('color', '#0d6efd')
+        
+        if not name or not min_age or not max_age:
+            messages.error(request, 'Veuillez remplir les champs obligatoires.')
+        else:
+            AgeGroup.objects.create(
+                name=name,
+                min_age=min_age,
+                max_age=max_age,
+                description=description,
+                color=color
+            )
+            messages.success(request, 'Tranche d\'âge créée avec succès.')
+            return redirect('bibleclub:age_group_list')
+            
+    return render(request, 'bibleclub/age_group_form.html', {'title': 'Nouvelle tranche d\'âge'})
+
+
+@login_required
+@club_admin_required
+def age_group_update(request, pk):
+    """Modifier une tranche d'âge."""
+    age_group = get_object_or_404(AgeGroup, pk=pk)
+    
+    if request.method == 'POST':
+        age_group.name = request.POST.get('name')
+        age_group.min_age = request.POST.get('min_age')
+        age_group.max_age = request.POST.get('max_age')
+        age_group.description = request.POST.get('description', '')
+        age_group.color = request.POST.get('color')
+        age_group.save()
+        
+        messages.success(request, 'Tranche d\'âge mise à jour.')
+        return redirect('bibleclub:age_group_list')
+        
+    return render(request, 'bibleclub/age_group_form.html', {
+        'age_group': age_group, 
+        'title': f'Modifier {age_group.name}'
+    })
+
+
+@login_required
+@club_admin_required
+def age_group_delete(request, pk):
+    """Supprimer une tranche d'âge."""
+    age_group = get_object_or_404(AgeGroup, pk=pk)
+    
+    # Vérifier utilisation
+    classes_count = age_group.classes.count()
+    
+    if request.method == 'POST':
+        if classes_count > 0:
+            messages.error(request, f'Impossible de supprimer : {classes_count} classe(s) liée(s).')
+        else:
+            age_group.delete()
+            messages.success(request, 'Tranche d\'âge supprimée.')
+            return redirect('bibleclub:age_group_list')
+            
+    return render(request, 'bibleclub/age_group_confirm_delete.html', {
+        'age_group': age_group,
+        'classes_count': classes_count
+    })
+

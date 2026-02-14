@@ -122,6 +122,11 @@ class WorshipService(models.Model):
         verbose_name = "Service de culte"
         verbose_name_plural = "Services de culte"
         ordering = ['-event__start_date']
+        indexes = [
+            models.Index(fields=['event'], name='worship_event_idx'),
+            models.Index(fields=['service_type'], name='worship_type_idx'),
+            models.Index(fields=['is_confirmed'], name='worship_confirmed_idx'),
+        ]
     
     def __str__(self):
         return f"{self.get_service_type_display()} - {self.event.start_date}"
@@ -530,6 +535,12 @@ class MonthlySchedule(models.Model):
         verbose_name_plural = "Plannings mensuels"
         ordering = ['-year', '-month']
         unique_together = ['year', 'month', 'site']
+        indexes = [
+            models.Index(fields=['year', 'month'], name='schedule_year_month_idx'),
+            models.Index(fields=['site'], name='schedule_site_idx'),
+            models.Index(fields=['status'], name='schedule_status_idx'),
+            models.Index(fields=['site', 'year', 'month'], name='schedule_site_ym_idx'),
+        ]
     
     def __str__(self):
         months = ['', 'Janvier', 'Février', 'Mars', 'Avril', 'Mai', 'Juin',
@@ -657,6 +668,12 @@ class ScheduledService(models.Model):
         verbose_name_plural = "Cultes programmés"
         ordering = ['date']
         unique_together = ['schedule', 'date']
+        indexes = [
+            models.Index(fields=['date'], name='schedservice_date_idx'),
+            models.Index(fields=['schedule'], name='schedservice_schedule_idx'),
+            models.Index(fields=['schedule', 'date'], name='schedservice_sched_date_idx'),
+            models.Index(fields=['notifications_sent'], name='schedservice_notif_idx'),
+        ]
     
     def __str__(self):
         return f"Culte du {self.date.strftime('%d/%m/%Y')}"

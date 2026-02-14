@@ -1,0 +1,37 @@
+{% extends 'base.html' %}
+
+{% block title %}Supprimer la campagne - {{ campaign.name }}{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-6">
+        <div class="card border-danger">
+            <div class="card-header bg-danger text-white">
+                <h5 class="mb-0"><i class="bi bi-exclamation-triangle me-2"></i>Confirmation de suppression</h5>
+            </div>
+            <div class="card-body">
+                <p>Êtes-vous sûr de vouloir supprimer la campagne <strong>{{ campaign.name }}</strong> ?</p>
+
+                {% if donations_count > 0 %}
+                <div class="alert alert-warning">
+                    <i class="bi bi-info-circle me-2"></i>
+                    Cette campagne contient <strong>{{ donations_count }}</strong> don(s) associé(s).
+                    <br>
+                    La suppression archivera la campagne mais conservera l'historique des dons.
+                </div>
+                {% endif %}
+
+                <p class="text-muted">Cette action est réversible par un administrateur.</p>
+
+                <form method="post">
+                    {% csrf_token %}
+                    <div class="d-flex justify-content-end gap-2">
+                        <a href="{% url 'campaigns:detail' campaign.pk %}" class="btn btn-secondary">Annuler</a>
+                        <button type="submit" class="btn btn-danger">Confirmer la suppression</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

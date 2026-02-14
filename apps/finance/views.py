@@ -10,7 +10,7 @@ from datetime import date, timedelta
 from decimal import Decimal
 
 from .models import FinancialTransaction, FinanceCategory, ReceiptProof, BudgetLine, BudgetCategory, Budget, BudgetItem, BudgetRequest
-from .forms import TransactionForm, ProofUploadForm
+from .forms import TransactionForm, ProofUploadForm, FinanceCategoryForm
 from .services import TransactionService, BudgetService
 from apps.core.permissions import role_required
 
@@ -798,6 +798,128 @@ def budget_category_update(request, pk):
 def budget_category_delete(request, pk):
     """Supprimer une catégorie de budget (soft delete)."""
     category = get_object_or_404(BudgetCategory, pk=pk)
+    
+    if request.method == 'POST':
+        category.is_active = False
+        category.save()
+        messages.success(request, f'Catégorie "{category.name}" supprimée avec succès.')
+        return redirect('finance:budget_category_list')
+    
+    return render(request, 'finance/budget_category_delete_confirm.html', {'category': category})
+
+
+# =============================================================================
+# CRUD POUR LES CATÉGORIES FINANCIÈRES (TRANSACTIONS)
+# =============================================================================
+
+@login_required
+@role_required('admin', 'finance')
+def finance_category_list(request):
+    """Liste des catégories financières."""
+    categories = FinanceCategory.objects.filter(is_active=True).order_by('name')
+    
+    # Statistiques
+    for category in categories:
+        category.transactions_count = category.transactions.count()
+    
+    context = {
+        'categories': categories,
+        'total_categories': categories.count(),
+    }
+    
+    return render(request, 'finance/finance_category_list.html', context)
+
+
+@login_required
+@role_required('admin', 'finance')
+def finance_category_create(request):
+    """Créer une nouvelle catégorie financière."""
+    if request.method == 'POST':
+        form = FinanceCategoryForm(request.POST)
+        if form.is_valid():
+            category = form.save()
+            messages.success(request, f'Catégorie "{category.name}" créée avec succès.')
+            return redirect('finance:finance_category_list')
+    else:
+        form = FinanceCategoryForm()
+    
+    context = {
+        'form': form,
+        'title': 'Nouvelle catégorie financière',
+        'submit_text': 'Créer la catégorie'
+    }
+    return render(request, 'finance/finance_category_form.html', context)
+
+
+@login_required
+@role_required('admin', 'finance')
+def finance_category_update(request, pk):
+    """Modifier une catégorie financière."""
+    category = get_object_or_404(FinanceCategory, pk=pk)
+    
+    if request.method == 'POST':
+        form = FinanceCategoryForm(request.POST, instance=category)
+        if form.is_valid():
+            category = form.save()
+            messages.success(request, f'Catégorie "{category.name}" modifiée avec succès.')
+            return redirect('finance:finance_category_list')
+    else:
+        form = FinanceCategoryForm(instance=category)
+    
+    context = {
+        'form': form,
+        'category': category,
+        'title': f'Modifier {category.name}',
+        'submit_text': 'Enregistrer les modifications'
+    }
+    return render(request, 'finance/finance_category_form.html', context)
+
+
+@login_required
+@role_required('admin', 'finance')
+def finance_category_delete(request, pk):
+    """Supprimer une catégorie financière (soft delete)."""
+    category = get_object_or_404(FinanceCategory, pk=pk)
+    
+    # Vérifier les transactions liées
+    transactions_count = category.transactions.count()
+    
+    if request.method == 'POST':
+        if transactions_count > 0:
+             # Demander confirmation pour la réassignation
+            reassign_to_id = request.POST.get('reassign_to')
+            if reassign_to_id:
+                try:
+                    new_category = FinanceCategory.objects.get(pk=reassign_to_id)
+                    category.transactions.update(category=new_category)
+                    messages.success(
+                        request, 
+                        f'{transactions_count} transaction(s) réassignée(s) à "{new_category.name}".'
+                    )
+                except FinanceCategory.DoesNotExist:
+                    messages.error(request, 'Catégorie de réassignation invalide.')
+                    return redirect('finance:finance_category_delete', pk=pk)
+            else:
+                 # Désactiver simplement sans réassigner (les transactions gardent la ref ou on met null?)
+                 # FinanceCategory est SET_NULL dans FinancialTransaction.
+                 if request.POST.get('action') == 'delete':
+                     category.transactions.update(category=None)
+                     messages.warning(request, f'{transactions_count} transaction(s) n\'ont plus de catégorie.')
+        
+        category.is_active = False # Soft delete
+        category.save()
+        messages.success(request, f'Catégorie "{category.name}" archivée avec succès.')
+        return redirect('finance:finance_category_list')
+    
+    other_categories = FinanceCategory.objects.filter(is_active=True).exclude(pk=pk)
+    
+    context = {
+        'category': category,
+        'transactions_count': transactions_count,
+        'other_categories': other_categories
+    }
+    
+    return render(request, 'finance/finance_category_confirm_delete.html', context)
     
     # Vérifier s'il y a des éléments liés
     budget_items_count = BudgetItem.objects.filter(category=category).count()

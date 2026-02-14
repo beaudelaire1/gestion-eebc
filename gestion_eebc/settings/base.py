@@ -19,13 +19,27 @@ SECRET_KEY = os.environ.get('SECRET_KEY', secrets.token_urlsafe(50))
 # Allowed Hosts
 ALLOWED_HOSTS = os.environ.get('ALLOWED_HOSTS', 'localhost,127.0.0.1').split(',')
 
+# =============================================================================
+# CAPTCHA CONFIGURATION - Transition reCAPTCHA → CloudFlare Turnstile
+# =============================================================================
+# CloudFlare Turnstile (recommandé : gratuit illimité, meilleur UX)
+TURNSTILE_SITE_KEY = os.environ.get('TURNSTILE_SITE_KEY', '')
+TURNSTILE_SECRET_KEY = os.environ.get('TURNSTILE_SECRET_KEY', '')
+
+# Google reCAPTCHA v3 (legacy, désactiver après migration)
+RECAPTCHA_PUBLIC_KEY = os.environ.get('RECAPTCHA_PUBLIC_KEY', '')
+RECAPTCHA_PRIVATE_KEY = os.environ.get('RECAPTCHA_PRIVATE_KEY', '')
+
+# =============================================================================
+# DEBUG (défaut False, overrideé par dev.py/prod.py)
+# =============================================================================
+DEBUG = False
 
 # =============================================================================
 # APPLICATIONS
 # =============================================================================
 INSTALLED_APPS = [
-    # Interface d'administration améliorée avec Jazzmin
-    'jazzmin',
+    # Interface d'administration Django standard
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -46,6 +60,7 @@ INSTALLED_APPS = [
     
     # Local apps
     'apps.core',
+    'apps.public',
     'apps.accounts',
     'apps.members',
     'apps.departments',
@@ -106,7 +121,18 @@ SESSION_TIMEOUT_EXCLUDED_PATHS = [
 CORS_ALLOWED_ORIGINS = [
     "https://eebc.org",
     "https://www.eebc.org",
+    "https://eglise-ebc.org",
+    "https://www.eglise-ebc.org",
+    "http://localhost:3000",
+    "http://localhost:8000",
+    "http://127.0.0.1:8000",
 ]
+
+# Allow Flutter web with random ports in dev only
+if DEBUG:
+    CORS_ORIGIN_ALLOW_ALL = True
+else:
+    CORS_ORIGIN_ALLOW_ALL = False
 
 CORS_ALLOW_CREDENTIALS = True
 
@@ -328,64 +354,12 @@ HOSTINGER_API_BASE_URL = os.environ.get('HOSTINGER_API_BASE_URL', 'https://devel
 
 
 # =============================================================================
-# JAZZMIN CONFIGURATION
+# ADMIN CONFIGURATION
 # =============================================================================
-JAZZMIN_SETTINGS = {
-    "site_title": "EEBC",
-    "site_header": "EEBC",
-    "site_brand": "Gestion EEBC",
-    "welcome_sign": "Bienvenue sur Gestion EEBC",
-    "copyright": "EEBC - Église Évangélique Baptiste de Cabassou",
-    "search_model": ["accounts.User", "members.Member", "bibleclub.Child"],
-    "topmenu_links": [
-        {"name": "Accueil", "url": "admin:index", "permissions": ["auth.view_user"]},
-        {"name": "Site", "url": "/", "new_window": False},
-    ],
-    "show_sidebar": True,
-    "navigation_expanded": True,
-    "order_with_respect_to": [
-        "accounts", "core", "bibleclub", "members", "events", "worship",
-        "groups", "campaigns", "finance", "departments", "transport",
-        "inventory", "communication",
-    ],
-    "icons": {
-        "auth": "fas fa-users-cog",
-        "accounts.User": "fas fa-user-circle",
-        "core.Site": "fas fa-church",
-        "bibleclub.Child": "fas fa-child",
-        "members.Member": "fas fa-user-friends",
-        "events.Event": "fas fa-calendar-day",
-        "finance.FinancialTransaction": "fas fa-exchange-alt",
-        "groups.Group": "fas fa-users",
-        "departments.Department": "fas fa-sitemap",
-        "transport.DriverProfile": "fas fa-id-card",
-        "inventory.Equipment": "fas fa-tools",
-    },
-    "related_modal_active": True,
-    "custom_css": "css/admin_custom.css",
-    "changeform_format": "horizontal_tabs",
-}
-
-JAZZMIN_UI_TWEAKS = {
-    "navbar_small_text": False,
-    "brand_colour": "navbar-primary",
-    "accent": "accent-primary",
-    "navbar": "navbar-primary navbar-dark",
-    "navbar_fixed": True,
-    "sidebar_fixed": True,
-    "sidebar": "sidebar-dark-primary",
-    "theme": "default",
-    "actions_sticky_top": True,
-}
-
-JAZZMIN_USER_THEME_CHOICES = {
-    "default": "Default",
-    "darkly": "Darkly",
-    "flatly": "Flatly",
-    "litera": "Litera",
-    "solar": "Solar",
-    "yeti": "Yeti",
-}
+# Admin Django standard - simple et robuste
+ADMIN_SITE_HEADER = "EEBC - Gestion"
+ADMIN_SITE_TITLE = "EEBC Admin"
+ADMIN_INDEX_TITLE = "Tableau de bord"
 
 # =============================================================================
 # LOGGING CONFIGURATION

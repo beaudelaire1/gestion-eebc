@@ -2,7 +2,7 @@
 
 from django import forms
 from apps.core.forms import EnhancedModelForm
-from .models import FinancialTransaction, ReceiptProof, BudgetLine
+from .models import FinancialTransaction, ReceiptProof, BudgetLine, FinanceCategory
 
 
 class TransactionForm(EnhancedModelForm):
@@ -60,4 +60,20 @@ class BudgetLineForm(EnhancedModelForm):
                 'placeholder': '0.00'
             }),
             'notes': forms.Textarea(attrs={'rows': 2}),
+        }
+
+
+class FinanceCategoryForm(EnhancedModelForm):
+    """Formulaire de catégorie financière."""
+    
+    class Meta:
+        model = FinanceCategory
+        fields = ['name', 'description', 'is_income', 'budget_annual', 'parent', 'is_active']
+        widgets = {
+            'name': forms.TextInput(attrs={'placeholder': 'Nom de la catégorie'}),
+            'description': forms.Textarea(attrs={'rows': 2}),
+            'budget_annual': forms.NumberInput(attrs={'step': '0.01', 'min': '0'}),
+        }
+        labels = {
+            'is_income': 'Catégorie de recettes (cocher si c\'est une entrée d\'argent)',
         }

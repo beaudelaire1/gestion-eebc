@@ -202,7 +202,7 @@ class VisitationLogAdmin(admin.ModelAdmin):
     list_filter = ['status', 'visit_type', 'follow_up_needed', 'is_confidential', 'visit_date']
     search_fields = ['member__first_name', 'member__last_name', 'summary', 'prayer_requests']
     date_hierarchy = 'visit_date'
-    raw_id_fields = ['member', 'visitor', 'life_event']  # Remplace autocomplete_fields
+    raw_id_fields = ['member', 'visitor', 'life_event']
     
     fieldsets = (
         ('Visite', {
@@ -234,14 +234,3 @@ class VisitationLogAdmin(admin.ModelAdmin):
             obj.get_status_display()
         )
     status_badge.short_description = 'Statut'
-    
-    def get_queryset(self, request):
-        """Filtre les visites confidentielles pour les non-superusers."""
-        qs = super().get_queryset(request)
-        if not request.user.is_superuser:
-            # Les non-superusers ne voient pas les visites confidentielles des autres
-            qs = qs.filter(
-                Q(is_confidential=False) | 
-                Q(visitor=request.user)
-            )
-        return qs

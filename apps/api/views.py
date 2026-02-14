@@ -577,3 +577,75 @@ class RegisterDeviceView(APIView):
             'success': True,
             'message': 'Appareil désenregistré'
         })
+
+
+# =============================================================================
+# BIBLECLUB VIEWSET
+# =============================================================================
+
+class BibleClubMyChildrenView(APIView):
+    """
+    View for parents to see their children's attendance at Bible Club.
+    
+    GET /api/v1/bibleclub/my-children/ - List user's children with attendance
+    """
+    permission_classes = [IsAuthenticated]
+    
+    def get(self, request):
+        """Get children linked to the current user with their attendance records."""
+        from apps.bibleclub.models import Child, Attendance, Session
+        
+        # Get children where the user is a parent
+        children_queryset = Child.objects.filter(
+            Q(parent1=request.user) | Q(parent2=request.user)
+        ).prefetch_related('bible_class__age_group')
+        
+        # Build response data
+        children_data = []
+        
+        for child in children_queryset:
+            # Get recent attendance (last 10 sessions)
+            recent_sessions = Session.objects.filter(
+                is_cancelled=False
+            ).order_by('-date')[:10]
+            
+            recent_attendance = []
+            present_count = 0
+            total_sessions = 0
+            
+            for session in recent_sessions:
+                try:
+                    attendance = Attendance.objects.get(child=child, session=session)
+                    recent_attendance.append({
+                        'id': attendance.id,
+                        'sessionDate': session.date.isoformat(),
+                        'sessionTheme': session.theme or '',
+                        'status': attendance.status,
+                        'notes': attendance.notes or '',
+                    })
+                    total_sessions += 1
+                    if attendance.status in ['present', 'late']:
+                        present_count += 1
+                except Attendance.DoesNotExist:
+                    pass
+            
+            # Calculate attendance rate
+            attendance_rate = (present_count / total_sessions * 100) if total_sessions > 0 else 0
+            
+            children_data.append({
+                'id': child.id,
+                'firstName': child.first_name,
+                'lastName': child.last_name,
+                'dateOfBirth': child.date_of_birth.isoformat() if child.date_of_birth else None,
+                'className': str(child.bible_class) if child.bible_class else '',
+                'ageGroup': str(child.bible_class.age_group) if child.bible_class else '',
+                'photo': request.build_absolute_uri(child.photo.url) if child.photo else None,
+                'recentAttendance': recent_attendance,
+                'attendanceRate': round(attendance_rate, 1),
+            })
+        
+        return Response({
+            'success': True,
+            'data': children_data
+        })
+

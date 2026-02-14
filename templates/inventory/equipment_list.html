@@ -15,15 +15,23 @@
                         <h4 class="mb-0">{{ total_equipment }}</h4>
                         <p class="mb-0">Équipements total</p>
                     </div>
-                    <div class="align-self-center">
-                        <i class="bi bi-box-seam fs-2"></i>
+                    <div class="card-header bg-transparent border-0 d-flex justify-content-between align-items-center">
+                        <h6 class="mb-0 fw-bold">
+                            <i class="bi bi-pie-chart me-2"></i>Lignes budgétaires
+                        </h6>
+                        {% if user.role == 'admin' or user.role == 'finance' %}
+                        <a href="{% url 'finance:budget_category_list' %}" class="btn btn-sm btn-outline-primary">
+                            <i class="bi bi-tags me-1"></i>Gérer les catégories
+                        </a>
+                        {% endif %}
                     </div>
                 </div>
             </div>
         </div>
     </div>
     <div class="col-md-3">
-        <div class="card {% if needs_attention_count > 0 %}bg-warning text-dark{% else %}bg-success text-white{% endif %}">
+        <div
+            class="card {% if needs_attention_count > 0 %}bg-warning text-dark{% else %}bg-success text-white{% endif %}">
             <div class="card-body">
                 <div class="d-flex justify-content-between">
                     <div>
@@ -52,17 +60,17 @@
 
 <div class="card mb-4">
     <div class="card-body">
-        <form method="get" class="row g-3 align-items-end"
-              hx-get="{% url 'inventory:list' %}"
-              hx-target="#inventory-content"
-              hx-trigger="submit, change from:select, keyup changed delay:500ms from:input[type=text]"
-              hx-indicator="#inventory-loading">
+        <form method="get" class="row g-3 align-items-end" hx-get="{% url 'inventory:list' %}"
+            hx-target="#inventory-content"
+            hx-trigger="submit, change from:select, keyup changed delay:500ms from:input[type=text]"
+            hx-indicator="#inventory-loading">
             <div class="col-md-4">
                 <label class="form-label">Catégorie</label>
                 <select class="form-select" name="category">
                     <option value="">Toutes les catégories</option>
                     {% for category in categories %}
-                    <option value="{{ category.pk }}" {% if current_filters.category == category.pk|stringformat:"s" %}selected{% endif %}>{{ category.name }}</option>
+                    <option value="{{ category.pk }}" {% if current_filters.category==category.pk|stringformat:"s"
+                        %}selected{% endif %}>{{ category.name }}</option>
                     {% endfor %}
                 </select>
             </div>
@@ -71,14 +79,16 @@
                 <select class="form-select" name="condition">
                     <option value="">Tous les états</option>
                     {% for value, label in conditions %}
-                    <option value="{{ value }}" {% if current_filters.condition == value %}selected{% endif %}>{{ label }}</option>
+                    <option value="{{ value }}" {% if current_filters.condition==value %}selected{% endif %}>{{ label }}
+                    </option>
                     {% endfor %}
                 </select>
             </div>
             <div class="col-md-2">
                 <label class="form-label">Filtre rapide</label>
                 <div class="form-check">
-                    <input class="form-check-input" type="checkbox" name="needs_attention" value="1" id="needsAttention" {% if current_filters.needs_attention == '1' %}checked{% endif %}>
+                    <input class="form-check-input" type="checkbox" name="needs_attention" value="1" id="needsAttention"
+                        {% if current_filters.needs_attention=='1' %}checked{% endif %}>
                     <label class="form-check-label" for="needsAttention">
                         <small>Attention requise</small>
                     </label>
@@ -97,8 +107,8 @@
             <div class="col-md-2 d-flex gap-2">
                 <!-- Boutons d'export -->
                 <div class="dropdown">
-                    <button class="btn btn-outline-secondary dropdown-toggle" type="button" 
-                            data-bs-toggle="dropdown" aria-expanded="false" title="Exporter">
+                    <button class="btn btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown"
+                        aria-expanded="false" title="Exporter">
                         <i class="bi bi-download"></i>
                     </button>
                     <ul class="dropdown-menu dropdown-menu-end">
@@ -112,6 +122,15 @@
                             <a class="dropdown-item" href="{% url 'exports:inventory_print' %}" target="_blank">
                                 <i class="bi bi-file-earmark-pdf text-danger me-2"></i>
                                 Exporter PDF
+                            </a>
+                        </li>
+                        <li>
+                            <hr class="dropdown-divider">
+                        </li>
+                        <li>
+                            <a class="dropdown-item" href="{% url 'inventory:category_list' %}">
+                                <i class="bi bi-tags me-2"></i>
+                                Gérer les catégories
                             </a>
                         </li>
                     </ul>
@@ -140,7 +159,7 @@
                 </thead>
                 <tbody>
                     {% for item in equipment %}
-                    <tr {% if item.needs_attention %}class="table-warning"{% endif %}>
+                    <tr {% if item.needs_attention %}class="table-warning" {% endif %}>
                         <td>
                             <div class="fw-semibold">
                                 {{ item.name }}
@@ -157,20 +176,24 @@
                         <td>{{ item.category|default:"-" }}</td>
                         <td>{{ item.quantity }}</td>
                         <td>
-                            <span class="badge bg-{% if item.condition == 'new' %}success{% elif item.condition == 'good' %}info{% elif item.condition == 'fair' %}warning{% elif item.condition == 'maintenance' %}secondary{% else %}danger{% endif %}">
+                            <span
+                                class="badge bg-{% if item.condition == 'new' %}success{% elif item.condition == 'good' %}info{% elif item.condition == 'fair' %}warning{% elif item.condition == 'maintenance' %}secondary{% else %}danger{% endif %}">
                                 {{ item.get_condition_display }}
                             </span>
                         </td>
                         <td>{{ item.location|default:"-" }}</td>
                         <td class="text-end">
                             <div class="btn-group" role="group">
-                                <a href="{% url 'inventory:detail' item.pk %}" class="btn btn-sm btn-outline-light" title="Voir détails">
+                                <a href="{% url 'inventory:detail' item.pk %}" class="btn btn-sm btn-outline-light"
+                                    title="Voir détails">
                                     <i class="bi bi-eye"></i>
                                 </a>
-                                <a href="{% url 'inventory:update' item.pk %}" class="btn btn-sm btn-outline-light" title="Modifier">
+                                <a href="{% url 'inventory:update' item.pk %}" class="btn btn-sm btn-outline-light"
+                                    title="Modifier">
                                     <i class="bi bi-pencil"></i>
                                 </a>
-                                <a href="{% url 'inventory:delete' item.pk %}" class="btn btn-sm btn-outline-danger" title="Supprimer">
+                                <a href="{% url 'inventory:delete' item.pk %}" class="btn btn-sm btn-outline-danger"
+                                    title="Supprimer">
                                     <i class="bi bi-trash"></i>
                                 </a>
                             </div>
@@ -180,7 +203,8 @@
                     <tr>
                         <td colspan="6" class="text-center py-5 text-muted">
                             <i class="bi bi-box-seam fs-1 d-block mb-3"></i>
-                            {% if current_filters.category or current_filters.condition or current_filters.needs_attention %}
+                            {% if current_filters.category or current_filters.condition or
+                            current_filters.needs_attention %}
                             Aucun équipement trouvé avec ces filtres
                             <br><small>Essayez de modifier vos critères de recherche</small>
                             {% else %}
@@ -196,4 +220,3 @@
     </div>
 </div>
 {% endblock %}
-

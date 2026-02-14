@@ -203,3 +203,17 @@ class EventSearchForm(EnhancedForm):
         label="Inclure les événements annulés",
         required=False
     )
+
+
+class EventCategoryForm(EnhancedModelForm):
+    """Formulaire de gestion des catégories d'événements."""
+    
+    class Meta:
+        model = EventCategory
+        fields = ['name', 'description', 'color', 'icon']
+        widgets = {
+            'name': forms.TextInput(attrs={'placeholder': 'Nom de la catégorie'}),
+            'description': forms.Textarea(attrs={'rows': 3, 'placeholder': 'Description...'}),
+            'color': forms.TextInput(attrs={'type': 'color'}),
+            'icon': forms.TextInput(attrs={'placeholder': 'Nom de l\'icône (ex: bi-calendar)'}),
+        }

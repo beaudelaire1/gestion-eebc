@@ -796,6 +796,36 @@ def template_item_reorder(request, template_pk):
                 template=template
             ).update(order=index)
         
+        
         messages.success(request, 'Ordre des éléments mis à jour.')
+    
+    return HttpResponse("")
+
+
+@login_required
+@role_required('admin', 'responsable_groupe')
+def service_delete(request, pk):
+    """Supprimer un service de culte (suppression de l'événement)."""
+    service = get_object_or_404(WorshipService, pk=pk)
+    event = service.event
+    
+    if request.method == 'POST':
+        # Suppression de l'événement (cascade vers le service)
+        # OU Soft delete via is_cancelled
+        if request.POST.get('action') == 'delete':
+            event.delete()
+            messages.success(request, "Service et événement supprimés définitivement.")
+        else:
+            event.is_cancelled = True
+            event.save()
+            messages.success(request, "Service annulé avec succès.")
+            
+        return redirect('worship:service_list')
+    
+    context = {
+        'service': service,
+        'event': event,
+    }
+    return render(request, 'worship/service_delete_confirm.html', context)
     
     return redirect('worship:template_detail', pk=template_pk)

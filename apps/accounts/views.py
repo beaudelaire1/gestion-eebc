@@ -14,11 +14,50 @@ from .services import AuthenticationService, AccountsService
 User = get_user_model()
 
 
+from django.conf import settings
+from apps.core.utils.recaptcha import validate_recaptcha
+from apps.core.utils.turnstile import validate_turnstile_with_ip
+
 def login_view(request):
-    """Vue de connexion personnalisée avec rate limiting et tokens sécurisés."""
+    """Vue de connexion personnalisée avec rate limiting, tokens sécurisés et CAPTCHA.
+    
+    Support de 2 systèmes CAPTCHA (transition progressive) :
+    - CloudFlare Turnstile (préféré) : gratuit illimité, meilleur UX
+    - Google reCAPTCHA v3 (legacy) : pour compatibilité
+    """
     if request.method == 'POST':
         username = request.POST.get('username')
         password = request.POST.get('password')
+        
+        # Validation CAPTCHA (CloudFlare Turnstile en priorité, sinon reCAPTCHA)
+        captcha_valid = False
+        captcha_error = None
+        
+        # 1. Essayer CloudFlare Turnstile d'abord (si configuré)
+        turnstile_site_key = getattr(settings, 'TURNSTILE_SITE_KEY', '')
+        if turnstile_site_key:
+            captcha_valid, captcha_error = validate_turnstile_with_ip(request)
+        
+        # 2. Fallback sur reCAPTCHA si Turnstile non configuré ou échoué
+        if not captcha_valid and not turnstile_site_key:
+            recaptcha_token = request.POST.get('recaptcha_token')
+            if settings.RECAPTCHA_PUBLIC_KEY:
+                captcha_valid, captcha_error = validate_recaptcha(recaptcha_token)
+        
+        # Si aucun CAPTCHA n'est configuré, laisser passer en dev
+        if not turnstile_site_key and not settings.RECAPTCHA_PUBLIC_KEY:
+            if settings.DEBUG:
+                captcha_valid = True
+            else:
+                captcha_error = "Configuration de sécurité manquante."
+        
+        # Bloquer si CAPTCHA invalide
+        if not captcha_valid:
+            messages.error(request, captcha_error or "Échec de validation de sécurité.")
+            return render(request, 'accounts/login.html', {
+                'recaptcha_site_key': getattr(settings, 'RECAPTCHA_PUBLIC_KEY', ''),
+                'turnstile_site_key': turnstile_site_key
+            })
         
         if username and password:
             # Utiliser le service d'authentification avec rate limiting
@@ -44,7 +83,10 @@ def login_view(request):
             else:
                 messages.error(request, error_message)
     
-    return render(request, 'accounts/login.html')
+    return render(request, 'accounts/login.html', {
+        'recaptcha_site_key': getattr(settings, 'RECAPTCHA_PUBLIC_KEY', ''),
+        'turnstile_site_key': getattr(settings, 'TURNSTILE_SITE_KEY', '')
+    })
 
 
 def first_login_password_change(request):

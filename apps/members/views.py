@@ -7,12 +7,14 @@ from django.http import HttpResponse
 from datetime import date, timedelta
 from .models import Member, LifeEvent, VisitationLog
 from apps.core.permissions import role_required
+from apps.core.optimization import get_optimized_queryset
 
 
 @login_required
 def member_list(request):
     """Liste des membres avec recherche et filtrage."""
-    members_qs = Member.objects.all()
+    # Optimiser les requêtes avec select_related et prefetch_related
+    members_qs = Member.objects.select_related('site', 'department').all()
     
     # Statistiques
     total_count = members_qs.count()

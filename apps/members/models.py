@@ -138,6 +138,16 @@ class Member(models.Model):
         verbose_name = "Membre"
         verbose_name_plural = "Membres"
         ordering = ['last_name', 'first_name']
+        indexes = [
+            models.Index(fields=['status'], name='member_status_idx'),
+            models.Index(fields=['site'], name='member_site_idx'),
+            models.Index(fields=['date_joined'], name='member_date_joined_idx'),
+            models.Index(fields=['is_baptized'], name='member_baptized_idx'),
+            models.Index(fields=['family'], name='member_family_idx'),
+            models.Index(fields=['status', 'site'], name='member_status_site_idx'),
+            models.Index(fields=['last_name', 'first_name'], name='member_name_idx'),
+            models.Index(fields=['email'], name='member_email_idx'),
+        ]
     
     def __str__(self):
         prefix = f"[{self.member_id}] " if self.member_id else ""
@@ -273,6 +283,13 @@ class LifeEvent(models.Model):
         verbose_name = "Événement de vie"
         verbose_name_plural = "Événements de vie"
         ordering = ['-event_date', '-created_at']
+        indexes = [
+            models.Index(fields=['event_date'], name='lifeevent_date_idx'),
+            models.Index(fields=['event_type'], name='lifeevent_type_idx'),
+            models.Index(fields=['primary_member'], name='lifeevent_member_idx'),
+            models.Index(fields=['requires_visit', 'visit_completed'], name='lifeevent_visit_idx'),
+            models.Index(fields=['announce_sunday', 'announced'], name='lifeevent_announce_idx'),
+        ]
     
     def __str__(self):
         if self.title:
@@ -405,6 +422,14 @@ class VisitationLog(models.Model):
         verbose_name = "Visite pastorale"
         verbose_name_plural = "Visites pastorales"
         ordering = ['-visit_date', '-scheduled_date']
+        indexes = [
+            models.Index(fields=['visit_date'], name='visitlog_visitdate_idx'),
+            models.Index(fields=['scheduled_date'], name='visitlog_scheddate_idx'),
+            models.Index(fields=['member'], name='visitlog_member_idx'),
+            models.Index(fields=['visitor'], name='visitlog_visitor_idx'),
+            models.Index(fields=['status'], name='visitlog_status_idx'),
+            models.Index(fields=['member', 'visit_date'], name='visitlog_member_date_idx'),
+        ]
     
     def __str__(self):
         date_str = self.visit_date or self.scheduled_date or "Non planifié"

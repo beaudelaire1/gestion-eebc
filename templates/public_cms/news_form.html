@@ -1,0 +1,92 @@
+{% extends "base.html" %}
+{% load crispy_forms_tags %}
+
+{% block title %}{% if form.instance.pk %}Modifier{% else %}Nouvel{% endif %} article - EEBC{% endblock %}
+
+{% block page_title %}{% if form.instance.pk %}Modifier l'article{% else %}Nouvel article{% endif %}{% endblock %}
+{% block page_subtitle %}Gestion des articles et annonces publiques{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-10">
+        <div class="card border-0 shadow-sm">
+            <div class="card-body p-4">
+                <form method="post" enctype="multipart/form-data">
+                    {% csrf_token %}
+
+                    <div class="row">
+                        <div class="col-md-8">
+                            <h5 class="mb-3 text-primary">Contenu</h5>
+                            {{ form.title|as_crispy_field }}
+                            {{ form.slug|as_crispy_field }}
+                            <div class="row">
+                                <div class="col-md-6">
+                                    {{ form.category|as_crispy_field }}
+                                </div>
+                                <div class="col-md-6">
+                                    {{ form.site|as_crispy_field }}
+                                </div>
+                            </div>
+                            {{ form.excerpt|as_crispy_field }}
+                            {{ form.content|as_crispy_field }}
+                        </div>
+
+                        <div class="col-md-4">
+                            <h5 class="mb-3 text-primary">Paramètres</h5>
+                            <div class="card bg-light border-0 mb-3">
+                                <div class="card-body">
+                                    {{ form.is_published|as_crispy_field }}
+                                    {{ form.is_featured|as_crispy_field }}
+                                    {{ form.publish_date|as_crispy_field }}
+                                </div>
+                            </div>
+
+                            <div class="card bg-light border-0 mb-3">
+                                <div class="card-body">
+                                    <h6 class="card-title">Image à la une</h6>
+                                    {% if form.instance.featured_image %}
+                                    <img src="{{ form.instance.featured_image.url }}" class="img-fluid rounded mb-2"
+                                        alt="Image actuelle">
+                                    <div class="mb-2">Image actuelle</div>
+                                    {% endif %}
+                                    {{ form.featured_image|as_crispy_field }}
+                                </div>
+                            </div>
+
+                            <div class="card bg-light border-0 mb-3">
+                                <div class="card-body">
+                                    <h6 class="card-title">Affichage temporaire</h6>
+                                    {{ form.display_start_date|as_crispy_field }}
+                                    {{ form.display_end_date|as_crispy_field }}
+                                </div>
+                            </div>
+
+                            {{ form.author_name|as_crispy_field }}
+                        </div>
+                    </div>
+
+                    <div class="d-flex justify-content-end gap-2 mt-4">
+                        <a href="{% url 'public_cms:news_list' %}" class="btn btn-outline-secondary">Annuler</a>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="bi bi-save me-2"></i>{% if form.instance.pk %}Enregistrer les modifications{% else
+                            %}Créer l'article{% endif %}
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Auto-slugify basic implementation
+    document.getElementById('id_title').addEventListener('input', function () {
+        if (!document.getElementById('id_slug').value) {
+            const slug = this.value.toLowerCase()
+                .replace(/[^\w ]+/g, '')
+                .replace(/ +/g, '-');
+            document.getElementById('id_slug').value = slug;
+        }
+    });
+</script>
+{% endblock %}

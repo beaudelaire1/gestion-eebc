@@ -1,0 +1,150 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ title }} - EEBC{% endblock %}
+{% block page_title %}{{ title }}{% endblock %}
+{% block page_subtitle %}{% if is_creation %}Ajouter un nouveau site paroissial{% else %}Modifier les informations du site{% endif %}{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-8">
+        <div class="card border-0 shadow-sm">
+            <div class="card-header bg-white border-bottom">
+                <h6 class="card-title mb-0">
+                    <i class="bi bi-building me-2"></i>{{ title }}
+                </h6>
+            </div>
+            <form method="post" class="card-body">
+                {% csrf_token %}
+
+                {% if form.non_field_errors %}
+                <div class="alert alert-danger">
+                    {% for error in form.non_field_errors %}
+                    <div>{{ error }}</div>
+                    {% endfor %}
+                </div>
+                {% endif %}
+
+                <!-- Identification -->
+                <h6 class="fw-bold text-primary mb-3">
+                    <i class="bi bi-tag me-2"></i>Identification
+                </h6>
+                <div class="row mb-4">
+                    <div class="col-md-3 mb-3">
+                        <label class="form-label fw-semibold">Code *</label>
+                        {{ form.code }}
+                        {% if form.code.errors %}<div class="text-danger small">{{ form.code.errors }}</div>{% endif %}
+                        <div class="form-text">Ex: CAB, MAC</div>
+                    </div>
+                    <div class="col-md-9 mb-3">
+                        <label class="form-label fw-semibold">Nom *</label>
+                        {{ form.name }}
+                        {% if form.name.errors %}<div class="text-danger small">{{ form.name.errors }}</div>{% endif %}
+                    </div>
+                </div>
+
+                <!-- Coordonnées -->
+                <h6 class="fw-bold text-primary mb-3">
+                    <i class="bi bi-geo-alt me-2"></i>Coordonnées
+                </h6>
+                <div class="row mb-4">
+                    <div class="col-12 mb-3">
+                        <label class="form-label fw-semibold">Adresse</label>
+                        {{ form.address }}
+                        {% if form.address.errors %}<div class="text-danger small">{{ form.address.errors }}</div>{% endif %}
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label fw-semibold">Ville</label>
+                        {{ form.city }}
+                        {% if form.city.errors %}<div class="text-danger small">{{ form.city.errors }}</div>{% endif %}
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label fw-semibold">Code postal</label>
+                        {{ form.postal_code }}
+                        {% if form.postal_code.errors %}<div class="text-danger small">{{ form.postal_code.errors }}</div>{% endif %}
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label fw-semibold">Téléphone</label>
+                        {{ form.phone }}
+                        {% if form.phone.errors %}<div class="text-danger small">{{ form.phone.errors }}</div>{% endif %}
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label fw-semibold">Email</label>
+                        {{ form.email }}
+                        {% if form.email.errors %}<div class="text-danger small">{{ form.email.errors }}</div>{% endif %}
+                    </div>
+                </div>
+
+                <!-- GPS -->
+                <h6 class="fw-bold text-primary mb-3">
+                    <i class="bi bi-pin-map me-2"></i>Position GPS
+                </h6>
+                <div class="row mb-4">
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label fw-semibold">Latitude</label>
+                        {{ form.latitude }}
+                        {% if form.latitude.errors %}<div class="text-danger small">{{ form.latitude.errors }}</div>{% endif %}
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label fw-semibold">Longitude</label>
+                        {{ form.longitude }}
+                        {% if form.longitude.errors %}<div class="text-danger small">{{ form.longitude.errors }}</div>{% endif %}
+                    </div>
+                </div>
+
+                <!-- Activités -->
+                <h6 class="fw-bold text-primary mb-3">
+                    <i class="bi bi-clock me-2"></i>Activités
+                </h6>
+                <div class="row mb-4">
+                    <div class="col-12 mb-3">
+                        <label class="form-label fw-semibold">Horaires des cultes</label>
+                        {{ form.worship_schedule }}
+                        {% if form.worship_schedule.errors %}<div class="text-danger small">{{ form.worship_schedule.errors }}</div>{% endif %}
+                    </div>
+                    <div class="col-12 mb-3">
+                        <label class="form-label fw-semibold">Pasteur</label>
+                        {{ form.pastor }}
+                        {% if form.pastor.errors %}<div class="text-danger small">{{ form.pastor.errors }}</div>{% endif %}
+                    </div>
+                </div>
+
+                <!-- Options -->
+                <h6 class="fw-bold text-primary mb-3">
+                    <i class="bi bi-toggles me-2"></i>Options
+                </h6>
+                <div class="row mb-4">
+                    <div class="col-md-6 mb-3">
+                        <div class="form-check">
+                            {{ form.is_active }}
+                            <label class="form-check-label" for="{{ form.is_active.id_for_label }}">
+                                Site actif
+                            </label>
+                        </div>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <div class="form-check">
+                            {{ form.is_main_site }}
+                            <label class="form-check-label" for="{{ form.is_main_site.id_for_label }}">
+                                Site principal
+                            </label>
+                            <div class="form-text">Un seul site peut être principal.</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Boutons -->
+                <hr>
+                <div class="d-flex justify-content-between">
+                    <a href="{% if is_creation %}{% url 'core:site_list' %}{% else %}{% url 'core:site_detail' pk=site.pk %}{% endif %}" class="btn btn-outline-secondary">
+                        <i class="bi bi-x-lg me-1"></i>Annuler
+                    </a>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="bi bi-check-lg me-1"></i>
+                        {% if is_creation %}Créer le site{% else %}Enregistrer{% endif %}
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

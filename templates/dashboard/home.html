@@ -7,6 +7,148 @@
 
 {% block extra_css %}
 <style>
+    /* ============================================
+       SECTION HEADERS - Navigation Enhancement
+       ============================================ */
+    .section-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 1.5rem;
+        padding-bottom: 0.75rem;
+        border-bottom: 2px solid var(--eebc-gray-100);
+        position: relative;
+        scroll-margin-top: 100px;
+    }
+
+    .section-header::before {
+        content: '';
+        position: absolute;
+        bottom: -2px;
+        left: 0;
+        width: 60px;
+        height: 2px;
+        background: linear-gradient(90deg, var(--eebc-primary) 0%, #3b82f6 100%);
+        border-radius: 2px;
+    }
+
+    .section-title {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        font-size: 1.25rem;
+        font-weight: 700;
+        color: var(--eebc-black);
+        margin: 0;
+        letter-spacing: -0.5px;
+    }
+
+    .section-title .section-icon {
+        width: 42px;
+        height: 42px;
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.1rem;
+        color: white;
+        background: linear-gradient(135deg, var(--eebc-primary) 0%, #3b82f6 100%);
+        box-shadow: 0 4px 12px rgba(10, 54, 255, 0.25);
+    }
+
+    .section-title .section-icon.green {
+        background: linear-gradient(135deg, #10B981 0%, #059669 100%);
+        box-shadow: 0 4px 12px rgba(16, 185, 129, 0.25);
+    }
+
+    .section-title .section-icon.purple {
+        background: linear-gradient(135deg, #8B5CF6 0%, #7C3AED 100%);
+        box-shadow: 0 4px 12px rgba(139, 92, 246, 0.25);
+    }
+
+    .section-title .section-icon.orange {
+        background: linear-gradient(135deg, #F59E0B 0%, #D97706 100%);
+        box-shadow: 0 4px 12px rgba(245, 158, 11, 0.25);
+    }
+
+    .section-title .section-icon.pink {
+        background: linear-gradient(135deg, #EC4899 0%, #BE185D 100%);
+        box-shadow: 0 4px 12px rgba(236, 72, 153, 0.25);
+    }
+
+    .section-title .section-icon.red {
+        background: linear-gradient(135deg, #EF4444 0%, #DC2626 100%);
+        box-shadow: 0 4px 12px rgba(239, 68, 68, 0.25);
+    }
+
+    .section-nav {
+        display: flex;
+        gap: 0.5rem;
+    }
+
+    .section-nav .btn {
+        font-size: 0.85rem;
+        padding: 0.4rem 0.75rem;
+        border-radius: 8px;
+    }
+
+    /* Section Navigation Bar (sticky) */
+    .section-nav-bar {
+        position: sticky;
+        top: 70px;
+        z-index: 100;
+        background: rgba(255, 255, 255, 0.95);
+        backdrop-filter: blur(10px);
+        padding: 0.75rem 0;
+        margin: -1rem -1rem 1.5rem -1rem;
+        padding-left: 1rem;
+        padding-right: 1rem;
+        border-bottom: 1px solid var(--eebc-gray-100);
+        display: flex;
+        gap: 0.5rem;
+        overflow-x: auto;
+        scrollbar-width: none;
+    }
+
+    .section-nav-bar::-webkit-scrollbar {
+        display: none;
+    }
+
+    .section-nav-bar .nav-pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 0.5rem 1rem;
+        background: var(--eebc-gray-50);
+        border: 1px solid var(--eebc-gray-200);
+        border-radius: 50px;
+        font-size: 0.85rem;
+        font-weight: 500;
+        color: var(--eebc-gray-600);
+        text-decoration: none;
+        white-space: nowrap;
+        transition: all 0.2s ease;
+    }
+
+    .section-nav-bar .nav-pill:hover {
+        background: var(--eebc-primary);
+        border-color: var(--eebc-primary);
+        color: white;
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(10, 54, 255, 0.3);
+    }
+
+    .section-nav-bar .nav-pill i {
+        font-size: 0.9rem;
+    }
+
+    .section-nav-bar .nav-pill.active {
+        background: var(--eebc-primary);
+        border-color: var(--eebc-primary);
+        color: white;
+        box-shadow: 0 4px 12px rgba(10, 54, 255, 0.3);
+    }
+
     /* Hero Stats Row */
     .hero-stats {
         display: grid;
@@ -14,15 +156,19 @@
         gap: 1.5rem;
         margin-bottom: 2rem;
     }
-    
+
     @media (max-width: 1200px) {
-        .hero-stats { grid-template-columns: repeat(2, 1fr); }
+        .hero-stats {
+            grid-template-columns: repeat(2, 1fr);
+        }
     }
-    
+
     @media (max-width: 576px) {
-        .hero-stats { grid-template-columns: 1fr; }
+        .hero-stats {
+            grid-template-columns: 1fr;
+        }
     }
-    
+
     /* Stat Cards Premium */
     .stat-card-premium {
         background: var(--bg-card);
@@ -34,7 +180,7 @@
         box-shadow: var(--shadow-lg);
         transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
     }
-    
+
     .stat-card-premium::before {
         content: '';
         position: absolute;
@@ -44,7 +190,7 @@
         height: 5px;
         background: var(--accent-primary);
     }
-    
+
     .stat-card-premium::after {
         content: '';
         position: absolute;
@@ -56,12 +202,12 @@
         opacity: 0.03;
         pointer-events: none;
     }
-    
+
     .stat-card-premium:hover {
         transform: translateY(-8px) scale(1.02);
         box-shadow: 0 25px 60px rgba(10, 54, 255, 0.15);
     }
-    
+
     .stat-card-premium .icon-wrapper {
         width: 64px;
         height: 64px;
@@ -75,7 +221,7 @@
         box-shadow: 0 8px 20px rgba(var(--card-accent-rgb, 10, 54, 255), 0.3);
         margin-bottom: 1.25rem;
     }
-    
+
     .stat-card-premium .stat-number {
         font-size: 2.75rem;
         font-weight: 800;
@@ -85,13 +231,13 @@
         line-height: 1;
         margin-bottom: 0.5rem;
     }
-    
+
     .stat-card-premium .stat-label {
         font-size: 0.95rem;
         font-weight: 600;
         color: var(--eebc-gray-500);
     }
-    
+
     .stat-card-premium .stat-trend {
         display: inline-flex;
         align-items: center;
@@ -102,10 +248,17 @@
         border-radius: 8px;
         margin-top: 0.75rem;
     }
-    
-    .stat-trend.up { background: rgba(16, 185, 129, 0.1); color: #059669; }
-    .stat-trend.down { background: rgba(239, 68, 68, 0.1); color: #DC2626; }
-    
+
+    .stat-trend.up {
+        background: rgba(16, 185, 129, 0.1);
+        color: #059669;
+    }
+
+    .stat-trend.down {
+        background: rgba(239, 68, 68, 0.1);
+        color: #DC2626;
+    }
+
     /* Quick Actions Grid */
     .quick-actions {
         display: grid;
@@ -113,11 +266,13 @@
         gap: 1rem;
         margin-bottom: 2rem;
     }
-    
+
     @media (max-width: 992px) {
-        .quick-actions { grid-template-columns: repeat(2, 1fr); }
+        .quick-actions {
+            grid-template-columns: repeat(2, 1fr);
+        }
     }
-    
+
     .quick-action {
         display: flex;
         align-items: center;
@@ -131,14 +286,14 @@
         transition: all 0.3s ease;
         box-shadow: 0 4px 15px rgba(11, 15, 25, 0.04);
     }
-    
+
     .quick-action:hover {
         border-color: var(--eebc-primary);
         transform: translateY(-4px);
         box-shadow: 0 15px 35px rgba(10, 54, 255, 0.12);
         color: var(--eebc-primary);
     }
-    
+
     .quick-action .action-icon {
         width: 48px;
         height: 48px;
@@ -150,18 +305,18 @@
         color: white;
         flex-shrink: 0;
     }
-    
+
     .quick-action .action-text {
         font-weight: 600;
         font-size: 0.95rem;
     }
-    
+
     .quick-action .action-desc {
         font-size: 0.8rem;
         color: var(--eebc-gray-500);
         font-weight: 400;
     }
-    
+
     /* Modern Card */
     .modern-card {
         background: var(--eebc-white);
@@ -171,7 +326,7 @@
         border: none;
         height: 100%;
     }
-    
+
     .modern-card .card-header {
         background: linear-gradient(135deg, var(--eebc-gray-50) 0%, var(--eebc-white) 100%);
         border-bottom: 1px solid var(--eebc-gray-100);
@@ -180,7 +335,7 @@
         justify-content: space-between;
         align-items: center;
     }
-    
+
     .modern-card .card-header h6 {
         font-weight: 700;
         font-size: 1rem;
@@ -190,11 +345,11 @@
         gap: 0.5rem;
         margin: 0;
     }
-    
+
     .modern-card .card-body {
         padding: 1.5rem;
     }
-    
+
     /* Presence Ring */
     .presence-ring {
         position: relative;
@@ -202,17 +357,17 @@
         height: 180px;
         margin: 0 auto 1.5rem;
     }
-    
+
     .presence-ring svg {
         transform: rotate(-90deg);
     }
-    
+
     .presence-ring .ring-bg {
         fill: none;
         stroke: var(--eebc-gray-200);
         stroke-width: 12;
     }
-    
+
     .presence-ring .ring-progress {
         fill: none;
         stroke: var(--eebc-primary);
@@ -222,7 +377,7 @@
         stroke-dashoffset: 502;
         transition: stroke-dashoffset 1.5s ease-out;
     }
-    
+
     .presence-ring .ring-center {
         position: absolute;
         top: 50%;
@@ -230,20 +385,20 @@
         transform: translate(-50%, -50%);
         text-align: center;
     }
-    
+
     .presence-ring .ring-value {
         font-size: 2.5rem;
         font-weight: 800;
         font-family: 'JetBrains Mono', monospace;
         color: var(--eebc-black);
     }
-    
+
     .presence-ring .ring-label {
         font-size: 0.85rem;
         color: var(--eebc-gray-500);
         font-weight: 500;
     }
-    
+
     /* Event Item Modern */
     .event-item-modern {
         display: flex;
@@ -258,18 +413,18 @@
         background: var(--eebc-gray-50);
         border: 1px solid transparent;
     }
-    
+
     .event-item-modern:last-child {
         margin-bottom: 0;
     }
-    
+
     .event-item-modern:hover {
         background: var(--eebc-white);
         border-color: var(--eebc-primary);
         transform: translateX(4px);
         box-shadow: 0 8px 25px rgba(10, 54, 255, 0.1);
     }
-    
+
     .event-date-badge {
         background: var(--eebc-white);
         border-radius: 12px;
@@ -279,33 +434,33 @@
         border: 1px solid var(--eebc-gray-200);
         box-shadow: 0 2px 8px rgba(11, 15, 25, 0.05);
     }
-    
+
     .event-date-badge .day {
         font-size: 1.5rem;
         font-weight: 800;
         color: var(--eebc-primary);
         line-height: 1;
     }
-    
+
     .event-date-badge .month {
         font-size: 0.7rem;
         font-weight: 600;
         text-transform: uppercase;
         color: var(--eebc-gray-500);
     }
-    
+
     .event-info h6 {
         font-weight: 600;
         margin-bottom: 0.25rem;
         color: var(--eebc-black);
     }
-    
+
     .event-info p {
         font-size: 0.85rem;
         color: var(--eebc-gray-500);
         margin: 0;
     }
-    
+
     /* Campaign Progress */
     .campaign-item {
         padding: 1.25rem;
@@ -315,16 +470,16 @@
         border: 1px solid var(--eebc-gray-100);
         transition: all 0.3s ease;
     }
-    
+
     .campaign-item:last-child {
         margin-bottom: 0;
     }
-    
+
     .campaign-item:hover {
         transform: translateY(-2px);
         box-shadow: 0 10px 30px rgba(11, 15, 25, 0.08);
     }
-    
+
     .campaign-progress {
         height: 10px;
         border-radius: 10px;
@@ -332,7 +487,7 @@
         overflow: hidden;
         position: relative;
     }
-    
+
     .campaign-progress-bar {
         height: 100%;
         border-radius: 10px;
@@ -340,7 +495,7 @@
         position: relative;
         transition: width 1s ease-out;
     }
-    
+
     .campaign-progress-bar::after {
         content: '';
         position: absolute;
@@ -348,15 +503,20 @@
         left: 0;
         right: 0;
         bottom: 0;
-        background: linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.3) 50%, transparent 100%);
+        background: linear-gradient(90deg, transparent 0%, rgba(255, 255, 255, 0.3) 50%, transparent 100%);
         animation: shimmer 2s infinite;
     }
-    
+
     @keyframes shimmer {
-        0% { transform: translateX(-100%); }
-        100% { transform: translateX(100%); }
+        0% {
+            transform: translateX(-100%);
+        }
+
+        100% {
+            transform: translateX(100%);
+        }
     }
-    
+
     /* Announcement Card */
     .announcement-card {
         padding: 1.25rem;
@@ -366,17 +526,17 @@
         border-left: 4px solid var(--eebc-primary);
         transition: all 0.2s ease;
     }
-    
+
     .announcement-card:hover {
         background: var(--eebc-white);
         box-shadow: 0 8px 25px rgba(10, 54, 255, 0.08);
     }
-    
+
     .announcement-card.pinned {
         border-left-color: var(--eebc-warning);
         background: linear-gradient(135deg, rgba(245, 158, 11, 0.05) 0%, var(--eebc-gray-50) 100%);
     }
-    
+
     /* Alerts Banner */
     .alert-banner {
         background: linear-gradient(135deg, rgba(245, 158, 11, 0.1) 0%, rgba(245, 158, 11, 0.05) 100%);
@@ -388,12 +548,12 @@
         gap: 1rem;
         margin-bottom: 2rem;
     }
-    
+
     .alert-banner.danger {
         background: linear-gradient(135deg, rgba(239, 68, 68, 0.1) 0%, rgba(239, 68, 68, 0.05) 100%);
         border-color: rgba(239, 68, 68, 0.2);
     }
-    
+
     .alert-banner .alert-icon {
         width: 48px;
         height: 48px;
@@ -406,37 +566,64 @@
         background: var(--eebc-warning);
         flex-shrink: 0;
     }
-    
+
     .alert-banner.danger .alert-icon {
         background: var(--eebc-danger);
     }
-    
+
     /* Animation classes */
     .animate-in {
         animation: slideUp 0.5s ease forwards;
         opacity: 0;
     }
-    
+
     @keyframes slideUp {
         from {
             opacity: 0;
             transform: translateY(20px);
         }
+
         to {
             opacity: 1;
             transform: translateY(0);
         }
     }
-    
-    .delay-1 { animation-delay: 0.1s; }
-    .delay-2 { animation-delay: 0.2s; }
-    .delay-3 { animation-delay: 0.3s; }
-    .delay-4 { animation-delay: 0.4s; }
-    .delay-5 { animation-delay: 0.5s; }
+
+    .delay-1 {
+        animation-delay: 0.1s;
+    }
+
+    .delay-2 {
+        animation-delay: 0.2s;
+    }
+
+    .delay-3 {
+        animation-delay: 0.3s;
+    }
+
+    .delay-4 {
+        animation-delay: 0.4s;
+    }
+
+    .delay-5 {
+        animation-delay: 0.5s;
+    }
 </style>
 {% endblock %}
 
 {% block content %}
+<!-- Section Navigation Bar -->
+<nav class="section-nav-bar">
+    <a href="#section-stats" class="nav-pill"><i class="bi bi-graph-up"></i> Statistiques</a>
+    <a href="#section-actions" class="nav-pill"><i class="bi bi-lightning"></i> Actions rapides</a>
+    <a href="#section-sessions" class="nav-pill"><i class="bi bi-clipboard-check"></i> Sessions</a>
+    <a href="#section-events" class="nav-pill"><i class="bi bi-calendar-event"></i> Événements</a>
+    <a href="#section-campaigns" class="nav-pill"><i class="bi bi-graph-up-arrow"></i> Campagnes</a>
+    <a href="#section-announcements" class="nav-pill"><i class="bi bi-megaphone"></i> Annonces</a>
+    <a href="#section-finance" class="nav-pill"><i class="bi bi-cash-coin"></i> Finances</a>
+    <a href="#section-worship" class="nav-pill"><i class="bi bi-music-note-beamed"></i> Cultes</a>
+</nav>
+
 <!-- Alerts Section -->
 {% if alerts %}
 <div class="alert-banner animate-in {% if alerts.0.type == 'danger' %}danger{% endif %}">
@@ -454,6 +641,12 @@
 {% endif %}
 
 <!-- Hero Stats -->
+<div id="section-stats" class="section-header">
+    <h3 class="section-title">
+        <span class="section-icon"><i class="bi bi-graph-up"></i></span>
+        Statistiques générales
+    </h3>
+</div>
 <div class="hero-stats">
     <div class="stat-card-premium animate-in delay-1" style="--card-accent: #0A36FF; --card-accent-rgb: 10, 54, 255;">
         <div class="icon-wrapper">
@@ -465,7 +658,7 @@
             <i class="bi bi-arrow-up-short"></i> Actifs
         </div>
     </div>
-    
+
     <div class="stat-card-premium animate-in delay-2" style="--card-accent: #10B981; --card-accent-rgb: 16, 185, 129;">
         <div class="icon-wrapper" style="background: #10B981;">
             <i class="bi bi-collection-fill"></i>
@@ -473,7 +666,7 @@
         <div class="stat-number" data-count="{{ stats.total_classes }}">0</div>
         <div class="stat-label">Classes actives</div>
     </div>
-    
+
     <div class="stat-card-premium animate-in delay-3" style="--card-accent: #F59E0B; --card-accent-rgb: 245, 158, 11;">
         <div class="icon-wrapper" style="background: #F59E0B;">
             <i class="bi bi-person-badge-fill"></i>
@@ -481,7 +674,7 @@
         <div class="stat-number" data-count="{{ stats.total_members }}">0</div>
         <div class="stat-label">Membres église</div>
     </div>
-    
+
     <div class="stat-card-premium animate-in delay-4" style="--card-accent: #8B5CF6; --card-accent-rgb: 139, 92, 246;">
         <div class="icon-wrapper" style="background: #8B5CF6;">
             <i class="bi bi-calendar-event-fill"></i>
@@ -492,6 +685,12 @@
 </div>
 
 <!-- Quick Actions -->
+<div id="section-actions" class="section-header">
+    <h3 class="section-title">
+        <span class="section-icon purple"><i class="bi bi-lightning"></i></span>
+        Actions rapides
+    </h3>
+</div>
 <div class="quick-actions animate-in delay-5">
     <a href="{% url 'communication:announcement_create' %}" class="quick-action">
         <div class="action-icon" style="background: linear-gradient(135deg, #0A36FF 0%, #3b82f6 100%);">
@@ -502,7 +701,7 @@
             <div class="action-desc">Publier une annonce</div>
         </div>
     </a>
-    
+
     <a href="{% url 'events:create' %}" class="quick-action">
         <div class="action-icon" style="background: linear-gradient(135deg, #10B981 0%, #059669 100%);">
             <i class="bi bi-calendar-plus"></i>
@@ -512,7 +711,7 @@
             <div class="action-desc">Créer un événement</div>
         </div>
     </a>
-    
+
     <a href="{% url 'bibleclub:create_session' %}" class="quick-action">
         <div class="action-icon" style="background: linear-gradient(135deg, #8B5CF6 0%, #7C3AED 100%);">
             <i class="bi bi-plus-lg"></i>
@@ -522,7 +721,7 @@
             <div class="action-desc">Créer un appel</div>
         </div>
     </a>
-    
+
     <a href="{% url 'events:calendar' %}" class="quick-action">
         <div class="action-icon" style="background: linear-gradient(135deg, #EC4899 0%, #BE185D 100%);">
             <i class="bi bi-calendar3"></i>
@@ -535,6 +734,15 @@
 </div>
 
 <!-- Main Content Grid -->
+<div id="section-sessions" class="section-header">
+    <h3 class="section-title">
+        <span class="section-icon green"><i class="bi bi-clipboard-check"></i></span>
+        Sessions & Présences
+    </h3>
+    <div class="section-nav">
+        <a href="{% url 'bibleclub:session_list' %}" class="btn btn-sm btn-outline-primary">Voir tout</a>
+    </div>
+</div>
 <div class="row g-4">
     <!-- Presence Card -->
     <div class="col-lg-5">
@@ -548,14 +756,15 @@
                 <div class="presence-ring">
                     <svg width="180" height="180" viewBox="0 0 180 180">
                         <circle class="ring-bg" cx="90" cy="90" r="80"></circle>
-                        <circle class="ring-progress" cx="90" cy="90" r="80" data-progress="{{ session_stats.rate }}"></circle>
+                        <circle class="ring-progress" cx="90" cy="90" r="80" data-progress="{{ session_stats.rate }}">
+                        </circle>
                     </svg>
                     <div class="ring-center">
                         <div class="ring-value">{{ session_stats.rate|floatformat:0 }}%</div>
                         <div class="ring-label">Présence</div>
                     </div>
                 </div>
-                
+
                 <div class="d-flex justify-content-center gap-4 mb-4">
                     <div class="text-center">
                         <div class="fs-4 fw-bold text-success">{{ session_stats.present }}</div>
@@ -570,11 +779,13 @@
                         <div class="small text-muted">Retards</div>
                     </div>
                 </div>
-                
+
                 <div class="p-3 rounded-4" style="background: var(--eebc-gray-50);">
                     <div class="fw-bold mb-1">{{ session_stats.session.date|date:"l d F Y" }}</div>
-                    <div class="small text-muted mb-3">{{ session_stats.session.theme|default:"Session du club biblique" }}</div>
-                    <a href="{% url 'bibleclub:session_detail' session_stats.session.pk %}" class="btn btn-primary btn-sm">
+                    <div class="small text-muted mb-3">{{ session_stats.session.theme|default:"Session du club biblique"
+                        }}</div>
+                    <a href="{% url 'bibleclub:session_detail' session_stats.session.pk %}"
+                        class="btn btn-primary btn-sm">
                         <i class="bi bi-eye me-1"></i> Voir détails
                     </a>
                 </div>
@@ -590,12 +801,12 @@
             </div>
         </div>
     </div>
-    
+
     <!-- Events & Campaigns -->
     <div class="col-lg-7">
         <div class="row g-4">
             <!-- Upcoming Events -->
-            <div class="col-12">
+            <div id="section-events" class="col-12">
                 <div class="modern-card">
                     <div class="card-header">
                         <h6><i class="bi bi-calendar-event-fill text-danger"></i> Événements à venir</h6>
@@ -612,11 +823,15 @@
                             <div class="event-info flex-grow-1">
                                 <h6>{{ event.title }}</h6>
                                 <p>
-                                    <i class="bi bi-clock me-1"></i>{% if event.start_time %}{{ event.start_time|time:"H:i" }}{% else %}Journée{% endif %}
-                                    {% if event.location %}<span class="ms-2"><i class="bi bi-geo-alt me-1"></i>{{ event.location }}</span>{% endif %}
+                                    <i class="bi bi-clock me-1"></i>{% if event.start_time %}{{
+                                    event.start_time|time:"H:i" }}{% else %}Journée{% endif %}
+                                    {% if event.location %}<span class="ms-2"><i class="bi bi-geo-alt me-1"></i>{{
+                                        event.location }}</span>{% endif %}
                                 </p>
                             </div>
-                            <div class="rounded-circle" style="width: 14px; height: 14px; background: {{ event.color|default:'#0A36FF' }}; flex-shrink: 0;"></div>
+                            <div class="rounded-circle"
+                                style="width: 14px; height: 14px; background: {{ event.color|default:'#0A36FF' }}; flex-shrink: 0;">
+                            </div>
                         </a>
                         {% endfor %}
                         {% else %}
@@ -628,9 +843,9 @@
                     </div>
                 </div>
             </div>
-            
+
             <!-- Active Campaigns -->
-            <div class="col-12">
+            <div id="section-campaigns" class="col-12">
                 <div class="modern-card">
                     <div class="card-header">
                         <h6><i class="bi bi-graph-up-arrow text-success"></i> Campagnes actives</h6>
@@ -642,13 +857,16 @@
                         <div class="campaign-item">
                             <div class="d-flex justify-content-between align-items-center mb-2">
                                 <h6 class="mb-0 fw-bold">{{ campaign.name }}</h6>
-                                <span class="badge bg-{{ campaign.status_color }}">{{ campaign.progress_percentage }}%</span>
+                                <span class="badge bg-{{ campaign.status_color }}">{{ campaign.progress_percentage
+                                    }}%</span>
                             </div>
                             <div class="campaign-progress mb-2">
-                                <div class="campaign-progress-bar" style="width: {{ campaign.progress_percentage }}%;"></div>
+                                <div class="campaign-progress-bar" style="width: {{ campaign.progress_percentage }}%;">
+                                </div>
                             </div>
                             <div class="d-flex justify-content-between small text-muted">
-                                <span><strong>{{ campaign.collected_amount|floatformat:0 }}€</strong> / {{ campaign.goal_amount|floatformat:0 }}€</span>
+                                <span><strong>{{ campaign.collected_amount|floatformat:0 }}€</strong> / {{
+                                    campaign.goal_amount|floatformat:0 }}€</span>
                                 <span><i class="bi bi-calendar me-1"></i>{{ campaign.end_date|date:"d/m/Y" }}</span>
                             </div>
                         </div>
@@ -664,9 +882,9 @@
             </div>
         </div>
     </div>
-    
+
     <!-- Announcements -->
-    <div class="col-12">
+    <div id="section-announcements" class="col-12">
         <div class="modern-card">
             <div class="card-header">
                 <h6><i class="bi bi-megaphone-fill text-warning"></i> Annonces récentes</h6>
@@ -679,7 +897,8 @@
                         <div class="announcement-card {% if announcement.is_pinned %}pinned{% endif %}">
                             <div class="d-flex justify-content-between align-items-start mb-2">
                                 <h6 class="mb-0 fw-bold">
-                                    {% if announcement.is_pinned %}<i class="bi bi-pin-angle-fill text-warning me-1"></i>{% endif %}
+                                    {% if announcement.is_pinned %}<i
+                                        class="bi bi-pin-angle-fill text-warning me-1"></i>{% endif %}
                                     {{ announcement.title }}
                                 </h6>
                                 <small class="text-muted">{{ announcement.created_at|naturalday }}</small>
@@ -698,11 +917,11 @@
             </div>
         </div>
     </div>
-    
+
     <!-- ========== NOUVEAUX MODULES ========== -->
-    
+
     <!-- Finance Card -->
-    <div class="col-lg-4">
+    <div id="section-finance" class="col-lg-4">
         <div class="modern-card">
             <div class="card-header">
                 <h6><i class="bi bi-cash-coin text-success"></i> Trésorerie du mois</h6>
@@ -713,25 +932,30 @@
                     <div class="col-6">
                         <div class="p-3 rounded-3" style="background: rgba(16, 185, 129, 0.1);">
                             <div class="small text-muted mb-1">Entrées</div>
-                            <div class="fs-5 fw-bold text-success">+{{ finance_stats.month_income|floatformat:0 }}€</div>
+                            <div class="fs-5 fw-bold text-success">+{{ finance_stats.month_income|floatformat:0 }}€
+                            </div>
                         </div>
                     </div>
                     <div class="col-6">
                         <div class="p-3 rounded-3" style="background: rgba(239, 68, 68, 0.1);">
                             <div class="small text-muted mb-1">Sorties</div>
-                            <div class="fs-5 fw-bold text-danger">-{{ finance_stats.month_expenses|floatformat:0 }}€</div>
+                            <div class="fs-5 fw-bold text-danger">-{{ finance_stats.month_expenses|floatformat:0 }}€
+                            </div>
                         </div>
                     </div>
                 </div>
                 <div class="p-3 rounded-3 text-center" style="background: var(--eebc-gray-50);">
                     <div class="small text-muted mb-1">Solde du mois</div>
-                    <div class="fs-4 fw-bold {% if finance_stats.month_balance >= 0 %}text-success{% else %}text-danger{% endif %}">
-                        {% if finance_stats.month_balance >= 0 %}+{% endif %}{{ finance_stats.month_balance|floatformat:0 }}€
+                    <div
+                        class="fs-4 fw-bold {% if finance_stats.month_balance >= 0 %}text-success{% else %}text-danger{% endif %}">
+                        {% if finance_stats.month_balance >= 0 %}+{% endif %}{{
+                        finance_stats.month_balance|floatformat:0 }}€
                     </div>
                 </div>
                 {% if finance_stats.pending_transactions > 0 %}
                 <div class="mt-3 text-center">
-                    <a href="{% url 'finance:transaction_list' %}?status=en_attente" class="btn btn-sm btn-outline-warning">
+                    <a href="{% url 'finance:transaction_list' %}?status=en_attente"
+                        class="btn btn-sm btn-outline-warning">
                         <i class="bi bi-clock-history me-1"></i>
                         {{ finance_stats.pending_transactions }} transaction(s) en attente
                     </a>
@@ -740,9 +964,9 @@
             </div>
         </div>
     </div>
-    
+
     <!-- Worship Card -->
-    <div class="col-lg-4">
+    <div id="section-worship" class="col-lg-4">
         <div class="modern-card">
             <div class="card-header">
                 <h6><i class="bi bi-calendar-check text-primary"></i> Prochain culte</h6>
@@ -751,10 +975,12 @@
             <div class="card-body">
                 {% if worship_stats.next_service %}
                 <div class="text-center mb-3">
-                    <div class="d-inline-block p-3 rounded-4" style="background: linear-gradient(135deg, var(--eebc-primary) 0%, #3b82f6 100%);">
+                    <div class="d-inline-block p-3 rounded-4"
+                        style="background: linear-gradient(135deg, var(--eebc-primary) 0%, #3b82f6 100%);">
                         <div class="text-white">
                             <div class="fs-2 fw-bold">{{ worship_stats.next_service.event.start_date|date:"d" }}</div>
-                            <div class="small text-uppercase">{{ worship_stats.next_service.event.start_date|date:"M" }}</div>
+                            <div class="small text-uppercase">{{ worship_stats.next_service.event.start_date|date:"M" }}
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -762,7 +988,7 @@
                 {% if worship_stats.next_service.theme %}
                 <p class="text-center text-muted small mb-3">{{ worship_stats.next_service.theme }}</p>
                 {% endif %}
-                
+
                 {% if unconfirmed_roles %}
                 <div class="alert alert-warning py-2 px-3 small mb-2">
                     <i class="bi bi-exclamation-triangle me-1"></i>
@@ -782,9 +1008,10 @@
                     Tous les rôles sont confirmés
                 </div>
                 {% endif %}
-                
+
                 <div class="text-center mt-3">
-                    <a href="{% url 'worship:service_detail' worship_stats.next_service.pk %}" class="btn btn-primary btn-sm">
+                    <a href="{% url 'worship:service_detail' worship_stats.next_service.pk %}"
+                        class="btn btn-primary btn-sm">
                         <i class="bi bi-eye me-1"></i> Voir détails
                     </a>
                 </div>
@@ -800,7 +1027,7 @@
             </div>
         </div>
     </div>
-    
+
     <!-- Pastoral CRM Card (réservé aux pasteurs, anciens et diacres) -->
     {% if user.can_view_member_alerts %}
     <div class="col-lg-4">
@@ -831,13 +1058,14 @@
                         </a>
                     </div>
                 </div>
-                
+
                 <!-- Événements de vie récents -->
                 {% if recent_life_events %}
                 <h6 class="small text-uppercase text-muted mb-2">Événements récents</h6>
                 <div class="small">
                     {% for event in recent_life_events %}
-                    <a href="{% url 'members:life_event_detail' event.pk %}" class="d-flex align-items-center py-2 border-bottom text-decoration-none text-dark">
+                    <a href="{% url 'members:life_event_detail' event.pk %}"
+                        class="d-flex align-items-center py-2 border-bottom text-decoration-none text-dark">
                         <span class="me-2">
                             {% if event.event_type == 'naissance' %}🎉
                             {% elif event.event_type == 'deces' %}⚫
@@ -848,7 +1076,8 @@
                         </span>
                         <div class="flex-grow-1">
                             <div class="fw-medium">{{ event.primary_member.full_name }}</div>
-                            <div class="text-muted small">{{ event.get_event_type_display }} · {{ event.event_date|date:"d/m" }}</div>
+                            <div class="text-muted small">{{ event.get_event_type_display }} · {{
+                                event.event_date|date:"d/m" }}</div>
                         </div>
                         {% if event.requires_visit and not event.visit_completed %}
                         <span class="badge bg-warning">À visiter</span>
@@ -857,13 +1086,14 @@
                     {% endfor %}
                 </div>
                 {% endif %}
-                
+
                 <!-- Visites planifiées -->
                 {% if pending_visits %}
                 <h6 class="small text-uppercase text-muted mb-2 mt-3">Visites à faire</h6>
                 <div class="small">
                     {% for visit in pending_visits %}
-                    <a href="{% url 'members:visit_detail' visit.pk %}" class="d-flex justify-content-between py-1 text-decoration-none text-dark">
+                    <a href="{% url 'members:visit_detail' visit.pk %}"
+                        class="d-flex justify-content-between py-1 text-decoration-none text-dark">
                         <span>{{ visit.member.full_name }}</span>
                         <span class="badge bg-{% if visit.status == 'a_faire' %}warning{% else %}info{% endif %}">
                             {% if visit.scheduled_date %}{{ visit.scheduled_date|date:"d/m" }}{% else %}À planifier{% endif %}
@@ -872,7 +1102,7 @@
                     {% endfor %}
                 </div>
                 {% endif %}
-                
+
                 <div class="text-center mt-3">
                     <a href="{% url 'members:life_event_create' %}" class="btn btn-outline-primary btn-sm me-1">
                         <i class="bi bi-plus-lg me-1"></i> Événement
@@ -890,80 +1120,118 @@
 
 {% block extra_js %}
 <script>
-document.addEventListener('DOMContentLoaded', function() {
-    // Animate numbers
-    document.querySelectorAll('[data-count]').forEach(function(el) {
-        const target = parseInt(el.dataset.count);
-        const duration = 1500;
-        const step = target / (duration / 16);
-        let current = 0;
-        
-        const timer = setInterval(function() {
-            current += step;
-            if (current >= target) {
-                el.textContent = target;
-                clearInterval(timer);
-            } else {
-                el.textContent = Math.floor(current);
-            }
-        }, 16);
-    });
-    
-    // Animate presence ring
-    document.querySelectorAll('.ring-progress').forEach(function(ring) {
-        const progress = parseFloat(ring.dataset.progress) || 0;
-        const circumference = 502; // 2 * π * 80
-        const offset = circumference - (progress / 100 * circumference);
-        
-        setTimeout(function() {
-            ring.style.strokeDashoffset = offset;
-        }, 300);
-    });
-    
-    // Animate campaign progress bars
-    document.querySelectorAll('.campaign-progress-bar').forEach(function(bar) {
-        const width = bar.style.width;
-        bar.style.width = '0%';
-        setTimeout(function() {
-            bar.style.width = width;
-        }, 500);
-    });
-});
+    document.addEventListener('DOMContentLoaded', function () {
+        // Animate numbers
+        document.querySelectorAll('[data-count]').forEach(function (el) {
+            const target = parseInt(el.dataset.count);
+            const duration = 1500;
+            const step = target / (duration / 16);
+            let current = 0;
 
-// Theme Demo Section
-document.addEventListener('DOMContentLoaded', function() {
-    // Ajouter un raccourci clavier pour ouvrir le sélecteur de thème
-    document.addEventListener('keydown', function(e) {
-        if (e.ctrlKey && e.shiftKey && e.key === 'T') {
-            e.preventDefault();
-            if (window.themeManager) {
-                window.themeManager.showThemeSelector();
-            }
+            const timer = setInterval(function () {
+                current += step;
+                if (current >= target) {
+                    el.textContent = target;
+                    clearInterval(timer);
+                } else {
+                    el.textContent = Math.floor(current);
+                }
+            }, 16);
+        });
+
+        // Animate presence ring
+        document.querySelectorAll('.ring-progress').forEach(function (ring) {
+            const progress = parseFloat(ring.dataset.progress) || 0;
+            const circumference = 502; // 2 * π * 80
+            const offset = circumference - (progress / 100 * circumference);
+
+            setTimeout(function () {
+                ring.style.strokeDashoffset = offset;
+            }, 300);
+        });
+
+        // Animate campaign progress bars
+        document.querySelectorAll('.campaign-progress-bar').forEach(function (bar) {
+            const width = bar.style.width;
+            bar.style.width = '0%';
+            setTimeout(function () {
+                bar.style.width = width;
+            }, 500);
+        });
+
+        // Smooth scroll for section navigation
+        document.querySelectorAll('.section-nav-bar .nav-pill').forEach(function (pill) {
+            pill.addEventListener('click', function (e) {
+                e.preventDefault();
+                const targetId = this.getAttribute('href');
+                const targetElement = document.querySelector(targetId);
+                if (targetElement) {
+                    targetElement.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                    // Update active state
+                    document.querySelectorAll('.section-nav-bar .nav-pill').forEach(p => p.classList.remove('active'));
+                    this.classList.add('active');
+                }
+            });
+        });
+
+        // Highlight active section on scroll
+        const sections = document.querySelectorAll('[id^="section-"]');
+        const navPills = document.querySelectorAll('.section-nav-bar .nav-pill');
+
+        function updateActiveNav() {
+            let current = '';
+            sections.forEach(section => {
+                const sectionTop = section.offsetTop - 150;
+                if (window.scrollY >= sectionTop) {
+                    current = section.getAttribute('id');
+                }
+            });
+            navPills.forEach(pill => {
+                pill.classList.remove('active');
+                if (pill.getAttribute('href') === '#' + current) {
+                    pill.classList.add('active');
+                }
+            });
         }
+
+        window.addEventListener('scroll', updateActiveNav);
+        updateActiveNav(); // Initial call
     });
-    
-    // Afficher une notification de bienvenue pour les thèmes
-    setTimeout(function() {
-        if (localStorage.getItem('eebc-theme-welcome') !== 'shown') {
-            const notification = document.createElement('div');
-            notification.className = 'theme-notification';
-            notification.innerHTML = `
+
+    // Theme Demo Section
+    document.addEventListener('DOMContentLoaded', function () {
+        // Ajouter un raccourci clavier pour ouvrir le sélecteur de thème
+        document.addEventListener('keydown', function (e) {
+            if (e.ctrlKey && e.shiftKey && e.key === 'T') {
+                e.preventDefault();
+                if (window.themeManager) {
+                    window.themeManager.showThemeSelector();
+                }
+            }
+        });
+
+        // Afficher une notification de bienvenue pour les thèmes
+        setTimeout(function () {
+            if (localStorage.getItem('eebc-theme-welcome') !== 'shown') {
+                const notification = document.createElement('div');
+                notification.className = 'theme-notification';
+                notification.innerHTML = `
                 <div class="theme-notification__content">
                     <i class="bi bi-palette me-2"></i>
                     Nouveau ! Cliquez sur l'icône thème pour découvrir 7 modes différents
                 </div>
             `;
-            document.body.appendChild(notification);
-            
-            setTimeout(() => notification.classList.add('theme-notification--visible'), 100);
-            setTimeout(() => {
-                notification.classList.remove('theme-notification--visible');
-                setTimeout(() => notification.remove(), 300);
-            }, 5000);
-            
-            localStorage.setItem('eebc-theme-welcome', 'shown');
-        }
-    }, 2000);
-});
+                document.body.appendChild(notification);
+
+                setTimeout(() => notification.classList.add('theme-notification--visible'), 100);
+                setTimeout(() => {
+                    notification.classList.remove('theme-notification--visible');
+                    setTimeout(() => notification.remove(), 300);
+                }, 5000);
+
+                localStorage.setItem('eebc-theme-welcome', 'shown');
+            }
+        }, 2000);
+    });
 </script>
 {% endblock %}

@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+
+{% block title %}Supprimer page - EEBC{% endblock %}
+
+{% block page_title %}Supprimer la page{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-6">
+        <div class="card border-0 shadow-sm">
+            <div class="card-body text-center p-5">
+                <div class="text-danger mb-4">
+                    <i class="bi bi-exclamation-circle" style="font-size: 4rem;"></i>
+                </div>
+                <h4 class="mb-3">Supprimer cette page ?</h4>
+                <p class="text-muted mb-4">
+                    Vous allez supprimer la page <strong>"{{ object.title }}"</strong>.<br>
+                    Confirmez-vous cette action ?
+                </p>
+                <form method="post">
+                    {% csrf_token %}
+                    <div class="d-flex justify-content-center gap-3">
+                        <a href="{% url 'public_cms:page_list' %}" class="btn btn-outline-secondary px-4">Annuler</a>
+                        <button type="submit" class="btn btn-danger px-4">
+                            <i class="bi bi-trash me-2"></i>Supprimer
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -101,12 +101,19 @@ body {
 
 .nav-section__title {
     font-size: 0.7rem;
-    font-weight: 600;
+    font-weight: 700;
     text-transform: uppercase;
-    letter-spacing: 1.2px;
-    color: var(--eebc-gray-400);
-    padding: 0 1.25rem;
-    margin-bottom: 0.5rem;
+    letter-spacing: 1.5px;
+    color: var(--eebc-primary);
+    padding: 0.5rem 1rem;
+    margin: 0.5rem 0.75rem 0.75rem;
+    background: linear-gradient(135deg, rgba(10, 54, 255, 0.08) 0%, rgba(59, 130, 246, 0.05) 100%);
+    border-radius: 8px;
+    border-left: 3px solid var(--eebc-primary);
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
 }
 
 .sidebar .nav-link {

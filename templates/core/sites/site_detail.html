@@ -1,0 +1,186 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ site.name }} - EEBC{% endblock %}
+{% block page_title %}{{ site.name }}{% endblock %}
+{% block page_subtitle %}Site {{ site.code }}{% endblock %}
+
+{% block content %}
+<div class="row g-4">
+    <!-- Sidebar -->
+    <div class="col-lg-4">
+        <div class="card border-0 shadow-sm mb-4">
+            <div class="card-body text-center">
+                <div class="rounded-circle bg-primary bg-opacity-10 d-inline-flex align-items-center justify-content-center mb-3" style="width:80px;height:80px;">
+                    <i class="bi bi-building fs-1 text-primary"></i>
+                </div>
+                <h5 class="mb-1">{{ site.name }}</h5>
+                <span class="badge bg-light text-dark">{{ site.code }}</span>
+                <div class="mt-2">
+                    {% if site.is_main_site %}
+                    <span class="badge bg-primary">Site principal</span>
+                    {% endif %}
+                    {% if site.is_active %}
+                    <span class="badge bg-success">Actif</span>
+                    {% else %}
+                    <span class="badge bg-secondary">Inactif</span>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Statistiques -->
+        <div class="card border-0 shadow-sm mb-4">
+            <div class="card-header bg-white border-bottom">
+                <h6 class="card-title mb-0"><i class="bi bi-bar-chart me-2"></i>Statistiques</h6>
+            </div>
+            <div class="card-body">
+                <div class="d-flex justify-content-between mb-2">
+                    <span class="text-muted">Membres total</span>
+                    <span class="fw-bold">{{ member_count }}</span>
+                </div>
+                <div class="d-flex justify-content-between mb-2">
+                    <span class="text-muted">Membres actifs</span>
+                    <span class="fw-bold text-success">{{ active_member_count }}</span>
+                </div>
+                <div class="d-flex justify-content-between">
+                    <span class="text-muted">Administrateurs</span>
+                    <span class="fw-bold">{{ administrators.count }}</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Actions -->
+        <div class="card border-0 shadow-sm">
+            <div class="card-header bg-white border-bottom">
+                <h6 class="card-title mb-0"><i class="bi bi-gear me-2"></i>Actions</h6>
+            </div>
+            <div class="card-body d-grid gap-2">
+                <a href="{% url 'core:site_edit' pk=site.pk %}" class="btn btn-primary">
+                    <i class="bi bi-pencil me-2"></i>Modifier
+                </a>
+                {% if not site.is_main_site %}
+                <a href="{% url 'core:site_delete' pk=site.pk %}" class="btn btn-outline-danger">
+                    <i class="bi bi-trash me-2"></i>Supprimer
+                </a>
+                {% endif %}
+                <a href="{% url 'core:site_list' %}" class="btn btn-outline-secondary">
+                    <i class="bi bi-arrow-left me-2"></i>Retour à la liste
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Contenu principal -->
+    <div class="col-lg-8">
+        <!-- Informations générales -->
+        <div class="card border-0 shadow-sm mb-4">
+            <div class="card-header bg-white border-bottom">
+                <h6 class="card-title mb-0"><i class="bi bi-info-circle me-2"></i>Informations générales</h6>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <div class="text-muted small">Adresse</div>
+                        <div>{{ site.address|default:"—" }}</div>
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <div class="text-muted small">Ville</div>
+                        <div>{{ site.city|default:"—" }}</div>
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <div class="text-muted small">Code postal</div>
+                        <div>{{ site.postal_code|default:"—" }}</div>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <div class="text-muted small">Téléphone</div>
+                        <div>
+                            {% if site.phone %}
+                            <a href="tel:{{ site.phone }}">{{ site.phone }}</a>
+                            {% else %}—{% endif %}
+                        </div>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <div class="text-muted small">Email</div>
+                        <div>
+                            {% if site.email %}
+                            <a href="mailto:{{ site.email }}">{{ site.email }}</a>
+                            {% else %}—{% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Horaires des cultes -->
+        <div class="card border-0 shadow-sm mb-4">
+            <div class="card-header bg-white border-bottom">
+                <h6 class="card-title mb-0"><i class="bi bi-clock me-2"></i>Horaires des cultes</h6>
+            </div>
+            <div class="card-body">
+                {% if site.worship_schedule %}
+                <pre class="mb-0" style="font-family:inherit; white-space:pre-wrap;">{{ site.worship_schedule }}</pre>
+                {% else %}
+                <p class="text-muted mb-0">Non renseigné.</p>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Responsables -->
+        <div class="card border-0 shadow-sm mb-4">
+            <div class="card-header bg-white border-bottom">
+                <h6 class="card-title mb-0"><i class="bi bi-people me-2"></i>Responsables</h6>
+            </div>
+            <div class="card-body">
+                <div class="mb-3">
+                    <div class="text-muted small">Pasteur</div>
+                    <div>
+                        {% if site.pastor %}
+                        <i class="bi bi-person-badge me-1"></i>{{ site.pastor.get_full_name }}
+                        {% else %}
+                        <span class="text-muted">Non assigné</span>
+                        {% endif %}
+                    </div>
+                </div>
+                <div>
+                    <div class="text-muted small mb-2">Administrateurs</div>
+                    {% if administrators %}
+                    <div class="d-flex flex-wrap gap-2">
+                        {% for admin in administrators %}
+                        <span class="badge bg-light text-dark">
+                            <i class="bi bi-person me-1"></i>{{ admin.get_full_name }}
+                        </span>
+                        {% endfor %}
+                    </div>
+                    {% else %}
+                    <span class="text-muted">Aucun administrateur assigné.</span>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Coordonnées GPS -->
+        {% if site.latitude and site.longitude %}
+        <div class="card border-0 shadow-sm">
+            <div class="card-header bg-white border-bottom">
+                <h6 class="card-title mb-0"><i class="bi bi-geo-alt me-2"></i>Localisation</h6>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6 mb-2">
+                        <div class="text-muted small">Latitude</div>
+                        <div>{{ site.latitude }}</div>
+                    </div>
+                    <div class="col-md-6 mb-2">
+                        <div class="text-muted small">Longitude</div>
+                        <div>{{ site.longitude }}</div>
+                    </div>
+                </div>
+                <a href="https://www.google.com/maps?q={{ site.latitude }},{{ site.longitude }}" target="_blank" class="btn btn-sm btn-outline-primary mt-2">
+                    <i class="bi bi-map me-1"></i>Voir sur Google Maps
+                </a>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

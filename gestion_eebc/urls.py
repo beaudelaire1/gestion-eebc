@@ -47,7 +47,9 @@ urlpatterns = [
     path('app/communication/', include('apps.communication.urls')),
     path('app/finance/', include('apps.finance.urls')),
     path('app/worship/', include('apps.worship.urls')),
+    path('app/cms/', include('apps.public.urls')),  # CMS Public
     path('app/imports/', include('apps.imports.urls')),  # Import Excel
+    # path('app/sites/', include('apps.core.site_urls')),  # CRUD Sites - TEMPORAIREMENT DÉSACTIVÉ
     
     # Exports et impressions
     path('app/exports/', include('apps.core.export_urls')),
@@ -56,6 +58,15 @@ urlpatterns = [
 if settings.DEBUG:
     urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
     urlpatterns += static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
+    
+    # Django Debug Toolbar
+    try:
+        import debug_toolbar
+        urlpatterns = [
+            path('__debug__/', include('debug_toolbar.urls')),
+        ] + urlpatterns
+    except ImportError:
+        pass
 
 # Admin site customization
 admin.site.site_header = "Gestion EEBC"

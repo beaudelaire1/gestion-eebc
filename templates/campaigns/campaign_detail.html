@@ -20,14 +20,13 @@
                     </div>
                     {% endif %}
                 </div>
-                
+
                 <!-- Barre de progression en temps réel -->
                 <div class="progress mb-4" style="height: 12px;" id="campaign-progress">
-                    <div class="progress-bar bg-{{ campaign.status_color }}" 
-                         style="width: {{ campaign.progress_percentage }}%;"
-                         id="progress-bar"></div>
+                    <div class="progress-bar bg-{{ campaign.status_color }}"
+                        style="width: {{ campaign.progress_percentage }}%;" id="progress-bar"></div>
                 </div>
-                
+
                 <div class="row text-center mb-4">
                     <div class="col-6">
                         <div class="h4 mb-0" id="collected-amount">{{ campaign.collected_amount|floatformat:0 }}€</div>
@@ -38,17 +37,17 @@
                         <small class="text-muted">Objectif</small>
                     </div>
                 </div>
-                
+
                 <div class="text-center mb-4">
                     <div class="h5 mb-0" id="remaining-amount">{{ campaign.remaining_amount|floatformat:0 }}€</div>
                     <small class="text-muted">Restant à collecter</small>
                 </div>
-                
+
                 <p class="mb-2">
                     <i class="bi bi-calendar me-2 text-muted"></i>
                     {{ campaign.start_date|date:"d/m/Y" }} - {{ campaign.end_date|date:"d/m/Y" }}
                 </p>
-                
+
                 {% if campaign.responsible %}
                 <p class="mb-0">
                     <i class="bi bi-person me-2 text-muted"></i>
@@ -65,6 +64,9 @@
                         <a href="{% url 'campaigns:update' campaign.pk %}" class="btn btn-outline-primary btn-sm">
                             <i class="bi bi-pencil me-1"></i>Modifier
                         </a>
+                        <a href="{% url 'campaigns:delete' campaign.pk %}" class="btn btn-outline-danger btn-sm">
+                            <i class="bi bi-trash me-1"></i>Supprimer
+                        </a>
                         <a href="{% url 'campaigns:list' %}" class="btn btn-outline-secondary btn-sm">
                             <i class="bi bi-arrow-left me-1"></i>Retour
                         </a>
@@ -72,7 +74,7 @@
                 </div>
             </div>
         </div>
-        
+
         {% if not campaign.is_active %}
         <div class="alert alert-secondary">
             <i class="bi bi-info-circle me-2"></i>
@@ -86,7 +88,7 @@
         </div>
         {% endif %}
     </div>
-    
+
     <div class="col-lg-8">
         {% if campaign.description %}
         <div class="card mb-4">
@@ -98,7 +100,7 @@
             </div>
         </div>
         {% endif %}
-        
+
         <div class="card">
             <div class="card-header d-flex justify-content-between align-items-center">
                 <h6 class="card-title"><i class="bi bi-coin me-2"></i>Derniers dons</h6>
@@ -113,20 +115,31 @@
                                 <th>Donateur</th>
                                 <th>Montant</th>
                                 <th>Date</th>
+                                <th>Actions</th>
                             </tr>
                         </thead>
                         <tbody>
                             {% for donation in donations %}
-                            <tr>
+                            <tr {% if donation.is_cancelled %}class="table-danger text-muted" {% endif %}>
                                 <td>
                                     {% if donation.is_anonymous %}
                                     <em class="text-muted">Anonyme</em>
                                     {% else %}
                                     {{ donation.donor_name|default:"Non spécifié" }}
                                     {% endif %}
+                                    {% if donation.is_cancelled %}<span class="badge bg-danger ms-2">Annulé</span>{%
+                                    endif %}
                                 </td>
                                 <td><strong>{{ donation.amount }}€</strong></td>
                                 <td>{{ donation.donation_date|date:"d/m/Y" }}</td>
+                                <td>
+                                    <a href="{% url 'campaigns:donation_cancel' donation.pk %}"
+                                        class="btn btn-sm btn-link text-danger"
+                                        title="{% if donation.is_cancelled %}Réactiver{% else %}Annuler{% endif %}">
+                                        <i
+                                            class="bi {% if donation.is_cancelled %}bi-arrow-counterclockwise{% else %}bi-x-circle{% endif %}"></i>
+                                    </a>
+                                </td>
                             </tr>
                             {% endfor %}
                         </tbody>
@@ -151,38 +164,37 @@
 
 {% block extra_js %}
 <script>
-// Mise à jour en temps réel de la progression
-function updateCampaignProgress() {
-    fetch(`/campaigns/{{ campaign.pk }}/progress/`)
-        .then(response => response.json())
-        .then(data => {
-            // Mettre à jour la barre de progression
-            const progressBar = document.getElementById('progress-bar');
-            const progressPercentage = document.getElementById('progress-percentage');
-            const collectedAmount = document.getElementById('collected-amount');
-            const remainingAmount = document.getElementById('remaining-amount');
-            
-            if (progressBar && progressPercentage && collectedAmount && remainingAmount) {
-                progressBar.style.width = `${data.progress_percentage}%`;
-                progressBar.className = `progress-bar bg-${data.status_color}`;
-                progressPercentage.textContent = `${data.progress_percentage}%`;
-                progressPercentage.style.color = `var(--bs-${data.status_color})`;
-                
-                collectedAmount.textContent = `${Math.round(data.collected_amount)}€`;
-                remainingAmount.textContent = `${Math.round(data.remaining_amount)}€`;
-                
-                // Notification si objectif atteint pour la première fois
-                if (data.goal_reached && !window.goalNotified) {
-                    window.goalNotified = true;
-                    window.toastManager.goalReached('{{ campaign.name|escapejs }}');
-                }
-            }
-        })
-        .catch(error => console.error('Erreur lors de la mise à jour:', error));
-}
+    // Mise à jour en temps réel de la progression
+    function updateCampaignProgress() {
+        fetch(`/campaigns/{{ campaign.pk }}/progress/`)
+            .then(response => response.json())
+            .then(data => {
+                // Mettre à jour la barre de progression
+                const progressBar = document.getElementById('progress-bar');
+                const progressPercentage = document.getElementById('progress-percentage');
+                const collectedAmount = document.getElementById('collected-amount');
+                const remainingAmount = document.getElementById('remaining-amount');
 
-// Mettre à jour toutes les 10 secondes sur la page de détail
-setInterval(updateCampaignProgress, 10000);
+                if (progressBar && progressPercentage && collectedAmount && remainingAmount) {
+                    progressBar.style.width = `${data.progress_percentage}%`;
+                    progressBar.className = `progress-bar bg-${data.status_color}`;
+                    progressPercentage.textContent = `${data.progress_percentage}%`;
+                    progressPercentage.style.color = `var(--bs-${data.status_color})`;
+
+                    collectedAmount.textContent = `${Math.round(data.collected_amount)}€`;
+                    remainingAmount.textContent = `${Math.round(data.remaining_amount)}€`;
+
+                    // Notification si objectif atteint pour la première fois
+                    if (data.goal_reached && !window.goalNotified) {
+                        window.goalNotified = true;
+                        window.toastManager.goalReached('{{ campaign.name|escapejs }}');
+                    }
+                }
+            })
+            .catch(error => console.error('Erreur lors de la mise à jour:', error));
+    }
+
+    // Mettre à jour toutes les 10 secondes sur la page de détail
+    setInterval(updateCampaignProgress, 10000);
 </script>
 {% endblock %}
-

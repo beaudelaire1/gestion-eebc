@@ -17,12 +17,13 @@
                     <div class="card-body p-4 text-center">
                         <div class="mb-4">
                             <div class="avatar mx-auto mb-3" style="width: 60px; height: 60px; font-size: 1.5rem;">
-                                {{ request.user.first_name|slice:":1"|upper }}{{ request.user.last_name|slice:":1"|upper }}
+                                {{ request.user.first_name|slice:":1"|upper }}{{ request.user.last_name|slice:":1"|upper
+                                }}
                             </div>
-                            <h5>{{ request.user.get_full_name|default:request.user.username }}</h5>
+                            <h5>{% firstof request.user.get_full_name request.user.username %}</h5>
                             <p class="text-muted">Voulez-vous vraiment vous déconnecter ?</p>
                         </div>
-                        
+
                         <div class="d-grid gap-2">
                             <form method="post" action="{% url 'accounts:logout' %}">
                                 {% csrf_token %}
@@ -31,13 +32,13 @@
                                     Oui, me déconnecter
                                 </button>
                             </form>
-                            
+
                             <a href="{% url 'dashboard:home' %}" class="btn btn-outline-secondary btn-lg">
                                 <i class="bi bi-arrow-left me-2"></i>
                                 Annuler et retourner au tableau de bord
                             </a>
                         </div>
-                        
+
                         <div class="mt-4 pt-3 border-top">
                             <p class="text-muted small mb-0">
                                 <i class="bi bi-info-circle me-1"></i>

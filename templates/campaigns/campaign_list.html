@@ -41,20 +41,21 @@
                         {% endif %}
                     </div>
                     <div class="text-end">
-                        <div class="h4 mb-0" style="color: var(--bs-{{ campaign.status_color }});">{{ campaign.progress_percentage }}%</div>
+                        <div class="h4 mb-0" style="color: var(--bs-{{ campaign.status_color }});">{{
+                            campaign.progress_percentage }}%</div>
                     </div>
                 </div>
-                
+
                 <!-- Barre de progression en temps réel -->
                 <div class="progress mb-3" style="height: 12px;" id="progress-{{ campaign.pk }}">
-                    <div class="progress-bar bg-{{ campaign.status_color }}" 
-                         style="width: {{ campaign.progress_percentage }}%;"
-                         data-campaign-id="{{ campaign.pk }}"></div>
+                    <div class="progress-bar bg-{{ campaign.status_color }}"
+                        style="width: {{ campaign.progress_percentage }}%;" data-campaign-id="{{ campaign.pk }}"></div>
                 </div>
-                
+
                 <div class="row text-center mb-3">
                     <div class="col-4">
-                        <div class="h5 mb-0" id="collected-{{ campaign.pk }}">{{ campaign.collected_amount|floatformat:0 }}€</div>
+                        <div class="h5 mb-0" id="collected-{{ campaign.pk }}">{{ campaign.collected_amount|floatformat:0
+                            }}€</div>
                         <small class="text-muted">Collecté</small>
                     </div>
                     <div class="col-4">
@@ -62,11 +63,12 @@
                         <small class="text-muted">Objectif</small>
                     </div>
                     <div class="col-4">
-                        <div class="h5 mb-0" id="remaining-{{ campaign.pk }}">{{ campaign.remaining_amount|floatformat:0 }}€</div>
+                        <div class="h5 mb-0" id="remaining-{{ campaign.pk }}">{{ campaign.remaining_amount|floatformat:0
+                            }}€</div>
                         <small class="text-muted">Restant</small>
                     </div>
                 </div>
-                
+
                 <p class="text-muted mb-0">
                     <i class="bi bi-calendar me-2"></i>
                     {{ campaign.start_date|date:"d/m/Y" }} - {{ campaign.end_date|date:"d/m/Y" }}
@@ -78,8 +80,10 @@
                         <a href="{% url 'campaigns:detail' campaign.pk %}" class="btn btn-outline-light btn-sm">
                             <i class="bi bi-eye me-1"></i>Détails
                         </a>
-                        <a href="{% url 'campaigns:update' campaign.pk %}" class="btn btn-outline-primary btn-sm">
-                            <i class="bi bi-pencil me-1"></i>Modifier
+                        <i class="bi bi-pencil me-1"></i>Modifier
+                        </a>
+                        <a href="{% url 'campaigns:delete' campaign.pk %}" class="btn btn-outline-danger btn-sm">
+                            <i class="bi bi-trash me-1"></i>
                         </a>
                     </div>
                     <a href="{% url 'campaigns:donate' campaign.pk %}" class="btn btn-primary btn-sm">
@@ -108,47 +112,46 @@
 
 {% block extra_js %}
 <script>
-// Mise à jour en temps réel de la progression des campagnes
-function updateCampaignProgress() {
-    const progressBars = document.querySelectorAll('[data-campaign-id]');
-    
-    progressBars.forEach(bar => {
-        const campaignId = bar.dataset.campaignId;
-        
-        fetch(`/campaigns/${campaignId}/progress/`)
-            .then(response => response.json())
-            .then(data => {
-                // Mettre à jour la barre de progression
-                bar.style.width = `${data.progress_percentage}%`;
-                bar.className = `progress-bar bg-${data.status_color}`;
-                
-                // Mettre à jour les montants
-                const collectedElement = document.getElementById(`collected-${campaignId}`);
-                const remainingElement = document.getElementById(`remaining-${campaignId}`);
-                
-                if (collectedElement) {
-                    collectedElement.textContent = `${Math.round(data.collected_amount)}€`;
-                }
-                if (remainingElement) {
-                    remainingElement.textContent = `${Math.round(data.remaining_amount)}€`;
-                }
-                
-                // Notification si objectif atteint pour la première fois
-                if (data.goal_reached && !bar.dataset.goalNotified) {
-                    bar.dataset.goalNotified = 'true';
-                    // Récupérer le nom de la campagne depuis le DOM
-                    const campaignCard = bar.closest('.card');
-                    const campaignNameElement = campaignCard.querySelector('h5');
-                    const campaignName = campaignNameElement ? campaignNameElement.textContent.trim() : 'cette campagne';
-                    window.toastManager.goalReached(campaignName);
-                }
-            })
-            .catch(error => console.error('Erreur lors de la mise à jour:', error));
-    });
-}
+    // Mise à jour en temps réel de la progression des campagnes
+    function updateCampaignProgress() {
+        const progressBars = document.querySelectorAll('[data-campaign-id]');
 
-// Mettre à jour toutes les 30 secondes
-setInterval(updateCampaignProgress, 30000);
+        progressBars.forEach(bar => {
+            const campaignId = bar.dataset.campaignId;
+
+            fetch(`/campaigns/${campaignId}/progress/`)
+                .then(response => response.json())
+                .then(data => {
+                    // Mettre à jour la barre de progression
+                    bar.style.width = `${data.progress_percentage}%`;
+                    bar.className = `progress-bar bg-${data.status_color}`;
+
+                    // Mettre à jour les montants
+                    const collectedElement = document.getElementById(`collected-${campaignId}`);
+                    const remainingElement = document.getElementById(`remaining-${campaignId}`);
+
+                    if (collectedElement) {
+                        collectedElement.textContent = `${Math.round(data.collected_amount)}€`;
+                    }
+                    if (remainingElement) {
+                        remainingElement.textContent = `${Math.round(data.remaining_amount)}€`;
+                    }
+
+                    // Notification si objectif atteint pour la première fois
+                    if (data.goal_reached && !bar.dataset.goalNotified) {
+                        bar.dataset.goalNotified = 'true';
+                        // Récupérer le nom de la campagne depuis le DOM
+                        const campaignCard = bar.closest('.card');
+                        const campaignNameElement = campaignCard.querySelector('h5');
+                        const campaignName = campaignNameElement ? campaignNameElement.textContent.trim() : 'cette campagne';
+                        window.toastManager.goalReached(campaignName);
+                    }
+                })
+                .catch(error => console.error('Erreur lors de la mise à jour:', error));
+        });
+    }
+
+    // Mettre à jour toutes les 30 secondes
+    setInterval(updateCampaignProgress, 30000);
 </script>
 {% endblock %}
-

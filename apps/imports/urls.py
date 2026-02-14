@@ -12,6 +12,7 @@ urlpatterns = [
     path('imports/create/', views.import_create, name='create'),
     path('imports/<int:pk>/', views.import_detail, name='detail'),
     path('imports/<int:pk>/status/', views.import_status, name='status'),
+    path('imports/<int:pk>/delete/', views.import_delete, name='delete'),
     path('template/<str:import_type>/', views.download_template, name='template'),
     
     # Exports existants (membres & enfants)

@@ -6,6 +6,7 @@ from django.utils import timezone
 from datetime import date
 
 from .models import Notification, Announcement, EmailLog, SMSLog
+from .forms import AnnouncementForm, EmailLogFilterForm, SMSLogFilterForm
 
 
 @login_required
@@ -40,7 +41,7 @@ def notifications_list(request):
 @login_required
 def notification_detail(request, pk):
     """Détail et marquage comme lu d'une notification."""
-    notification = get_object_or_404(Notification, pk=pk, recipient=request.user)
+    notification = get_object_or_404(Notification, pk=pk, user=request.user)
     notification.mark_as_read()
     
     if request.headers.get('HX-Request'):
@@ -51,7 +52,7 @@ def notification_detail(request, pk):
 @login_required
 def notification_mark_read(request, pk):
     """Marquer une notification comme lue."""
-    notification = get_object_or_404(Notification, pk=pk, recipient=request.user)
+    notification = get_object_or_404(Notification, pk=pk, user=request.user)
     notification.mark_as_read()
     
     if request.headers.get('HX-Request'):
@@ -115,42 +116,20 @@ def announcement_create(request):
         return redirect('communication:announcements')
     
     if request.method == 'POST':
-        title = request.POST.get('title')
-        content = request.POST.get('content')
-        is_pinned = 'is_pinned' in request.POST
-        start_date = request.POST.get('start_date')
-        end_date = request.POST.get('end_date')
-        
-        # Préparer les données pour la création
-        announcement_data = {
-            'title': title,
-            'content': content,
-            'is_pinned': is_pinned,
-            'created_by': request.user,
-            'is_active': True
-        }
-        
-        # Gérer les dates optionnelles
-        if start_date:
-            from django.utils.dateparse import parse_date
-            parsed_start = parse_date(start_date)
-            if parsed_start:
-                announcement_data['start_date'] = parsed_start
-        
-        if end_date:
-            from django.utils.dateparse import parse_date
-            parsed_end = parse_date(end_date)
-            if parsed_end:
-                announcement_data['end_date'] = parsed_end
-        
-        try:
-            announcement = Announcement.objects.create(**announcement_data)
-            messages.success(request, f"Annonce '{title}' créée avec succès.")
+        form = AnnouncementForm(request.POST)
+        if form.is_valid():
+            announcement = form.save(commit=False)
+            announcement.created_by = request.user
+            announcement.save()
+            messages.success(request, f"Annonce '{announcement.title}' créée avec succès.")
             return redirect('communication:announcements')
-        except Exception as e:
-            messages.error(request, f"Erreur lors de la création : {e}")
+        else:
+            for error in form.errors.values():
+                messages.error(request, error.as_text())
+    else:
+        form = AnnouncementForm()
     
-    return render(request, 'communication/announcement_create.html')
+    return render(request, 'communication/announcement_create.html', {'form': form})
 
 
 @login_required
@@ -171,25 +150,21 @@ def announcement_edit(request, pk):
     announcement = get_object_or_404(Announcement, pk=pk)
     
     if request.method == 'POST':
-        announcement.title = request.POST.get('title')
-        announcement.content = request.POST.get('content')
-        announcement.is_pinned = 'is_pinned' in request.POST
-        announcement.is_active = 'is_active' in request.POST
-        
-        start_date = request.POST.get('start_date')
-        end_date = request.POST.get('end_date')
-        
-        if start_date:
-            announcement.start_date = start_date
-        if end_date:
-            announcement.end_date = end_date
-        
-        announcement.save()
-        
-        messages.success(request, f"Annonce '{announcement.title}' modifiée avec succès.")
-        return redirect('communication:announcement_detail', pk=announcement.pk)
+        form = AnnouncementForm(request.POST, instance=announcement)
+        if form.is_valid():
+            form.save()
+            messages.success(request, f"Annonce '{announcement.title}' modifiée avec succès.")
+            return redirect('communication:announcement_detail', pk=announcement.pk)
+        else:
+            for error in form.errors.values():
+                messages.error(request, error.as_text())
+    else:
+        form = AnnouncementForm(instance=announcement)
     
-    return render(request, 'communication/announcement_edit.html', {'announcement': announcement})
+    return render(request, 'communication/announcement_edit.html', {
+        'announcement': announcement,
+        'form': form,
+    })
 
 
 @login_required
@@ -237,14 +212,26 @@ def email_logs(request):
         return redirect('dashboard:home')
     
     logs = EmailLog.objects.all().order_by('-created_at')
+    filter_form = EmailLogFilterForm(request.GET or None)
     
-    # Filtres
-    status = request.GET.get('status')
-    if status:
-        logs = logs.filter(status=status)
+    if filter_form.is_valid():
+        status = filter_form.cleaned_data.get('status')
+        recipient = filter_form.cleaned_data.get('recipient')
+        from_date = filter_form.cleaned_data.get('from_date')
+        to_date = filter_form.cleaned_data.get('to_date')
+        
+        if status:
+            logs = logs.filter(status=status)
+        if recipient:
+            logs = logs.filter(recipient_email__icontains=recipient)
+        if from_date:
+            logs = logs.filter(created_at__date__gte=from_date)
+        if to_date:
+            logs = logs.filter(created_at__date__lte=to_date)
     
     context = {
         'logs': logs[:200],
+        'filter_form': filter_form,
         'statuses': EmailLog.Status.choices,
         'total_count': EmailLog.objects.count(),
     }
@@ -305,9 +292,26 @@ def sms_logs(request):
         return redirect('dashboard:home')
     
     logs = SMSLog.objects.all().order_by('-created_at')
+    filter_form = SMSLogFilterForm(request.GET or None)
+    
+    if filter_form.is_valid():
+        status = filter_form.cleaned_data.get('status')
+        phone = filter_form.cleaned_data.get('phone')
+        from_date = filter_form.cleaned_data.get('from_date')
+        to_date = filter_form.cleaned_data.get('to_date')
+        
+        if status:
+            logs = logs.filter(status=status)
+        if phone:
+            logs = logs.filter(recipient_phone__icontains=phone)
+        if from_date:
+            logs = logs.filter(created_at__date__gte=from_date)
+        if to_date:
+            logs = logs.filter(created_at__date__lte=to_date)
     
     context = {
         'logs': logs[:200],
+        'filter_form': filter_form,
         'total_count': SMSLog.objects.count(),
     }
     
@@ -338,11 +342,11 @@ def send_notification(user, title, message, notification_type='info', link=''):
     Fonction utilitaire pour créer une notification.
     """
     return Notification.objects.create(
-        recipient=user,
+        user=user,
         title=title,
         message=message,
         notification_type=notification_type,
-        link=link
+        action_url=link
     )
 
 

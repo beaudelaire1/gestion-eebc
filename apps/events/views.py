@@ -11,7 +11,7 @@ import calendar as cal_module
 
 from apps.core.permissions import role_required
 from .models import Event, EventCategory, EventRegistration
-from .forms import EventForm, EventCancelForm, EventDuplicateForm, EventSearchForm
+from .forms import EventForm, EventCancelForm, EventDuplicateForm, EventSearchForm, EventCategoryForm
 
 
 @login_required

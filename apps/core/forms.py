@@ -227,3 +227,85 @@ class EnhancedForm(FrenchErrorMessagesMixin, HTML5ValidationMixin, forms.Form):
 class EnhancedModelForm(FrenchErrorMessagesMixin, HTML5ValidationMixin, forms.ModelForm):
     """Formulaire modèle complet avec validation HTML5 et messages français."""
     pass
+
+
+# ── Formulaire Sites ──────────────────────────────────────────────────
+
+class SiteForm(EnhancedModelForm):
+    """Formulaire pour créer/modifier un site paroissial."""
+    
+    class Meta:
+        from .models import Site
+        model = Site
+        fields = [
+            'code', 'name', 'address', 'city', 'postal_code',
+            'phone', 'email', 'latitude', 'longitude',
+            'worship_schedule', 'pastor', 'is_active', 'is_main_site',
+        ]
+        widgets = {
+            'code': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'Ex: CAB, MAC',
+                'maxlength': '5',
+                'style': 'text-transform: uppercase;',
+            }),
+            'name': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'Nom du site',
+            }),
+            'address': forms.Textarea(attrs={
+                'class': 'form-control',
+                'rows': 2,
+                'placeholder': 'Adresse complète',
+            }),
+            'city': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'Ville',
+            }),
+            'postal_code': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': '97XXX',
+                'maxlength': '10',
+            }),
+            'phone': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': '0594 XX XX XX',
+                'type': 'tel',
+            }),
+            'email': forms.EmailInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'contact@site.org',
+            }),
+            'latitude': forms.NumberInput(attrs={
+                'class': 'form-control',
+                'step': '0.000001',
+                'placeholder': 'Ex: 4.9372',
+            }),
+            'longitude': forms.NumberInput(attrs={
+                'class': 'form-control',
+                'step': '0.000001',
+                'placeholder': 'Ex: -52.3261',
+            }),
+            'worship_schedule': forms.Textarea(attrs={
+                'class': 'form-control',
+                'rows': 3,
+                'placeholder': 'Dimanche 9h et 11h\nMercredi 19h',
+            }),
+            'pastor': forms.Select(attrs={
+                'class': 'form-select',
+            }),
+            'is_active': forms.CheckboxInput(attrs={
+                'class': 'form-check-input',
+            }),
+            'is_main_site': forms.CheckboxInput(attrs={
+                'class': 'form-check-input',
+            }),
+        }
+    
+    def clean_code(self):
+        code = self.cleaned_data.get('code', '').strip().upper()
+        if len(code) < 2:
+            raise ValidationError("Le code doit contenir au moins 2 caractères.")
+        if not re.match(r'^[A-Z0-9]+$', code):
+            raise ValidationError("Le code ne doit contenir que des lettres majuscules et chiffres.")
+        return code

@@ -1,0 +1,59 @@
+{% extends 'base.html' %}
+{% load crispy_forms_tags %}
+
+{% block title %}{{ title }} - Club Biblique{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8 col-lg-6">
+        <div class="card border-0 shadow-sm">
+            <div class="card-header bg-transparent border-0 pt-4 pb-0">
+                <h4 class="mb-0"><i class="bi bi-diagram-3 me-2"></i>{{ title }}</h4>
+            </div>
+            <div class="card-body p-4">
+                <form method="post">
+                    {% csrf_token %}
+
+                    <div class="mb-3">
+                        <label for="name" class="form-label">Nom de la tranche *</label>
+                        <input type="text" class="form-control" id="name" name="name" value="{{ age_group.name }}"
+                            required placeholder="Ex: Petits">
+                    </div>
+
+                    <div class="row g-3 mb-3">
+                        <div class="col-md-6">
+                            <label for="min_age" class="form-label">Âge minimum *</label>
+                            <input type="number" class="form-control" id="min_age" name="min_age"
+                                value="{{ age_group.min_age }}" required min="0" max="18">
+                        </div>
+                        <div class="col-md-6">
+                            <label for="max_age" class="form-label">Âge maximum *</label>
+                            <input type="number" class="form-control" id="max_age" name="max_age"
+                                value="{{ age_group.max_age }}" required min="0" max="18">
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="color" class="form-label">Couleur (code hex) *</label>
+                        <input type="color" class="form-control form-control-color w-100" id="color" name="color"
+                            value="{{ age_group.color|default:'#0d6efd' }}" title="Choisir une couleur">
+                    </div>
+
+                    <div class="mb-4">
+                        <label for="description" class="form-label">Description</label>
+                        <textarea class="form-control" id="description" name="description"
+                            rows="3">{{ age_group.description }}</textarea>
+                    </div>
+
+                    <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                        <a href="{% url 'bibleclub:age_group_list' %}" class="btn btn-light me-md-2">Annuler</a>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="bi bi-check-lg me-2"></i>{{ submit_text|default:"Enregistrer" }}
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

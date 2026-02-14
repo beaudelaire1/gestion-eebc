@@ -5,6 +5,7 @@ from django.conf import settings
 class EventCategory(models.Model):
     """Catégorie d'événement."""
     name = models.CharField(max_length=100, verbose_name="Nom")
+    description = models.TextField(blank=True, verbose_name="Description")
     color = models.CharField(max_length=7, default="#0d6efd", verbose_name="Couleur")
     icon = models.CharField(max_length=50, blank=True, verbose_name="Icône")
     
@@ -148,6 +149,15 @@ class Event(models.Model):
         verbose_name = "Événement"
         verbose_name_plural = "Événements"
         ordering = ['start_date', 'start_time']
+        indexes = [
+            models.Index(fields=['start_date'], name='event_start_date_idx'),
+            models.Index(fields=['start_date', 'start_time'], name='event_start_datetime_idx'),
+            models.Index(fields=['site'], name='event_site_idx'),
+            models.Index(fields=['visibility'], name='event_visibility_idx'),
+            models.Index(fields=['is_cancelled'], name='event_cancelled_idx'),
+            models.Index(fields=['category'], name='event_category_idx'),
+            models.Index(fields=['site', 'start_date'], name='event_site_date_idx'),
+        ]
     
     def __str__(self):
         return f"{self.title} - {self.start_date}"

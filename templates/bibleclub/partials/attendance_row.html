@@ -1,0 +1,39 @@
+<tr id="attendance-row-{{ attendance.pk }}" class="{% if attendance.status == 'present' %}table-success{% elif attendance.status == 'absent' %}table-danger{% elif attendance.status == 'late' %}table-warning{% endif %}">
+    <td>
+        <div class="d-flex align-items-center">
+            <div class="rounded-circle bg-primary bg-opacity-10 d-flex align-items-center justify-content-center me-2" style="width:32px;height:32px;">
+                <i class="bi bi-person-fill text-primary small"></i>
+            </div>
+            <div>
+                <span class="fw-semibold">{{ attendance.child.full_name }}</span>
+                {% if attendance.child.bible_class %}
+                <br><small class="text-muted">{{ attendance.child.bible_class }}</small>
+                {% endif %}
+            </div>
+        </div>
+    </td>
+    <td>
+        <select class="form-select form-select-sm"
+                hx-post="{% url 'bibleclub:attendance_update' pk=attendance.pk %}"
+                hx-target="#attendance-row-{{ attendance.pk }}"
+                hx-swap="outerHTML"
+                name="status">
+            {% for value, label in status_choices %}
+            <option value="{{ value }}" {% if attendance.status == value %}selected{% endif %}>{{ label }}</option>
+            {% endfor %}
+        </select>
+    </td>
+    <td>
+        {% if attendance.status == 'present' %}
+        <span class="badge bg-success"><i class="bi bi-check-circle me-1"></i>Présent</span>
+        {% elif attendance.status == 'absent' %}
+        <span class="badge bg-danger"><i class="bi bi-x-circle me-1"></i>Absent</span>
+        {% elif attendance.status == 'late' %}
+        <span class="badge bg-warning text-dark"><i class="bi bi-clock me-1"></i>En retard</span>
+        {% elif attendance.status == 'excused' %}
+        <span class="badge bg-info"><i class="bi bi-info-circle me-1"></i>Excusé</span>
+        {% else %}
+        <span class="badge bg-secondary">—</span>
+        {% endif %}
+    </td>
+</tr>

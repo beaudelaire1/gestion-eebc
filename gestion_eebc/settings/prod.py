@@ -135,6 +135,19 @@ TWILIO_WHATSAPP_NUMBER = os.environ.get('TWILIO_WHATSAPP_NUMBER', '')
 
 
 # =============================================================================
+# CAPTCHA CONFIGURATION - CloudFlare Turnstile (recommandé)
+# =============================================================================
+# CloudFlare Turnstile (gratuit illimité, meilleur UX que reCAPTCHA)
+TURNSTILE_SITE_KEY = os.environ.get('TURNSTILE_SITE_KEY', '')
+TURNSTILE_SECRET_KEY = os.environ.get('TURNSTILE_SECRET_KEY', '')
+
+# Google reCAPTCHA v3 (legacy - à désactiver après migration vers Turnstile)
+RECAPTCHA_PUBLIC_KEY = os.environ.get('RECAPTCHA_PUBLIC_KEY', '')
+RECAPTCHA_PRIVATE_KEY = os.environ.get('RECAPTCHA_PRIVATE_KEY', '')
+RECAPTCHA_REQUIRED_SCORE = float(os.environ.get('RECAPTCHA_REQUIRED_SCORE', 0.5))
+
+
+# =============================================================================
 # STATIC FILES - WhiteNoise pour Render
 # =============================================================================
 STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'

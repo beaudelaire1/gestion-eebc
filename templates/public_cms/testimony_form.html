@@ -1,0 +1,67 @@
+{% extends "base.html" %}
+{% load crispy_forms_tags %}
+
+{% block title %}{% if form.instance.pk %}Modifier{% else %}Nouveau{% endif %} témoignage - EEBC{% endblock %}
+
+{% block page_title %}{% if form.instance.pk %}Modifier le témoignage{% else %}Nouveau témoignage{% endif %}{% endblock
+%}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-8">
+        <div class="card border-0 shadow-sm">
+            <div class="card-body p-4">
+                <form method="post" enctype="multipart/form-data">
+                    {% csrf_token %}
+
+                    <h5 class="mb-3 text-primary">Informations</h5>
+                    <div class="row">
+                        <div class="col-md-6">
+                            {{ form.author_name|as_crispy_field }}
+                        </div>
+                        <div class="col-md-6">
+                            {{ form.member|as_crispy_field }}
+                        </div>
+                    </div>
+
+                    {{ form.title|as_crispy_field }}
+                    {{ form.content|as_crispy_field }}
+
+                    <div class="row mt-3">
+                        <div class="col-md-6">
+                            <div class="card bg-light border-0">
+                                <div class="card-body">
+                                    <h6 class="card-title">Photo</h6>
+                                    {% if form.instance.author_photo %}
+                                    <img src="{{ form.instance.author_photo.url }}" class="img-thumbnail mb-2"
+                                        width="100">
+                                    {% endif %}
+                                    {{ form.author_photo|as_crispy_field }}
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="card bg-light border-0">
+                                <div class="card-body">
+                                    <h6 class="card-title">Publication</h6>
+                                    {{ form.publish_date|as_crispy_field }}
+                                    {{ form.is_published|as_crispy_field }}
+                                    {{ form.is_featured|as_crispy_field }}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="d-flex justify-content-end gap-2 mt-4">
+                        <a href="{% url 'public_cms:testimony_list' %}" class="btn btn-outline-secondary">Annuler</a>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="bi bi-save me-2"></i>{% if form.instance.pk %}Enregistrer{% else %}Créer{% endif
+                            %}
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

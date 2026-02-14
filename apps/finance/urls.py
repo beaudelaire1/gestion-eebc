@@ -39,6 +39,12 @@ urlpatterns = [
     path('budget-categories/<int:pk>/edit/', views.budget_category_update, name='budget_category_update'),
     path('budget-categories/<int:pk>/delete/', views.budget_category_delete, name='budget_category_delete'),
     
+    # Catégories financières (Transactions)
+    path('categories/', views.finance_category_list, name='finance_category_list'),
+    path('categories/create/', views.finance_category_create, name='finance_category_create'),
+    path('categories/<int:pk>/edit/', views.finance_category_update, name='finance_category_update'),
+    path('categories/<int:pk>/delete/', views.finance_category_delete, name='finance_category_delete'),
+    
     # Export et impression des budgets
     path('budgets/<int:budget_id>/export-excel/', budget_views.budget_export_excel, name='budget_export_excel'),
     path('budgets/<int:budget_id>/print/', budget_views.budget_print_view, name='budget_print'),

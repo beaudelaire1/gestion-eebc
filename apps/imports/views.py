@@ -521,3 +521,20 @@ def export_communication(request):
     except Exception as e:
         messages.error(request, f'Erreur lors de l\'export des logs: {str(e)}')
         return redirect('imports:export_hub')
+
+
+@login_required
+def import_delete(request, pk):
+    """Supprimer un log d'import et le fichier associé."""
+    import_log = get_object_or_404(ImportLog, pk=pk)
+    
+    if request.method == 'POST':
+        # Supprimer le fichier physique si existant
+        if import_log.file_path:
+            import_log.file_path.delete(save=False)
+            
+        import_log.delete()
+        messages.success(request, 'Journal d\'import supprimé avec succès.')
+        return redirect('imports:list')
+    
+    return render(request, 'imports/import_confirm_delete.html', {'import_log': import_log})

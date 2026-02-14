@@ -43,6 +43,10 @@ urlpatterns = [
     # Worship confirmation
     path('worship/confirm/', views.WorshipConfirmationView.as_view(), name='worship_confirm'),
     
+    # BibleClub - For parents to see children's attendance
+    path('bibleclub/my-children/', views.BibleClubMyChildrenView.as_view(), name='bibleclub_my_children'),
+    
     # Router URLs
     path('', include(router.urls)),
 ]
+

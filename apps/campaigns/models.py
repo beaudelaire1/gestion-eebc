@@ -124,6 +124,8 @@ class Donation(models.Model):
     
     notes = models.TextField(blank=True, verbose_name="Notes")
     
+    is_cancelled = models.BooleanField(default=False, verbose_name="Annulé")
+    
     created_at = models.DateTimeField(auto_now_add=True)
     
     class Meta:
@@ -133,24 +135,43 @@ class Donation(models.Model):
     
     def __str__(self):
         donor = "Anonyme" if self.is_anonymous else (self.donor_name or "Inconnu")
-        return f"{donor} - {self.amount}€"
+        status = " (Annulé)" if self.is_cancelled else ""
+        return f"{donor} - {self.amount}€{status}"
     
     def save(self, *args, **kwargs):
         is_new = self.pk is None
-        old_amount = None
+        was_cancelled = False
+        prev_amount = Decimal('0')
+        
         if not is_new:
-            old_donation = Donation.objects.filter(pk=self.pk).first()
-            if old_donation:
-                old_amount = old_donation.amount
+            old_inst = Donation.objects.filter(pk=self.pk).first()
+            if old_inst:
+                was_cancelled = old_inst.is_cancelled
+                prev_amount = old_inst.amount
         
         super().save(*args, **kwargs)
         
-        # Mise à jour incrémentale du montant collecté
-        if is_new:
-            self.campaign.collected_amount += self.amount
-        elif old_amount is not None:
-            self.campaign.collected_amount += (self.amount - old_amount)
-        self.campaign.save(update_fields=['collected_amount'])
+        # Mise à jour du montant collecté
+        campaign = self.campaign
+        impact = Decimal('0')
+        
+        if self.is_cancelled:
+            # Si annulé maintenant
+            if not was_cancelled:
+                # Vient d'être annulé : on soustrait l'ancien montant
+                impact = -prev_amount
+        else:
+            # Si actif maintenant
+            if was_cancelled:
+                # Vient d'être réactivé : on ajoute le montant actuel
+                impact = self.amount
+            else:
+                # Était actif et reste actif : on ajuste la différence
+                impact = self.amount - prev_amount
+                
+        if impact != 0:
+            campaign.collected_amount += impact
+            campaign.save(update_fields=['collected_amount'])
     
     def delete(self, *args, **kwargs):
         campaign = self.campaign

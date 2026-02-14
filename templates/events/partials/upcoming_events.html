@@ -1,0 +1,24 @@
+{% for event in events %}
+<div class="d-flex align-items-center mb-3 {% if not forloop.last %}border-bottom pb-3{% endif %}">
+    <div class="rounded bg-primary bg-opacity-10 p-2 me-3 text-center" style="min-width:50px;">
+        <div class="fw-bold text-primary" style="font-size:1.2rem;">{{ event.start_date|date:"d" }}</div>
+        <div class="text-muted small text-uppercase">{{ event.start_date|date:"M" }}</div>
+    </div>
+    <div class="flex-grow-1">
+        <a href="{% url 'events:event_detail' pk=event.pk %}" class="text-decoration-none">
+            <h6 class="mb-0">{{ event.title }}</h6>
+        </a>
+        <div class="text-muted small">
+            <i class="bi bi-clock me-1"></i>{{ event.start_date|date:"H:i" }}
+            {% if event.category %}
+            <span class="ms-2"><i class="bi bi-tag me-1"></i>{{ event.category.name }}</span>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% empty %}
+<div class="text-center py-3">
+    <i class="bi bi-calendar-x text-muted"></i>
+    <p class="text-muted small mb-0">Aucun événement à venir.</p>
+</div>
+{% endfor %}

@@ -39,7 +39,7 @@
                 </div>
             </div>
         </div>
-        
+
         <!-- Programme -->
         <div class="card border-0 shadow-sm">
             <div class="card-header bg-transparent border-0 d-flex justify-content-between align-items-center">
@@ -48,7 +48,8 @@
                     <a href="{% url 'worship:plan_edit' service.pk %}" class="btn btn-sm btn-outline-primary me-1">
                         <i class="bi bi-pencil me-1"></i> Éditer
                     </a>
-                    <a href="{% url 'worship:run_sheet_pdf' service.pk %}" class="btn btn-sm btn-primary" target="_blank">
+                    <a href="{% url 'worship:run_sheet_pdf' service.pk %}" class="btn btn-sm btn-primary"
+                        target="_blank">
                         <i class="bi bi-file-pdf me-1"></i> PDF
                     </a>
                 </div>
@@ -72,10 +73,12 @@
                                 </td>
                                 <td class="text-muted">{{ item.duration_minutes }}'</td>
                                 <td>
-                                    <span class="badge bg-secondary-subtle text-secondary me-1">{{ item.get_item_type_display }}</span>
+                                    <span class="badge bg-secondary-subtle text-secondary me-1">{{
+                                        item.get_item_type_display }}</span>
                                     {% if item.title %}{{ item.title }}{% endif %}
                                 </td>
-                                <td>{% if item.responsible %}{{ item.responsible.full_name }}{% else %}<span class="text-muted">—</span>{% endif %}</td>
+                                <td>{% if item.responsible %}{{ item.responsible.full_name }}{% else %}<span
+                                        class="text-muted">—</span>{% endif %}</td>
                             </tr>
                             {% empty %}
                             <tr>
@@ -90,7 +93,7 @@
             </div>
         </div>
     </div>
-    
+
     <!-- Rôles -->
     <div class="col-lg-4">
         <div class="card border-0 shadow-sm">
@@ -121,7 +124,7 @@
                 {% endfor %}
             </div>
         </div>
-        
+
         <!-- Actions -->
         <div class="card border-0 shadow-sm mt-4">
             <div class="card-body">
@@ -131,6 +134,9 @@
                     </a>
                     <a href="{% url 'worship:service_list' %}" class="btn btn-outline-secondary">
                         <i class="bi bi-arrow-left me-1"></i> Retour au planning
+                    </a>
+                    <a href="{% url 'worship:service_delete' service.pk %}" class="btn btn-outline-danger">
+                        <i class="bi bi-trash me-1"></i> Supprimer le service
                     </a>
                 </div>
             </div>
