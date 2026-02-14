@@ -806,13 +806,8 @@ class DatabaseBackupAdmin(admin.ModelAdmin):
         
         return self.response_redirect(request, '../')
     
+    
     def response_redirect(self, request, url):
         """Redirection helper."""
         from django.shortcuts import redirect
         return redirect(url)
-    
-    def changelist_view(self, request, extra_context=None):
-        """Ajouter le bouton de sauvegarde manuelle."""
-        extra_context = extra_context or {}
-        extra_context['show_manual_backup_button'] = True
-        return super().changelist_view(request, extra_context)
