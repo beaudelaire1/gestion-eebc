@@ -793,8 +793,7 @@
 
                 <div class="p-3 rounded-4" style="background: var(--eebc-gray-50);">
                     <div class="fw-bold mb-1">{{ session_stats.session.date|date:"l d F Y" }}</div>
-                    <div class="small text-muted mb-3">{{ session_stats.session.theme|default:"Session du club biblique"
-                        }}</div>
+                    <div class="small text-muted mb-3">{{ session_stats.session.theme|default:"Session du club biblique" }}</div>
                     <a href="{% url 'bibleclub:session_detail' session_stats.session.pk %}"
                         class="btn btn-primary btn-sm">
                         <i class="bi bi-eye me-1"></i> Voir détails
@@ -834,10 +833,8 @@
                             <div class="event-info flex-grow-1">
                                 <h6>{{ event.title }}</h6>
                                 <p>
-                                    <i class="bi bi-clock me-1"></i>{% if event.start_time %}{{
-                                    event.start_time|time:"H:i" }}{% else %}Journée{% endif %}
-                                    {% if event.location %}<span class="ms-2"><i class="bi bi-geo-alt me-1"></i>{{
-                                        event.location }}</span>{% endif %}
+                                    <i class="bi bi-clock me-1"></i>{% if event.start_time %}{{ event.start_time|time:"H:i" }}{% else %}Journée{% endif %}
+                                    {% if event.location %}<span class="ms-2"><i class="bi bi-geo-alt me-1"></i>{{ event.location }}</span>{% endif %}
                                 </p>
                             </div>
                             <div class="rounded-circle"
@@ -868,16 +865,14 @@
                         <div class="campaign-item">
                             <div class="d-flex justify-content-between align-items-center mb-2">
                                 <h6 class="mb-0 fw-bold">{{ campaign.name }}</h6>
-                                <span class="badge bg-{{ campaign.status_color }}">{{ campaign.progress_percentage
-                                    }}%</span>
+                                <span class="badge bg-{{ campaign.status_color }}">{{ campaign.progress_percentage }}%</span>
                             </div>
                             <div class="campaign-progress mb-2">
                                 <div class="campaign-progress-bar" style="width: {{ campaign.progress_percentage }}%;">
                                 </div>
                             </div>
                             <div class="d-flex justify-content-between small text-muted">
-                                <span><strong>{{ campaign.collected_amount|floatformat:0 }}€</strong> / {{
-                                    campaign.goal_amount|floatformat:0 }}€</span>
+                                <span><strong>{{ campaign.collected_amount|floatformat:0 }}€</strong> / {{ campaign.goal_amount|floatformat:0 }}€</span>
                                 <span><i class="bi bi-calendar me-1"></i>{{ campaign.end_date|date:"d/m/Y" }}</span>
                             </div>
                         </div>
@@ -959,8 +954,7 @@
                     <div class="small text-muted mb-1">Solde du mois</div>
                     <div
                         class="fs-4 fw-bold {% if finance_stats.month_balance >= 0 %}text-success{% else %}text-danger{% endif %}">
-                        {% if finance_stats.month_balance >= 0 %}+{% endif %}{{
-                        finance_stats.month_balance|floatformat:0 }}€
+                        {% if finance_stats.month_balance >= 0 %}+{% endif %}{{ finance_stats.month_balance|floatformat:0 }}€
                     </div>
                 </div>
                 {% if finance_stats.pending_transactions > 0 %}
@@ -1087,8 +1081,7 @@
                         </span>
                         <div class="flex-grow-1">
                             <div class="fw-medium">{{ event.primary_member.full_name }}</div>
-                            <div class="text-muted small">{{ event.get_event_type_display }} · {{
-                                event.event_date|date:"d/m" }}</div>
+                            <div class="text-muted small">{{ event.get_event_type_display }} · {{ event.event_date|date:"d/m" }}</div>
                         </div>
                         {% if event.requires_visit and not event.visit_completed %}
                         <span class="badge bg-warning">À visiter</span>
