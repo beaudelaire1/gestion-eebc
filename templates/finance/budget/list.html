@@ -147,7 +147,7 @@
                                                 <i class="bi bi-eye"></i>
                                             </a>
                                             {% if budget.status == 'submitted' and user.is_admin or user.role == 'finance' %}
-                                            <a href="{% url 'finance:budget_approve' budget_id=budget.id %}" 
+                                                          <a href="{% url 'finance:budget_approve_detailed' budget_id=budget.id %}" 
                                                class="btn btn-outline-success" title="Approuver">
                                                 <i class="bi bi-check-circle"></i>
                                             </a>

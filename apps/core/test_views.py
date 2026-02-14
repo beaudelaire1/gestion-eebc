@@ -115,7 +115,7 @@ class TestFormValidation:
             'last_name': 'Dupont',
             'email': 'jean@example.com',
             'phone': '0123456789',
-            'birth_date': '1990-01-01',
+            'date_of_birth': '1990-01-01',
             'gender': 'M',
             'status': 'actif',
             'site': site.pk,

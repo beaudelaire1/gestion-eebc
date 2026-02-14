@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% load static %}
 
 {% block title %}Justificatifs{% endblock %}
 {% block page_title %}Justificatifs{% endblock %}
@@ -201,7 +202,7 @@
 {% endblock %}
 
 {% block extra_js %}
-<script src="{% load static %}{% static 'js/ocr-polling.js' %}"></script>
+<script src="{% static 'js/ocr-polling.js' %}"></script>
 <script>
 document.addEventListener('DOMContentLoaded', function() {
     // Gérer les clics sur les boutons de relance OCR

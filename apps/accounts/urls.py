@@ -1,5 +1,11 @@
 from django.urls import path
 from . import views
+from .two_factor_views import (
+    TwoFactorSetupView,
+    TwoFactorDisableView,
+    TwoFactorVerifyView,
+    TwoFactorBackupCodesView,
+)
 
 app_name = 'accounts'
 
@@ -11,6 +17,12 @@ urlpatterns = [
     
     # Profil
     path('profile/', views.profile_view, name='profile'),
+    
+    # Double authentification (2FA)
+    path('2fa/setup/', TwoFactorSetupView.as_view(), name='two_factor_setup'),
+    path('2fa/disable/', TwoFactorDisableView.as_view(), name='two_factor_disable'),
+    path('2fa/verify/', TwoFactorVerifyView.as_view(), name='two_factor_verify'),
+    path('2fa/backup-codes/', TwoFactorBackupCodesView.as_view(), name='two_factor_backup_codes'),
     
     # Gestion des utilisateurs (équipe) - CRUD complet
     path('users/', views.user_list_view, name='user_list'),

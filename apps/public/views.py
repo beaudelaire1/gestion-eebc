@@ -11,7 +11,7 @@ class CMSRoleRequiredMixin(LoginRequiredMixin, UserPassesTestMixin):
     """Vérifie que l'utilisateur a les droits d'administration du CMS."""
     def test_func(self):
         user = self.request.user
-        return user.is_active and (user.is_superuser or user.role in ['admin', 'secretariat', 'pasteur', 'communication'])
+        return user.is_active and (user.is_superuser or user.has_any_role('admin', 'secretariat', 'pasteur', 'communication'))
 
 # ==================== NEWS ====================
 class NewsListView(CMSRoleRequiredMixin, ListView):

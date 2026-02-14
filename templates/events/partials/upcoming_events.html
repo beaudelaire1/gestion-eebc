@@ -5,7 +5,7 @@
         <div class="text-muted small text-uppercase">{{ event.start_date|date:"M" }}</div>
     </div>
     <div class="flex-grow-1">
-        <a href="{% url 'events:event_detail' pk=event.pk %}" class="text-decoration-none">
+        <a href="{% url 'events:detail' pk=event.pk %}" class="text-decoration-none">
             <h6 class="mb-0">{{ event.title }}</h6>
         </a>
         <div class="text-muted small">

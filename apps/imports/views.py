@@ -393,7 +393,7 @@ def export_groups(request):
         
     except Exception as e:
         messages.error(request, f'Erreur lors de l\'export des groupes: {str(e)}')
-        return redirect('imports:export_hub')
+        return redirect('imports:hub')
 
 
 @login_required
@@ -435,7 +435,7 @@ def export_inventory(request):
         
     except Exception as e:
         messages.error(request, f'Erreur lors de l\'export de l\'inventaire: {str(e)}')
-        return redirect('imports:export_hub')
+        return redirect('imports:hub')
 
 
 @login_required
@@ -477,7 +477,7 @@ def export_transport(request):
         
     except Exception as e:
         messages.error(request, f'Erreur lors de l\'export du transport: {str(e)}')
-        return redirect('imports:export_hub')
+        return redirect('imports:hub')
 
 
 @login_required

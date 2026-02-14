@@ -100,7 +100,7 @@ def budget_detail(request, budget_id):
     # Vérifier les permissions
     user_can_edit = (
         request.user.is_admin or
-        request.user.role in ['admin', 'finance'] or
+        request.user.has_any_role('admin', 'finance') or
         budget.created_by == request.user
     )
     
@@ -134,7 +134,7 @@ def budget_detail(request, budget_id):
 @role_required('admin', 'finance')
 def budget_create(request):
     """Créer un nouveau budget."""
-    if not (request.user.is_admin or request.user.role in ['admin', 'finance']):
+    if not (request.user.is_admin or request.user.has_any_role('admin', 'finance')):
         messages.error(request, 'Vous n\'avez pas les permissions pour créer un budget.')
         return redirect('finance:budget_list')
     
@@ -317,7 +317,7 @@ def budget_request_detail(request, request_id):
     # Vérifier les permissions
     user_can_review = (
         request.user.is_admin or
-        request.user.role in ['admin', 'finance']
+        request.user.has_any_role('admin', 'finance')
     )
     
     context = {
@@ -332,7 +332,7 @@ def budget_request_detail(request, request_id):
 @role_required('admin', 'finance')
 def budget_approve_detailed(request, budget_id):
     """Approbation détaillée ligne par ligne."""
-    if not (request.user.is_admin or request.user.role in ['admin', 'finance']):
+    if not (request.user.is_admin or request.user.has_any_role('admin', 'finance')):
         messages.error(request, 'Vous n\'avez pas les permissions pour approuver un budget.')
         return redirect('finance:budget_detail', budget_id=budget_id)
     
@@ -415,7 +415,7 @@ def budget_submit(request, budget_id):
     budget = get_object_or_404(Budget, id=budget_id)
     
     # Vérifier les permissions
-    if not (request.user == budget.created_by or request.user.is_admin or request.user.role in ['admin', 'finance']):
+    if not (request.user == budget.created_by or request.user.is_admin or request.user.has_any_role('admin', 'finance')):
         messages.error(request, 'Vous n\'avez pas les permissions pour soumettre ce budget.')
         return redirect('finance:budget_detail', budget_id=budget_id)
     
@@ -446,7 +446,7 @@ def budget_edit(request, budget_id):
     budget = get_object_or_404(Budget, id=budget_id)
     
     # Vérifier les permissions
-    if not (request.user == budget.created_by or request.user.is_admin or request.user.role in ['admin', 'finance']):
+    if not (request.user == budget.created_by or request.user.is_admin or request.user.has_any_role('admin', 'finance')):
         messages.error(request, 'Vous n\'avez pas les permissions pour éditer ce budget.')
         return redirect('finance:budget_detail', budget_id=budget_id)
     

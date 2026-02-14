@@ -30,7 +30,7 @@ def notifications_list(request):
     context = {
         'notifications': notifications[:100],
         'unread_count': unread_count,
-        'notification_types': Notification.NotificationType.choices if hasattr(Notification, 'NotificationType') else [],
+        'notification_types': Notification.Type.choices,
     }
     
     if request.headers.get('HX-Request'):
@@ -96,7 +96,7 @@ def announcements_list(request):
     # Toutes les annonces pour les admins
     all_announcements = None
     # Utiliser le système de rôles du projet
-    if request.user.is_admin or request.user.role in ['admin', 'secretariat']:
+    if request.user.is_admin or request.user.has_any_role('admin', 'secretariat'):
         all_announcements = Announcement.objects.all().order_by('-created_at')
     
     context = {
@@ -111,7 +111,7 @@ def announcements_list(request):
 def announcement_create(request):
     """Créer une annonce."""
     # Utiliser le système de rôles du projet au lieu de is_staff
-    if not (request.user.is_admin or request.user.role in ['admin', 'secretariat']):
+    if not (request.user.is_admin or request.user.has_any_role('admin', 'secretariat')):
         messages.error(request, "Vous n'avez pas la permission de créer des annonces.")
         return redirect('communication:announcements')
     
@@ -143,7 +143,7 @@ def announcement_detail(request, pk):
 def announcement_edit(request, pk):
     """Modifier une annonce."""
     # Utiliser le système de rôles du projet
-    if not (request.user.is_admin or request.user.role in ['admin', 'secretariat']):
+    if not (request.user.is_admin or request.user.has_any_role('admin', 'secretariat')):
         messages.error(request, "Vous n'avez pas la permission de modifier des annonces.")
         return redirect('communication:announcements')
     
@@ -171,7 +171,7 @@ def announcement_edit(request, pk):
 def announcement_delete(request, pk):
     """Supprimer une annonce."""
     # Utiliser le système de rôles du projet
-    if not (request.user.is_admin or request.user.role in ['admin', 'secretariat']):
+    if not (request.user.is_admin or request.user.has_any_role('admin', 'secretariat')):
         messages.error(request, "Vous n'avez pas la permission de supprimer des annonces.")
         return redirect('communication:announcements')
     

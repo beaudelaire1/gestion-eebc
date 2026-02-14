@@ -13,8 +13,8 @@ from apps.core.optimization import get_optimized_queryset
 @login_required
 def member_list(request):
     """Liste des membres avec recherche et filtrage."""
-    # Optimiser les requêtes avec select_related et prefetch_related
-    members_qs = Member.objects.select_related('site', 'department').all()
+    # Optimiser les requêtes avec select_related
+    members_qs = Member.objects.select_related('site', 'family').all()
     
     # Statistiques
     total_count = members_qs.count()
@@ -43,7 +43,7 @@ def member_list(request):
     sort_order = request.GET.get('order', 'asc')
     
     # Champs de tri autorisés
-    allowed_sort_fields = ['last_name', 'first_name', 'email', 'city', 'status', 'birth_date']
+    allowed_sort_fields = ['last_name', 'first_name', 'email', 'city', 'status', 'date_of_birth']
     if sort_by not in allowed_sort_fields:
         sort_by = 'last_name'
     

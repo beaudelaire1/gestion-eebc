@@ -12,7 +12,7 @@ import random
 from apps.core.models import Site
 from apps.members.models import Member
 from apps.events.models import Event, EventCategory
-from apps.finance.models import FinancialTransaction, DonationCategory
+from apps.finance.models import FinancialTransaction, FinanceCategory
 from apps.accounts.models import User as CustomUser
 
 User = get_user_model()
@@ -24,9 +24,9 @@ class SiteFactory(DjangoModelFactory):
     class Meta:
         model = Site
     
+    code = factory.Sequence(lambda n: f'S{n:03d}')
     name = factory.Faker('city')
     city = factory.Faker('city')
-    country = factory.Faker('city')
     phone = factory.Faker('phone_number')
     email = factory.Faker('email')
     address = factory.Faker('address')
@@ -60,7 +60,7 @@ class MemberFactory(DjangoModelFactory):
     last_name = factory.Faker('last_name')
     email = factory.Faker('email')
     phone = factory.Faker('phone_number')
-    birth_date = factory.Faker('date_of_birth', minimum_age=18, maximum_age=80)
+    date_of_birth = factory.Faker('date_of_birth', minimum_age=18, maximum_age=80)
     gender = factory.Faker('bothify', letters='MF')
     address = factory.Faker('address')
     city = factory.Faker('city')
@@ -69,7 +69,7 @@ class MemberFactory(DjangoModelFactory):
     baptism_date = factory.Faker('date_between', start_date='-10y', end_date='today')
     is_baptized = True
     site = factory.SubFactory(SiteFactory)
-    joined_date = factory.Faker('date_between', start_date='-5y', end_date='today')
+    date_joined = factory.Faker('date_between', start_date='-5y', end_date='today')
     
     @factory.lazy_attribute
     def gender(self):
@@ -83,7 +83,6 @@ class EventCategoryFactory(DjangoModelFactory):
         model = EventCategory
     
     name = factory.Sequence(lambda n: f'Catégorie {n}')
-    color = factory.Faker('hex_color')
 
 
 class EventFactory(DjangoModelFactory):
@@ -103,17 +102,15 @@ class EventFactory(DjangoModelFactory):
     visibility = 'members'
     all_day = False
     is_cancelled = False
-    color = factory.Faker('hex_color')
 
 
-class DonationCategoryFactory(DjangoModelFactory):
-    """Factory pour créer les catégories de dons."""
+class FinanceCategoryFactory(DjangoModelFactory):
+    """Factory pour créer les catégories financières."""
     
     class Meta:
-        model = DonationCategory
+        model = FinanceCategory
     
-    name = factory.Sequence(lambda n: f'Catégorie de don {n}')
-    color = factory.Faker('hex_color')
+    name = factory.Sequence(lambda n: f'Catégorie finance {n}')
 
 
 class FinancialTransactionFactory(DjangoModelFactory):
@@ -122,15 +119,15 @@ class FinancialTransactionFactory(DjangoModelFactory):
     class Meta:
         model = FinancialTransaction
     
-    date = factory.Faker('date_between', start_date='-1y', end_date='today')
+    transaction_date = factory.Faker('date_between', start_date='-1y', end_date='today')
     amount = factory.Faker('pydecimal', left_digits=5, right_digits=2, positive=True)
-    status = 'pending'  # pending, validated, rejected
-    type = factory.Faker('random_element', elements=['don', 'achat', 'paiement'])
-    category = factory.SubFactory(DonationCategoryFactory)
+    status = 'en_attente'
+    transaction_type = 'don'
+    category = factory.SubFactory(FinanceCategoryFactory)
     site = factory.SubFactory(SiteFactory)
     description = factory.Faker('text', max_nb_chars=100)
-    contributor = factory.SubFactory(UserFactory)
+    member = factory.SubFactory(MemberFactory)
     
     @factory.lazy_attribute
-    def type(self):
-        return random.choice(['don', 'achat', 'paiement'])
+    def transaction_type(self):
+        return random.choice(['don', 'dime', 'offrande', 'depense'])

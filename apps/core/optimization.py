@@ -92,7 +92,7 @@ def optimize_queryset(queryset, select_related_fields=None, prefetch_related_fie
         queryset = Member.objects.all()
         queryset = optimize_queryset(
             queryset,
-            select_related_fields=['department', 'site'],
+            select_related_fields=['user', 'site'],
             prefetch_related_fields=['life_events', 'visits_received']
         )
     """
@@ -108,15 +108,15 @@ def optimize_queryset(queryset, select_related_fields=None, prefetch_related_fie
 # Configuration des optimisations par modèle
 OPTIMIZATION_CONFIGS = {
     'Member': {
-        'select_related': ['department', 'site', 'photo'],
-        'prefetch_related': ['life_events', 'visits_received', 'group_memberships']
+        'select_related': ['user', 'site', 'family'],
+        'prefetch_related': ['life_events', 'visits_received']
     },
     'Event': {
         'select_related': ['site', 'category'],
-        'prefetch_related': ['organizers', 'attendees']
+        'prefetch_related': ['registrations']
     },
     'FinancialTransaction': {
-        'select_related': ['contributor', 'site', 'category'],
+        'select_related': ['member', 'site', 'category'],
         'prefetch_related': ['proofs']
     },
     'DriverProfile': {
@@ -124,8 +124,8 @@ OPTIMIZATION_CONFIGS = {
         'prefetch_related': ['transport_requests']
     },
     'Child': {
-        'select_related': ['member', 'age_group'],
-        'prefetch_related': ['attendance_records', 'parent_checkins']
+        'select_related': ['bible_class', 'assigned_driver'],
+        'prefetch_related': ['attendances']
     },
     'User': {
         'select_related': [],

@@ -218,7 +218,8 @@ class Notification(models.Model):
         ordering = ['-created_at']
     
     def __str__(self):
-        return f"{self.user.username} - {self.title}"
+        username = self.user.username if self.user else "Système"
+        return f"{username} - {self.title}"
     
     def mark_as_read(self):
         """Marque la notification comme lue."""

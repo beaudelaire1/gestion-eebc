@@ -69,8 +69,7 @@
                 <select class="form-select" name="category">
                     <option value="">Toutes les catégories</option>
                     {% for category in categories %}
-                    <option value="{{ category.pk }}" {% if current_filters.category==category.pk|stringformat:"s"
-                        %}selected{% endif %}>{{ category.name }}</option>
+                    <option value="{{ category.pk }}" {% if current_filters.category == category.pk|stringformat:"s" %}selected{% endif %}>{{ category.name }}</option>
                     {% endfor %}
                 </select>
             </div>
@@ -79,7 +78,7 @@
                 <select class="form-select" name="condition">
                     <option value="">Tous les états</option>
                     {% for value, label in conditions %}
-                    <option value="{{ value }}" {% if current_filters.condition==value %}selected{% endif %}>{{ label }}
+                    <option value="{{ value }}" {% if current_filters.condition == value %}selected{% endif %}>{{ label }}
                     </option>
                     {% endfor %}
                 </select>
@@ -88,7 +87,7 @@
                 <label class="form-label">Filtre rapide</label>
                 <div class="form-check">
                     <input class="form-check-input" type="checkbox" name="needs_attention" value="1" id="needsAttention"
-                        {% if current_filters.needs_attention=='1' %}checked{% endif %}>
+                        {% if current_filters.needs_attention == '1' %}checked{% endif %}>
                     <label class="form-check-label" for="needsAttention">
                         <small>Attention requise</small>
                     </label>
@@ -203,8 +202,7 @@
                     <tr>
                         <td colspan="6" class="text-center py-5 text-muted">
                             <i class="bi bi-box-seam fs-1 d-block mb-3"></i>
-                            {% if current_filters.category or current_filters.condition or
-                            current_filters.needs_attention %}
+                            {% if current_filters.category or current_filters.condition or current_filters.needs_attention %}
                             Aucun équipement trouvé avec ces filtres
                             <br><small>Essayez de modifier vos critères de recherche</small>
                             {% else %}

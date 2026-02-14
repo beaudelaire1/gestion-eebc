@@ -74,9 +74,9 @@ def group_update(request, pk):
     group = get_object_or_404(Group, pk=pk)
     
     # Vérifier si l'utilisateur peut modifier ce groupe
-    if (request.user.role == 'responsable_groupe' and 
+    if (request.user.has_role('responsable_groupe') and 
         group.leader != request.user and 
-        request.user.role != 'admin'):
+        not request.user.has_role('admin')):
         messages.error(request, "Vous ne pouvez modifier que vos propres groupes.")
         return redirect('groups:detail', pk=pk)
     
@@ -105,9 +105,9 @@ def group_members_manage(request, pk):
     group = get_object_or_404(Group, pk=pk)
     
     # Vérifier si l'utilisateur peut gérer ce groupe
-    if (request.user.role == 'responsable_groupe' and 
+    if (request.user.has_role('responsable_groupe') and 
         group.leader != request.user and 
-        request.user.role != 'admin'):
+        not request.user.has_role('admin')):
         messages.error(request, "Vous ne pouvez gérer que vos propres groupes.")
         return redirect('groups:detail', pk=pk)
     
@@ -136,9 +136,9 @@ def group_meeting_create(request, group_pk):
     group = get_object_or_404(Group, pk=group_pk)
     
     # Vérifier si l'utilisateur peut gérer ce groupe
-    if (request.user.role == 'responsable_groupe' and 
+    if (request.user.has_role('responsable_groupe') and 
         group.leader != request.user and 
-        request.user.role != 'admin'):
+        not request.user.has_role('admin')):
         messages.error(request, "Vous ne pouvez gérer que vos propres groupes.")
         return redirect('groups:detail', pk=group_pk)
     
@@ -170,9 +170,9 @@ def group_meeting_update(request, group_pk, meeting_pk):
     meeting = get_object_or_404(GroupMeeting, pk=meeting_pk, group=group)
     
     # Vérifier si l'utilisateur peut gérer ce groupe
-    if (request.user.role == 'responsable_groupe' and 
+    if (request.user.has_role('responsable_groupe') and 
         group.leader != request.user and 
-        request.user.role != 'admin'):
+        not request.user.has_role('admin')):
         messages.error(request, "Vous ne pouvez gérer que vos propres groupes.")
         return redirect('groups:detail', pk=group_pk)
     
@@ -223,9 +223,9 @@ def group_generate_meetings(request, pk):
     group = get_object_or_404(Group, pk=pk)
     
     # Vérifier si l'utilisateur peut gérer ce groupe
-    if (request.user.role == 'responsable_groupe' and 
+    if (request.user.has_role('responsable_groupe') and 
         group.leader != request.user and 
-        request.user.role != 'admin'):
+        not request.user.has_role('admin')):
         messages.error(request, "Vous ne pouvez gérer que vos propres groupes.")
         return redirect('groups:detail', pk=pk)
     
@@ -270,7 +270,7 @@ def groups_dashboard(request):
     groups = Group.objects.filter(is_active=True).select_related('leader')
     
     # Filtrer par responsable si nécessaire
-    if request.user.role == 'responsable_groupe':
+    if request.user.has_role('responsable_groupe'):
         groups = groups.filter(leader=request.user)
     
     # Calculer les statistiques pour chaque groupe
@@ -321,9 +321,9 @@ def group_delete(request, pk):
     group = get_object_or_404(Group, pk=pk)
     
     # Vérifier si l'utilisateur peut supprimer ce groupe
-    if (request.user.role == 'responsable_groupe' and 
+    if (request.user.has_role('responsable_groupe') and 
         group.leader != request.user and 
-        request.user.role != 'admin'):
+        not request.user.has_role('admin')):
         messages.error(request, "Vous ne pouvez supprimer que vos propres groupes.")
         return redirect('groups:detail', pk=pk)
     
@@ -369,9 +369,9 @@ def meeting_delete(request, group_pk, meeting_pk):
     meeting = get_object_or_404(GroupMeeting, pk=meeting_pk, group=group)
     
     # Vérifier si l'utilisateur peut supprimer cette réunion
-    if (request.user.role == 'responsable_groupe' and 
+    if (request.user.has_role('responsable_groupe') and 
         group.leader != request.user and 
-        request.user.role != 'admin'):
+        not request.user.has_role('admin')):
         messages.error(request, "Vous ne pouvez supprimer que les réunions de vos propres groupes.")
         return redirect('groups:detail', pk=group_pk)
     

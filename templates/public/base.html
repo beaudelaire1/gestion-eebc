@@ -366,7 +366,10 @@
                 </div>
                 <div class="col-md-6 text-center text-md-end">
                     <small class="text-white-50">
-                        {{ settings.footer_text|default:'' }}
+                        développé par <a href="https://www.traitdunion.it" target="_blank" rel="noopener noreferrer" class="text-white">Trait d'Union Studio</a> (www.traitdunion.it)
+                        {% if settings.footer_text %}
+                        <span class="mx-2">•</span>{{ settings.footer_text }}
+                        {% endif %}
                     </small>
                 </div>
             </div>

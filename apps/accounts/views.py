@@ -6,6 +6,7 @@ from django.http import JsonResponse, HttpResponseRedirect
 from django.views.decorators.http import require_http_methods
 from django.core.exceptions import ValidationError
 from django.contrib.auth.password_validation import validate_password
+from django.db.models import Q
 from django.urls import reverse
 from urllib.parse import urlencode
 from .forms import UserCreationByTeamForm, FirstLoginPasswordChangeForm
@@ -162,7 +163,7 @@ def create_user_view(request):
     La vue ne fait que: recevoir requête → appeler service → renvoyer réponse.
     """
     # Vérifier les permissions
-    if not (request.user.is_admin or request.user.role in ['admin', 'secretariat']):
+    if not (request.user.is_admin or request.user.has_any_role('admin', 'secretariat')):
         messages.error(request, 'Vous n\'avez pas les permissions pour créer des utilisateurs.')
         return redirect('dashboard:home')
     
@@ -200,7 +201,7 @@ def create_user_view(request):
 @login_required
 def user_list_view(request):
     """Liste des utilisateurs (pour l'équipe)."""
-    if not (request.user.is_admin or request.user.role in ['admin', 'secretariat']):
+    if not (request.user.is_admin or request.user.has_any_role('admin', 'secretariat')):
         messages.error(request, 'Vous n\'avez pas les permissions pour voir cette page.')
         return redirect('dashboard:home')
     
@@ -218,7 +219,7 @@ def resend_invitation(request, user_id):
     
     Délègue la logique métier au service AccountsService.
     """
-    if not (request.user.is_admin or request.user.role in ['admin', 'secretariat']):
+    if not (request.user.is_admin or request.user.has_any_role('admin', 'secretariat')):
         return JsonResponse({'success': False, 'error': 'Permissions insuffisantes'})
     
     user = get_object_or_404(User, id=user_id)
@@ -239,7 +240,7 @@ def reset_user_password(request, user_id):
     
     Délègue la logique métier au service AccountsService.
     """
-    if not (request.user.is_admin or request.user.role in ['admin', 'secretariat']):
+    if not (request.user.is_admin or request.user.has_any_role('admin', 'secretariat')):
         return JsonResponse({'success': False, 'error': 'Permissions insuffisantes'})
     
     user = get_object_or_404(User, id=user_id)
@@ -290,7 +291,7 @@ def profile_view(request):
 @login_required
 def user_detail_view(request, user_id):
     """Détail d'un utilisateur."""
-    if not (request.user.is_admin or request.user.role in ['admin', 'secretariat']):
+    if not (request.user.is_admin or request.user.has_any_role('admin', 'secretariat')):
         messages.error(request, 'Vous n\'avez pas les permissions pour voir cette page.')
         return redirect('dashboard:home')
     
@@ -302,7 +303,7 @@ def user_detail_view(request, user_id):
         'date_joined': user.date_joined,
         'is_active': user.is_active,
         'must_change_password': user.must_change_password,
-        'roles_count': len(user.roles) if user.roles else 0,
+        'roles_count': len(user.get_roles_list()),
     }
     
     context = {
@@ -316,7 +317,7 @@ def user_detail_view(request, user_id):
 @login_required
 def user_update_view(request, user_id):
     """Modifier un utilisateur."""
-    if not (request.user.is_admin or request.user.role in ['admin', 'secretariat']):
+    if not (request.user.is_admin or request.user.has_any_role('admin', 'secretariat')):
         messages.error(request, 'Vous n\'avez pas les permissions pour voir cette page.')
         return redirect('dashboard:home')
     
@@ -342,7 +343,7 @@ def user_update_view(request, user_id):
             user.last_name = last_name
             user.email = email
             user.phone = phone
-            user.roles = roles
+            user.role = ','.join(roles) if roles else 'membre'
             user.is_active = is_active
             user.save()
             
@@ -374,7 +375,7 @@ def user_update_view(request, user_id):
 @login_required
 def user_delete_view(request, user_id):
     """Supprimer un utilisateur (désactivation)."""
-    if not (request.user.is_admin or request.user.role in ['admin', 'secretariat']):
+    if not (request.user.is_admin or request.user.has_any_role('admin', 'secretariat')):
         messages.error(request, 'Vous n\'avez pas les permissions pour voir cette page.')
         return redirect('dashboard:home')
     
@@ -387,7 +388,10 @@ def user_delete_view(request, user_id):
     
     # Empêcher la suppression du dernier admin
     if user.is_admin:
-        admin_count = User.objects.filter(is_admin=True, is_active=True).count()
+        admin_count = User.objects.filter(
+            Q(role__contains='admin') | Q(is_superuser=True),
+            is_active=True
+        ).count()
         if admin_count <= 1:
             messages.error(request, 'Impossible de supprimer le dernier administrateur actif.')
             return redirect('accounts:user_detail', user_id=user_id)
@@ -426,7 +430,10 @@ def user_delete_view(request, user_id):
     context = {
         'user_detail': user,
         'dependencies': dependencies,
-        'is_last_admin': user.is_admin and User.objects.filter(is_admin=True, is_active=True).count() <= 1,
+        'is_last_admin': user.is_admin and User.objects.filter(
+            Q(role__contains='admin') | Q(is_superuser=True),
+            is_active=True
+        ).count() <= 1,
     }
     
     return render(request, 'accounts/user_delete_confirm.html', context)
@@ -435,7 +442,7 @@ def user_delete_view(request, user_id):
 @login_required
 def user_activate_view(request, user_id):
     """Réactiver un utilisateur désactivé."""
-    if not (request.user.is_admin or request.user.role in ['admin', 'secretariat']):
+    if not (request.user.is_admin or request.user.has_any_role('admin', 'secretariat')):
         return JsonResponse({'success': False, 'error': 'Permissions insuffisantes'})
     
     user = get_object_or_404(User, id=user_id)

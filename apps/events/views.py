@@ -69,7 +69,7 @@ def events_json(request):
         events = events.filter(Q(visibility='public') | Q(visibility='members'))
     
     # Inclure les événements annulés pour les admins/organisateurs
-    if not (request.user.role in ['admin', 'secretariat']):
+    if not request.user.has_any_role('admin', 'secretariat'):
         events = events.filter(is_cancelled=False)
     
     events_data = []
@@ -130,7 +130,7 @@ def event_list(request):
         events = Event.objects.filter(start_date__gte=today)
     
     # Ne pas filtrer les annulés pour les admins
-    if not (hasattr(request.user, 'role') and request.user.role in ['admin', 'secretariat']):
+    if not request.user.has_any_role('admin', 'secretariat'):
         events = events.filter(is_cancelled=False)
     
     events = events.select_related('category').order_by('start_date', 'start_time')
@@ -601,7 +601,7 @@ def event_update(request, pk):
     event = get_object_or_404(Event, pk=pk)
     
     # Vérifier si l'utilisateur peut modifier cet événement
-    if not request.user.role == 'admin' and request.user not in event.organizers.all():
+    if not request.user.has_role('admin') and request.user not in event.organizers.all():
         messages.error(request, "Vous ne pouvez modifier que les événements que vous organisez.")
         return redirect('events:detail', pk=event.pk)
     
@@ -633,7 +633,7 @@ def event_cancel(request, pk):
     event = get_object_or_404(Event, pk=pk)
     
     # Vérifier si l'utilisateur peut annuler cet événement
-    if not request.user.role == 'admin' and request.user not in event.organizers.all():
+    if not request.user.has_role('admin') and request.user not in event.organizers.all():
         messages.error(request, "Vous ne pouvez annuler que les événements que vous organisez.")
         return redirect('events:detail', pk=event.pk)
     

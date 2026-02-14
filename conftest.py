@@ -9,8 +9,8 @@ from django.test import Client
 from apps.core.models import Site
 from apps.members.models import Member
 from apps.events.models import Event, EventCategory
-from apps.finance.models import FinancialTransaction, DonationCategory
-from apps.bibleclub.models import Child, AgeGroup
+from apps.finance.models import FinancialTransaction, FinanceCategory
+from apps.bibleclub.models import Child, AgeGroup, BibleClass
 from test_factories import (
     UserFactory,
     SiteFactory,
@@ -142,8 +142,8 @@ def events(db, site_cayenne, event_category, pastor_user):
 
 @pytest.fixture
 def donation_category(db):
-    """Catégorie de don."""
-    return DonationCategory.objects.create(name="Dîme", color="#28a745")
+    """Catégorie financière."""
+    return FinanceCategory.objects.create(name="Dîme", is_income=True)
 
 
 @pytest.fixture
@@ -152,7 +152,7 @@ def financial_transaction(db, site_cayenne, donation_category):
     return FinancialTransactionFactory(
         site=site_cayenne,
         category=donation_category,
-        status='validated'
+        status='valide'
     )
 
 
@@ -163,7 +163,7 @@ def financial_transactions(db, site_cayenne, donation_category):
         10,
         site=site_cayenne,
         category=donation_category,
-        status='validated'
+        status='valide'
     )
 
 
@@ -180,10 +180,19 @@ def age_group(db):
 @pytest.fixture
 def child(db, member, age_group):
     """Enfant simple."""
+    bible_class = BibleClass.objects.create(
+        name="Classe test",
+        age_group=age_group
+    )
     return Child.objects.create(
-        member=member,
-        age_group=age_group,
-        status='active',
+        first_name="Test",
+        last_name="Enfant",
+        date_of_birth="2018-01-15",
+        gender="M",
+        father_name="Papa Test",
+        father_phone="0694000000",
+        bible_class=bible_class,
+        is_active=True,
     )
 
 
@@ -225,10 +234,10 @@ def complete_setup(db, sites, users, members, events, financial_transactions):
 # ==================================================================================
 
 @pytest.fixture
-def django_db_setup(django_db_blocker, django_db_usefitures):
+def django_db_setup(django_db_blocker):
     """Configuration BD pour les tests."""
     with django_db_blocker.unblock():
         from django.core.management import call_command
         # Créer les sites par défaut
-        Site.objects.get_or_create(name="Cayenne", defaults={'city': 'Cayenne'})
-        Site.objects.get_or_create(name="Remire-Montjoly", defaults={'city': 'Remire-Montjoly'})
+        Site.objects.get_or_create(name="Cayenne", defaults={'city': 'Cayenne', 'code': 'CAY'})
+        Site.objects.get_or_create(name="Remire-Montjoly", defaults={'city': 'Remire-Montjoly', 'code': 'REM'})

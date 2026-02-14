@@ -4,7 +4,7 @@ Montées sous /app/sites/
 """
 
 from django.urls import path
-from apps.core.views.sites import (
+from apps.core.site_crud_views import (
     site_list, site_detail, site_create, site_edit, site_delete, site_toggle_active
 )
 

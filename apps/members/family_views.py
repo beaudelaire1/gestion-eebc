@@ -4,7 +4,6 @@ Vues pour la gestion des familles.
 from django.shortcuts import render, get_object_or_404, redirect
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
-from django.db.models import Count
 
 from apps.core.models import Family, Neighborhood, Site
 from .models import Member
@@ -13,9 +12,7 @@ from .models import Member
 @login_required
 def family_list(request):
     """Liste des familles."""
-    families = Family.objects.annotate(
-        member_count=Count('members')
-    ).select_related('site', 'neighborhood', 'neighborhood__city').order_by('name')
+    families = Family.objects.select_related('site', 'neighborhood', 'neighborhood__city').order_by('name')
     
     # Filtres
     site_id = request.GET.get('site')

@@ -99,9 +99,9 @@ class TestMemberValidation:
         today = date.today()
         young_birthdate = today - relativedelta(years=2)
         
-        member = MemberFactory(birth_date=young_birthdate)
+        member = MemberFactory(date_of_birth=young_birthdate)
         # Devrait pas être accepté en prod mais le factory le permet
-        assert member.birth_date == young_birthdate
+        assert member.date_of_birth == young_birthdate
     
     def test_member_email_format(self):
         """Vérifier le format de l'email."""

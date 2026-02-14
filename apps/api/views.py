@@ -595,10 +595,15 @@ class BibleClubMyChildrenView(APIView):
         """Get children linked to the current user with their attendance records."""
         from apps.bibleclub.models import Child, Attendance, Session
         
-        # Get children where the user is a parent
-        children_queryset = Child.objects.filter(
-            Q(parent1=request.user) | Q(parent2=request.user)
-        ).prefetch_related('bible_class__age_group')
+        # Get children where the user is linked (by name match or direct reference)
+        user_member = getattr(request.user, 'member_profile', None)
+        if user_member:
+            children_queryset = Child.objects.filter(
+                Q(father_name__icontains=user_member.last_name) |
+                Q(mother_name__icontains=user_member.last_name)
+            ).prefetch_related('bible_class__age_group')
+        else:
+            children_queryset = Child.objects.none()
         
         # Build response data
         children_data = []

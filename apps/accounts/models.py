@@ -129,6 +129,11 @@ class User(AbstractUser):
         """Vérifie si l'utilisateur a un rôle spécifique."""
         return role in self.get_roles_list()
     
+    def has_any_role(self, *roles):
+        """Vérifie si l'utilisateur a au moins un des rôles spécifiés."""
+        user_roles = self.get_roles_list()
+        return any(role in user_roles for role in roles)
+    
     def add_role(self, role):
         """Ajoute un rôle à l'utilisateur."""
         roles = self.get_roles_list()

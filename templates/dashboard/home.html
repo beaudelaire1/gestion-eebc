@@ -7,6 +7,17 @@
 
 {% block extra_css %}
 <style>
+    /* Harmonise les variables legacy du dashboard avec le thème actif */
+    .main-content {
+        --eebc-white: var(--bg-card);
+        --eebc-black: var(--text-primary);
+        --eebc-gray-50: var(--bg-secondary);
+        --eebc-gray-100: var(--border-light);
+        --eebc-gray-200: var(--border-color);
+        --eebc-gray-500: var(--text-secondary);
+        --eebc-gray-600: var(--text-secondary);
+    }
+
     /* ============================================
        SECTION HEADERS - Navigation Enhancement
        ============================================ */
@@ -97,7 +108,7 @@
         position: sticky;
         top: 70px;
         z-index: 100;
-        background: rgba(255, 255, 255, 0.95);
+        background: var(--bg-card);
         backdrop-filter: blur(10px);
         padding: 0.75rem 0;
         margin: -1rem -1rem 1.5rem -1rem;
@@ -1065,7 +1076,7 @@
                 <div class="small">
                     {% for event in recent_life_events %}
                     <a href="{% url 'members:life_event_detail' event.pk %}"
-                        class="d-flex align-items-center py-2 border-bottom text-decoration-none text-dark">
+                        class="d-flex align-items-center py-2 border-bottom text-decoration-none text-reset">
                         <span class="me-2">
                             {% if event.event_type == 'naissance' %}🎉
                             {% elif event.event_type == 'deces' %}⚫
@@ -1093,7 +1104,7 @@
                 <div class="small">
                     {% for visit in pending_visits %}
                     <a href="{% url 'members:visit_detail' visit.pk %}"
-                        class="d-flex justify-content-between py-1 text-decoration-none text-dark">
+                        class="d-flex justify-content-between py-1 text-decoration-none text-reset">
                         <span>{{ visit.member.full_name }}</span>
                         <span class="badge bg-{% if visit.status == 'a_faire' %}warning{% else %}info{% endif %}">
                             {% if visit.scheduled_date %}{{ visit.scheduled_date|date:"d/m" }}{% else %}À planifier{% endif %}

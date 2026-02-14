@@ -367,13 +367,12 @@ def tax_receipt_detail(request, pk):
 @role_required('admin', 'finance')
 def tax_receipt_pdf(request, pk):
     """Générer le PDF d'un reçu fiscal."""
-    from .pdf_service import TaxReceiptPDFService
+    from .pdf_service import generate_tax_receipt_pdf
     
     receipt = get_object_or_404(TaxReceipt, pk=pk)
     
     # Générer le PDF
-    pdf_service = TaxReceiptPDFService()
-    pdf_content = pdf_service.generate_receipt_pdf(receipt)
+    pdf_content = generate_tax_receipt_pdf(receipt)
     
     # Mettre à jour le statut si brouillon
     if receipt.status == 'draft':
@@ -392,7 +391,7 @@ def tax_receipt_pdf(request, pk):
 @role_required('admin', 'finance')
 def tax_receipt_send(request, pk):
     """Envoyer le reçu fiscal par email."""
-    from .pdf_service import TaxReceiptPDFService
+    from .pdf_service import generate_tax_receipt_pdf
     from django.core.mail import EmailMessage
     
     receipt = get_object_or_404(TaxReceipt, pk=pk)
@@ -406,8 +405,7 @@ def tax_receipt_send(request, pk):
         return redirect('finance:tax_receipt_detail', pk=pk)
     
     # Générer le PDF
-    pdf_service = TaxReceiptPDFService()
-    pdf_content = pdf_service.generate_receipt_pdf(receipt)
+    pdf_content = generate_tax_receipt_pdf(receipt)
     
     # Envoyer l'email
     email = EmailMessage(
@@ -920,49 +918,3 @@ def finance_category_delete(request, pk):
     }
     
     return render(request, 'finance/finance_category_confirm_delete.html', context)
-    
-    # Vérifier s'il y a des éléments liés
-    budget_items_count = BudgetItem.objects.filter(category=category).count()
-    budget_requests_count = BudgetRequest.objects.filter(category=category).count()
-    
-    if request.method == 'POST':
-        action = request.POST.get('action')
-        
-        if action == 'reassign' and (budget_items_count > 0 or budget_requests_count > 0):
-            new_category_id = request.POST.get('new_category')
-            if new_category_id:
-                try:
-                    new_category = BudgetCategory.objects.get(pk=new_category_id, is_active=True)
-                    
-                    # Réassigner les éléments de budget
-                    if budget_items_count > 0:
-                        BudgetItem.objects.filter(category=category).update(category=new_category)
-                        messages.info(request, f'{budget_items_count} élément(s) de budget réassigné(s) à "{new_category.name}".')
-                    
-                    # Réassigner les demandes de budget
-                    if budget_requests_count > 0:
-                        BudgetRequest.objects.filter(category=category).update(category=new_category)
-                        messages.info(request, f'{budget_requests_count} demande(s) de budget réassignée(s) à "{new_category.name}".')
-                        
-                except BudgetCategory.DoesNotExist:
-                    messages.error(request, 'Catégorie de réassignation invalide.')
-                    return redirect('finance:budget_category_delete', pk=pk)
-        
-        # Soft delete de la catégorie
-        category_name = category.name
-        category.is_active = False
-        category.save()
-        
-        messages.success(request, f'Catégorie "{category_name}" supprimée avec succès.')
-        return redirect('finance:budget_category_list')
-    
-    # Autres catégories pour réassignation
-    other_categories = BudgetCategory.objects.filter(is_active=True).exclude(pk=pk)
-    
-    context = {
-        'category': category,
-        'budget_items_count': budget_items_count,
-        'budget_requests_count': budget_requests_count,
-        'other_categories': other_categories,
-    }
-    return render(request, 'finance/budget_category_delete_confirm.html', context)
