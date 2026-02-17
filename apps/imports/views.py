@@ -538,3 +538,29 @@ def import_delete(request, pk):
         return redirect('imports:list')
     
     return render(request, 'imports/import_confirm_delete.html', {'import_log': import_log})
+
+
+@login_required
+def import_bulk_delete(request):
+    """Suppression de plusieurs logs d'import en une seule opération."""
+    if request.method == 'POST':
+        ids = request.POST.getlist('selected_ids')
+        if not ids:
+            messages.warning(request, 'Aucun import sélectionné.')
+            return redirect('imports:list')
+        
+        logs = ImportLog.objects.filter(pk__in=ids)
+        count = logs.count()
+        
+        # Supprimer les fichiers physiques
+        for log in logs:
+            if log.file_path:
+                try:
+                    log.file_path.delete(save=False)
+                except Exception:
+                    pass
+        
+        logs.delete()
+        messages.success(request, f'{count} journal(aux) d\'import supprimé(s) avec succès.')
+    
+    return redirect('imports:list')

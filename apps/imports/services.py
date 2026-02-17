@@ -4,6 +4,7 @@ from datetime import datetime, date
 from django.utils import timezone
 from django.db import transaction
 from django.core.exceptions import ValidationError
+from django.core.cache import cache
 from apps.members.models import Member
 from apps.bibleclub.models import Child, BibleClass, AgeGroup
 from .models import ImportLog
@@ -376,6 +377,12 @@ class ExcelImportService:
             self.import_log.status = ImportLog.Status.ERROR
         
         self.import_log.save()
+        
+        # Vider le cache pour que les listes de membres/enfants soient à jour immédiatement
+        try:
+            cache.clear()
+        except Exception:
+            pass
 
 
 def generate_template_excel(import_type):

@@ -157,9 +157,16 @@
         <h6 class="mb-0">Historique des imports</h6>
         <small class="text-muted">{{ page_obj.paginator.count }} import(s) au total</small>
     </div>
-    <a href="{% url 'imports:create' %}" class="btn btn-primary">
-        <i class="bi bi-upload me-2"></i>Nouvel import
-    </a>
+    <div class="d-flex gap-2">
+        <button type="button" id="btn-bulk-delete" class="btn btn-outline-danger d-none"
+                onclick="document.getElementById('bulk-delete-form').submit()">
+            <i class="bi bi-trash me-1"></i>Supprimer la sélection
+            <span id="bulk-count" class="badge bg-danger ms-1">0</span>
+        </button>
+        <a href="{% url 'imports:create' %}" class="btn btn-primary">
+            <i class="bi bi-upload me-2"></i>Nouvel import
+        </a>
+    </div>
 </div>
 
 <!-- Filtres -->
@@ -201,10 +208,16 @@
 <div class="card">
     <div class="card__body p-0">
         {% if page_obj %}
+        <form id="bulk-delete-form" method="post" action="{% url 'imports:bulk_delete' %}">
+            {% csrf_token %}
         <div class="table-responsive">
             <table class="table table-hover mb-0">
                 <thead>
                     <tr>
+                        <th class="table__header" style="width:40px">
+                            <input type="checkbox" id="select-all-chk" class="form-check-input"
+                                   title="Tout sélectionner">
+                        </th>
                         <th class="table__header">Fichier</th>
                         <th class="table__header">Type</th>
                         <th class="table__header">Statut</th>
@@ -217,6 +230,10 @@
                 <tbody>
                     {% for import_log in page_obj %}
                     <tr class="table__row">
+                        <td class="table__cell">
+                            <input type="checkbox" name="selected_ids" value="{{ import_log.pk }}"
+                                   class="form-check-input row-chk">
+                        </td>
                         <td class="table__cell">
                             <div>
                                 <div class="fw-semibold">{{ import_log.file_name }}</div>
@@ -269,8 +286,12 @@
                             {% endif %}
                         </td>
                         <td class="table__cell text-end">
-                            <a href="{% url 'imports:detail' import_log.pk %}" class="btn btn-sm btn-outline-secondary">
+                            <a href="{% url 'imports:detail' import_log.pk %}" class="btn btn-sm btn-outline-secondary" title="Voir">
                                 <i class="bi bi-eye"></i>
+                            </a>
+                            <a href="{% url 'imports:delete' import_log.pk %}" class="btn btn-sm btn-outline-danger" title="Supprimer"
+                               onclick="return confirm('Supprimer ce journal d\'import ?')">
+                                <i class="bi bi-trash"></i>
                             </a>
                         </td>
                     </tr>
@@ -278,6 +299,7 @@
                 </tbody>
             </table>
         </div>
+        </form>
         
         <!-- Pagination -->
         {% if page_obj.has_other_pages %}
@@ -322,4 +344,37 @@
         {% endif %}
     </div>
 </div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Gestion sélection + bulk delete
+const selectAll  = document.getElementById('select-all-chk');
+const bulkBtn    = document.getElementById('btn-bulk-delete');
+const bulkCount  = document.getElementById('bulk-count');
+
+function updateBulk() {
+    const checked = document.querySelectorAll('.row-chk:checked');
+    if (bulkCount)  bulkCount.textContent  = checked.length;
+    if (bulkBtn)    bulkBtn.classList.toggle('d-none', checked.length === 0);
+}
+
+if (selectAll) {
+    selectAll.addEventListener('change', function () {
+        document.querySelectorAll('.row-chk').forEach(cb => cb.checked = this.checked);
+        updateBulk();
+    });
+}
+
+document.querySelectorAll('.row-chk').forEach(cb => {
+    cb.addEventListener('change', function () {
+        const all = document.querySelectorAll('.row-chk');
+        if (selectAll) {
+            selectAll.checked       = Array.from(all).every(c => c.checked);
+            selectAll.indeterminate = !selectAll.checked && Array.from(all).some(c => c.checked);
+        }
+        updateBulk();
+    });
+});
+</script>
 {% endblock %}
