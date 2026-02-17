@@ -2,7 +2,6 @@
 Vues admin personnalisées pour les membres.
 Inclut une carte interactive des membres par quartier/famille.
 """
-import random
 import math
 import hashlib
 
@@ -22,49 +21,32 @@ from apps.core.permissions import role_required, has_role
 # GPS OBFUSCATION UTILITIES
 # =============================================================================
 
-def obfuscate_coordinates(lat, lng, min_offset_meters=50, max_offset_meters=100):
+def obfuscate_coordinates(lat, lng, member_id=None, address_seed=None, min_offset_meters=50, max_offset_meters=100):
     """
-    Ajoute un décalage aléatoire aux coordonnées GPS pour protéger la vie privée.
-    
-    Args:
-        lat: Latitude originale
-        lng: Longitude originale
-        min_offset_meters: Décalage minimum en mètres (défaut: 50)
-        max_offset_meters: Décalage maximum en mètres (défaut: 100)
-    
-    Returns:
-        tuple: (latitude_obfusquée, longitude_obfusquée)
-    
-    Notes:
-        - Le décalage est appliqué dans une direction aléatoire
-        - La distance est aléatoire entre min_offset_meters et max_offset_meters
-        - Utilise la formule de conversion degrés/mètres approximative
-        - Gère les cas limites aux pôles (latitude ±90°)
+    Ajoute un décalage déterministe aux coordonnées GPS pour protéger la vie privée.
+    L'offset est basé sur l'adresse (même adresse = même point) + micro-jitter par membre.
     """
-    # Conversion approximative: 1 degré de latitude ≈ 111,320 mètres
-    # 1 degré de longitude ≈ 111,320 * cos(latitude) mètres
     METERS_PER_DEGREE_LAT = 111320
-    
-    # Générer une distance aléatoire entre min et max
-    distance_meters = random.uniform(min_offset_meters, max_offset_meters)
-    
-    # Générer un angle aléatoire (0 à 2π)
-    angle = random.uniform(0, 2 * math.pi)
-    
-    # Calculer le décalage en degrés
+
+    # Seed principal basé sur l'adresse pour grouper les membres de la même adresse
+    primary_seed = str(address_seed or f"{lat:.6f},{lng:.6f}")
+    primary_hash = hashlib.sha256(primary_seed.encode('utf-8')).hexdigest()
+    angle = (int(primary_hash[:8], 16) / 0xFFFFFFFF) * 2 * math.pi
+    distance_meters = min_offset_meters + (int(primary_hash[8:16], 16) / 0xFFFFFFFF) * (max_offset_meters - min_offset_meters)
+
     lat_offset = (distance_meters * math.cos(angle)) / METERS_PER_DEGREE_LAT
-    
-    # Ajuster pour la longitude (dépend de la latitude)
-    # Limiter la latitude à ±89.9° pour éviter la division par zéro aux pôles
     clamped_lat = max(-89.9, min(89.9, lat))
     meters_per_degree_lng = METERS_PER_DEGREE_LAT * math.cos(math.radians(clamped_lat))
-    
-    if meters_per_degree_lng > 0.01:  # Éviter la division par des valeurs très petites
-        lng_offset = (distance_meters * math.sin(angle)) / meters_per_degree_lng
-    else:
-        # Aux pôles, le décalage en longitude n'a pas de sens, on l'ignore
-        lng_offset = 0
-    
+    lng_offset = (distance_meters * math.sin(angle)) / meters_per_degree_lng if meters_per_degree_lng > 0.01 else 0
+
+    # Micro-décalage par membre (5 m max) pour éviter la superposition exacte
+    if member_id is not None:
+        member_hash = hashlib.sha256(f"member:{member_id}".encode('utf-8')).hexdigest()
+        micro_angle = (int(member_hash[:8], 16) / 0xFFFFFFFF) * 2 * math.pi
+        micro_dist = (int(member_hash[8:16], 16) / 0xFFFFFFFF) * 5  # 5 m max
+        lat_offset += (micro_dist * math.cos(micro_angle)) / METERS_PER_DEGREE_LAT
+        lng_offset += (micro_dist * math.sin(micro_angle)) / meters_per_degree_lng if meters_per_degree_lng > 0.01 else 0
+
     return (lat + lat_offset, lng + lng_offset)
 
 
@@ -244,11 +226,20 @@ def members_map_data(request):
             coords = deterministic_offset_coords(4.9225, -52.3058, f"default:{member.id}", min_offset_meters=300, max_offset_meters=2500)
         
         if coords:
-            # Appliquer l'obfuscation si nécessaire
+            # Appliquer l'obfuscation si nécessaire (déterministe : même adresse = même position)
             if obfuscate:
-                display_lat, display_lng = obfuscate_coordinates(coords[0], coords[1])
+                display_lat, display_lng = obfuscate_coordinates(
+                    coords[0], coords[1],
+                    member_id=member.id,
+                    address_seed=cache_key,
+                )
             elif member.site and member.site.latitude is not None and member.site.longitude is not None and coords == (float(member.site.latitude), float(member.site.longitude)):
-                display_lat, display_lng = obfuscate_coordinates(coords[0], coords[1], min_offset_meters=120, max_offset_meters=250)
+                display_lat, display_lng = obfuscate_coordinates(
+                    coords[0], coords[1],
+                    member_id=member.id,
+                    address_seed=f"site:{member.site.id}",
+                    min_offset_meters=120, max_offset_meters=250,
+                )
             else:
                 display_lat, display_lng = coords[0], coords[1]
             

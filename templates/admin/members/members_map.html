@@ -252,7 +252,8 @@
                                 <p>${getStatusBadge(m.status)}</p>
                                 ${m.phone ? '<p>📞 ' + m.phone + '</p>' : ''}
                                 ${m.site ? '<p>⛪ ' + m.site + '</p>' : ''}
-                                ${m.family ? '<p>👨‍👩‍👧‍👦 ' + m.family + '</p>' : ''}`)
+                                ${m.family ? '<p>👨‍👩‍👧‍👦 ' + m.family + '</p>' : ''}
+                                <a href="/app/members/${m.id}/" class="btn btn-sm btn-primary mt-2 w-100">Voir le profil</a>`)
                             .addTo(map);
                     });
                     
