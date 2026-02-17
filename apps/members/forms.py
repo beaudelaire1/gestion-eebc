@@ -128,11 +128,11 @@ class MemberForm(forms.ModelForm):
         self.fields['site'].empty_label = "Sélectionner un site"
         self.fields['gender'].empty_label = "Non spécifié"
         
-        # Filtrer les familles actives
-        self.fields['family'].queryset = Family.objects.filter(is_active=True)
+        # Filtrer les familles actives (triées alphabétiquement)
+        self.fields['family'].queryset = Family.objects.filter(is_active=True).order_by('name')
         
         # Filtrer les sites actifs
-        self.fields['site'].queryset = Site.objects.filter(is_active=True)
+        self.fields['site'].queryset = Site.objects.filter(is_active=True).order_by('name')
     
     def clean_email(self):
         """Valider l'unicité de l'email."""
@@ -198,6 +198,10 @@ class LifeEventForm(forms.ModelForm):
         super().__init__(*args, **kwargs)
         self.fields['related_members'].required = False
         self.fields['notes'].required = False
+        # Membres actifs triés alphabétiquement
+        membres_qs = Member.objects.filter(status='actif').order_by('last_name', 'first_name')
+        self.fields['primary_member'].queryset = membres_qs
+        self.fields['related_members'].queryset = membres_qs
 
 
 class VisitationLogForm(forms.ModelForm):
@@ -236,9 +240,13 @@ class VisitationLogForm(forms.ModelForm):
         self.fields['prayer_requests'].required = False
         self.fields['follow_up_notes'].required = False
         
+        # Membres actifs triés alphabétiquement
+        membres_qs = Member.objects.filter(status='actif').order_by('last_name', 'first_name')
+        self.fields['member'].queryset = membres_qs
+        self.fields['visitor'].queryset = membres_qs
         # Filtrer les événements de vie non visités
         self.fields['life_event'].queryset = LifeEvent.objects.filter(
             requires_visit=True, 
             visit_completed=False
-        )
+        ).order_by('event_date', 'title')
         self.fields['life_event'].empty_label = "Aucun événement lié"
