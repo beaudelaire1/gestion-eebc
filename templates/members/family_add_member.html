@@ -14,7 +14,8 @@
                     
                     <div class="mb-3">
                         <label class="form-label">Membre à ajouter *</label>
-                        <select name="member_id" class="form-select" required>
+                        <select name="member_id" class="form-select tom-select" required
+                                data-placeholder="Rechercher un membre...">
                             <option value="">-- Sélectionner un membre --</option>
                             {% for member in available_members %}
                             <option value="{{ member.id }}">{{ member.full_name }}</option>

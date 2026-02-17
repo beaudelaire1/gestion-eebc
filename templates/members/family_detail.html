@@ -118,7 +118,7 @@
                                 </td>
                                 <td>
                                     {% if member.family_role %}
-                                    <span class="badge bg-info">{{ member.family_role }}</span>
+                                    <span class="badge bg-info">{{ member.get_family_role_display }}</span>
                                     {% else %}
                                     <span class="text-muted">-</span>
                                     {% endif %}

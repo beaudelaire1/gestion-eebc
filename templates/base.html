@@ -20,6 +20,9 @@
     <!-- Bootstrap Icons -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" rel="stylesheet">
 
+    <!-- Tom Select (recherche dans les listes déroulantes) -->
+    <link href="https://cdn.jsdelivr.net/npm/tom-select@2.3.1/dist/css/tom-select.bootstrap5.min.css" rel="stylesheet">
+
     <!-- HTMX -->
     <script src="https://unpkg.com/htmx.org@1.9.10"></script>
 
@@ -521,6 +524,28 @@
     {% endif %}
 
     {% block extra_js %}{% endblock %}
+
+    <!-- Tom Select JS -->
+    <script src="https://cdn.jsdelivr.net/npm/tom-select@2.3.1/dist/js/tom-select.complete.min.js"></script>
+    <script>
+    // Initialisation automatique de tous les selects avec classe tom-select
+    document.addEventListener('DOMContentLoaded', function () {
+        document.querySelectorAll('select.tom-select').forEach(function (el) {
+            new TomSelect(el, {
+                plugins: el.multiple ? ['remove_button', 'checkbox_options'] : [],
+                placeholder: el.dataset.placeholder || 'Rechercher...',
+                allowEmptyOption: !el.required,
+                maxOptions: null,
+                searchField: ['text'],
+                render: {
+                    no_results: function () {
+                        return '<div class="no-results">Aucun résultat</div>';
+                    }
+                }
+            });
+        });
+    });
+    </script>
 
     <!-- Toast Container -->
     <div id="toast-container" class="toast-container position-fixed top-0 end-0 p-3" style="z-index: 9999;"></div>

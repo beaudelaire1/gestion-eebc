@@ -28,7 +28,7 @@ class GroupForm(forms.ModelForm):
                 'placeholder': 'Description du groupe'
             }),
             'group_type': forms.Select(attrs={'class': 'form-select'}),
-            'leader': forms.Select(attrs={'class': 'form-select'}),
+            'leader': forms.Select(attrs={'class': 'form-select tom-select', 'data-placeholder': 'Rechercher un responsable...'}),
             'meeting_day': forms.Select(attrs={'class': 'form-select'}),
             'meeting_time': forms.TimeInput(attrs={
                 'class': 'form-control',

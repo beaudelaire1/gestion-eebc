@@ -57,7 +57,8 @@ class MemberForm(forms.ModelForm):
                 'placeholder': 'Code postal'
             }),
             'family': forms.Select(attrs={
-                'class': 'form-select'
+                'class': 'form-select tom-select',
+                'data-placeholder': 'Rechercher une famille...'
             }),
             'family_role': forms.Select(attrs={
                 'class': 'form-select'
@@ -185,8 +186,8 @@ class LifeEventForm(forms.ModelForm):
             'title': forms.TextInput(attrs={'class': 'form-control'}),
             'event_date': forms.DateInput(attrs={'class': 'form-control', 'type': 'date'}),
             'priority': forms.Select(attrs={'class': 'form-select'}),
-            'primary_member': forms.Select(attrs={'class': 'form-select'}),
-            'related_members': forms.SelectMultiple(attrs={'class': 'form-select'}),
+            'primary_member': forms.Select(attrs={'class': 'form-select tom-select', 'data-placeholder': 'Rechercher un membre...'}),
+            'related_members': forms.SelectMultiple(attrs={'class': 'form-select tom-select', 'data-placeholder': 'Rechercher des membres...'}),
             'description': forms.Textarea(attrs={'class': 'form-control', 'rows': 3}),
             'notes': forms.Textarea(attrs={'class': 'form-control', 'rows': 2}),
             'requires_visit': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
@@ -211,14 +212,14 @@ class VisitationLogForm(forms.ModelForm):
             'follow_up_needed', 'follow_up_notes', 'is_confidential'
         ]
         widgets = {
-            'member': forms.Select(attrs={'class': 'form-select'}),
-            'visitor': forms.Select(attrs={'class': 'form-select'}),
+            'member': forms.Select(attrs={'class': 'form-select tom-select', 'data-placeholder': 'Rechercher un membre...'}),
+            'visitor': forms.Select(attrs={'class': 'form-select tom-select', 'data-placeholder': 'Rechercher un visiteur...'}),
             'visit_type': forms.Select(attrs={'class': 'form-select'}),
             'status': forms.Select(attrs={'class': 'form-select'}),
             'scheduled_date': forms.DateInput(attrs={'class': 'form-control', 'type': 'date'}),
             'visit_date': forms.DateInput(attrs={'class': 'form-control', 'type': 'date'}),
             'duration_minutes': forms.NumberInput(attrs={'class': 'form-control'}),
-            'life_event': forms.Select(attrs={'class': 'form-select'}),
+            'life_event': forms.Select(attrs={'class': 'form-select tom-select', 'data-placeholder': "Filtrer par événement de vie..."}),
             'summary': forms.Textarea(attrs={'class': 'form-control', 'rows': 4}),
             'prayer_requests': forms.Textarea(attrs={'class': 'form-control', 'rows': 3}),
             'follow_up_notes': forms.Textarea(attrs={'class': 'form-control', 'rows': 2}),
