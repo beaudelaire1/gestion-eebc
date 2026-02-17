@@ -3,6 +3,7 @@ from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.http import JsonResponse
 from django.utils import timezone
+from django.db.models import Q
 from datetime import date
 
 from .models import Notification, Announcement, EmailLog, SMSLog
@@ -381,3 +382,85 @@ def send_email_notification(recipient_email, recipient_name, subject, body):
     log.save()
     return log
 
+
+# =============================================================================
+# GESTION DES LOGS EMAILS - SUPPRESSION AVEC CHECKBOXES
+# =============================================================================
+
+@login_required
+def email_logs_management(request):
+    """
+    Affiche la liste des logs emails avec des checkboxes pour suppression.
+    """
+    from django.core.paginator import Paginator
+    
+    # Vérifier les permissions
+    if not request.user.has_role('admin'):
+        messages.error(request, "Vous n'avez pas accès à cette page.")
+        return redirect('dashboard:index')
+    
+    # Traitement de la suppression (POST)
+    if request.method == 'POST':
+        selected_ids = request.POST.getlist('selected_logs')
+        
+        if not selected_ids:
+            messages.warning(request, "Veuillez sélectionner au moins un log à supprimer.")
+            return redirect('communication:email_logs_management')
+        
+        try:
+            # Récupérer les logs à supprimer
+            logs_to_delete = EmailLog.objects.filter(id__in=selected_ids)
+            count = logs_to_delete.count()
+            
+            # Supprimer
+            logs_to_delete.delete()
+            
+            messages.success(request, f"✅ {count} log(s) email supprimé(s) avec succès.")
+        except Exception as e:
+            messages.error(request, f"❌ Erreur lors de la suppression: {str(e)}")
+        
+        return redirect('communication:email_logs_management')
+    
+    # GET - Afficher les logs
+    # Filtres
+    status_filter = request.GET.get('status', '')
+    search = request.GET.get('search', '')
+    
+    logs = EmailLog.objects.all().order_by('-created_at')
+    
+    if status_filter:
+        logs = logs.filter(status=status_filter)
+    
+    if search:
+        logs = logs.filter(
+            Q(recipient_email__icontains=search) |
+            Q(subject__icontains=search) |
+            Q(recipient_name__icontains=search)
+        )
+    
+    # Pagination
+    paginator = Paginator(logs, 50)
+    page_number = request.GET.get('page', 1)
+    page_obj = paginator.get_page(page_number)
+    
+    # Statistiques
+    stats = {
+        'total': EmailLog.objects.count(),
+        'sent': EmailLog.objects.filter(status=EmailLog.Status.SENT).count(),
+        'failed': EmailLog.objects.filter(status=EmailLog.Status.FAILED).count(),
+        'pending': EmailLog.objects.filter(status=EmailLog.Status.PENDING).count(),
+        'others': EmailLog.objects.exclude(status__in=[
+            EmailLog.Status.SENT, EmailLog.Status.FAILED, EmailLog.Status.PENDING
+        ]).count(),
+    }
+    
+    context = {
+        'page_obj': page_obj,
+        'logs': page_obj.object_list,
+        'stats': stats,
+        'status_filter': status_filter,
+        'search': search,
+        'statuses': EmailLog.Status.choices,
+    }
+    
+    return render(request, 'communication/email_logs_management.html', context)

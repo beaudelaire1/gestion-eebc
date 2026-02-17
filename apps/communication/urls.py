@@ -21,6 +21,7 @@ urlpatterns = [
     
     # Logs avec suppression
     path('logs/email/', views.email_logs, name='email_logs'),
+    path('logs/email/manage/', views.email_logs_management, name='email_logs_management'),
     path('logs/email/<int:pk>/delete/', views.email_log_delete, name='email_log_delete'),
     path('logs/email/clear-old/', views.email_logs_clear_old, name='email_logs_clear_old'),
     path('logs/sms/', views.sms_logs, name='sms_logs'),
