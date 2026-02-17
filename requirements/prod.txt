@@ -26,9 +26,6 @@ twilio>=8.10.0
 # Paiements en ligne
 stripe>=7.0.0
 
-# OCR pour les reçus
-pytesseract>=0.3.10
-
 # Stockage cloud (optionnel)
 boto3>=1.28.0
 django-storages>=1.14.0

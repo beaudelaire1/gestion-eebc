@@ -180,6 +180,8 @@ if SENTRY_DSN:
         environment='production',
     )
 
+# En production sur Render, le filesystem est éphémère.
+# On utilise uniquement le handler console (stdout/stderr capturé par Render).
 LOGGING = {
     'version': 1,
     'disable_existing_loggers': False,
@@ -194,24 +196,19 @@ LOGGING = {
             'class': 'logging.StreamHandler',
             'formatter': 'verbose',
         },
-        'file': {
-            'class': 'logging.FileHandler',
-            'filename': BASE_DIR / 'logs' / 'django.log',
-            'formatter': 'verbose',
-        },
     },
     'root': {
-        'handlers': ['console', 'file'],
+        'handlers': ['console'],
         'level': 'WARNING',
     },
     'loggers': {
         'django': {
-            'handlers': ['console', 'file'],
+            'handlers': ['console'],
             'level': 'WARNING',
             'propagate': False,
         },
         'apps': {
-            'handlers': ['console', 'file'],
+            'handlers': ['console'],
             'level': 'INFO',
             'propagate': False,
         },

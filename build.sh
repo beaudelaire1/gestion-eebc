@@ -5,6 +5,10 @@
 
 set -o errexit
 
+echo "=== Création des répertoires nécessaires ==="
+mkdir -p logs
+mkdir -p media
+
 echo "=== Installation des dépendances ==="
 pip install --upgrade pip
 pip install -r requirements/prod.txt
