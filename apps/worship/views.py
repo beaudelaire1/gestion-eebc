@@ -60,14 +60,29 @@ def service_create(request):
     if request.method == 'POST':
         form = WorshipServiceForm(request.POST)
         if form.is_valid():
+            from apps.events.models import Event
+            service_date = form.cleaned_data['service_date']
             service = form.save(commit=False)
             service.created_by = request.user
+            # Créer automatiquement un Event associé au service
+            event_title = (
+                service.sermon_title
+                or service.theme
+                or service.get_service_type_display()
+                or 'Service de culte'
+            )
+            event = Event.objects.create(
+                title=event_title,
+                start_date=service_date,
+                visibility='members',
+            )
+            service.event = event
             service.save()
             messages.success(request, "Service créé avec succès.")
             return redirect('worship:service_detail', pk=service.pk)
     else:
         form = WorshipServiceForm()
-    
+
     return render(request, 'worship/service_form.html', {'form': form})
 
 
@@ -76,16 +91,24 @@ def service_create(request):
 def service_edit(request, pk):
     """Modifier un service."""
     service = get_object_or_404(WorshipService, pk=pk)
-    
+
     if request.method == 'POST':
         form = WorshipServiceForm(request.POST, instance=service)
         if form.is_valid():
+            service_date = form.cleaned_data['service_date']
+            # Mettre à jour la date de l'Event associé
+            if service.event:
+                service.event.start_date = service_date
+                service.event.save(update_fields=['start_date'])
             form.save()
             messages.success(request, "Service mis à jour.")
             return redirect('worship:service_detail', pk=pk)
     else:
         form = WorshipServiceForm(instance=service)
-    
+        # Pré-remplir service_date depuis l'Event lié
+        if service.event:
+            form.fields['service_date'].initial = service.event.start_date
+
     return render(request, 'worship/service_form.html', {'form': form, 'service': service})
 
 

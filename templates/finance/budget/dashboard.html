@@ -307,102 +307,66 @@
 </div>
 {% endblock %}
 
+{% block extra_css %}
+<style>
+.alert-light {
+    border-left: 4px solid #0d6efd;
+}
+.card {
+    transition: all 0.3s ease;
+}
+.card:hover {
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+}
+#left-panel, #right-panel {
+    transition: all 0.3s ease;
+}
+@media (max-width: 768px) {
+    #left-panel, #right-panel { order: 1; }
+}
+</style>
+{% endblock %}
+
+{% block extra_js %}
 <script>
 let currentLayoutMode = 'normal';
 
 function setLayoutMode(mode) {
     const leftPanel = document.getElementById('left-panel');
     const rightPanel = document.getElementById('right-panel');
-    
-    // Réinitialiser tous les boutons
+    if (!leftPanel || !rightPanel) return;
+
     document.getElementById('btn-normal').className = 'btn btn-outline-primary';
     document.getElementById('btn-extended').className = 'btn btn-outline-success';
     document.getElementById('btn-minimal').className = 'btn btn-outline-warning';
-    
+
     switch(mode) {
         case 'normal':
-            // Vue normale - 2 colonnes
             leftPanel.style.display = 'block';
             rightPanel.style.display = 'block';
             leftPanel.className = 'col-lg-6 mb-4';
             rightPanel.className = 'col-lg-6 mb-4';
             document.getElementById('btn-normal').className = 'btn btn-primary';
             break;
-            
         case 'extended':
-            // Vue étendue - panneau gauche étendu
             leftPanel.style.display = 'block';
             rightPanel.style.display = 'none';
             leftPanel.className = 'col-12 mb-4';
+            rightPanel.className = 'col-lg-6 mb-4';
             document.getElementById('btn-extended').className = 'btn btn-success';
             break;
-            
         case 'minimal':
-            // Vue minimale - pas de panneaux latéraux
             leftPanel.style.display = 'none';
             rightPanel.style.display = 'none';
             document.getElementById('btn-minimal').className = 'btn btn-warning';
             break;
     }
-    
     currentLayoutMode = mode;
-    
-    // Forcer le recalcul du layout
-    setTimeout(() => {
-        window.dispatchEvent(new Event('resize'));
-    }, 300);
+    setTimeout(() => { window.dispatchEvent(new Event('resize')); }, 300);
 }
 
-// Ajouter des styles pour les transitions et initialiser le mode normal
 document.addEventListener('DOMContentLoaded', function() {
-    const style = document.createElement('style');
-    style.textContent = `
-        #left-panel, #right-panel {
-            transition: all 0.3s ease;
-        }
-        
-        .btn:hover {
-            transform: translateY(-1px);
-            transition: all 0.2s ease;
-        }
-        
-        .col-12 {
-            width: 100% !important;
-            flex: 0 0 100% !important;
-            max-width: 100% !important;
-        }
-        
-        .col-lg-6 {
-            width: 50% !important;
-            flex: 0 0 50% !important;
-            max-width: 50% !important;
-        }
-    `;
-    document.head.appendChild(style);
-    
-    // Initialiser en mode normal
     setLayoutMode('normal');
 });
 </script>
-
-{% block extra_css %}
-<style>
-.alert-light {
-    border-left: 4px solid #0d6efd;
-}
-
-.card {
-    transition: all 0.3s ease;
-}
-
-.card:hover {
-    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
-}
-
-@media (max-width: 768px) {
-    #left-panel, #right-panel {
-        order: 1;
-    }
-}
-</style>
 {% endblock %}

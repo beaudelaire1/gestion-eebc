@@ -1,16 +1,25 @@
 """Formulaires pour le module Worship."""
 
 from django import forms
+from datetime import date as dt_date
 from .models import WorshipService, ServiceRole, ServicePlanItem
 
 
 class WorshipServiceForm(forms.ModelForm):
     """Formulaire de création/édition de service."""
-    
+
+    service_date = forms.DateField(
+        required=True,
+        label='Date du service',
+        initial=dt_date.today,
+        widget=forms.DateInput(attrs={'type': 'date', 'class': 'form-control'}),
+        help_text='Date à laquelle le service aura lieu.',
+    )
+
     class Meta:
         model = WorshipService
         fields = [
-            'event', 'service_type', 'theme', 'bible_text',
+            'service_date', 'service_type', 'theme', 'bible_text',
             'sermon_title', 'sermon_notes', 'expected_attendance', 'notes'
         ]
         widgets = {

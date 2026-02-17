@@ -550,3 +550,79 @@ CORS_ALLOWED_ORIGINS += [
 
 # Allow credentials for mobile app
 CORS_ALLOW_CREDENTIALS = True
+# =============================================================================
+# JAZZMIN ADMIN CONFIGURATION
+# =============================================================================
+# Jazzmin theme and UI customization
+JAZZMIN_SETTINGS = {
+    "site_title": "EEBC Admin",
+    "site_header": "Gestion Église Baptiste de Cayenne",
+    "site_brand": "EEBC",
+    
+    # Navigation customization
+    "navigation_expanded": False,
+    "show_sidebar": True,
+    "navigation_depth": 2,
+    
+    # UI customizations
+    "show_ui_builder": False,
+    "default_icon_parents": "fas fa-chevron-right",
+    "default_icon_children": "fas fa-arrow-right",
+    
+    # Search
+    "search_model": ["auth.User"],
+    
+    # Icons configuration
+    "icons": {
+        "auth": "fas fa-users",
+        "auth.user": "fas fa-user",
+        "auth.Group": "fas fa-users",
+        "accounts.User": "fas fa-user-circle",
+        "members.Member": "fas fa-id-card",
+        "members.LifeEvent": "fas fa-birthday-cake",
+        "members.VisitationLog": "fas fa-clipboard",
+        "departments.Department": "fas fa-sitemap",
+        "transport.Vehicle": "fas fa-car",
+        "transport.TransportRequest": "fas fa-route",
+        "inventory.Category": "fas fa-tags",
+        "inventory.Equipment": "fas fa-tools",
+        "campaigns.Campaign": "fas fa-dollar-sign",
+        "campaigns.Donation": "fas fa-donate",
+        "communication.Message": "fas fa-envelope",
+        "communication.Newsletter": "fas fa-newspaper",
+        "events.Event": "fas fa-calendar",
+        "events.EventCategory": "fas fa-list",
+        "finance.Budget": "fas fa-chart-pie",
+        "finance.BudgetLine": "fas fa-chart-bar",
+        "finance.FinancialTransaction": "fas fa-exchange-alt",
+        "worship.WorshipService": "fas fa-church",
+        "worship.ServiceRole": "fas fa-user-tie",
+        "groups.Group": "fas fa-users-circle",
+        "groups.GroupMeeting": "fas fa-video",
+        "bibleclub.BibleStudy": "fas fa-book",
+        "dashboard.Dashboard": "fas fa-chart-line",
+    },
+    
+    # Related modal widget customization
+    "related_modal_active": True,
+    "show_form_bottom_submit_button": True,
+    "show_administration_panel": True,
+    "enable_nav_sidebar": True,
+    
+    # Custom theme colors
+    "changeform_format": "collapsible",
+    "changeform_format_overrides": {
+        "auth.user": "collapsible",
+        "auth.group": "collapsible",
+    },
+}
+
+# =============================================================================
+# JAZZMIN UI TWEAKS
+# =============================================================================
+# Fix for inline display issues in Jazzmin
+TEMPLATES[0]['OPTIONS']['context_processors'] = TEMPLATES[0]['OPTIONS'].get('context_processors', [])
+if 'django.template.context_processors.request' not in TEMPLATES[0]['OPTIONS']['context_processors']:
+    TEMPLATES[0]['OPTIONS']['context_processors'].append('django.template.context_processors.request')
+if 'django.contrib.auth.context_processors.auth' not in TEMPLATES[0]['OPTIONS']['context_processors']:
+    TEMPLATES[0]['OPTIONS']['context_processors'].append('django.contrib.auth.context_processors.auth')

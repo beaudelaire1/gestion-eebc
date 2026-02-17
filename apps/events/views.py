@@ -860,24 +860,20 @@ def category_list(request):
 def category_create(request):
     """Créer une nouvelle catégorie d'événement."""
     if request.method == 'POST':
-        name = request.POST.get('name', '').strip()
-        color = request.POST.get('color', '#007bff')
-        description = request.POST.get('description', '').strip()
-        
-        if not name:
-            messages.error(request, 'Le nom de la catégorie est requis.')
-        else:
-            # Vérifier l'unicité
-            if EventCategory.objects.filter(name__iexact=name).exists():
-                messages.error(request, f'Une catégorie "{name}" existe déjà.')
-            else:
-                category = EventCategory.objects.create(
-                    name=name,
-                    color=color,
-                    description=description
-                )
-                messages.success(request, f'Catégorie "{category.name}" créée avec succès.')
-                return redirect('events:category_list')
+        form = EventCategoryForm(request.POST)
+        if form.is_valid():
+            category = form.save()
+            messages.success(request, f'Catégorie "{category.name}" créée avec succès.')
+            return redirect('events:category_list')
+    else:
+        form = EventCategoryForm()
+    
+    context = {
+        'form': form,
+        'title': 'Créer une catégorie d\'événement',
+        'submit_text': 'Créer la catégorie'
+    }
+    return render(request, 'events/category_form.html', context)
     
     context = {
         'title': 'Nouvelle catégorie',
@@ -891,28 +887,18 @@ def category_create(request):
 def category_update(request, pk):
     """Modifier une catégorie d'événement."""
     category = get_object_or_404(EventCategory, pk=pk)
-    
+
     if request.method == 'POST':
-        name = request.POST.get('name', '').strip()
-        color = request.POST.get('color', '#007bff')
-        description = request.POST.get('description', '').strip()
-        
-        if not name:
-            messages.error(request, 'Le nom de la catégorie est requis.')
-        else:
-            # Vérifier l'unicité (exclure la catégorie actuelle)
-            if EventCategory.objects.filter(name__iexact=name).exclude(pk=pk).exists():
-                messages.error(request, f'Une catégorie "{name}" existe déjà.')
-            else:
-                category.name = name
-                category.color = color
-                category.description = description
-                category.save()
-                
-                messages.success(request, f'Catégorie "{category.name}" modifiée avec succès.')
-                return redirect('events:category_list')
-    
+        form = EventCategoryForm(request.POST, instance=category)
+        if form.is_valid():
+            category = form.save()
+            messages.success(request, f'Catégorie "{category.name}" modifiée avec succès.')
+            return redirect('events:category_list')
+    else:
+        form = EventCategoryForm(instance=category)
+
     context = {
+        'form': form,
         'category': category,
         'title': f'Modifier {category.name}',
         'submit_text': 'Enregistrer les modifications'

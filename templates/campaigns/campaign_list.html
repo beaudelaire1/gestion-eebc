@@ -41,8 +41,7 @@
                         {% endif %}
                     </div>
                     <div class="text-end">
-                        <div class="h4 mb-0" style="color: var(--bs-{{ campaign.status_color }});">{{
-                            campaign.progress_percentage }}%</div>
+                        <div class="h4 mb-0" style="color: var(--bs-{{ campaign.status_color }});">{{ campaign.progress_percentage }}%</div>
                     </div>
                 </div>
 
@@ -54,8 +53,7 @@
 
                 <div class="row text-center mb-3">
                     <div class="col-4">
-                        <div class="h5 mb-0" id="collected-{{ campaign.pk }}">{{ campaign.collected_amount|floatformat:0
-                            }}€</div>
+                        <div class="h5 mb-0" id="collected-{{ campaign.pk }}">{{ campaign.collected_amount|floatformat:0 }}€</div>
                         <small class="text-muted">Collecté</small>
                     </div>
                     <div class="col-4">
@@ -63,8 +61,7 @@
                         <small class="text-muted">Objectif</small>
                     </div>
                     <div class="col-4">
-                        <div class="h5 mb-0" id="remaining-{{ campaign.pk }}">{{ campaign.remaining_amount|floatformat:0
-                            }}€</div>
+                        <div class="h5 mb-0" id="remaining-{{ campaign.pk }}">{{ campaign.remaining_amount|floatformat:0 }}€</div>
                         <small class="text-muted">Restant</small>
                     </div>
                 </div>
@@ -80,7 +77,8 @@
                         <a href="{% url 'campaigns:detail' campaign.pk %}" class="btn btn-outline-light btn-sm">
                             <i class="bi bi-eye me-1"></i>Détails
                         </a>
-                        <i class="bi bi-pencil me-1"></i>Modifier
+                        <a href="{% url 'campaigns:update' campaign.pk %}" class="btn btn-outline-light btn-sm">
+                            <i class="bi bi-pencil me-1"></i>Modifier
                         </a>
                         <a href="{% url 'campaigns:delete' campaign.pk %}" class="btn btn-outline-danger btn-sm">
                             <i class="bi bi-trash me-1"></i>

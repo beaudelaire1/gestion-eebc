@@ -1,5 +1,6 @@
 from django import forms
 from django.contrib.auth import get_user_model
+from django.db.models import Q
 from .models import Group, GroupMeeting
 from apps.members.models import Member
 
@@ -47,9 +48,13 @@ class GroupForm(forms.ModelForm):
     
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        # Filtrer les utilisateurs pour ne montrer que ceux avec des rôles appropriés
+        # Filtrer les utilisateurs pour ne montrer que ceux avec des rôles appropriés.
+        # Le champ `role` est un TextField avec valeurs séparées par virgule,
+        # donc on utilise __contains pour chaque rôle possible.
         self.fields['leader'].queryset = User.objects.filter(
-            role__in=['admin', 'responsable_groupe', 'secretariat']
+            Q(role__contains='admin')
+            | Q(role__contains='responsable_groupe')
+            | Q(role__contains='secretariat')
         ).order_by('first_name', 'last_name')
         self.fields['leader'].empty_label = "Sélectionner un responsable"
 
