@@ -143,12 +143,13 @@ def members_map_data(request):
             'member_count': member_count,
         })
     
-    # Données des membres avec adresse
+    # Données des membres avec adresse ou rattachés à un site géolocalisé
     members_data = []
     members_qs = Member.objects.filter(
         (Q(address__isnull=False) & ~Q(address='')) |
         (Q(family__address__isnull=False) & ~Q(family__address='')) |
-        (Q(family__latitude__isnull=False) & Q(family__longitude__isnull=False))
+        (Q(family__latitude__isnull=False) & Q(family__longitude__isnull=False)) |
+        (Q(site__latitude__isnull=False) & Q(site__longitude__isnull=False))  # fallback: coordonnées du site
     ).select_related('site', 'family')
     
     if site_id:
