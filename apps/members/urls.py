@@ -24,6 +24,7 @@ urlpatterns = [
     path('families/<int:pk>/', family_views.family_detail, name='family_detail'),
     path('families/<int:pk>/edit/', family_views.family_edit, name='family_edit'),
     path('families/<int:pk>/add-member/', family_views.family_add_member, name='family_add_member'),
+    path('api/member/<int:pk>/data/', family_views.member_api_data, name='member_api_data'),
     
     # Événements de vie (Pastoral CRM)
     path('life-events/', views.life_event_list, name='life_events'),

@@ -7,6 +7,38 @@
 {% block content %}
 <div class="row justify-content-center">
     <div class="col-lg-8">
+
+        <!-- Sélecteur chef de famille -->
+        <div class="card border-primary mb-3">
+            <div class="card-header bg-primary bg-opacity-10">
+                <h6 class="card-title mb-0">
+                    <i class="bi bi-person-fill-gear me-2 text-primary"></i>
+                    Importer depuis un membre existant <span class="badge bg-secondary ms-1">Optionnel</span>
+                </h6>
+            </div>
+            <div class="card-body">
+                <p class="text-muted small mb-3">Sélectionnez le chef de famille pour pré-remplir automatiquement le formulaire avec ses informations.</p>
+                <select id="chef-famille-select" class="form-select tom-select"
+                        data-placeholder="Rechercher un membre actif..."
+                        data-url="{% url 'members:member_api_data' 0 %}">
+                    <option value="">-- Sélectionner un chef de famille --</option>
+                    {% for m in available_members %}
+                    <option value="{{ m.id }}"
+                            data-last-name="{{ m.last_name }}"
+                            data-first-name="{{ m.first_name }}"
+                            data-email="{{ m.email }}"
+                            data-phone="{{ m.phone }}"
+                            data-address="{{ m.address }}"
+                            data-city="{{ m.city }}"
+                            data-postal-code="{{ m.postal_code }}"
+                            data-site-id="{{ m.site_id|default:'' }}">
+                        {{ m.last_name }} {{ m.first_name }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+        </div>
+
         <div class="card">
             <div class="card-body">
                 <form method="post">
@@ -15,11 +47,11 @@
                     <div class="row">
                         <div class="col-md-6 mb-3">
                             <label class="form-label">Nom de famille *</label>
-                            <input type="text" name="name" class="form-control" required>
+                            <input type="text" name="name" id="id_name" class="form-control" required>
                         </div>
                         <div class="col-md-6 mb-3">
                             <label class="form-label">Site</label>
-                            <select name="site" class="form-select">
+                            <select name="site" id="id_site" class="form-select">
                                 <option value="">-- Sélectionner --</option>
                                 {% for site in sites %}
                                 <option value="{{ site.id }}">{{ site.name }}</option>
@@ -43,17 +75,17 @@
                     
                     <div class="mb-3">
                         <label class="form-label">Adresse</label>
-                        <input type="text" name="address" class="form-control" placeholder="Numéro et rue">
+                        <input type="text" name="address" id="id_address" class="form-control" placeholder="Numéro et rue">
                     </div>
                     
                     <div class="row">
                         <div class="col-md-4 mb-3">
                             <label class="form-label">Code postal</label>
-                            <input type="text" name="postal_code" class="form-control">
+                            <input type="text" name="postal_code" id="id_postal_code" class="form-control">
                         </div>
                         <div class="col-md-8 mb-3">
                             <label class="form-label">Ville</label>
-                            <input type="text" name="city" class="form-control">
+                            <input type="text" name="city" id="id_city" class="form-control">
                         </div>
                     </div>
                     
@@ -63,11 +95,11 @@
                     <div class="row">
                         <div class="col-md-6 mb-3">
                             <label class="form-label">Téléphone</label>
-                            <input type="tel" name="phone" class="form-control">
+                            <input type="tel" name="phone" id="id_phone" class="form-control">
                         </div>
                         <div class="col-md-6 mb-3">
                             <label class="form-label">Email</label>
-                            <input type="email" name="email" class="form-control">
+                            <input type="email" name="email" id="id_email" class="form-control">
                         </div>
                     </div>
                     
@@ -84,4 +116,60 @@
         </div>
     </div>
 </div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const select = document.getElementById('chef-famille-select');
+    if (!select) return;
+
+    // Attendre que TomSelect soit initialisé (chargé après le bloc extra_js)
+    function setupChefFamille() {
+        if (select.tomselect) {
+            select.tomselect.on('change', function (value) {
+                if (!value) return;
+                const opt = select.querySelector('option[value="' + value + '"]');
+                if (!opt) return;
+
+                const lastName  = opt.dataset.lastName  || '';
+                const firstName = opt.dataset.firstName || '';
+
+                // Nom de famille : pré-remplir seulement si vide
+                const nameField = document.getElementById('id_name');
+                if (nameField && !nameField.value && lastName) {
+                    nameField.value = 'Famille ' + lastName;
+                }
+
+                setField('id_address',     opt.dataset.address    || '');
+                setField('id_city',        opt.dataset.city       || '');
+                setField('id_postal_code', opt.dataset.postalCode || '');
+                setField('id_phone',       opt.dataset.phone      || '');
+                setField('id_email',       opt.dataset.email      || '');
+
+                // Site
+                const siteId = opt.dataset.siteId || '';
+                if (siteId) {
+                    const siteSelect = document.getElementById('id_site');
+                    if (siteSelect) siteSelect.value = siteId;
+                }
+
+                // Toast de confirmation
+                if (typeof showToast === 'function') {
+                    showToast('Informations importées depuis ' + firstName + ' ' + lastName, 'success');
+                }
+            });
+        } else {
+            setTimeout(setupChefFamille, 100);
+        }
+    }
+
+    function setField(id, value) {
+        const el = document.getElementById(id);
+        if (el && !el.value && value) el.value = value;
+    }
+
+    setupChefFamille();
+});
+</script>
 {% endblock %}

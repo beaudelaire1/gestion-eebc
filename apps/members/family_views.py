@@ -4,6 +4,7 @@ Vues pour la gestion des familles.
 from django.shortcuts import render, get_object_or_404, redirect
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
+from django.http import JsonResponse
 
 from apps.core.models import Family, Neighborhood, Site
 from .models import Member
@@ -55,6 +56,22 @@ def family_detail(request, pk):
 
 
 @login_required
+def member_api_data(request, pk):
+    """Retourne les données d'un membre en JSON pour l'auto-remplissage du formulaire famille."""
+    member = get_object_or_404(Member, pk=pk)
+    return JsonResponse({
+        'last_name': member.last_name,
+        'first_name': member.first_name,
+        'email': member.email,
+        'phone': member.phone,
+        'address': member.address,
+        'city': member.city,
+        'postal_code': member.postal_code,
+        'site_id': member.site_id or '',
+    })
+
+
+@login_required
 def family_create(request):
     """Créer une nouvelle famille."""
     if request.method == 'POST':
@@ -84,6 +101,7 @@ def family_create(request):
     context = {
         'sites': Site.objects.filter(is_active=True),
         'neighborhoods': Neighborhood.objects.filter(is_active=True).select_related('city'),
+        'available_members': Member.objects.filter(status='actif').order_by('last_name', 'first_name'),
     }
     
     return render(request, 'members/family_create.html', context)
