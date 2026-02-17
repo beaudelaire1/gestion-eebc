@@ -20,7 +20,7 @@ class WorshipServiceForm(forms.ModelForm):
         model = WorshipService
         fields = [
             'service_date', 'service_type', 'theme', 'bible_text',
-            'sermon_title', 'sermon_notes', 'expected_attendance', 'notes'
+            'sermon_title', 'sermon_notes', 'notes'
         ]
         widgets = {
             'sermon_notes': forms.Textarea(attrs={'rows': 4}),

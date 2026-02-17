@@ -207,36 +207,61 @@ def announcement_toggle_active(request, pk):
 
 @login_required
 def email_logs(request):
-    """Logs des emails envoyés."""
+    """Logs des emails envoyés avec suppression en masse."""
     if not request.user.is_staff:
         messages.error(request, "Accès réservé aux administrateurs.")
         return redirect('dashboard:home')
-    
+
+    # Traitement de la suppression en masse (POST)
+    if request.method == 'POST':
+        selected_ids = request.POST.getlist('selected_logs')
+        if not selected_ids:
+            messages.warning(request, "Veuillez sélectionner au moins un log à supprimer.")
+        else:
+            try:
+                count = EmailLog.objects.filter(id__in=selected_ids).count()
+                EmailLog.objects.filter(id__in=selected_ids).delete()
+                messages.success(request, f"{count} log(s) email supprimé(s) avec succès.")
+            except Exception as e:
+                messages.error(request, f"Erreur lors de la suppression : {str(e)}")
+        return redirect('communication:email_logs')
+
+    # GET - affichage et filtres
+    status_filter = request.GET.get('status', '')
+    search = request.GET.get('search', '')
+
     logs = EmailLog.objects.all().order_by('-created_at')
-    filter_form = EmailLogFilterForm(request.GET or None)
-    
-    if filter_form.is_valid():
-        status = filter_form.cleaned_data.get('status')
-        recipient = filter_form.cleaned_data.get('recipient')
-        from_date = filter_form.cleaned_data.get('from_date')
-        to_date = filter_form.cleaned_data.get('to_date')
-        
-        if status:
-            logs = logs.filter(status=status)
-        if recipient:
-            logs = logs.filter(recipient_email__icontains=recipient)
-        if from_date:
-            logs = logs.filter(created_at__date__gte=from_date)
-        if to_date:
-            logs = logs.filter(created_at__date__lte=to_date)
-    
+
+    if status_filter:
+        logs = logs.filter(status=status_filter)
+    if search:
+        logs = logs.filter(
+            Q(recipient_email__icontains=search)
+            | Q(subject__icontains=search)
+            | Q(recipient_name__icontains=search)
+        )
+
+    from django.core.paginator import Paginator
+    paginator = Paginator(logs, 50)
+    page_obj = paginator.get_page(request.GET.get('page', 1))
+
+    stats = {
+        'total': EmailLog.objects.count(),
+        'sent': EmailLog.objects.filter(status=EmailLog.Status.SENT).count(),
+        'failed': EmailLog.objects.filter(status=EmailLog.Status.FAILED).count(),
+        'pending': EmailLog.objects.filter(status=EmailLog.Status.PENDING).count(),
+    }
+
     context = {
-        'logs': logs[:200],
-        'filter_form': filter_form,
+        'page_obj': page_obj,
+        'logs': page_obj.object_list,
+        'stats': stats,
+        'status_filter': status_filter,
+        'search': search,
         'statuses': EmailLog.Status.choices,
         'total_count': EmailLog.objects.count(),
     }
-    
+
     return render(request, 'communication/email_logs.html', context)
 
 

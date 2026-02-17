@@ -2,75 +2,249 @@
 
 {% block title %}Logs emails{% endblock %}
 {% block page_title %}Historique des emails{% endblock %}
-{% block page_subtitle %}Suivi des emails envoyés ({{ total_count }} au total){% endblock %}
+{% block page_subtitle %}Suivi et suppression des emails envoyés ({{ total_count }} au total){% endblock %}
 
 {% block page_actions %}
 <form method="post" action="{% url 'communication:email_logs_clear_old' %}" style="display: inline;">
     {% csrf_token %}
-    <button type="submit" class="btn btn-outline-warning" onclick="return confirm('Supprimer les logs de plus de 30 jours ?')">
-        <i class="bi bi-trash me-1"></i> Nettoyer les anciens logs
+    <button type="submit" class="btn btn-outline-warning"
+            onclick="return confirm('Supprimer les logs de plus de 30 jours ?')">
+        <i class="bi bi-clock-history me-1"></i> Nettoyer anciens logs
     </button>
 </form>
 {% endblock %}
 
 {% block content %}
-{% csrf_token %}
-<div class="card border-0 shadow-sm">
-    <div class="card-body p-0">
-        <div class="table-responsive">
-            <table class="table table-hover mb-0">
-                <thead class="table-light">
-                    <tr>
-                        <th>Date</th>
-                        <th>Destinataire</th>
-                        <th>Sujet</th>
-                        <th>Statut</th>
-                        <th>Actions</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for log in logs %}
-                    <tr id="log-row-{{ log.pk }}">
-                        <td>{{ log.created_at|date:"d/m/Y H:i" }}</td>
-                        <td>
-                            {{ log.recipient_name|default:"" }}<br>
-                            <small class="text-muted">{{ log.recipient_email }}</small>
-                        </td>
-                        <td>{{ log.subject|truncatechars:50 }}</td>
-                        <td>
-                            {% if log.status == 'sent' %}
-                            <span class="badge bg-success">Envoyé</span>
-                            {% elif log.status == 'pending' %}
-                            <span class="badge bg-warning">En attente</span>
-                            {% elif log.status == 'failed' %}
-                            <span class="badge bg-danger" title="{{ log.error_message }}">Échec</span>
-                            {% elif log.status == 'opened' %}
-                            <span class="badge bg-info">Ouvert</span>
-                            {% elif log.status == 'clicked' %}
-                            <span class="badge bg-primary">Cliqué</span>
-                            {% endif %}
-                        </td>
-                        <td>
-                            <form method="post" action="{% url 'communication:email_log_delete' log.pk %}" style="display: inline;">
-                                {% csrf_token %}
-                                <button type="submit" class="btn btn-sm btn-outline-danger" 
-                                        onclick="return confirm('Supprimer ce log ?')"
-                                        title="Supprimer ce log">
-                                    <i class="bi bi-trash"></i>
-                                </button>
-                            </form>
-                        </td>
-                    </tr>
-                    {% empty %}
-                    <tr>
-                        <td colspan="5" class="text-center py-4 text-muted">
-                            Aucun email envoyé
-                        </td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
+<div class="container-fluid">
+
+    <!-- Statistiques -->
+    <div class="row mb-4">
+        <div class="col-6 col-md-3">
+            <div class="card bg-light">
+                <div class="card-body text-center py-3">
+                    <h6 class="text-muted mb-1">Total</h6>
+                    <h3 class="mb-0">{{ stats.total }}</h3>
+                </div>
+            </div>
+        </div>
+        <div class="col-6 col-md-3">
+            <div class="card bg-success bg-opacity-10">
+                <div class="card-body text-center py-3">
+                    <h6 class="text-muted mb-1">Envoyés</h6>
+                    <h3 class="mb-0 text-success">{{ stats.sent }}</h3>
+                </div>
+            </div>
+        </div>
+        <div class="col-6 col-md-3">
+            <div class="card bg-danger bg-opacity-10">
+                <div class="card-body text-center py-3">
+                    <h6 class="text-muted mb-1">Échoués</h6>
+                    <h3 class="mb-0 text-danger">{{ stats.failed }}</h3>
+                </div>
+            </div>
+        </div>
+        <div class="col-6 col-md-3">
+            <div class="card bg-warning bg-opacity-10">
+                <div class="card-body text-center py-3">
+                    <h6 class="text-muted mb-1">En attente</h6>
+                    <h3 class="mb-0 text-warning">{{ stats.pending }}</h3>
+                </div>
+            </div>
         </div>
     </div>
+
+    <!-- Filtres -->
+    <div class="card mb-3">
+        <div class="card-body">
+            <form method="get" class="row g-3 align-items-end">
+                <div class="col-md-5">
+                    <label class="form-label">Recherche</label>
+                    <input type="text" class="form-control" name="search"
+                           placeholder="Email, sujet, nom..." value="{{ search }}">
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label">Statut</label>
+                    <select class="form-select" name="status">
+                        <option value="">Tous les statuts</option>
+                        {% for value, label in statuses %}
+                        <option value="{{ value }}" {% if status_filter == value %}selected{% endif %}>{{ label }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <button type="submit" class="btn btn-primary w-100">
+                        <i class="bi bi-search me-1"></i>Filtrer
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Tableau avec suppression en masse -->
+    <form method="post" id="delete-form">
+        {% csrf_token %}
+
+        <div class="card border-0 shadow-sm">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h6 class="mb-0">
+                    <i class="bi bi-envelope me-2"></i>Logs emails
+                    <span class="text-muted fw-normal">({{ page_obj.paginator.count }} résultat(s))</span>
+                </h6>
+                <div class="d-flex gap-3 align-items-center">
+                    <div class="form-check mb-0">
+                        <input class="form-check-input" type="checkbox" id="select-all">
+                        <label class="form-check-label" for="select-all">Tout sélectionner</label>
+                    </div>
+                    <button type="submit" class="btn btn-danger btn-sm" id="delete-btn" disabled>
+                        <i class="bi bi-trash me-1"></i>Supprimer (<span id="count-label">0</span>)
+                    </button>
+                </div>
+            </div>
+
+            <div class="table-responsive">
+                <table class="table table-hover mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th style="width:40px;"></th>
+                            <th>Date</th>
+                            <th>Destinataire</th>
+                            <th>Sujet</th>
+                            <th>Statut</th>
+                            <th style="width:80px;">Action</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for log in logs %}
+                        <tr>
+                            <td>
+                                <input type="checkbox" class="form-check-input log-checkbox"
+                                       name="selected_logs" value="{{ log.id }}">
+                            </td>
+                            <td><small class="text-muted">{{ log.created_at|date:"d/m/Y H:i" }}</small></td>
+                            <td>
+                                {% if log.recipient_name %}<small>{{ log.recipient_name }}</small><br>{% endif %}
+                                <small class="text-muted">{{ log.recipient_email }}</small>
+                            </td>
+                            <td><small>{{ log.subject|truncatechars:60 }}</small></td>
+                            <td>
+                                {% if log.status == 'sent' %}
+                                    <span class="badge bg-success">Envoyé</span>
+                                {% elif log.status == 'pending' %}
+                                    <span class="badge bg-warning text-dark">En attente</span>
+                                {% elif log.status == 'failed' %}
+                                    <span class="badge bg-danger" title="{{ log.error_message }}">Échec</span>
+                                {% elif log.status == 'bounced' %}
+                                    <span class="badge bg-secondary">Rejeté</span>
+                                {% elif log.status == 'opened' %}
+                                    <span class="badge bg-info">Ouvert</span>
+                                {% elif log.status == 'clicked' %}
+                                    <span class="badge bg-primary">Cliqué</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <form method="post"
+                                      action="{% url 'communication:email_log_delete' log.pk %}"
+                                      style="display:inline;">
+                                    {% csrf_token %}
+                                    <button type="submit" class="btn btn-sm btn-outline-danger"
+                                            onclick="return confirm('Supprimer ce log ?')"
+                                            title="Supprimer">
+                                        <i class="bi bi-trash"></i>
+                                    </button>
+                                </form>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="6" class="text-center py-5">
+                                <i class="bi bi-inbox fs-1 text-muted d-block mb-2"></i>
+                                <p class="text-muted mb-0">Aucun log trouvé</p>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Pagination -->
+            {% if page_obj.has_other_pages %}
+            <nav class="p-3 border-top">
+                <ul class="pagination pagination-sm mb-0">
+                    {% if page_obj.has_previous %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% if search %}&search={{ search }}{% endif %}{% if status_filter %}&status={{ status_filter }}{% endif %}">
+                            &laquo; Précédente
+                        </a>
+                    </li>
+                    {% endif %}
+                    {% for num in page_obj.paginator.page_range %}
+                        {% if page_obj.number == num %}
+                        <li class="page-item active"><span class="page-link">{{ num }}</span></li>
+                        {% elif num >= page_obj.number|add:"-3" and num <= page_obj.number|add:"3" %}
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ num }}{% if search %}&search={{ search }}{% endif %}{% if status_filter %}&status={{ status_filter }}{% endif %}">{{ num }}</a>
+                        </li>
+                        {% endif %}
+                    {% endfor %}
+                    {% if page_obj.has_next %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ page_obj.next_page_number }}{% if search %}&search={{ search }}{% endif %}{% if status_filter %}&status={{ status_filter }}{% endif %}">
+                            Suivante &raquo;
+                        </a>
+                    </li>
+                    {% endif %}
+                </ul>
+            </nav>
+            {% endif %}
+        </div>
+
+        <!-- Résumé sélection -->
+        <div class="alert alert-warning d-none mt-3" id="warning-alert" role="alert">
+            <i class="bi bi-exclamation-triangle me-2"></i>
+            <span id="selected-count">0</span> log(s) sélectionné(s) — ils seront supprimés définitivement.
+        </div>
+    </form>
+
 </div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const selectAll = document.getElementById('select-all');
+    const checkboxes = document.querySelectorAll('.log-checkbox');
+    const deleteBtn = document.getElementById('delete-btn');
+    const countLabel = document.getElementById('count-label');
+    const warningAlert = document.getElementById('warning-alert');
+    const selectedCount = document.getElementById('selected-count');
+    const form = document.getElementById('delete-form');
+
+    function updateState() {
+        const checked = document.querySelectorAll('.log-checkbox:checked').length;
+        deleteBtn.disabled = checked === 0;
+        countLabel.textContent = checked;
+        selectedCount.textContent = checked;
+        warningAlert.classList.toggle('d-none', checked === 0);
+        selectAll.checked = checkboxes.length > 0 && checked === checkboxes.length;
+        selectAll.indeterminate = checked > 0 && checked < checkboxes.length;
+    }
+
+    selectAll.addEventListener('change', function () {
+        checkboxes.forEach(cb => { cb.checked = this.checked; });
+        updateState();
+    });
+
+    checkboxes.forEach(cb => cb.addEventListener('change', updateState));
+
+    form.addEventListener('submit', function (e) {
+        const checked = document.querySelectorAll('.log-checkbox:checked').length;
+        if (checked === 0) { e.preventDefault(); return; }
+        if (!confirm('Supprimer définitivement ' + checked + ' log(s) email ?')) {
+            e.preventDefault();
+        }
+    });
+
+    updateState();
+});
+</script>
 {% endblock %}
