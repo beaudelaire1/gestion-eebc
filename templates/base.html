@@ -562,6 +562,45 @@
         {% endfor %}
         {% endif %}
     </div>
+
+    <!-- Bannière RGPD - Consentement cookies -->
+    <div id="cookie-banner" style="display:none; position:fixed; bottom:0; left:0; right:0; z-index:99999;
+         background:#1a1a2e; color:#fff; padding:1rem 1.5rem; box-shadow:0 -4px 20px rgba(0,0,0,0.3);">
+        <div style="max-width:1200px; margin:0 auto; display:flex; align-items:center; gap:1rem; flex-wrap:wrap; justify-content:space-between;">
+            <div style="flex:1; min-width:250px;">
+                <strong><i class="bi bi-shield-lock me-2"></i>Cookies &amp; Confidentialité</strong>
+                <p style="margin:0.25rem 0 0; font-size:0.87rem; opacity:0.85;">
+                    Ce site utilise des cookies essentiels à son fonctionnement (session, sécurité CSRF).
+                    En continuant, vous acceptez leur utilisation conformément à notre politique de confidentialité.
+                </p>
+            </div>
+            <div style="display:flex; gap:0.75rem; flex-shrink:0;">
+                <button onclick="setCookieConsent('refused')"
+                        style="background:transparent; border:1px solid rgba(255,255,255,0.4); color:#fff;
+                               padding:0.5rem 1rem; border-radius:6px; cursor:pointer; font-size:0.875rem;">
+                    Refuser
+                </button>
+                <button onclick="setCookieConsent('accepted')"
+                        style="background:#0A36FF; border:none; color:#fff;
+                               padding:0.5rem 1.25rem; border-radius:6px; cursor:pointer;
+                               font-size:0.875rem; font-weight:600;">
+                    Tout accepter
+                </button>
+            </div>
+        </div>
+    </div>
+    <script>
+    (function() {
+        var consent = localStorage.getItem('eebc_cookie_consent');
+        if (!consent) {
+            document.getElementById('cookie-banner').style.display = 'block';
+        }
+    })();
+    function setCookieConsent(value) {
+        localStorage.setItem('eebc_cookie_consent', value);
+        document.getElementById('cookie-banner').style.display = 'none';
+    }
+    </script>
 </body>
 
 </html>
