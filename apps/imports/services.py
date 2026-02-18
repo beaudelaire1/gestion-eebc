@@ -209,10 +209,43 @@ class ExcelImportService:
         if not member_data.get('first_name') or not member_data.get('last_name'):
             raise ValidationError("Prénom et nom obligatoires")
         
-        # Mode radical: création uniquement (aucune mise à jour automatique)
-        member = Member.objects.create(**member_data)
-        self.created_count += 1
-        self.successes.append(f"Ligne {row_number}: {member.full_name} créé")
+        # ── Déduplication intelligente : prénom + nom + date de naissance ──
+        first = member_data['first_name'].strip()
+        last  = member_data['last_name'].strip()
+        dob   = member_data.get('date_of_birth')
+
+        candidates = Member.objects.filter(
+            first_name__iexact=first,
+            last_name__iexact=last,
+        )
+
+        existing = None
+        if dob:
+            # DOB disponible → matcher sur nom + DOB (distingue les homonymes)
+            existing = candidates.filter(date_of_birth=dob).first()
+            # Si même nom mais DOB différente → homonyme → on crée (existing reste None)
+        else:
+            # Pas de DOB dans l'Excel → matcher sur le nom seul
+            existing = candidates.first()
+
+        if existing:
+            # Mettre à jour uniquement les champs vides du membre existant
+            updated_fields = []
+            for field, value in member_data.items():
+                if field in ('first_name', 'last_name'):
+                    continue  # ne pas écraser le nom
+                current = getattr(existing, field, None)
+                if value and not current:
+                    setattr(existing, field, value)
+                    updated_fields.append(field)
+            if updated_fields:
+                existing.save(update_fields=updated_fields)
+            self.updated_count += 1
+            self.successes.append(f"Ligne {row_number}: {existing.full_name} existant (inchangé ou complété)")
+        else:
+            member = Member.objects.create(**member_data)
+            self.created_count += 1
+            self.successes.append(f"Ligne {row_number}: {member.full_name} créé")
         
         # Ajouter les avertissements
         for w in row_warnings:
