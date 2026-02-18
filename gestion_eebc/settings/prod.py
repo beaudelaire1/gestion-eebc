@@ -152,7 +152,15 @@ RECAPTCHA_REQUIRED_SCORE = float(os.environ.get('RECAPTCHA_REQUIRED_SCORE', 0.5)
 # =============================================================================
 # STATIC FILES - WhiteNoise pour Render
 # =============================================================================
-STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
+# Django 4.2+ utilise STORAGES au lieu de STATICFILES_STORAGE (deprecated/supprimé en 6.x)
+STORAGES = {
+    "default": {
+        "BACKEND": "django.core.files.storage.FileSystemStorage",
+    },
+    "staticfiles": {
+        "BACKEND": "whitenoise.storage.CompressedManifestStaticFilesStorage",
+    },
+}
 
 # WhiteNoise middleware (doit être après SecurityMiddleware)
 MIDDLEWARE.insert(2, 'whitenoise.middleware.WhiteNoiseMiddleware')

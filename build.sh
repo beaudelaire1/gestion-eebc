@@ -9,7 +9,19 @@ echo "=== Création des répertoires nécessaires ==="
 mkdir -p logs
 mkdir -p media
 
-echo "=== Installation des dépendances ==="
+echo "=== Installation des dépendances système (WeasyPrint/PDF) ==="
+if command -v apt-get &> /dev/null; then
+    apt-get update -qq && apt-get install -y -qq --no-install-recommends \
+        libcairo2 \
+        libpango-1.0-0 \
+        libpangocairo-1.0-0 \
+        libgdk-pixbuf2.0-0 \
+        libffi-dev \
+        shared-mime-info \
+        2>/dev/null || echo "⚠ Certaines libs système manquantes — PDF limité"
+fi
+
+echo "=== Installation des dépendances Python ==="
 pip install --upgrade pip
 pip install -r requirements/prod.txt
 
