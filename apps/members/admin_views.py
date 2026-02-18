@@ -21,7 +21,7 @@ from apps.core.permissions import role_required, has_role
 # GPS OBFUSCATION UTILITIES
 # =============================================================================
 
-def obfuscate_coordinates(lat, lng, member_id=None, address_seed=None, min_offset_meters=50, max_offset_meters=100):
+def obfuscate_coordinates(lat, lng, member_id=None, address_seed=None, min_offset_meters=8, max_offset_meters=15):
     """
     Ajoute un décalage déterministe aux coordonnées GPS pour protéger la vie privée.
     L'offset est basé sur l'adresse (même adresse = même point) + micro-jitter par membre.
@@ -39,11 +39,11 @@ def obfuscate_coordinates(lat, lng, member_id=None, address_seed=None, min_offse
     meters_per_degree_lng = METERS_PER_DEGREE_LAT * math.cos(math.radians(clamped_lat))
     lng_offset = (distance_meters * math.sin(angle)) / meters_per_degree_lng if meters_per_degree_lng > 0.01 else 0
 
-    # Micro-décalage par membre (5 m max) pour éviter la superposition exacte
+    # Micro-décalage par membre (3 m max) pour éviter la superposition exacte
     if member_id is not None:
         member_hash = hashlib.sha256(f"member:{member_id}".encode('utf-8')).hexdigest()
         micro_angle = (int(member_hash[:8], 16) / 0xFFFFFFFF) * 2 * math.pi
-        micro_dist = (int(member_hash[8:16], 16) / 0xFFFFFFFF) * 5  # 5 m max
+        micro_dist = (int(member_hash[8:16], 16) / 0xFFFFFFFF) * 3  # 3 m max
         lat_offset += (micro_dist * math.cos(micro_angle)) / METERS_PER_DEGREE_LAT
         lng_offset += (micro_dist * math.sin(micro_angle)) / meters_per_degree_lng if meters_per_degree_lng > 0.01 else 0
 
@@ -239,7 +239,7 @@ def members_map_data(request):
                     coords[0], coords[1],
                     member_id=member.id,
                     address_seed=f"site:{member.site.id}",
-                    min_offset_meters=120, max_offset_meters=250,
+                    min_offset_meters=10, max_offset_meters=20,
                 )
             else:
                 display_lat, display_lng = coords[0], coords[1]
