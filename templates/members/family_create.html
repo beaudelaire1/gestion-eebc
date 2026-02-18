@@ -6,68 +6,68 @@
 
 {% block extra_css %}
 <style>
-    /* Fallback natif si TomSelect ne s'initialise pas */
+    /* ====== Select chef de famille : TOUJOURS lisible ====== */
+    /* Style natif (avant init TomSelect ou si TomSelect échoue) */
     #chef-famille-select {
-        min-height: 56px;
-        font-size: 1.15rem;
-        font-weight: 600;
-        padding: 0.65rem 0.9rem;
+        width: 100% !important;
+        min-height: 54px !important;
+        font-size: 1.1rem !important;
+        font-weight: 600 !important;
+        padding: 0.6rem 2.2rem 0.6rem 0.9rem !important;
+        border: 2px solid #d1d5db !important;
+        border-radius: 8px !important;
+        background-color: #fff !important;
+        color: #1a1a2e !important;
+        appearance: auto !important;
+        -webkit-appearance: listbox !important;
+    }
+    #chef-famille-select:focus {
+        border-color: #3b82f6 !important;
+        box-shadow: 0 0 0 3px rgba(59,130,246,0.15) !important;
     }
     #chef-famille-select option {
-        font-size: 1.02rem;
-        padding: 0.45rem 0.6rem;
+        font-size: 1rem;
+        padding: 8px 10px;
     }
 
-    /* Sélecteur chef de famille : zone de saisie agrandie */
-    .chef-famille-wrapper {
-        width: 100%;
+    /* Quand TomSelect est actif : le select natif est caché, on style le wrapper */
+    .ts-wrapper.chef-ts {
+        width: 100% !important;
     }
-    .chef-famille-wrapper .ts-control {
-        min-height: 58px !important;
-        height: auto !important;
-        font-size: 1.15rem !important;
-        padding: 0.7rem 1rem !important;
+    .ts-wrapper.chef-ts .ts-control {
+        min-height: 54px !important;
+        font-size: 1.1rem !important;
+        padding: 0.6rem 1rem !important;
+        border: 2px solid #d1d5db !important;
+        border-radius: 8px !important;
+        display: flex !important;
         align-items: center !important;
-        cursor: text;
     }
-    .chef-famille-wrapper .ts-control input {
+    .ts-wrapper.chef-ts .ts-control input {
         font-size: 1.1rem !important;
     }
-    .chef-famille-wrapper.single .ts-control .item {
-        max-width: calc(100% - 1.6rem);
-        overflow: hidden;
-        text-overflow: ellipsis;
-        white-space: nowrap;
+    .ts-wrapper.chef-ts .ts-control > .item {
+        font-size: 1.05rem !important;
+        font-weight: 600 !important;
+        color: #1a1a2e !important;
     }
-    .chef-famille-wrapper .ts-control .item {
-        font-size: 1.05rem;
-        font-weight: 600;
-        color: #1a1a2e;
-        white-space: normal;
-        word-break: break-word;
-        line-height: 1.4;
+    .ts-wrapper.chef-ts .ts-dropdown {
+        max-height: 350px !important;
+        font-size: 1rem !important;
+        border: 2px solid #d1d5db !important;
+        border-radius: 0 0 8px 8px !important;
     }
-    /* Liste déroulante : haute et lisible */
-    .chef-famille-wrapper .ts-dropdown {
-        max-height: 360px;
-        font-size: 0.97rem;
+    .ts-wrapper.chef-ts .ts-dropdown .option {
+        padding: 10px 14px !important;
+        border-bottom: 1px solid #f0f0f0 !important;
     }
-    .chef-famille-wrapper .ts-dropdown .option {
-        padding: 0.55rem 0.9rem;
-        border-bottom: 1px solid #f0f0f0;
+    .ts-wrapper.chef-ts .ts-dropdown .option.active {
+        background: #e8f0fe !important;
+        color: #1a56db !important;
     }
-    .chef-famille-wrapper .ts-dropdown .option:hover,
-    .chef-famille-wrapper .ts-dropdown .option.active {
-        background-color: #e8f0fe;
-        color: #1a56db;
-        font-weight: 500;
-    }
-    #autofill-status {
-        display: none;
-    }
-    #autofill-status.visible {
-        display: block;
-    }
+
+    #autofill-status { display: none; }
+    #autofill-status.visible { display: block; }
 </style>
 {% endblock %}
 
@@ -85,9 +85,8 @@
             </div>
             <div class="card-body">
                 <p class="text-muted small mb-3">Sélectionnez le chef de famille pour pré-remplir automatiquement le formulaire avec ses informations.</p>
-                <select id="chef-famille-select" class="form-select tom-select"
-                        data-placeholder="Rechercher un membre actif..."
-                        data-wrapper-class="chef-famille-wrapper">
+                <select id="chef-famille-select" class="form-select"
+                        size="1">
                     <option value="">-- Sélectionner un chef de famille --</option>
                     {% for m in available_members %}
                     <option value="{{ m.id }}">{{ m.last_name }} {{ m.first_name }}</option>
@@ -179,8 +178,40 @@
 {% block extra_js %}
 <script>
 (function () {
-    // L'URL de base de l'API : on remplace le "0" par l'ID réel
-    const API_BASE = "{% url 'members:member_api_data' 0 %}".replace('/0/', '/');
+    var select = document.getElementById('chef-famille-select');
+    if (!select) return;
+
+    // ========== Init TomSelect manuellement (robuste) ==========
+    function initChefSelect() {
+        if (typeof TomSelect === 'undefined') return;
+        // Éviter double init
+        if (select.tomselect) return;
+        try {
+            new TomSelect(select, {
+                placeholder: 'Rechercher un membre...',
+                allowEmptyOption: true,
+                maxOptions: null,
+                searchField: ['text'],
+                sortField: [{ field: 'text', direction: 'asc' }],
+                wrapperClass: 'ts-wrapper chef-ts',
+                render: {
+                    no_results: function() {
+                        return '<div class="no-results" style="padding:10px;color:#888;">Aucun résultat</div>';
+                    }
+                }
+            });
+        } catch(e) {
+            console.warn('TomSelect init failed for chef-famille-select:', e);
+        }
+    }
+
+    // Tenter immédiatement, puis retry après 500ms et 1500ms (CDN lent)
+    initChefSelect();
+    setTimeout(initChefSelect, 500);
+    setTimeout(initChefSelect, 1500);
+
+    // ========== Auto-fill depuis l'API ==========
+    var API_BASE = "{% url 'members:member_api_data' 0 %}".replace('/0/', '/');
 
     const select    = document.getElementById('chef-famille-select');
     const statusEl  = document.getElementById('autofill-status');
