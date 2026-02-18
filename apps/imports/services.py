@@ -13,7 +13,6 @@ from .models import ImportLog
 # ── Constantes de validation ──────────────────────────────────────────
 EMAIL_REGEX = re.compile(r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$')
 PHONE_REGEX = re.compile(r'^[\d\s\-\+\(\)]{10,20}$')
-POSTAL_CODE_REGEX = re.compile(r'^\d{5}$')
 
 
 def validate_email(value: str) -> str:
@@ -45,11 +44,19 @@ def validate_phone(value: str) -> str:
     return value
 
 
-def validate_postal_code(value: str) -> str:
-    """Valide un code postal (5 chiffres)."""
-    value = str(value).strip()
-    if value and not POSTAL_CODE_REGEX.match(value):
-        raise ValidationError(f"Code postal invalide (5 chiffres attendus) : {value}")
+def validate_postal_code(value) -> str:
+    """Valide et normalise un code postal. Non obligatoire.
+    Accepte les entiers, floats Excel (97300.0 -> 97300) et chaînes."""
+    # Gérer les floats Excel (97300.0 -> '97300')
+    if isinstance(value, float):
+        value = str(int(value))
+    elif isinstance(value, int):
+        value = str(value)
+    else:
+        value = str(value).strip()
+    # Nettoyer l'éventuel .0 résiduel
+    if value.endswith('.0'):
+        value = value[:-2]
     return value
 
 
@@ -188,13 +195,7 @@ class ExcelImportService:
                 
                 # ── Code postal ──
                 elif model_field == 'postal_code':
-                    value = str(value).strip()
-                    if value:
-                        try:
-                            value = validate_postal_code(value)
-                        except ValidationError:
-                            row_warnings.append(f"Code postal invalide ignoré: {value}")
-                            continue
+                    value = validate_postal_code(value)
                 
                 # ── Nettoyage texte générique ──
                 elif isinstance(value, str):
@@ -224,12 +225,7 @@ class ExcelImportService:
                 date_of_birth=member_data['date_of_birth']
             ).first()
         
-        # Priorité 3 : doublon par nom seul (moins fiable)
-        if not existing_member:
-            existing_member = Member.objects.filter(
-                first_name__iexact=first_name,
-                last_name__iexact=last_name
-            ).first()
+        # Note: pas de détection par nom seul (trop risqué, homonymes fréquents)
         
         if existing_member:
             for field, value in member_data.items():
