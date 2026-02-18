@@ -154,13 +154,27 @@ RECAPTCHA_REQUIRED_SCORE = float(os.environ.get('RECAPTCHA_REQUIRED_SCORE', 0.5)
 # =============================================================================
 # Django 4.2+ utilise STORAGES au lieu de STATICFILES_STORAGE (deprecated/supprimé en 6.x)
 #
-# manifest_strict = False est INDISPENSABLE car Jazzmin inclut des CSS Bootswatch
-# qui référencent des fichiers .map inexistants (ex: bootstrap.min.css.map).
-# Avec manifest_strict=True (défaut), collectstatic crash avec MissingFileError.
-from whitenoise.storage import CompressedManifestStaticFilesStorage as _WhiteNoiseBase
+# Jazzmin embarque des CSS Bootswatch qui référencent des .map inexistants.
+# WhiteNoise lève MissingFileError pendant post_process (son propre check,
+# pas celui de Django). On override post_process pour ignorer ces erreurs.
+import logging as _logging
+from whitenoise.storage import (
+    CompressedManifestStaticFilesStorage as _WhiteNoiseBase,
+    MissingFileError as _MissingFileError,
+)
 
 class _SafeWhiteNoiseStorage(_WhiteNoiseBase):
     manifest_strict = False
+
+    def post_process(self, *args, **kwargs):
+        _log = _logging.getLogger('whitenoise.storage')
+        for entry in super().post_process(*args, **kwargs):
+            name, hashed_name, processed = entry
+            if isinstance(processed, Exception):
+                _log.warning('Ignoring post-process error for %s: %s', name, processed)
+                yield name, hashed_name, True  # report success → collectstatic won't crash
+                continue
+            yield entry
 
 STORAGES = {
     "default": {

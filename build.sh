@@ -25,6 +25,27 @@ echo "=== Installation des dépendances Python ==="
 pip install --upgrade pip
 pip install -r requirements/prod.txt
 
+echo "=== Nettoyage des sourceMappingURL cassés (Jazzmin/Bootswatch) ==="
+python -c "
+import pathlib, re
+try:
+    import jazzmin
+    root = pathlib.Path(jazzmin.__path__[0]) / 'static' / 'vendor' / 'bootswatch'
+    if root.exists():
+        for css in root.rglob('*.css'):
+            text = css.read_text(encoding='utf-8', errors='ignore')
+            cleaned = re.sub(r'/\*#\s*sourceMappingURL=.*?\*/', '', text)
+            cleaned = re.sub(r'//# sourceMappingURL=.*', '', cleaned)
+            if cleaned != text:
+                css.write_text(cleaned, encoding='utf-8')
+                print(f'  Cleaned: {css.relative_to(root)}')
+        print('Done - sourceMappingURL stripped')
+    else:
+        print('No bootswatch dir found, skipping')
+except ImportError:
+    print('Jazzmin not installed, skipping')
+"
+
 echo "=== Collecte des fichiers statiques ==="
 python manage.py collectstatic --noinput
 
