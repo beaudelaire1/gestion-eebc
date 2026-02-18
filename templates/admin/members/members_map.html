@@ -247,7 +247,7 @@
                     // Regrouper les membres par position (même adresse = même point)
                     const grouped = {};
                     data.members.forEach(m => {
-                        const key = m.lat.toFixed(6) + ',' + m.lng.toFixed(6);
+                        const key = m.location_key || (m.lat.toFixed(6) + ',' + m.lng.toFixed(6));
                         if (!grouped[key]) grouped[key] = [];
                         grouped[key].push(m);
                     });

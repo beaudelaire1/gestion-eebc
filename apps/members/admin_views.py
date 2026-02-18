@@ -4,7 +4,7 @@ Inclut une carte interactive des membres par quartier/famille.
 """
 import math
 import hashlib
-import re
+import logging
 
 from django.contrib.admin.views.decorators import staff_member_required
 from django.contrib.auth.decorators import login_required
@@ -13,9 +13,16 @@ from django.http import JsonResponse
 from django.db.models import Count, Q
 
 from .models import Member
-from .geocoding import geocode_address
+from .geocoding import (
+    geocode_address_with_metadata,
+    build_canonical_address,
+    normalize_address_component,
+)
 from apps.core.models import Site, Neighborhood, Family, City
 from apps.core.permissions import role_required, has_role
+
+
+logger = logging.getLogger(__name__)
 
 
 # =============================================================================
@@ -39,14 +46,6 @@ def obfuscate_coordinates(lat, lng, member_id=None, address_seed=None, min_offse
     clamped_lat = max(-89.9, min(89.9, lat))
     meters_per_degree_lng = METERS_PER_DEGREE_LAT * math.cos(math.radians(clamped_lat))
     lng_offset = (distance_meters * math.sin(angle)) / meters_per_degree_lng if meters_per_degree_lng > 0.01 else 0
-
-    # Micro-décalage par membre (3 m max) pour éviter la superposition exacte
-    if member_id is not None:
-        member_hash = hashlib.sha256(f"member:{member_id}".encode('utf-8')).hexdigest()
-        micro_angle = (int(member_hash[:8], 16) / 0xFFFFFFFF) * 2 * math.pi
-        micro_dist = (int(member_hash[8:16], 16) / 0xFFFFFFFF) * 3  # 3 m max
-        lat_offset += (micro_dist * math.cos(micro_angle)) / METERS_PER_DEGREE_LAT
-        lng_offset += (micro_dist * math.sin(micro_angle)) / meters_per_degree_lng if meters_per_degree_lng > 0.01 else 0
 
     return (lat + lat_offset, lng + lng_offset)
 
@@ -166,7 +165,7 @@ def members_map_data(request):
     
     # Coordonnées fallback par ville (évite de perdre des marqueurs si le géocodage échoue)
     city_coords = {
-        c.name.lower(): (float(c.latitude), float(c.longitude))
+        normalize_address_component(c.name): (float(c.latitude), float(c.longitude))
         for c in City.objects.filter(latitude__isnull=False, longitude__isnull=False)
     }
 
@@ -191,25 +190,33 @@ def members_map_data(request):
         return (base_lat + lat_offset, base_lng + lng_offset)
     
     for member in members_qs:
-        # Créer une clé de cache basée sur l'adresse (normalisée pour regrouper les variantes)
         base_address = (member.address or '').strip() or ((member.family.address or '').strip() if member.family else '')
         base_city = (member.city or '').strip() or ((member.family.city or '').strip() if member.family else '') or ((member.site.city or '').strip() if member.site else '')
         base_postal_code = (member.postal_code or '').strip() or ((member.family.postal_code or '').strip() if member.family else '')
-        # Normaliser : minuscules, espaces multiples → simple, pour que "Cayenne" == "cayenne"
-        norm_addr = re.sub(r'\s+', ' ', base_address.lower().strip())
-        norm_city = re.sub(r'\s+', ' ', base_city.lower().strip())
-        norm_pc   = base_postal_code.strip()
-        cache_key = f"{norm_addr}|{norm_city}|{norm_pc}"
+
+        canonical = build_canonical_address(
+            address=base_address,
+            city=base_city,
+            postal_code=base_postal_code,
+        )
+        address_key = canonical['address_key']
         
-        if cache_key in geocode_cache:
-            coords = geocode_cache[cache_key]
+        if address_key in geocode_cache:
+            coords = geocode_cache[address_key]
         else:
-            coords = geocode_address(
-                address=norm_addr,
-                city=norm_city,
-                postal_code=norm_pc
+            geocode_result = geocode_address_with_metadata(
+                address=base_address,
+                city=base_city,
+                postal_code=base_postal_code,
             )
-            geocode_cache[cache_key] = coords
+            coords = geocode_result['coords']
+            geocode_cache[address_key] = coords
+            logger.info(
+                "members_map_geocode member=%s key=%s from_cache=%s",
+                member.id,
+                address_key[:12],
+                geocode_result.get('from_cache', False),
+            )
 
         if not coords and member.family and member.family.latitude is not None and member.family.longitude is not None:
             coords = (float(member.family.latitude), float(member.family.longitude))
@@ -220,24 +227,23 @@ def members_map_data(request):
         if not coords and member.family and member.family.neighborhood and member.family.neighborhood.city:
             city_obj = member.family.neighborhood.city
             if city_obj.latitude is not None and city_obj.longitude is not None:
-                coords = deterministic_offset_coords(float(city_obj.latitude), float(city_obj.longitude), f"cityobj:{city_obj.id}:member:{member.id}")
+                coords = deterministic_offset_coords(float(city_obj.latitude), float(city_obj.longitude), f"cityobj:{city_obj.id}:addr:{address_key}")
 
         if not coords and base_city:
-            city_key = base_city.strip().lower()
+            city_key = normalize_address_component(base_city)
             if city_key in city_coords:
-                coords = deterministic_offset_coords(city_coords[city_key][0], city_coords[city_key][1], f"cityname:{city_key}:member:{member.id}")
+                coords = deterministic_offset_coords(city_coords[city_key][0], city_coords[city_key][1], f"cityname:{city_key}:addr:{address_key}")
 
         # Fallback final: si adresse présente mais aucun géocodage possible, placer autour de Cayenne
         if not coords and base_address:
-            coords = deterministic_offset_coords(4.9225, -52.3058, f"default:{member.id}", min_offset_meters=300, max_offset_meters=2500)
+            coords = deterministic_offset_coords(4.9225, -52.3058, f"default:{address_key}", min_offset_meters=300, max_offset_meters=2500)
         
         if coords:
             # Appliquer l'obfuscation si nécessaire (déterministe : même adresse = même position)
             if obfuscate:
                 display_lat, display_lng = obfuscate_coordinates(
                     coords[0], coords[1],
-                    member_id=member.id,
-                    address_seed=cache_key,
+                    address_seed=address_key,
                 )
             else:
                 # Admin / secrétariat : afficher la position exacte
@@ -256,6 +262,7 @@ def members_map_data(request):
                 'status': member.status,
                 'site': member.site.name if member.site else '',
                 'family': member.family.name if member.family else '',
+                'location_key': address_key,
                 'obfuscated': obfuscate,  # Indicateur pour le frontend
             })
     

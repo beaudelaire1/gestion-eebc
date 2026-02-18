@@ -436,6 +436,56 @@ class VisitationLog(models.Model):
         return f"{self.member} - {date_str} ({self.get_status_display()})"
 
 
+class GeocodedAddress(models.Model):
+    """
+    Cache persistant des géocodages par adresse canonique.
+
+    Une address_key détermine un unique point GPS stable.
+    """
+
+    address_key = models.CharField(
+        max_length=255,
+        unique=True,
+        db_index=True,
+        verbose_name="Clé d'adresse canonique"
+    )
+    normalized_address = models.TextField(blank=True, verbose_name="Adresse normalisée")
+    normalized_city = models.CharField(max_length=100, blank=True, verbose_name="Ville normalisée")
+    normalized_postal_code = models.CharField(max_length=10, blank=True, verbose_name="Code postal normalisé")
+    country = models.CharField(max_length=100, default="Guyane française", verbose_name="Pays")
+
+    latitude = models.DecimalField(max_digits=9, decimal_places=6, verbose_name="Latitude")
+    longitude = models.DecimalField(max_digits=9, decimal_places=6, verbose_name="Longitude")
+
+    provider = models.CharField(max_length=50, default="nominatim", verbose_name="Provider")
+    provider_precision = models.CharField(max_length=50, blank=True, verbose_name="Précision provider")
+    provider_importance = models.DecimalField(
+        max_digits=6,
+        decimal_places=5,
+        null=True,
+        blank=True,
+        verbose_name="Importance provider"
+    )
+    raw_query = models.TextField(blank=True, verbose_name="Requête brute")
+
+    last_geocoded_at = models.DateTimeField(auto_now=True, verbose_name="Dernier géocodage")
+    expires_at = models.DateTimeField(null=True, blank=True, verbose_name="Expire le")
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        verbose_name = "Adresse géocodée"
+        verbose_name_plural = "Adresses géocodées"
+        ordering = ['-updated_at']
+        indexes = [
+            models.Index(fields=['address_key'], name='geocode_addr_key_idx'),
+            models.Index(fields=['expires_at'], name='geocode_expires_idx'),
+        ]
+
+    def __str__(self):
+        return f"{self.address_key[:48]}... ({self.latitude}, {self.longitude})"
+
+
 # Extension du modèle Member avec des propriétés optimisées
 def _get_last_visit_date(self):
     """Retourne la date de la dernière visite effectuée."""
