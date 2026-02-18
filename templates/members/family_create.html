@@ -4,6 +4,33 @@
 {% block page_title %}Nouvelle famille{% endblock %}
 {% block page_subtitle %}Créer une nouvelle famille{% endblock %}
 
+{% block extra_css %}
+<style>
+    /* Agrandir le sélecteur chef-de-famille pour mieux voir le nom sélectionné */
+    #chef-famille-select + .ts-wrapper .ts-control {
+        min-height: 48px;
+        height: auto;
+        font-size: 1rem;
+        padding: 0.5rem 0.75rem;
+    }
+    #chef-famille-select + .ts-wrapper .ts-control .item {
+        font-size: 1rem;
+        font-weight: 500;
+        white-space: normal;
+        word-break: break-word;
+    }
+    #chef-famille-select + .ts-wrapper .ts-dropdown {
+        max-height: 300px;
+    }
+    #autofill-status {
+        display: none;
+    }
+    #autofill-status.visible {
+        display: block;
+    }
+</style>
+{% endblock %}
+
 {% block content %}
 <div class="row justify-content-center">
     <div class="col-lg-8">
@@ -19,23 +46,13 @@
             <div class="card-body">
                 <p class="text-muted small mb-3">Sélectionnez le chef de famille pour pré-remplir automatiquement le formulaire avec ses informations.</p>
                 <select id="chef-famille-select" class="form-select tom-select"
-                        data-placeholder="Rechercher un membre actif..."
-                        data-url="{% url 'members:member_api_data' 0 %}">
+                        data-placeholder="Rechercher un membre actif...">
                     <option value="">-- Sélectionner un chef de famille --</option>
                     {% for m in available_members %}
-                    <option value="{{ m.id }}"
-                            data-last-name="{{ m.last_name }}"
-                            data-first-name="{{ m.first_name }}"
-                            data-email="{{ m.email }}"
-                            data-phone="{{ m.phone }}"
-                            data-address="{{ m.address }}"
-                            data-city="{{ m.city }}"
-                            data-postal-code="{{ m.postal_code }}"
-                            data-site-id="{{ m.site_id|default:'' }}">
-                        {{ m.last_name }} {{ m.first_name }}
-                    </option>
+                    <option value="{{ m.id }}">{{ m.last_name }} {{ m.first_name }}</option>
                     {% endfor %}
                 </select>
+                <div id="autofill-status"></div>
             </div>
         </div>
 
@@ -120,56 +137,72 @@
 
 {% block extra_js %}
 <script>
-document.addEventListener('DOMContentLoaded', function () {
-    const select = document.getElementById('chef-famille-select');
+(function () {
+    // L'URL de base de l'API : on remplace le "0" par l'ID réel
+    const API_BASE = "{% url 'members:member_api_data' 0 %}".replace('/0/', '/');
+
+    const select    = document.getElementById('chef-famille-select');
+    const statusEl  = document.getElementById('autofill-status');
     if (!select) return;
 
-    // Attendre que TomSelect soit initialisé (chargé après le bloc extra_js)
-    function setupChefFamille() {
-        if (select.tomselect) {
-            select.tomselect.on('change', function (value) {
-                if (!value) return;
-                const opt = select.querySelector('option[value="' + value + '"]');
-                if (!opt) return;
+    /* TomSelect déclenche un événement natif 'change' sur le <select> original.
+       On l'écoute directement — pas besoin de .tomselect.on() */
+    select.addEventListener('change', function () {
+        const memberId = this.value;
+        if (!memberId) return;
 
-                const lastName  = opt.dataset.lastName  || '';
-                const firstName = opt.dataset.firstName || '';
+        // Feedback visuel
+        if (statusEl) {
+            statusEl.textContent = 'Chargement…';
+            statusEl.className   = 'alert alert-info py-1 px-2 small mt-2 visible';
+        }
 
-                // Nom de famille : pré-remplir seulement si vide
+        fetch(API_BASE + memberId + '/data/')
+            .then(function (res) {
+                if (!res.ok) throw new Error('Erreur réseau');
+                return res.json();
+            })
+            .then(function (data) {
+                // Nom de famille : suggère "Famille NOM" si champ vide
                 const nameField = document.getElementById('id_name');
-                if (nameField && !nameField.value && lastName) {
-                    nameField.value = 'Famille ' + lastName;
+                if (nameField && !nameField.value && data.last_name) {
+                    nameField.value = 'Famille ' + data.last_name.toUpperCase();
                 }
 
-                setField('id_address',     opt.dataset.address    || '');
-                setField('id_city',        opt.dataset.city       || '');
-                setField('id_postal_code', opt.dataset.postalCode || '');
-                setField('id_phone',       opt.dataset.phone      || '');
-                setField('id_email',       opt.dataset.email      || '');
+                fillField('id_address',     data.address);
+                fillField('id_city',        data.city);
+                fillField('id_postal_code', data.postal_code);
+                fillField('id_phone',       data.phone);
+                fillField('id_email',       data.email);
 
                 // Site
-                const siteId = opt.dataset.siteId || '';
-                if (siteId) {
+                if (data.site_id) {
                     const siteSelect = document.getElementById('id_site');
-                    if (siteSelect) siteSelect.value = siteId;
+                    if (siteSelect) siteSelect.value = data.site_id;
                 }
 
-                // Toast de confirmation
-                if (typeof showToast === 'function') {
-                    showToast('Informations importées depuis ' + firstName + ' ' + lastName, 'success');
+                // Feedback succès
+                if (statusEl) {
+                    statusEl.textContent = '✓ Informations de ' + data.first_name + ' ' + data.last_name + ' importées.';
+                    statusEl.className   = 'alert alert-success py-1 px-2 small mt-2 visible';
+                    setTimeout(function () {
+                        statusEl.className = 'alert py-1 px-2 small mt-2';
+                    }, 3000);
+                }
+            })
+            .catch(function (err) {
+                if (statusEl) {
+                    statusEl.textContent = 'Impossible de charger les informations.';
+                    statusEl.className   = 'alert alert-warning py-1 px-2 small mt-2 visible';
                 }
             });
-        } else {
-            setTimeout(setupChefFamille, 100);
-        }
-    }
+    });
 
-    function setField(id, value) {
+    function fillField(id, value) {
         const el = document.getElementById(id);
+        // Pré-remplit seulement si le champ est vide
         if (el && !el.value && value) el.value = value;
     }
-
-    setupChefFamille();
-});
+})();
 </script>
 {% endblock %}
