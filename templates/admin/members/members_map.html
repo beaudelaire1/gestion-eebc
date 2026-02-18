@@ -244,16 +244,40 @@
                             .addTo(map);
                     });
                     
-                    // Add members avec icône Bible
+                    // Regrouper les membres par position (même adresse = même point)
+                    const grouped = {};
                     data.members.forEach(m => {
-                        L.marker([m.lat, m.lng], {icon: bibleIcon})
-                            .bindPopup(`<div class="popup-title popup-member">📖 ${m.name}</div>
+                        const key = m.lat.toFixed(6) + ',' + m.lng.toFixed(6);
+                        if (!grouped[key]) grouped[key] = [];
+                        grouped[key].push(m);
+                    });
+
+                    Object.values(grouped).forEach(group => {
+                        const first = group[0];
+                        let popupHtml;
+                        if (group.length === 1) {
+                            const m = first;
+                            popupHtml = `<div class="popup-title popup-member">📖 ${m.name}</div>
                                 <p>${m.address}<br>${m.city}</p>
                                 <p>${getStatusBadge(m.status)}</p>
                                 ${m.phone ? '<p>📞 ' + m.phone + '</p>' : ''}
                                 ${m.site ? '<p>⛪ ' + m.site + '</p>' : ''}
                                 ${m.family ? '<p>👨‍👩‍👧‍👦 ' + m.family + '</p>' : ''}
-                                <a href="/app/members/${m.id}/" class="btn btn-sm btn-primary mt-2 w-100">Voir le profil</a>`)
+                                <a href="/app/members/${m.id}/" class="btn btn-sm btn-primary mt-2 w-100">Voir le profil</a>`;
+                        } else {
+                            popupHtml = `<div class="popup-title popup-member">📍 ${group.length} membres à cette adresse</div>
+                                <p>${first.address}<br>${first.city}</p><hr style="margin:6px 0">`;
+                            group.forEach(m => {
+                                popupHtml += `<div style="padding:4px 0;border-bottom:1px solid #eee;">
+                                    <strong>${m.name}</strong> ${getStatusBadge(m.status)}
+                                    ${m.phone ? ' <small>📞 ' + m.phone + '</small>' : ''}
+                                    ${m.family ? ' <small>👨‍👩‍👧‍👦 ' + m.family + '</small>' : ''}
+                                    <a href="/app/members/${m.id}/" class="btn btn-sm btn-outline-primary btn-sm ms-1" style="font-size:0.7rem;padding:1px 6px;">Profil</a>
+                                </div>`;
+                            });
+                        }
+                        L.marker([first.lat, first.lng], {icon: bibleIcon})
+                            .bindPopup(popupHtml, {maxWidth: 350, maxHeight: 300})
                             .addTo(map);
                     });
                     

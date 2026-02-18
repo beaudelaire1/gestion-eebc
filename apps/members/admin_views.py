@@ -4,6 +4,7 @@ Inclut une carte interactive des membres par quartier/famille.
 """
 import math
 import hashlib
+import re
 
 from django.contrib.admin.views.decorators import staff_member_required
 from django.contrib.auth.decorators import login_required
@@ -190,19 +191,23 @@ def members_map_data(request):
         return (base_lat + lat_offset, base_lng + lng_offset)
     
     for member in members_qs:
-        # Créer une clé de cache basée sur l'adresse
+        # Créer une clé de cache basée sur l'adresse (normalisée pour regrouper les variantes)
         base_address = (member.address or '').strip() or ((member.family.address or '').strip() if member.family else '')
         base_city = (member.city or '').strip() or ((member.family.city or '').strip() if member.family else '') or ((member.site.city or '').strip() if member.site else '')
         base_postal_code = (member.postal_code or '').strip() or ((member.family.postal_code or '').strip() if member.family else '')
-        cache_key = f"{base_address}|{base_city}|{base_postal_code}"
+        # Normaliser : minuscules, espaces multiples → simple, pour que "Cayenne" == "cayenne"
+        norm_addr = re.sub(r'\s+', ' ', base_address.lower().strip())
+        norm_city = re.sub(r'\s+', ' ', base_city.lower().strip())
+        norm_pc   = base_postal_code.strip()
+        cache_key = f"{norm_addr}|{norm_city}|{norm_pc}"
         
         if cache_key in geocode_cache:
             coords = geocode_cache[cache_key]
         else:
             coords = geocode_address(
-                address=base_address,
-                city=base_city,
-                postal_code=base_postal_code
+                address=norm_addr,
+                city=norm_city,
+                postal_code=norm_pc
             )
             geocode_cache[cache_key] = coords
 
@@ -234,14 +239,9 @@ def members_map_data(request):
                     member_id=member.id,
                     address_seed=cache_key,
                 )
-            elif member.site and member.site.latitude is not None and member.site.longitude is not None and coords == (float(member.site.latitude), float(member.site.longitude)):
-                display_lat, display_lng = obfuscate_coordinates(
-                    coords[0], coords[1],
-                    member_id=member.id,
-                    address_seed=f"site:{member.site.id}",
-                    min_offset_meters=10, max_offset_meters=20,
-                )
             else:
+                # Admin / secrétariat : afficher la position exacte
+                # (même adresse = même point sur la carte)
                 display_lat, display_lng = coords[0], coords[1]
             
             members_data.append({
