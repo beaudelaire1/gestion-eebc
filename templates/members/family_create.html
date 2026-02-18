@@ -6,70 +6,88 @@
 
 {% block extra_css %}
 <style>
-    /* Sélecteur chef de famille : wrapper TomSelect - UX améliorée */
-    .ts-wrapper.chef-ts {
-        width: 100% !important;
+    /* ================================================================
+       PANNEAU DE SÉLECTION DU CHEF DE FAMILLE
+       Liste visible et scrollable — PAS un dropdown minuscule
+       ================================================================ */
+
+    /* Barre de recherche */
+    .chef-search-input {
+        width: 100%;
+        padding: 12px 16px 12px 42px;
+        font-size: 1rem;
+        border: 2px solid #d1d5db;
+        border-radius: 8px;
+        outline: none;
+        transition: border-color 0.2s;
+        background: white url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' fill='%239ca3af' viewBox='0 0 16 16'%3E%3Cpath d='M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398h-.001q.044.06.098.115l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85a1 1 0 0 0-.115-.1zM12 6.5a5.5 5.5 0 1 1-11 0 5.5 5.5 0 0 1 11 0'/%3E%3C/svg%3E") no-repeat 14px center;
     }
-    .ts-wrapper.chef-ts .ts-control {
-        min-height: 72px !important;
-        font-size: 1.1rem !important;
-        padding: 1rem !important;
-        border: 2px solid #d1d5db !important;
-        border-radius: 8px !important;
-        display: flex !important;
-        align-items: flex-start !important;
+    .chef-search-input:focus {
+        border-color: #3b82f6;
+        box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
     }
-    .ts-wrapper.chef-ts .ts-control input {
-        font-size: 1.05rem !important;
-        width: 100% !important;
+    .chef-search-input::placeholder {
+        color: #9ca3af;
     }
-    .ts-wrapper.chef-ts .ts-control > .item {
-        font-size: 1.08rem !important;
-        font-weight: 600 !important;
-        color: #1a1a2e !important;
-        white-space: normal !important;
-        overflow: visible !important;
-        text-overflow: unset !important;
-        line-height: 1.35 !important;
-        word-break: break-word;
+
+    /* Liste des membres — visible directement */
+    .chef-member-list {
+        max-height: 320px;
+        overflow-y: auto;
+        border: 2px solid #e5e7eb;
+        border-radius: 8px;
+        margin-top: 10px;
+        background: white;
     }
-    .ts-wrapper.chef-ts .ts-dropdown {
-        max-height: 520px !important;
-        font-size: 1rem !important;
-        border: 2px solid #d1d5db !important;
-        box-shadow: 0 8px 24px rgba(0,0,0,0.12) !important;
+    .chef-member-list::-webkit-scrollbar {
+        width: 6px;
     }
-    .ts-wrapper.chef-ts .ts-dropdown-content {
-        max-height: 480px !important;
+    .chef-member-list::-webkit-scrollbar-thumb {
+        background: #cbd5e1;
+        border-radius: 3px;
     }
-    
-    /* Options enrichies avec photo/avatar */
-    .ts-wrapper.chef-ts .ts-dropdown .option {
-        padding: 12px 16px !important;
-        border-bottom: 1px solid #f0f0f0 !important;
-        display: flex !important;
-        align-items: center !important;
-        gap: 12px !important;
-        transition: all 0.2s ease !important;
+
+    /* Compteur de résultats */
+    .chef-result-count {
+        font-size: 0.8rem;
+        color: #6b7280;
+        margin-top: 6px;
+        padding-left: 4px;
     }
-    .ts-wrapper.chef-ts .ts-dropdown .option:hover,
-    .ts-wrapper.chef-ts .ts-dropdown .option.active {
-        background: #e8f0fe !important;
-        color: #1a56db !important;
-        border-left: 3px solid #1a56db !important;
+
+    /* Chaque membre dans la liste */
+    .chef-member-item {
+        display: flex;
+        align-items: center;
+        gap: 14px;
+        padding: 12px 16px;
+        cursor: pointer;
+        border-bottom: 1px solid #f3f4f6;
+        transition: background 0.15s;
     }
-    
-    /* Avatar/Initiales */
-    .member-avatar {
-        width: 40px;
-        height: 40px;
+    .chef-member-item:last-child {
+        border-bottom: none;
+    }
+    .chef-member-item:hover {
+        background: #eff6ff;
+    }
+    .chef-member-item.selected {
+        background: #dbeafe;
+        border-left: 4px solid #2563eb;
+        padding-left: 12px;
+    }
+
+    /* Avatar / Initiales */
+    .chef-avatar {
+        width: 44px;
+        height: 44px;
         border-radius: 50%;
         object-fit: cover;
         flex-shrink: 0;
     }
-    .member-initials {
-        width: 40px;
-        height: 40px;
+    .chef-initials {
+        width: 44px;
+        height: 44px;
         border-radius: 50%;
         background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
         color: white;
@@ -77,52 +95,50 @@
         align-items: center;
         justify-content: center;
         font-weight: 700;
-        font-size: 0.875rem;
+        font-size: 0.9rem;
         flex-shrink: 0;
     }
-    .member-info {
+
+    /* Info membre */
+    .chef-info {
         flex: 1;
         min-width: 0;
     }
-    .member-name {
+    .chef-name {
         font-weight: 600;
-        color: #1a1a2e;
-        margin: 0;
+        color: #1e293b;
+        font-size: 0.95rem;
         line-height: 1.3;
     }
-    .member-meta {
-        font-size: 0.8125rem;
+    .chef-meta {
+        font-size: 0.8rem;
         color: #6b7280;
-        margin: 2px 0 0 0;
+        margin-top: 2px;
         display: flex;
-        gap: 8px;
+        gap: 10px;
         flex-wrap: wrap;
     }
-    .member-meta span {
+    .chef-meta span {
         display: inline-flex;
         align-items: center;
-        gap: 4px;
+        gap: 3px;
     }
-    
-    /* Résumé du membre sélectionné */
-    #selected-member-preview {
+
+    /* Aucun résultat */
+    .chef-no-result {
+        padding: 24px;
+        text-align: center;
+        color: #9ca3af;
+        font-size: 0.9rem;
+    }
+
+    /* Bouton déselection */
+    .chef-clear-btn {
         display: none;
-        margin-top: 12px;
-        padding: 12px;
-        background: #f8fafc;
-        border-left: 4px solid #10b981;
-        border-radius: 6px;
+        margin-top: 8px;
     }
-    #selected-member-preview.visible {
-        display: flex;
-        align-items: center;
-        gap: 12px;
-    }
-    #selected-member-preview .member-name {
-        font-size: 0.95rem;
-    }
-    #selected-member-preview .member-meta {
-        font-size: 0.8rem;
+    .chef-clear-btn.visible {
+        display: inline-flex;
     }
     
     /* Status auto-remplissage */
@@ -147,26 +163,52 @@
                 <p class="text-muted small mb-3">
                     <i class="bi bi-info-circle me-1"></i>
                     Sélectionnez le chef de famille pour pré-remplir automatiquement le formulaire avec ses informations.
-                    Utilisez la recherche pour trouver rapidement un membre (nom, prénom, téléphone, site).
                 </p>
                 
-                <!-- Select sans classe .tom-select pour éviter double init base.html -->
-                <select id="chef-famille-select" class="form-select" size="1">
-                    <option value="">-- Sélectionner un chef de famille --</option>
+                <!-- Champ caché qui contient l'ID du membre sélectionné -->
+                <input type="hidden" id="chef-famille-value" name="chef_famille" value="">
+
+                <!-- Barre de recherche -->
+                <input type="text"
+                       id="chef-search"
+                       class="chef-search-input"
+                       placeholder="Rechercher par nom, prénom, téléphone, site…"
+                       autocomplete="off">
+
+                <!-- Liste visible des membres -->
+                <div class="chef-member-list" id="chef-member-list">
                     {% for m in available_members %}
-                    <option value="{{ m.id }}" 
-                            data-first-name="{{ m.first_name }}"
-                            data-last-name="{{ m.last_name }}"
-                            data-photo="{% if m.photo %}{{ m.photo.url }}{% endif %}"
-                            data-site="{% if m.site %}{{ m.site.name }}{% endif %}"
-                            data-phone="{{ m.phone }}">
-                        {{ m.last_name }} {{ m.first_name }}
-                    </option>
+                    <div class="chef-member-item"
+                         data-id="{{ m.id }}"
+                         data-first-name="{{ m.first_name }}"
+                         data-last-name="{{ m.last_name }}"
+                         data-photo="{% if m.photo %}{{ m.photo.url }}{% endif %}"
+                         data-site="{% if m.site %}{{ m.site.name }}{% endif %}"
+                         data-phone="{{ m.phone }}"
+                         data-search="{{ m.last_name|lower }} {{ m.first_name|lower }} {{ m.phone }} {% if m.site %}{{ m.site.name|lower }}{% endif %}">
+                        {% if m.photo %}
+                        <img src="{{ m.photo.url }}" class="chef-avatar" alt="Photo">
+                        {% else %}
+                        <div class="chef-initials">{{ m.first_name|first|upper }}{{ m.last_name|first|upper }}</div>
+                        {% endif %}
+                        <div class="chef-info">
+                            <div class="chef-name">{{ m.last_name }} {{ m.first_name }}</div>
+                            <div class="chef-meta">
+                                {% if m.site %}<span><i class="bi bi-building"></i> {{ m.site.name }}</span>{% endif %}
+                                {% if m.phone %}<span><i class="bi bi-telephone"></i> {{ m.phone }}</span>{% endif %}
+                            </div>
+                        </div>
+                    </div>
+                    {% empty %}
+                    <div class="chef-no-result">Aucun membre disponible</div>
                     {% endfor %}
-                </select>
-                
-                <!-- Résumé visuel du membre sélectionné -->
-                <div id="selected-member-preview"></div>
+                </div>
+                <div class="chef-result-count" id="chef-result-count"></div>
+
+                <!-- Bouton annuler la sélection -->
+                <button type="button" class="btn btn-sm btn-outline-secondary chef-clear-btn" id="chef-clear-btn">
+                    <i class="bi bi-x-circle me-1"></i>Annuler la sélection
+                </button>
                 
                 <!-- Status de l'auto-remplissage -->
                 <div id="autofill-status"></div>
@@ -255,109 +297,100 @@
 {% block extra_js %}
 <script>
 /**
- * Auto-remplissage famille depuis un membre existant - VERSION CORRIGÉE
- * 
- * CORRECTIFS :
- * 1. Pas de classe .tom-select sur le select → évite double init base.html
- * 2. Init manuelle TomSelect unique avec onChange intégré
- * 3. Rendering enrichi : photo/initiales + infos membre
- * 4. Recherche multi-champs optimisée
- * 5. Aperçu visuel du membre sélectionné
- * 6. Garde-fou : 1 sélection = 1 fetch = STOP
+ * Sélection du chef de famille — Panneau visible avec recherche
+ * PAS de TomSelect / dropdown minuscule.
+ * Liste scrollable avec avatars, noms, recherche instantanée.
  */
 document.addEventListener('DOMContentLoaded', function () {
-    var select = document.getElementById('chef-famille-select');
-    if (!select) return;
-
-    // URL template API
-    var API_URL_TPL = "{% url 'members:member_api_data' 0 %}";
+    var searchInput = document.getElementById('chef-search');
+    var memberList = document.getElementById('chef-member-list');
+    var hiddenInput = document.getElementById('chef-famille-value');
+    var clearBtn = document.getElementById('chef-clear-btn');
     var statusEl = document.getElementById('autofill-status');
-    var previewEl = document.getElementById('selected-member-preview');
-    var isProcessing = false; // Garde-fou anti-boucle
+    var countEl = document.getElementById('chef-result-count');
     
-    // ── Helper : Générer initiales ──
-    function getInitials(firstName, lastName) {
-        var f = (firstName || '').trim();
-        var l = (lastName || '').trim();
-        return ((f[0] || '') + (l[0] || '')).toUpperCase() || '?';
-    }
+    if (!memberList || !searchInput) return;
     
-    // ── Helper : Rendering custom des options ──
-    function renderOption(data, escape) {
-        var photoUrl = data.element ? data.element.dataset.photo : '';
-        var firstName = data.element ? data.element.dataset.firstName : '';
-        var lastName = data.element ? data.element.dataset.lastName : '';
-        var site = data.element ? data.element.dataset.site : '';
-        var phone = data.element ? data.element.dataset.phone : '';
+    var allItems = Array.from(memberList.querySelectorAll('.chef-member-item'));
+    var API_URL_TPL = "{% url 'members:member_api_data' 0 %}";
+    var isProcessing = false;
+    
+    // Afficher le compteur initial
+    updateCount(allItems.length, allItems.length);
+    
+    // ── Recherche instantanée ──
+    searchInput.addEventListener('input', function () {
+        var query = this.value.toLowerCase().trim();
+        var visibleCount = 0;
         
-        var avatarHtml = '';
-        if (photoUrl) {
-            avatarHtml = '<img src="' + escape(photoUrl) + '" class="member-avatar" alt="Photo">';
-        } else {
-            var initials = getInitials(firstName, lastName);
-            avatarHtml = '<div class="member-initials">' + escape(initials) + '</div>';
+        allItems.forEach(function (item) {
+            var searchText = item.dataset.search || '';
+            var match = !query || searchText.indexOf(query) !== -1;
+            item.style.display = match ? '' : 'none';
+            if (match) visibleCount++;
+        });
+        
+        // Afficher message si aucun résultat
+        var noResult = memberList.querySelector('.chef-no-result-dynamic');
+        if (visibleCount === 0 && allItems.length > 0) {
+            if (!noResult) {
+                noResult = document.createElement('div');
+                noResult.className = 'chef-no-result chef-no-result-dynamic';
+                memberList.appendChild(noResult);
+            }
+            noResult.innerHTML = '<i class="bi bi-search me-1"></i> Aucun membre trouvé pour « ' + query + ' »';
+            noResult.style.display = '';
+        } else if (noResult) {
+            noResult.style.display = 'none';
         }
         
-        var metaParts = [];
-        if (site) metaParts.push('<span><i class="bi bi-building"></i> ' + escape(site) + '</span>');
-        if (phone) metaParts.push('<span><i class="bi bi-telephone"></i> ' + escape(phone) + '</span>');
-        
-        var metaHtml = metaParts.length > 0 
-            ? '<div class="member-meta">' + metaParts.join('') + '</div>' 
-            : '';
-        
-        return '<div style="display:flex;align-items:center;gap:12px;">' +
-               avatarHtml +
-               '<div class="member-info">' +
-               '<div class="member-name">' + escape(data.text) + '</div>' +
-               metaHtml +
-               '</div>' +
-               '</div>';
-    }
+        updateCount(visibleCount, allItems.length);
+    });
     
-    // ── Initialiser TomSelect UNE SEULE FOIS (pas de double init) ──
-    if (typeof TomSelect !== 'undefined' && !select.tomselect) {
-        var ts = new TomSelect(select, {
-            placeholder: 'Rechercher par nom, prénom, téléphone, site…',
-            allowEmptyOption: true,
-            maxOptions: null,
-            searchField: ['text', 'element.dataset.firstName', 'element.dataset.lastName', 'element.dataset.phone', 'element.dataset.site'],
-            sortField: [{ field: 'text', direction: 'asc' }],
-            wrapperClass: 'ts-wrapper chef-ts',
-            render: {
-                option: renderOption,
-                item: function(data, escape) {
-                    return '<div>' + escape(data.text) + '</div>';
-                },
-                no_results: function() {
-                    return '<div style="padding:12px;color:#888;text-align:center;"><i class="bi bi-search"></i> Aucun membre trouvé</div>';
-                }
-            },
-            onChange: function(value) {
-                // Garde-fou : éviter re-trigger
-                if (isProcessing) return;
-                if (value) {
-                    isProcessing = true;
-                    loadMemberData(value);
-                } else {
-                    // Clear preview si désélection
-                    if (previewEl) previewEl.className = '';
-                    isProcessing = false;
-                }
-            }
+    // ── Clic sur un membre ──
+    allItems.forEach(function (item) {
+        item.addEventListener('click', function () {
+            if (isProcessing) return;
+            
+            // Désélectionner l'ancien
+            allItems.forEach(function (el) { el.classList.remove('selected'); });
+            
+            // Sélectionner celui-ci
+            this.classList.add('selected');
+            hiddenInput.value = this.dataset.id;
+            clearBtn.classList.add('visible');
+            
+            // Scroll vers l'élément sélectionné
+            this.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+            
+            // Charger les données et pré-remplir
+            isProcessing = true;
+            loadMemberData(this.dataset.id, this.dataset.firstName, this.dataset.lastName);
         });
-    } else {
-        // Fallback si TomSelect absent (ultra-rare)
-        select.addEventListener('change', function() {
-            if (!isProcessing && this.value) {
-                isProcessing = true;
-                loadMemberData(this.value);
+    });
+    
+    // ── Bouton annuler ──
+    clearBtn.addEventListener('click', function () {
+        allItems.forEach(function (el) { el.classList.remove('selected'); });
+        hiddenInput.value = '';
+        this.classList.remove('visible');
+        if (statusEl) statusEl.className = '';
+        isProcessing = false;
+    });
+    
+    // ── Compteur ──
+    function updateCount(visible, total) {
+        if (countEl) {
+            if (visible === total) {
+                countEl.textContent = total + ' membre' + (total > 1 ? 's' : '') + ' disponible' + (total > 1 ? 's' : '');
+            } else {
+                countEl.textContent = visible + ' résultat' + (visible > 1 ? 's' : '') + ' sur ' + total;
             }
-        });
+        }
     }
     
     // ── Charger les données du membre et pré-remplir le formulaire ──
-    function loadMemberData(memberId) {
+    function loadMemberData(memberId, firstName, lastName) {
         var url = API_URL_TPL.replace('/0/', '/' + memberId + '/');
         
         if (statusEl) {
@@ -366,11 +399,11 @@ document.addEventListener('DOMContentLoaded', function () {
         }
         
         fetch(url)
-            .then(function(res) {
+            .then(function (res) {
                 if (!res.ok) throw new Error('HTTP ' + res.status);
                 return res.json();
             })
-            .then(function(data) {
+            .then(function (data) {
                 // Nom de famille
                 var nameField = document.getElementById('id_name');
                 if (nameField && !nameField.value && data.last_name) {
@@ -390,48 +423,18 @@ document.addEventListener('DOMContentLoaded', function () {
                     if (siteSelect && !siteSelect.value) siteSelect.value = data.site_id;
                 }
                 
-                // Afficher preview du membre sélectionné
-                if (previewEl) {
-                    var selectedOpt = select.querySelector('option[value="' + memberId + '"]');
-                    if (selectedOpt) {
-                        var photoUrl = selectedOpt.dataset.photo || '';
-                        var firstName = selectedOpt.dataset.firstName || '';
-                        var lastName = selectedOpt.dataset.lastName || '';
-                        var site = selectedOpt.dataset.site || '';
-                        var phone = selectedOpt.dataset.phone || '';
-                        
-                        var avatarHtml = '';
-                        if (photoUrl) {
-                            avatarHtml = '<img src="' + photoUrl + '" class="member-avatar" alt="Photo">';
-                        } else {
-                            avatarHtml = '<div class="member-initials">' + getInitials(firstName, lastName) + '</div>';
-                        }
-                        
-                        var metaParts = [];
-                        if (site) metaParts.push('<span><i class="bi bi-building"></i> ' + site + '</span>');
-                        if (phone) metaParts.push('<span><i class="bi bi-telephone"></i> ' + phone + '</span>');
-                        
-                        previewEl.innerHTML = avatarHtml +
-                            '<div class="member-info">' +
-                            '<div class="member-name">' + firstName + ' ' + lastName + '</div>' +
-                            (metaParts.length > 0 ? '<div class="member-meta">' + metaParts.join('') + '</div>' : '') +
-                            '</div>';
-                        previewEl.className = 'visible';
-                    }
-                }
-                
                 // Status succès
                 if (statusEl) {
                     statusEl.innerHTML = '<i class="bi bi-check-circle me-2"></i>Informations de <strong>' + 
-                                         data.first_name + ' ' + data.last_name + '</strong> importées avec succès.';
+                                         (data.first_name || firstName) + ' ' + (data.last_name || lastName) + 
+                                         '</strong> importées avec succès.';
                     statusEl.className = 'alert alert-success py-2 px-3 small mt-3 visible';
-                    setTimeout(function() { statusEl.className = ''; }, 5000);
+                    setTimeout(function () { statusEl.className = ''; }, 5000);
                 }
                 
-                // Libérer le garde-fou
                 isProcessing = false;
             })
-            .catch(function(err) {
+            .catch(function (err) {
                 console.error('[Auto-fill Error]', err);
                 if (statusEl) {
                     statusEl.innerHTML = '<i class="bi bi-exclamation-triangle me-2"></i>Impossible de charger les informations du membre.';
