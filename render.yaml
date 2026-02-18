@@ -12,7 +12,10 @@ services:
     buildCommand: ./build.sh
     startCommand: ./start.sh
     healthCheckPath: /healthz/ping/
+    autoDeploy: true
     envVars:
+      - key: PORT
+        value: "10000"
       - key: PYTHON_VERSION
         value: "3.11.4"
       - key: DJANGO_SETTINGS_MODULE
