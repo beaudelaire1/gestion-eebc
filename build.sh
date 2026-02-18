@@ -30,7 +30,11 @@ os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'gestion_eebc.settings.prod')
 django.setup()
 from django.core.wsgi import get_wsgi_application
 app = get_wsgi_application()
-print('WSGI app loaded OK')
+print('✓ WSGI app loaded OK')
 "
+
+echo "=== Rendre les scripts exécutables ==="
+chmod +x start.sh
+chmod +x build.sh
 
 echo "=== Build terminé avec succès ==="
