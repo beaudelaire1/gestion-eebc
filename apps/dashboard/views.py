@@ -31,8 +31,17 @@ def home(request):
     ).count()
     
     # Stats globales
+    members_qs = Member.objects.all()
+    members_by_status = {
+        s['status']: s['n']
+        for s in members_qs.values('status').annotate(n=Count('id'))
+    }
     stats = {
-        'total_members': Member.objects.filter(status='actif').count(),
+        'total_members': members_qs.count(),
+        'members_actif': members_by_status.get('actif', 0),
+        'members_visiteur': members_by_status.get('visiteur', 0),
+        'members_inactif': members_by_status.get('inactif', 0),
+        'members_transfere': members_by_status.get('transfere', 0),
         'total_children': Child.objects.filter(is_active=True).count(),
         'total_classes': BibleClass.objects.filter(is_active=True).count(),
         'total_groups': Group.objects.filter(is_active=True).count(),

@@ -684,6 +684,14 @@
         </div>
         <div class="stat-number" data-count="{{ stats.total_members }}">0</div>
         <div class="stat-label">Membres église</div>
+        {% if stats.members_actif or stats.members_visiteur or stats.members_inactif or stats.members_transfere %}
+        <div style="font-size:0.72rem; opacity:0.75; margin-top:0.3rem; line-height:1.5;">
+            {% if stats.members_actif %}Actifs : <strong>{{ stats.members_actif }}</strong>{% endif %}
+            {% if stats.members_visiteur %}&nbsp;· Visiteurs : <strong>{{ stats.members_visiteur }}</strong>{% endif %}
+            {% if stats.members_inactif %}&nbsp;· Inactifs : <strong>{{ stats.members_inactif }}</strong>{% endif %}
+            {% if stats.members_transfere %}&nbsp;· Transférés : <strong>{{ stats.members_transfere }}</strong>{% endif %}
+        </div>
+        {% endif %}
     </div>
 
     <div class="stat-card-premium animate-in delay-4" style="--card-accent: #8B5CF6; --card-accent-rgb: 139, 92, 246;">
