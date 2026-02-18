@@ -68,6 +68,8 @@ class ExcelImportService:
         self.errors = []
         self.successes = []
         self.warnings = []
+        self.created_count = 0
+        self.updated_count = 0
     
     def process_import(self):
         """Traite l'import selon le type."""
@@ -231,9 +233,11 @@ class ExcelImportService:
             for field, value in member_data.items():
                 setattr(existing_member, field, value)
             existing_member.save()
-            self.successes.append(f"Ligne {row_number}: {existing_member.full_name} mis à jour")
+            self.updated_count += 1
+            self.successes.append(f"Ligne {row_number}: {existing_member.full_name} mis \u00e0 jour")
         else:
             member = Member.objects.create(**member_data)
+            self.created_count += 1
             self.successes.append(f"Ligne {row_number}: {member.full_name} créé")
         
         # Ajouter les avertissements
@@ -363,17 +367,31 @@ class ExcelImportService:
             for field, value in child_data.items():
                 setattr(existing_child, field, value)
             existing_child.save()
-            self.successes.append(f"Ligne {row_number}: {existing_child.full_name} mis à jour")
+            self.updated_count += 1
+            self.successes.append(f"Ligne {row_number}: {existing_child.full_name} mis \u00e0 jour")
         else:
             child = Child.objects.create(**child_data)
+            self.created_count += 1
             self.successes.append(f"Ligne {row_number}: {child.full_name} créé")
     
     def _finalize_import(self):
         """Finalise l'import et met à jour les logs."""
         self.import_log.error_log = '\n'.join(self.errors)
         
-        # Ajouter les avertissements au log de succès
-        success_parts = self.successes[:]
+        # R\u00e9sum\u00e9 en t\u00eate du log
+        summary_lines = [
+            f"=== R\u00c9SUM\u00c9 D'IMPORT ===",
+            f"\u2705 Cr\u00e9\u00e9s    : {self.created_count}",
+            f"\U0001f504 Mis \u00e0 jour : {self.updated_count}",
+            f"\u274c Erreurs  : {self.import_log.error_rows}",
+            f"\u26a0\ufe0f  Avertiss.: {len(self.warnings)}",
+            f"Total trait\u00e9 : {self.import_log.processed_rows}",
+            "=" * 30,
+            "",
+        ]
+        
+        # Ajouter les avertissements au log de succ\u00e8s
+        success_parts = summary_lines + self.successes[:]
         if self.warnings:
             success_parts.append('\n--- Avertissements ---')
             success_parts.extend(self.warnings)
