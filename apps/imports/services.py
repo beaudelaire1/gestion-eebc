@@ -209,56 +209,10 @@ class ExcelImportService:
         if not member_data.get('first_name') or not member_data.get('last_name'):
             raise ValidationError("Prénom et nom obligatoires")
         
-        # Détection de doublon par nom + date de naissance (plus fiable)
-        first_name = member_data['first_name']
-        last_name = member_data['last_name']
-        
-        existing_member = None
-        
-        # Priorité 1 : email + vérification d'identité (évite les emails familiaux partagés)
-        if member_data.get('email'):
-            email_matches = Member.objects.filter(email__iexact=member_data['email'])
-            if email_matches.count() == 1:
-                email_member = email_matches.first()
-                same_name = (
-                    email_member.first_name.strip().lower() == first_name.strip().lower() and
-                    email_member.last_name.strip().lower() == last_name.strip().lower()
-                )
-                same_dob = (
-                    member_data.get('date_of_birth') and
-                    email_member.date_of_birth == member_data.get('date_of_birth')
-                )
-                if same_name or same_dob:
-                    existing_member = email_member
-                else:
-                    row_warnings.append(
-                        f"Email partagé détecté ({member_data['email']}) : création d'un nouveau membre"
-                    )
-            elif email_matches.count() > 1:
-                row_warnings.append(
-                    f"Email non unique en base ({member_data['email']}) : correspondance ignorée"
-                )
-        
-        # Priorité 2 : doublon par nom + date de naissance  
-        if not existing_member and member_data.get('date_of_birth'):
-            existing_member = Member.objects.filter(
-                first_name__iexact=first_name,
-                last_name__iexact=last_name,
-                date_of_birth=member_data['date_of_birth']
-            ).first()
-        
-        # Note: pas de détection par nom seul (trop risqué, homonymes fréquents)
-        
-        if existing_member:
-            for field, value in member_data.items():
-                setattr(existing_member, field, value)
-            existing_member.save()
-            self.updated_count += 1
-            self.successes.append(f"Ligne {row_number}: {existing_member.full_name} mis \u00e0 jour")
-        else:
-            member = Member.objects.create(**member_data)
-            self.created_count += 1
-            self.successes.append(f"Ligne {row_number}: {member.full_name} créé")
+        # Mode radical: création uniquement (aucune mise à jour automatique)
+        member = Member.objects.create(**member_data)
+        self.created_count += 1
+        self.successes.append(f"Ligne {row_number}: {member.full_name} créé")
         
         # Ajouter les avertissements
         for w in row_warnings:
