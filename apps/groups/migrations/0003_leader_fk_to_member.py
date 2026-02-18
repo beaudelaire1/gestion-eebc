@@ -5,9 +5,9 @@ from django.db import migrations, models
 
 
 def nullify_leader_ids(apps, schema_editor):
-    """Met à NULL tous les leader_id existants car ils référencent User, pas Member."""
+    """Met à NULL tous les leader existants car ils référencent User, pas Member."""
     Group = apps.get_model('groups', 'Group')
-    Group.objects.filter(leader_id__isnull=False).update(leader_id=None)
+    Group.objects.filter(leader__isnull=False).update(leader=None)
 
 
 class Migration(migrations.Migration):
