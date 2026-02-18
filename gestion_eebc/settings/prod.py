@@ -153,12 +153,21 @@ RECAPTCHA_REQUIRED_SCORE = float(os.environ.get('RECAPTCHA_REQUIRED_SCORE', 0.5)
 # STATIC FILES - WhiteNoise pour Render
 # =============================================================================
 # Django 4.2+ utilise STORAGES au lieu de STATICFILES_STORAGE (deprecated/supprimé en 6.x)
+#
+# manifest_strict = False est INDISPENSABLE car Jazzmin inclut des CSS Bootswatch
+# qui référencent des fichiers .map inexistants (ex: bootstrap.min.css.map).
+# Avec manifest_strict=True (défaut), collectstatic crash avec MissingFileError.
+from whitenoise.storage import CompressedManifestStaticFilesStorage as _WhiteNoiseBase
+
+class _SafeWhiteNoiseStorage(_WhiteNoiseBase):
+    manifest_strict = False
+
 STORAGES = {
     "default": {
         "BACKEND": "django.core.files.storage.FileSystemStorage",
     },
     "staticfiles": {
-        "BACKEND": "whitenoise.storage.CompressedManifestStaticFilesStorage",
+        "BACKEND": "gestion_eebc.settings.prod._SafeWhiteNoiseStorage",
     },
 }
 
