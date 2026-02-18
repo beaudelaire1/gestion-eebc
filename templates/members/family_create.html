@@ -6,21 +6,40 @@
 
 {% block extra_css %}
 <style>
-    /* Agrandir le sélecteur chef-de-famille pour mieux voir le nom sélectionné */
-    #chef-famille-select + .ts-wrapper .ts-control {
-        min-height: 48px;
-        height: auto;
-        font-size: 1rem;
-        padding: 0.5rem 0.75rem;
+    /* Sélecteur chef de famille : zone de saisie agrandie */
+    .chef-famille-wrapper .ts-control {
+        min-height: 52px !important;
+        height: auto !important;
+        font-size: 1.05rem !important;
+        padding: 0.6rem 0.9rem !important;
+        align-items: center !important;
+        cursor: text;
     }
-    #chef-famille-select + .ts-wrapper .ts-control .item {
+    .chef-famille-wrapper .ts-control input {
+        font-size: 1.05rem !important;
+    }
+    .chef-famille-wrapper .ts-control .item {
         font-size: 1rem;
-        font-weight: 500;
+        font-weight: 600;
+        color: #1a1a2e;
         white-space: normal;
         word-break: break-word;
+        line-height: 1.4;
     }
-    #chef-famille-select + .ts-wrapper .ts-dropdown {
-        max-height: 300px;
+    /* Liste déroulante : haute et lisible */
+    .chef-famille-wrapper .ts-dropdown {
+        max-height: 360px;
+        font-size: 0.97rem;
+    }
+    .chef-famille-wrapper .ts-dropdown .option {
+        padding: 0.55rem 0.9rem;
+        border-bottom: 1px solid #f0f0f0;
+    }
+    .chef-famille-wrapper .ts-dropdown .option:hover,
+    .chef-famille-wrapper .ts-dropdown .option.active {
+        background-color: #e8f0fe;
+        color: #1a56db;
+        font-weight: 500;
     }
     #autofill-status {
         display: none;
@@ -46,7 +65,8 @@
             <div class="card-body">
                 <p class="text-muted small mb-3">Sélectionnez le chef de famille pour pré-remplir automatiquement le formulaire avec ses informations.</p>
                 <select id="chef-famille-select" class="form-select tom-select"
-                        data-placeholder="Rechercher un membre actif...">
+                        data-placeholder="Rechercher un membre actif..."
+                        data-wrapper-class="chef-famille-wrapper">
                     <option value="">-- Sélectionner un chef de famille --</option>
                     {% for m in available_members %}
                     <option value="{{ m.id }}">{{ m.last_name }} {{ m.first_name }}</option>

@@ -538,6 +538,7 @@
                 maxOptions: null,
                 searchField: ['text'],
                 sortField: [{ field: 'text', direction: 'asc' }],
+                wrapperClass: 'ts-wrapper ' + (el.dataset.wrapperClass || ''),
                 render: {
                     no_results: function () {
                         return '<div class="no-results">Aucun résultat</div>';

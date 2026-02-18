@@ -25,13 +25,23 @@ def validate_email(value: str) -> str:
 
 
 def validate_phone(value: str) -> str:
-    """Valide et normalise un numéro de téléphone."""
-    value = str(value).strip()
-    digits_only = re.sub(r'[^\d+]', '', value)
-    if len(digits_only) < 10:
+    """Valide et normalise un numéro de téléphone. Plus tolérant pour les formats Excel."""
+    # Excel stocke parfois les numéros comme float (ex: 694123456.0)
+    if isinstance(value, (int, float)):
+        value = str(int(value))
+    else:
+        value = str(value).strip()
+    
+    # Compter seulement les chiffres
+    digits_only = re.sub(r'[^\d]', '', value)
+    
+    # Récupérer le 0 initial si le numéro Guyanais commence sans
+    if len(digits_only) == 9 and digits_only[0] in '16789':
+        digits_only = '0' + digits_only
+    
+    if len(digits_only) < 8:
         raise ValidationError(f"Numéro de téléphone trop court : {value}")
-    if not PHONE_REGEX.match(value):
-        raise ValidationError(f"Format de téléphone invalide : {value}")
+    
     return value
 
 
@@ -136,7 +146,8 @@ class ExcelImportService:
                     gender_mapping = {'MASCULIN': 'M', 'FÉMININ': 'F', 'FEMININ': 'F', 'HOMME': 'M', 'FEMME': 'F', 'H': 'M'}
                     value = gender_mapping.get(value, value)
                     if value not in ['M', 'F']:
-                        raise ValidationError(f"Genre invalide: {value} (M ou F attendu)")
+                        row_warnings.append(f"Genre '{value}' non reconnu, champ ignoré")
+                        continue  # ignore ce champ, continue la ligne
                 
                 # ── Booléen : baptisé ──
                 elif model_field == 'is_baptized':
@@ -160,7 +171,11 @@ class ExcelImportService:
                 elif model_field == 'email':
                     value = str(value).strip()
                     if value:
-                        value = validate_email(value)
+                        try:
+                            value = validate_email(value)
+                        except ValidationError:
+                            row_warnings.append(f"Email invalide ignoré (membre importé sans email) : {value}")
+                            continue  # champ ignoré, le reste de la ligne continue
                 
                 # ── Téléphone ──
                 elif model_field == 'phone':
@@ -294,7 +309,8 @@ class ExcelImportService:
                     gender_mapping = {'MASCULIN': 'M', 'FÉMININ': 'F', 'FEMININ': 'F', 'GARÇON': 'M', 'GARCON': 'M', 'FILLE': 'F'}
                     value = gender_mapping.get(value, value)
                     if value not in ['M', 'F']:
-                        raise ValidationError(f"Genre invalide: {value}")
+                        row_warnings.append(f"Genre '{value}' non reconnu pour enfant, champ ignoré")
+                        continue
                 
                 elif model_field == 'needs_transport':
                     if isinstance(value, str):
