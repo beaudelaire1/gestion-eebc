@@ -9,12 +9,23 @@ User = get_user_model()
 
 class GroupForm(forms.ModelForm):
     """Formulaire pour créer/modifier un groupe."""
-    
+
+    members = forms.ModelMultipleChoiceField(
+        queryset=Member.objects.filter(status='actif').order_by('last_name', 'first_name'),
+        widget=forms.SelectMultiple(attrs={
+            'class': 'form-select tom-select',
+            'data-placeholder': 'Rechercher des membres...',
+            'multiple': 'multiple',
+        }),
+        required=False,
+        label="Membres du groupe",
+    )
+
     class Meta:
         model = Group
         fields = [
-            'name', 'description', 'group_type', 'leader', 
-            'meeting_day', 'meeting_time', 'meeting_location', 
+            'name', 'description', 'group_type', 'leader',
+            'meeting_day', 'meeting_time', 'meeting_location',
             'meeting_frequency', 'color', 'image'
         ]
         widgets = {
@@ -45,18 +56,18 @@ class GroupForm(forms.ModelForm):
             }),
             'image': forms.FileInput(attrs={'class': 'form-control'})
         }
-    
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        # Filtrer les utilisateurs pour ne montrer que ceux avec des rôles appropriés.
-        # Le champ `role` est un TextField avec valeurs séparées par virgule,
-        # donc on utilise __contains pour chaque rôle possible.
-        self.fields['leader'].queryset = User.objects.filter(
-            Q(role__contains='admin')
-            | Q(role__contains='responsable_groupe')
-            | Q(role__contains='secretariat')
-        ).order_by('first_name', 'last_name')
+        # Leader = n'importe quel membre actif
+        self.fields['leader'].queryset = Member.objects.filter(
+            status='actif'
+        ).order_by('last_name', 'first_name')
         self.fields['leader'].empty_label = "Sélectionner un responsable"
+
+        # Pré-remplir les membres si édition
+        if self.instance and self.instance.pk:
+            self.fields['members'].initial = self.instance.members.all()
 
 
 class GroupMembersForm(forms.Form):
@@ -64,7 +75,11 @@ class GroupMembersForm(forms.Form):
     
     members = forms.ModelMultipleChoiceField(
         queryset=Member.objects.filter(status='actif'),
-        widget=forms.CheckboxSelectMultiple(attrs={'class': 'form-check-input'}),
+        widget=forms.SelectMultiple(attrs={
+            'class': 'form-select tom-select',
+            'data-placeholder': 'Rechercher des membres...',
+            'multiple': 'multiple',
+        }),
         required=False,
         label="Membres"
     )

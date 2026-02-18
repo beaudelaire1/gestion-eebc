@@ -612,9 +612,9 @@ class GenericExportService:
             export_data.append({
                 'nom': group.name,
                 'description': group.description or '',
-                'responsable': group.leader.get_full_name() if group.leader else '',
+                'responsable': group.leader.full_name if group.leader else '',
                 'email_responsable': group.leader.email if group.leader else '',
-                'telephone_responsable': getattr(group.leader, 'phone', '') if group.leader else '',
+                'telephone_responsable': group.leader.phone if group.leader else '',
                 'nombre_membres': group.members.count(),
                 'lieu_reunion': getattr(group, 'meeting_location', '') or '',
                 'horaire': getattr(group, 'meeting_time', '') or '',

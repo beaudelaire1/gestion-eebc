@@ -18,35 +18,10 @@
                     {% csrf_token %}
                     
                     <div class="mb-3">
-                        <div class="input-group">
-                            <span class="input-group-text">
-                                <i class="bi bi-search"></i>
-                            </span>
-                            <input type="text" class="form-control" id="member-search" 
-                                   placeholder="Rechercher un membre...">
-                        </div>
+                        <label class="form-label fw-bold">Sélectionner les membres</label>
+                        {{ form.members }}
                     </div>
-                    
-                    <div class="row g-2" id="members-list">
-                        {% for field in form.members %}
-                            <div class="col-md-6 member-item" data-name="{{ field.choice_label|lower }}">
-                                <div class="form-check p-3 border rounded">
-                                    {{ field.tag }}
-                                    <label class="form-check-label ms-2" for="{{ field.id_for_label }}">
-                                        <div class="d-flex align-items-center">
-                                            <div class="avatar me-2" style="width: 32px; height: 32px; font-size: 0.7rem;">
-                                                {% with names=field.choice_label|split:" " %}
-                                                    {{ names.0|slice:":1"|upper }}{{ names.1|slice:":1"|upper }}
-                                                {% endwith %}
-                                            </div>
-                                            <span>{{ field.choice_label }}</span>
-                                        </div>
-                                    </label>
-                                </div>
-                            </div>
-                        {% endfor %}
-                    </div>
-                    
+
                     {% if form.members.errors %}
                         <div class="alert alert-danger mt-3">
                             {{ form.members.errors.0 }}
@@ -87,7 +62,7 @@
                 {% if group.leader %}
                 <p class="mb-2">
                     <i class="bi bi-person-badge me-2 text-muted"></i>
-                    <strong>Responsable:</strong> {{ group.leader.get_full_name }}
+                    <strong>Responsable:</strong> {{ group.leader.full_name }}
                 </p>
                 {% endif %}
                 
@@ -134,37 +109,21 @@
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    const searchInput = document.getElementById('member-search');
-    const memberItems = document.querySelectorAll('.member-item');
-    const currentCountSpan = document.getElementById('current-count');
-    
-    // Fonction de recherche
-    searchInput.addEventListener('input', function() {
-        const searchTerm = this.value.toLowerCase();
-        
-        memberItems.forEach(item => {
-            const memberName = item.dataset.name;
-            if (memberName.includes(searchTerm)) {
-                item.style.display = 'block';
-            } else {
-                item.style.display = 'none';
-            }
-        });
-    });
-    
-    // Compter les membres sélectionnés
-    function updateMemberCount() {
-        const checkedBoxes = document.querySelectorAll('input[name="members"]:checked');
-        currentCountSpan.textContent = checkedBoxes.length;
+    const countSpan = document.getElementById('current-count');
+    // TomSelect est initialisé automatiquement via base.html sur .tom-select
+    // Mettre à jour le compteur quand la sélection change
+    const selectEl = document.querySelector('select[name="members"]');
+    if (selectEl && countSpan) {
+        function updateCount() {
+            const selected = selectEl.tomselect
+                ? selectEl.tomselect.items.length
+                : selectEl.selectedOptions.length;
+            countSpan.textContent = selected;
+        }
+        selectEl.addEventListener('change', updateCount);
+        // Retry après init TomSelect
+        setTimeout(updateCount, 600);
     }
-    
-    // Écouter les changements de sélection
-    document.querySelectorAll('input[name="members"]').forEach(checkbox => {
-        checkbox.addEventListener('change', updateMemberCount);
-    });
-    
-    // Initialiser le compteur
-    updateMemberCount();
 });
 </script>
 {% endblock %}

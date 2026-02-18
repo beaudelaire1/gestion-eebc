@@ -40,7 +40,7 @@
         <tr>
             <td><strong>{{ group.name }}</strong></td>
             <td>{{ group.get_group_type_display }}</td>
-            <td>{% if group.leader %}{{ group.leader.get_full_name }}{% else %}-{% endif %}</td>
+            <td>{% if group.leader %}{{ group.leader.full_name }}{% else %}-{% endif %}</td>
             <td class="text-center">{{ group.member_count }}</td>
             <td>{% if group.meeting_day %}{{ group.get_meeting_day_display }}{% else %}-{% endif %}</td>
             <td class="text-center">{% if group.meeting_time %}{{ group.meeting_time|time:"H:i" }}{% else %}-{% endif %}</td>

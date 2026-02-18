@@ -54,6 +54,9 @@ def group_create(request):
         form = GroupForm(request.POST, request.FILES)
         if form.is_valid():
             group = form.save()
+            # Sauver les membres (M2M)
+            if form.cleaned_data.get('members'):
+                group.members.set(form.cleaned_data['members'])
             messages.success(request, f'Le groupe "{group.name}" a été créé avec succès.')
             return redirect('groups:detail', pk=group.pk)
     else:
@@ -73,17 +76,12 @@ def group_update(request, pk):
     """Modifier un groupe."""
     group = get_object_or_404(Group, pk=pk)
     
-    # Vérifier si l'utilisateur peut modifier ce groupe
-    if (request.user.has_role('responsable_groupe') and 
-        group.leader != request.user and 
-        not request.user.has_role('admin')):
-        messages.error(request, "Vous ne pouvez modifier que vos propres groupes.")
-        return redirect('groups:detail', pk=pk)
-    
     if request.method == 'POST':
         form = GroupForm(request.POST, request.FILES, instance=group)
         if form.is_valid():
             group = form.save()
+            # Sauver les membres (M2M)
+            group.members.set(form.cleaned_data.get('members', []))
             messages.success(request, f'Le groupe "{group.name}" a été modifié avec succès.')
             return redirect('groups:detail', pk=group.pk)
     else:
@@ -103,13 +101,6 @@ def group_update(request, pk):
 def group_members_manage(request, pk):
     """Gérer les membres d'un groupe."""
     group = get_object_or_404(Group, pk=pk)
-    
-    # Vérifier si l'utilisateur peut gérer ce groupe
-    if (request.user.has_role('responsable_groupe') and 
-        group.leader != request.user and 
-        not request.user.has_role('admin')):
-        messages.error(request, "Vous ne pouvez gérer que vos propres groupes.")
-        return redirect('groups:detail', pk=pk)
     
     if request.method == 'POST':
         form = GroupMembersForm(request.POST, group=group)

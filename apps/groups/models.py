@@ -35,7 +35,7 @@ class Group(models.Model):
     )
     
     leader = models.ForeignKey(
-        settings.AUTH_USER_MODEL,
+        'members.Member',
         on_delete=models.SET_NULL,
         null=True,
         blank=True,
