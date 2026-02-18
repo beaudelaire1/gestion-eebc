@@ -4,6 +4,12 @@ import django.db.models.deletion
 from django.db import migrations, models
 
 
+def nullify_leader_ids(apps, schema_editor):
+    """Met à NULL tous les leader_id existants car ils référencent User, pas Member."""
+    Group = apps.get_model('groups', 'Group')
+    Group.objects.filter(leader_id__isnull=False).update(leader_id=None)
+
+
 class Migration(migrations.Migration):
 
     dependencies = [
@@ -12,9 +18,25 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
+        # 1. Supprimer la contrainte FK existante (vers User) en rendant le champ un simple IntegerField
         migrations.AlterField(
             model_name='group',
             name='leader',
-            field=models.ForeignKey(blank=True, null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='led_groups', to='members.member', verbose_name='Responsable'),
+            field=models.IntegerField(blank=True, null=True, verbose_name='Responsable'),
+        ),
+        # 2. Mettre tous les leader_id à NULL (les IDs User ne correspondent pas aux IDs Member)
+        migrations.RunPython(nullify_leader_ids, migrations.RunPython.noop),
+        # 3. Recréer la FK vers Member
+        migrations.AlterField(
+            model_name='group',
+            name='leader',
+            field=models.ForeignKey(
+                blank=True,
+                null=True,
+                on_delete=django.db.models.deletion.SET_NULL,
+                related_name='led_groups',
+                to='members.member',
+                verbose_name='Responsable',
+            ),
         ),
     ]

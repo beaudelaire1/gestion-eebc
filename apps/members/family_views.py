@@ -57,17 +57,22 @@ def family_detail(request, pk):
 
 @login_required
 def member_api_data(request, pk):
-    """Retourne les données d'un membre en JSON pour l'auto-remplissage du formulaire famille."""
-    member = get_object_or_404(Member, pk=pk)
+    """Retourne les données d'un membre en JSON pour l'auto-remplissage du formulaire famille.
+    
+    Fallback : si le membre n'a pas d'adresse/téléphone/email, on retourne
+    ceux de sa famille existante.
+    """
+    member = get_object_or_404(Member.objects.select_related('family', 'site'), pk=pk)
+    family = member.family
     return JsonResponse({
         'last_name': member.last_name,
         'first_name': member.first_name,
-        'email': member.email,
-        'phone': member.phone,
-        'address': member.address,
-        'city': member.city,
-        'postal_code': member.postal_code,
-        'site_id': member.site_id or '',
+        'email': member.email or (family.email if family else ''),
+        'phone': member.phone or (family.phone if family else ''),
+        'address': member.address or (family.address if family else ''),
+        'city': member.city or (family.city if family else ''),
+        'postal_code': member.postal_code or (family.postal_code if family else ''),
+        'site_id': member.site_id or (family.site_id if family else '') or '',
     })
 
 

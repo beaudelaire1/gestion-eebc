@@ -213,14 +213,9 @@
     // ========== Auto-fill depuis l'API ==========
     var API_BASE = "{% url 'members:member_api_data' 0 %}".replace('/0/', '/');
 
-    const select    = document.getElementById('chef-famille-select');
     const statusEl  = document.getElementById('autofill-status');
-    if (!select) return;
 
-    /* TomSelect déclenche un événement natif 'change' sur le <select> original.
-       On l'écoute directement — pas besoin de .tomselect.on() */
-    select.addEventListener('change', function () {
-        const memberId = this.value;
+    function onMemberSelected(memberId) {
         if (!memberId) return;
 
         // Feedback visuel
@@ -231,12 +226,12 @@
 
         fetch(API_BASE + memberId + '/data/')
             .then(function (res) {
-                if (!res.ok) throw new Error('Erreur réseau');
+                if (!res.ok) throw new Error('Erreur réseau ' + res.status);
                 return res.json();
             })
             .then(function (data) {
                 // Nom de famille : suggère "Famille NOM" si champ vide
-                const nameField = document.getElementById('id_name');
+                var nameField = document.getElementById('id_name');
                 if (nameField && !nameField.value && data.last_name) {
                     nameField.value = 'Famille ' + data.last_name.toUpperCase();
                 }
@@ -249,7 +244,7 @@
 
                 // Site
                 if (data.site_id) {
-                    const siteSelect = document.getElementById('id_site');
+                    var siteSelect = document.getElementById('id_site');
                     if (siteSelect) siteSelect.value = data.site_id;
                 }
 
@@ -263,12 +258,30 @@
                 }
             })
             .catch(function (err) {
+                console.error('Auto-fill error:', err);
                 if (statusEl) {
                     statusEl.textContent = 'Impossible de charger les informations.';
                     statusEl.className   = 'alert alert-warning py-1 px-2 small mt-2 visible';
                 }
             });
+    }
+
+    // Écouter les changements : TomSelect OU select natif
+    // TomSelect déclenche un événement 'change' natif sur le <select> hidden
+    select.addEventListener('change', function () {
+        onMemberSelected(this.value);
     });
+    // Sécurité supplémentaire : si TomSelect est initialisé, écouter aussi via son API
+    function bindTomSelectChange() {
+        if (select.tomselect) {
+            select.tomselect.on('change', function (value) {
+                onMemberSelected(value);
+            });
+        }
+    }
+    bindTomSelectChange();
+    setTimeout(bindTomSelectChange, 600);
+    setTimeout(bindTomSelectChange, 2000);
 
     function fillField(id, value) {
         const el = document.getElementById(id);
