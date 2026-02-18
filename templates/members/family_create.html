@@ -7,22 +7,31 @@
 {% block extra_css %}
 <style>
     /* Sélecteur chef de famille : wrapper TomSelect - UX améliorée */
+    .ts-wrapper.chef-ts {
+        width: 100% !important;
+    }
     .ts-wrapper.chef-ts .ts-control {
-        min-height: 64px !important;
+        min-height: 72px !important;
         font-size: 1.1rem !important;
-        padding: 0.9rem !important;
+        padding: 1rem !important;
         border: 2px solid #d1d5db !important;
         border-radius: 8px !important;
         display: flex !important;
-        align-items: center !important;
+        align-items: flex-start !important;
     }
     .ts-wrapper.chef-ts .ts-control input {
         font-size: 1.05rem !important;
+        width: 100% !important;
     }
     .ts-wrapper.chef-ts .ts-control > .item {
-        font-size: 1.05rem !important;
+        font-size: 1.08rem !important;
         font-weight: 600 !important;
         color: #1a1a2e !important;
+        white-space: normal !important;
+        overflow: visible !important;
+        text-overflow: unset !important;
+        line-height: 1.35 !important;
+        word-break: break-word;
     }
     .ts-wrapper.chef-ts .ts-dropdown {
         max-height: 520px !important;
@@ -124,7 +133,7 @@
 
 {% block content %}
 <div class="row justify-content-center">
-    <div class="col-lg-10 col-xl-9">
+    <div class="col-12 col-xl-10">
 
         <!-- Sélecteur chef de famille -->
         <div class="card border-primary mb-3">
