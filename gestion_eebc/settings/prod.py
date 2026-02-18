@@ -25,7 +25,9 @@ CSRF_TRUSTED_ORIGINS = [
 ]
 
 # HTTPS
-SECURE_SSL_REDIRECT = True
+# SECURE_SSL_REDIRECT = False : Render gère le SSL à son edge proxy.
+# Un redirect ici bloque les health checks HTTP internes de Render.
+SECURE_SSL_REDIRECT = False
 SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
 SESSION_COOKIE_SECURE = True
 CSRF_COOKIE_SECURE = True
