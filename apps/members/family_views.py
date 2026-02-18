@@ -103,10 +103,19 @@ def family_create(request):
         messages.success(request, f"Famille '{name}' créée avec succès.")
         return redirect('members:family_detail', pk=family.pk)
     
+    # Membres disponibles avec toutes les infos pour UX enrichie (photo, site, téléphone)
+    available_members = Member.objects.filter(
+        status='actif'
+    ).select_related(
+        'site'
+    ).only(
+        'id', 'first_name', 'last_name', 'photo', 'phone', 'site__name'
+    ).order_by('last_name', 'first_name')
+    
     context = {
         'sites': Site.objects.filter(is_active=True),
         'neighborhoods': Neighborhood.objects.filter(is_active=True).select_related('city'),
-        'available_members': Member.objects.filter(status='actif').order_by('last_name', 'first_name'),
+        'available_members': available_members,
     }
     
     return render(request, 'members/family_create.html', context)

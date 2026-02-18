@@ -6,11 +6,11 @@
 
 {% block extra_css %}
 <style>
-    /* Sélecteur chef de famille : wrapper TomSelect */
+    /* Sélecteur chef de famille : wrapper TomSelect - UX améliorée */
     .ts-wrapper.chef-ts .ts-control {
-        min-height: 48px !important;
+        min-height: 56px !important;
         font-size: 1.05rem !important;
-        padding: 0.5rem 0.75rem !important;
+        padding: 0.75rem !important;
         border: 2px solid #d1d5db !important;
         border-radius: 8px !important;
         display: flex !important;
@@ -25,18 +25,95 @@
         color: #1a1a2e !important;
     }
     .ts-wrapper.chef-ts .ts-dropdown {
-        max-height: 350px !important;
+        max-height: 420px !important;
         font-size: 1rem !important;
         border: 2px solid #d1d5db !important;
+        box-shadow: 0 8px 24px rgba(0,0,0,0.12) !important;
     }
+    
+    /* Options enrichies avec photo/avatar */
     .ts-wrapper.chef-ts .ts-dropdown .option {
-        padding: 10px 14px !important;
+        padding: 12px 16px !important;
         border-bottom: 1px solid #f0f0f0 !important;
+        display: flex !important;
+        align-items: center !important;
+        gap: 12px !important;
+        transition: all 0.2s ease !important;
     }
+    .ts-wrapper.chef-ts .ts-dropdown .option:hover,
     .ts-wrapper.chef-ts .ts-dropdown .option.active {
         background: #e8f0fe !important;
         color: #1a56db !important;
+        border-left: 3px solid #1a56db !important;
     }
+    
+    /* Avatar/Initiales */
+    .member-avatar {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        object-fit: cover;
+        flex-shrink: 0;
+    }
+    .member-initials {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 700;
+        font-size: 0.875rem;
+        flex-shrink: 0;
+    }
+    .member-info {
+        flex: 1;
+        min-width: 0;
+    }
+    .member-name {
+        font-weight: 600;
+        color: #1a1a2e;
+        margin: 0;
+        line-height: 1.3;
+    }
+    .member-meta {
+        font-size: 0.8125rem;
+        color: #6b7280;
+        margin: 2px 0 0 0;
+        display: flex;
+        gap: 8px;
+        flex-wrap: wrap;
+    }
+    .member-meta span {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+    }
+    
+    /* Résumé du membre sélectionné */
+    #selected-member-preview {
+        display: none;
+        margin-top: 12px;
+        padding: 12px;
+        background: #f8fafc;
+        border-left: 4px solid #10b981;
+        border-radius: 6px;
+    }
+    #selected-member-preview.visible {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+    }
+    #selected-member-preview .member-name {
+        font-size: 0.95rem;
+    }
+    #selected-member-preview .member-meta {
+        font-size: 0.8rem;
+    }
+    
+    /* Status auto-remplissage */
     #autofill-status { display: none; }
     #autofill-status.visible { display: block; }
 </style>
@@ -55,14 +132,31 @@
                 </h6>
             </div>
             <div class="card-body">
-                <p class="text-muted small mb-3">Sélectionnez le chef de famille pour pré-remplir automatiquement le formulaire avec ses informations.</p>
-                <select id="chef-famille-select" class="form-select"
-                        size="1">
+                <p class="text-muted small mb-3">
+                    <i class="bi bi-info-circle me-1"></i>
+                    Sélectionnez le chef de famille pour pré-remplir automatiquement le formulaire avec ses informations.
+                    Utilisez la recherche pour trouver rapidement un membre (nom, prénom, téléphone, site).
+                </p>
+                
+                <!-- Select sans classe .tom-select pour éviter double init base.html -->
+                <select id="chef-famille-select" class="form-select" size="1">
                     <option value="">-- Sélectionner un chef de famille --</option>
                     {% for m in available_members %}
-                    <option value="{{ m.id }}">{{ m.last_name }} {{ m.first_name }}</option>
+                    <option value="{{ m.id }}" 
+                            data-first-name="{{ m.first_name }}"
+                            data-last-name="{{ m.last_name }}"
+                            data-photo="{% if m.photo %}{{ m.photo.url }}{% endif %}"
+                            data-site="{% if m.site %}{{ m.site.name }}{% endif %}"
+                            data-phone="{{ m.phone }}">
+                        {{ m.last_name }} {{ m.first_name }}
+                    </option>
                     {% endfor %}
                 </select>
+                
+                <!-- Résumé visuel du membre sélectionné -->
+                <div id="selected-member-preview"></div>
+                
+                <!-- Status de l'auto-remplissage -->
                 <div id="autofill-status"></div>
             </div>
         </div>
@@ -149,87 +243,192 @@
 {% block extra_js %}
 <script>
 /**
- * Auto-fill famille depuis un membre existant.
- * Ce script tourne dans DOMContentLoaded → TomSelect CDN est déjà chargé.
+ * Auto-remplissage famille depuis un membre existant - VERSION CORRIGÉE
+ * 
+ * CORRECTIFS :
+ * 1. Pas de classe .tom-select sur le select → évite double init base.html
+ * 2. Init manuelle TomSelect unique avec onChange intégré
+ * 3. Rendering enrichi : photo/initiales + infos membre
+ * 4. Recherche multi-champs optimisée
+ * 5. Aperçu visuel du membre sélectionné
+ * 6. Garde-fou : 1 sélection = 1 fetch = STOP
  */
 document.addEventListener('DOMContentLoaded', function () {
     var select = document.getElementById('chef-famille-select');
     if (!select) return;
 
-    // URL template : /app/members/api/member/0/data/ → on remplace /0/ par /<id>/
+    // URL template API
     var API_URL_TPL = "{% url 'members:member_api_data' 0 %}";
     var statusEl = document.getElementById('autofill-status');
-
-    // ── Initialiser TomSelect avec callback onChange intégré ──
+    var previewEl = document.getElementById('selected-member-preview');
+    var isProcessing = false; // Garde-fou anti-boucle
+    
+    // ── Helper : Générer initiales ──
+    function getInitials(firstName, lastName) {
+        var f = (firstName || '').trim();
+        var l = (lastName || '').trim();
+        return ((f[0] || '') + (l[0] || '')).toUpperCase() || '?';
+    }
+    
+    // ── Helper : Rendering custom des options ──
+    function renderOption(data, escape) {
+        var photoUrl = data.element ? data.element.dataset.photo : '';
+        var firstName = data.element ? data.element.dataset.firstName : '';
+        var lastName = data.element ? data.element.dataset.lastName : '';
+        var site = data.element ? data.element.dataset.site : '';
+        var phone = data.element ? data.element.dataset.phone : '';
+        
+        var avatarHtml = '';
+        if (photoUrl) {
+            avatarHtml = '<img src="' + escape(photoUrl) + '" class="member-avatar" alt="Photo">';
+        } else {
+            var initials = getInitials(firstName, lastName);
+            avatarHtml = '<div class="member-initials">' + escape(initials) + '</div>';
+        }
+        
+        var metaParts = [];
+        if (site) metaParts.push('<span><i class="bi bi-building"></i> ' + escape(site) + '</span>');
+        if (phone) metaParts.push('<span><i class="bi bi-telephone"></i> ' + escape(phone) + '</span>');
+        
+        var metaHtml = metaParts.length > 0 
+            ? '<div class="member-meta">' + metaParts.join('') + '</div>' 
+            : '';
+        
+        return '<div style="display:flex;align-items:center;gap:12px;">' +
+               avatarHtml +
+               '<div class="member-info">' +
+               '<div class="member-name">' + escape(data.text) + '</div>' +
+               metaHtml +
+               '</div>' +
+               '</div>';
+    }
+    
+    // ── Initialiser TomSelect UNE SEULE FOIS (pas de double init) ──
     if (typeof TomSelect !== 'undefined' && !select.tomselect) {
-        new TomSelect(select, {
-            placeholder: 'Rechercher un membre…',
+        var ts = new TomSelect(select, {
+            placeholder: 'Rechercher par nom, prénom, téléphone, site…',
             allowEmptyOption: true,
             maxOptions: null,
-            searchField: ['text'],
+            searchField: ['text', 'element.dataset.firstName', 'element.dataset.lastName', 'element.dataset.phone', 'element.dataset.site'],
             sortField: [{ field: 'text', direction: 'asc' }],
             wrapperClass: 'ts-wrapper chef-ts',
             render: {
-                no_results: function () {
-                    return '<div style="padding:10px;color:#888;">Aucun résultat</div>';
+                option: renderOption,
+                item: function(data, escape) {
+                    return '<div>' + escape(data.text) + '</div>';
+                },
+                no_results: function() {
+                    return '<div style="padding:12px;color:#888;text-align:center;"><i class="bi bi-search"></i> Aucun membre trouvé</div>';
                 }
             },
-            onChange: function (value) {
-                if (value) loadMemberData(value);
+            onChange: function(value) {
+                // Garde-fou : éviter re-trigger
+                if (isProcessing) return;
+                if (value) {
+                    isProcessing = true;
+                    loadMemberData(value);
+                } else {
+                    // Clear preview si désélection
+                    if (previewEl) previewEl.className = '';
+                    isProcessing = false;
+                }
             }
         });
     } else {
-        // Fallback si TomSelect absent : écouter le change natif
-        select.addEventListener('change', function () {
-            if (this.value) loadMemberData(this.value);
+        // Fallback si TomSelect absent (ultra-rare)
+        select.addEventListener('change', function() {
+            if (!isProcessing && this.value) {
+                isProcessing = true;
+                loadMemberData(this.value);
+            }
         });
     }
-
+    
     // ── Charger les données du membre et pré-remplir le formulaire ──
     function loadMemberData(memberId) {
         var url = API_URL_TPL.replace('/0/', '/' + memberId + '/');
-
+        
         if (statusEl) {
-            statusEl.textContent = 'Chargement…';
-            statusEl.className = 'alert alert-info py-1 px-2 small mt-2 visible';
+            statusEl.textContent = '⏳ Chargement des informations…';
+            statusEl.className = 'alert alert-info py-2 px-3 small mt-3 visible';
         }
-
+        
         fetch(url)
-            .then(function (res) {
+            .then(function(res) {
                 if (!res.ok) throw new Error('HTTP ' + res.status);
                 return res.json();
             })
-            .then(function (data) {
+            .then(function(data) {
                 // Nom de famille
                 var nameField = document.getElementById('id_name');
                 if (nameField && !nameField.value && data.last_name) {
                     nameField.value = 'Famille ' + data.last_name.toUpperCase();
                 }
+                
+                // Pré-remplir uniquement les champs vides
                 setIfEmpty('id_address', data.address);
                 setIfEmpty('id_city', data.city);
                 setIfEmpty('id_postal_code', data.postal_code);
                 setIfEmpty('id_phone', data.phone);
                 setIfEmpty('id_email', data.email);
+                
                 // Site
                 if (data.site_id) {
-                    var s = document.getElementById('id_site');
-                    if (s) s.value = data.site_id;
+                    var siteSelect = document.getElementById('id_site');
+                    if (siteSelect && !siteSelect.value) siteSelect.value = data.site_id;
                 }
+                
+                // Afficher preview du membre sélectionné
+                if (previewEl) {
+                    var selectedOpt = select.querySelector('option[value="' + memberId + '"]');
+                    if (selectedOpt) {
+                        var photoUrl = selectedOpt.dataset.photo || '';
+                        var firstName = selectedOpt.dataset.firstName || '';
+                        var lastName = selectedOpt.dataset.lastName || '';
+                        var site = selectedOpt.dataset.site || '';
+                        var phone = selectedOpt.dataset.phone || '';
+                        
+                        var avatarHtml = '';
+                        if (photoUrl) {
+                            avatarHtml = '<img src="' + photoUrl + '" class="member-avatar" alt="Photo">';
+                        } else {
+                            avatarHtml = '<div class="member-initials">' + getInitials(firstName, lastName) + '</div>';
+                        }
+                        
+                        var metaParts = [];
+                        if (site) metaParts.push('<span><i class="bi bi-building"></i> ' + site + '</span>');
+                        if (phone) metaParts.push('<span><i class="bi bi-telephone"></i> ' + phone + '</span>');
+                        
+                        previewEl.innerHTML = avatarHtml +
+                            '<div class="member-info">' +
+                            '<div class="member-name">' + firstName + ' ' + lastName + '</div>' +
+                            (metaParts.length > 0 ? '<div class="member-meta">' + metaParts.join('') + '</div>' : '') +
+                            '</div>';
+                        previewEl.className = 'visible';
+                    }
+                }
+                
+                // Status succès
                 if (statusEl) {
-                    statusEl.textContent = '✓ Données de ' + data.first_name + ' ' + data.last_name + ' importées.';
-                    statusEl.className = 'alert alert-success py-1 px-2 small mt-2 visible';
-                    setTimeout(function () { statusEl.className = ''; }, 4000);
+                    statusEl.innerHTML = '<i class="bi bi-check-circle me-2"></i>Informations de <strong>' + 
+                                         data.first_name + ' ' + data.last_name + '</strong> importées avec succès.';
+                    statusEl.className = 'alert alert-success py-2 px-3 small mt-3 visible';
+                    setTimeout(function() { statusEl.className = ''; }, 5000);
                 }
+                
+                // Libérer le garde-fou
+                isProcessing = false;
             })
-            .catch(function (err) {
-                console.error('Auto-fill error:', err);
+            .catch(function(err) {
+                console.error('[Auto-fill Error]', err);
                 if (statusEl) {
-                    statusEl.textContent = 'Impossible de charger les informations.';
-                    statusEl.className = 'alert alert-warning py-1 px-2 small mt-2 visible';
+                    statusEl.innerHTML = '<i class="bi bi-exclamation-triangle me-2"></i>Impossible de charger les informations du membre.';
+                    statusEl.className = 'alert alert-warning py-2 px-3 small mt-3 visible';
                 }
+                isProcessing = false;
             });
     }
-
+    
     function setIfEmpty(id, value) {
         var el = document.getElementById(id);
         if (el && !el.value && value) el.value = value;
