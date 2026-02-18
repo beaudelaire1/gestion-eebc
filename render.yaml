@@ -10,7 +10,7 @@ services:
     region: frankfurt
     plan: free
     buildCommand: ./build.sh
-    startCommand: sh -c 'gunicorn gestion_eebc.wsgi:application --bind 0.0.0.0:${PORT:-10000} --workers 1 --worker-class gthread --threads 4 --timeout 120 --log-file -'
+    startCommand: gunicorn gestion_eebc.wsgi:application --bind 0.0.0.0:10000 --workers 1 --worker-class gthread --threads 4 --timeout 120 --log-file -
     healthCheckPath: /healthz/ping/
     envVars:
       - key: PYTHON_VERSION

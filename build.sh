@@ -22,4 +22,15 @@ python manage.py migrate --noinput
 echo "=== Initialisation des données (sites, etc.) ==="
 python manage.py setup_sites
 
+echo "=== Vérification que Django démarre correctement ==="
+python -c "
+import django
+import os
+os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'gestion_eebc.settings.prod')
+django.setup()
+from django.core.wsgi import get_wsgi_application
+app = get_wsgi_application()
+print('WSGI app loaded OK')
+"
+
 echo "=== Build terminé avec succès ==="
