@@ -6,45 +6,18 @@
 
 {% block extra_css %}
 <style>
-    /* ====== Select chef de famille : TOUJOURS lisible ====== */
-    /* Style natif (avant init TomSelect ou si TomSelect échoue) */
-    #chef-famille-select {
-        width: 100% !important;
-        min-height: 54px !important;
-        font-size: 1.1rem !important;
-        font-weight: 600 !important;
-        padding: 0.6rem 2.2rem 0.6rem 0.9rem !important;
-        border: 2px solid #d1d5db !important;
-        border-radius: 8px !important;
-        background-color: #fff !important;
-        color: #1a1a2e !important;
-        appearance: auto !important;
-        -webkit-appearance: listbox !important;
-    }
-    #chef-famille-select:focus {
-        border-color: #3b82f6 !important;
-        box-shadow: 0 0 0 3px rgba(59,130,246,0.15) !important;
-    }
-    #chef-famille-select option {
-        font-size: 1rem;
-        padding: 8px 10px;
-    }
-
-    /* Quand TomSelect est actif : le select natif est caché, on style le wrapper */
-    .ts-wrapper.chef-ts {
-        width: 100% !important;
-    }
+    /* Sélecteur chef de famille : wrapper TomSelect */
     .ts-wrapper.chef-ts .ts-control {
-        min-height: 54px !important;
-        font-size: 1.1rem !important;
-        padding: 0.6rem 1rem !important;
+        min-height: 48px !important;
+        font-size: 1.05rem !important;
+        padding: 0.5rem 0.75rem !important;
         border: 2px solid #d1d5db !important;
         border-radius: 8px !important;
         display: flex !important;
         align-items: center !important;
     }
     .ts-wrapper.chef-ts .ts-control input {
-        font-size: 1.1rem !important;
+        font-size: 1.05rem !important;
     }
     .ts-wrapper.chef-ts .ts-control > .item {
         font-size: 1.05rem !important;
@@ -55,7 +28,6 @@
         max-height: 350px !important;
         font-size: 1rem !important;
         border: 2px solid #d1d5db !important;
-        border-radius: 0 0 8px 8px !important;
     }
     .ts-wrapper.chef-ts .ts-dropdown .option {
         padding: 10px 14px !important;
@@ -65,7 +37,6 @@
         background: #e8f0fe !important;
         color: #1a56db !important;
     }
-
     #autofill-status { display: none; }
     #autofill-status.visible { display: block; }
 </style>
@@ -177,117 +148,92 @@
 
 {% block extra_js %}
 <script>
-(function () {
+/**
+ * Auto-fill famille depuis un membre existant.
+ * Ce script tourne dans DOMContentLoaded → TomSelect CDN est déjà chargé.
+ */
+document.addEventListener('DOMContentLoaded', function () {
     var select = document.getElementById('chef-famille-select');
     if (!select) return;
 
-    // ========== Init TomSelect manuellement (robuste) ==========
-    function initChefSelect() {
-        if (typeof TomSelect === 'undefined') return;
-        // Éviter double init
-        if (select.tomselect) return;
-        try {
-            new TomSelect(select, {
-                placeholder: 'Rechercher un membre...',
-                allowEmptyOption: true,
-                maxOptions: null,
-                searchField: ['text'],
-                sortField: [{ field: 'text', direction: 'asc' }],
-                wrapperClass: 'ts-wrapper chef-ts',
-                render: {
-                    no_results: function() {
-                        return '<div class="no-results" style="padding:10px;color:#888;">Aucun résultat</div>';
-                    }
+    // URL template : /app/members/api/member/0/data/ → on remplace /0/ par /<id>/
+    var API_URL_TPL = "{% url 'members:member_api_data' 0 %}";
+    var statusEl = document.getElementById('autofill-status');
+
+    // ── Initialiser TomSelect avec callback onChange intégré ──
+    if (typeof TomSelect !== 'undefined' && !select.tomselect) {
+        new TomSelect(select, {
+            placeholder: 'Rechercher un membre…',
+            allowEmptyOption: true,
+            maxOptions: null,
+            searchField: ['text'],
+            sortField: [{ field: 'text', direction: 'asc' }],
+            wrapperClass: 'ts-wrapper chef-ts',
+            render: {
+                no_results: function () {
+                    return '<div style="padding:10px;color:#888;">Aucun résultat</div>';
                 }
-            });
-        } catch(e) {
-            console.warn('TomSelect init failed for chef-famille-select:', e);
-        }
+            },
+            onChange: function (value) {
+                if (value) loadMemberData(value);
+            }
+        });
+    } else {
+        // Fallback si TomSelect absent : écouter le change natif
+        select.addEventListener('change', function () {
+            if (this.value) loadMemberData(this.value);
+        });
     }
 
-    // Tenter immédiatement, puis retry après 500ms et 1500ms (CDN lent)
-    initChefSelect();
-    setTimeout(initChefSelect, 500);
-    setTimeout(initChefSelect, 1500);
+    // ── Charger les données du membre et pré-remplir le formulaire ──
+    function loadMemberData(memberId) {
+        var url = API_URL_TPL.replace('/0/', '/' + memberId + '/');
 
-    // ========== Auto-fill depuis l'API ==========
-    var API_BASE = "{% url 'members:member_api_data' 0 %}".replace('/0/', '/');
-
-    const statusEl  = document.getElementById('autofill-status');
-
-    function onMemberSelected(memberId) {
-        if (!memberId) return;
-
-        // Feedback visuel
         if (statusEl) {
             statusEl.textContent = 'Chargement…';
-            statusEl.className   = 'alert alert-info py-1 px-2 small mt-2 visible';
+            statusEl.className = 'alert alert-info py-1 px-2 small mt-2 visible';
         }
 
-        fetch(API_BASE + memberId + '/data/')
+        fetch(url)
             .then(function (res) {
-                if (!res.ok) throw new Error('Erreur réseau ' + res.status);
+                if (!res.ok) throw new Error('HTTP ' + res.status);
                 return res.json();
             })
             .then(function (data) {
-                // Nom de famille : suggère "Famille NOM" si champ vide
+                // Nom de famille
                 var nameField = document.getElementById('id_name');
                 if (nameField && !nameField.value && data.last_name) {
                     nameField.value = 'Famille ' + data.last_name.toUpperCase();
                 }
-
-                fillField('id_address',     data.address);
-                fillField('id_city',        data.city);
-                fillField('id_postal_code', data.postal_code);
-                fillField('id_phone',       data.phone);
-                fillField('id_email',       data.email);
-
+                setIfEmpty('id_address', data.address);
+                setIfEmpty('id_city', data.city);
+                setIfEmpty('id_postal_code', data.postal_code);
+                setIfEmpty('id_phone', data.phone);
+                setIfEmpty('id_email', data.email);
                 // Site
                 if (data.site_id) {
-                    var siteSelect = document.getElementById('id_site');
-                    if (siteSelect) siteSelect.value = data.site_id;
+                    var s = document.getElementById('id_site');
+                    if (s) s.value = data.site_id;
                 }
-
-                // Feedback succès
                 if (statusEl) {
-                    statusEl.textContent = '✓ Informations de ' + data.first_name + ' ' + data.last_name + ' importées.';
-                    statusEl.className   = 'alert alert-success py-1 px-2 small mt-2 visible';
-                    setTimeout(function () {
-                        statusEl.className = 'alert py-1 px-2 small mt-2';
-                    }, 3000);
+                    statusEl.textContent = '✓ Données de ' + data.first_name + ' ' + data.last_name + ' importées.';
+                    statusEl.className = 'alert alert-success py-1 px-2 small mt-2 visible';
+                    setTimeout(function () { statusEl.className = ''; }, 4000);
                 }
             })
             .catch(function (err) {
                 console.error('Auto-fill error:', err);
                 if (statusEl) {
                     statusEl.textContent = 'Impossible de charger les informations.';
-                    statusEl.className   = 'alert alert-warning py-1 px-2 small mt-2 visible';
+                    statusEl.className = 'alert alert-warning py-1 px-2 small mt-2 visible';
                 }
             });
     }
 
-    // Écouter les changements : TomSelect OU select natif
-    // TomSelect déclenche un événement 'change' natif sur le <select> hidden
-    select.addEventListener('change', function () {
-        onMemberSelected(this.value);
-    });
-    // Sécurité supplémentaire : si TomSelect est initialisé, écouter aussi via son API
-    function bindTomSelectChange() {
-        if (select.tomselect) {
-            select.tomselect.on('change', function (value) {
-                onMemberSelected(value);
-            });
-        }
-    }
-    bindTomSelectChange();
-    setTimeout(bindTomSelectChange, 600);
-    setTimeout(bindTomSelectChange, 2000);
-
-    function fillField(id, value) {
-        const el = document.getElementById(id);
-        // Pré-remplit seulement si le champ est vide
+    function setIfEmpty(id, value) {
+        var el = document.getElementById(id);
         if (el && !el.value && value) el.value = value;
     }
-})();
+});
 </script>
 {% endblock %}
