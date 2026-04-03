@@ -1,0 +1,32 @@
+<tr id="attendance-row-{{ att.pk }}"
+    hx-target="#attendance-row-{{ att.pk }}"
+    hx-swap="outerHTML">
+    <td>{{ att.young_member.full_name }}</td>
+    <td>
+        {% if att.young_member.group %}
+        <span class="badge" style="background: {{ att.young_member.group.color }};">
+            {{ att.young_member.group.name }}
+        </span>
+        {% else %}—{% endif %}
+    </td>
+    <td>
+        <select name="status"
+                class="form-select form-select-sm"
+                style="width: auto;"
+                hx-post="{% url 'young:update_attendance' att.pk %}"
+                hx-trigger="change">
+            {% for value, label in status_choices %}
+            <option value="{{ value }}" {% if att.status == value %}selected{% endif %}>
+                {{ label }}
+            </option>
+            {% endfor %}
+        </select>
+    </td>
+    <td>
+        {% if att.transported %}
+        <i class="bi bi-check-circle text-success"></i>
+        {% else %}
+        <i class="bi bi-dash text-muted"></i>
+        {% endif %}
+    </td>
+</tr>

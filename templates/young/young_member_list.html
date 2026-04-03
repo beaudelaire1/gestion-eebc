@@ -1,0 +1,288 @@
+{% extends 'base.html' %}
+
+{% block title %}Jeunes - Jeunesse - EEBC{% endblock %}
+{% block page_title %}Jeunes{% endblock %}
+{% block page_subtitle %}{{ total_count }} jeune{{ total_count|pluralize }} inscrit{{ total_count|pluralize }}{% endblock %}
+
+{% block extra_css %}
+<style>
+    .young-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+        gap: 1.5rem;
+    }
+
+    .young-card {
+        background: var(--eebc-white);
+        border-radius: 24px;
+        overflow: hidden;
+        box-shadow: 0 10px 40px rgba(11, 15, 25, 0.06);
+        transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        border: 2px solid transparent;
+    }
+
+    .young-card:hover {
+        transform: translateY(-8px);
+        box-shadow: 0 25px 60px rgba(10, 54, 255, 0.15);
+        border-color: var(--eebc-primary);
+    }
+
+    .young-photo-zone {
+        position: relative;
+        height: 160px;
+        overflow: hidden;
+    }
+
+    .young-photo-zone.boy { background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%); }
+    .young-photo-zone.girl { background: linear-gradient(135deg, #ec4899 0%, #be185d 100%); }
+
+    .young-photo-zone img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
+
+    .young-photo-zone .initials {
+        width: 100%;
+        height: 100%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 3.5rem;
+        font-weight: 800;
+        color: rgba(255, 255, 255, 0.9);
+    }
+
+    .young-badge {
+        position: absolute;
+        top: 12px;
+        right: 12px;
+        background: rgba(255, 255, 255, 0.95);
+        backdrop-filter: blur(8px);
+        padding: 0.4rem 0.8rem;
+        border-radius: 20px;
+        font-size: 0.75rem;
+        font-weight: 600;
+        display: flex;
+        align-items: center;
+        gap: 0.3rem;
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+    }
+
+    .young-badge.baptized { color: #8b5cf6; }
+    .young-badge.transport { color: #f59e0b; }
+
+    .young-card-body { padding: 1.25rem; }
+
+    .young-name {
+        font-size: 1.1rem;
+        font-weight: 700;
+        color: var(--eebc-black);
+        margin-bottom: 0.25rem;
+    }
+
+    .young-age {
+        font-size: 0.85rem;
+        color: var(--eebc-gray-500);
+        margin-bottom: 0.75rem;
+    }
+
+    .young-group-badge {
+        display: inline-block;
+        padding: 0.4rem 0.9rem;
+        border-radius: 30px;
+        font-size: 0.75rem;
+        font-weight: 600;
+        color: white;
+        margin-bottom: 1rem;
+    }
+
+    .young-info {
+        padding: 0.85rem;
+        background: var(--eebc-gray-50);
+        border-radius: 12px;
+        margin-bottom: 1rem;
+    }
+
+    .young-info-item {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        font-size: 0.8rem;
+        color: var(--eebc-gray-600);
+    }
+
+    .young-info-item i {
+        color: var(--eebc-primary);
+        width: 14px;
+    }
+
+    .young-card-actions {
+        display: flex;
+        gap: 0.5rem;
+    }
+
+    .young-card-actions .btn {
+        flex: 1;
+        padding: 0.6rem;
+        border-radius: 10px;
+        font-weight: 600;
+        font-size: 0.8rem;
+    }
+
+    .filter-card {
+        background: var(--eebc-white);
+        border-radius: 20px;
+        padding: 1.5rem;
+        margin-bottom: 2rem;
+        box-shadow: 0 10px 40px rgba(11, 15, 25, 0.06);
+        border: none;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Filters -->
+<div class="filter-card">
+    <form method="get" class="row g-3 align-items-end">
+        <div class="col-md-4">
+            <label class="form-label fw-bold">Rechercher</label>
+            <div class="input-group">
+                <span class="input-group-text" style="border-radius: 12px 0 0 12px;">
+                    <i class="bi bi-search"></i>
+                </span>
+                <input type="text" class="form-control" name="search"
+                       value="{{ form.search.value|default:'' }}"
+                       placeholder="Nom, prénom, téléphone…"
+                       style="border-radius: 0 12px 12px 0;">
+            </div>
+        </div>
+        <div class="col-md-2">
+            <label class="form-label fw-bold">Groupe</label>
+            <select class="form-select" name="group">
+                <option value="">Tous</option>
+                {% for g in groups %}
+                <option value="{{ g.pk }}" {% if form.group.value|stringformat:"s" == g.pk|stringformat:"s" %}selected{% endif %}>
+                    {{ g.name }}
+                </option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="col-md-2">
+            <label class="form-label fw-bold">Statut</label>
+            {{ form.status }}
+        </div>
+        <div class="col-md-2">
+            <label class="form-label fw-bold">Baptisé</label>
+            {{ form.baptized }}
+        </div>
+        <div class="col-md-2 d-flex gap-2">
+            <button type="submit" class="btn btn-primary flex-fill">
+                <i class="bi bi-funnel"></i> Filtrer
+            </button>
+            <a href="{% url 'young:member_create' %}" class="btn btn-success" title="Inscrire">
+                <i class="bi bi-plus-lg"></i>
+            </a>
+        </div>
+    </form>
+</div>
+
+<!-- Grid -->
+<div class="young-grid">
+    {% for member in page_obj %}
+    <div class="young-card">
+        <div class="young-photo-zone {% if member.gender == 'M' %}boy{% else %}girl{% endif %}">
+            {% if member.photo %}
+            <img src="{{ member.photo.url }}" alt="{{ member.full_name }}">
+            {% else %}
+            <div class="initials">
+                {{ member.first_name|slice:":1"|upper }}{{ member.last_name|slice:":1"|upper }}
+            </div>
+            {% endif %}
+
+            {% if member.is_baptized %}
+            <div class="young-badge baptized">
+                <i class="bi bi-water"></i> Baptisé{{ member.gender|default:"" }}
+            </div>
+            {% endif %}
+
+            {% if member.needs_transport %}
+            <div class="young-badge transport" style="top: {% if member.is_baptized %}48px{% else %}12px{% endif %};">
+                <i class="bi bi-truck"></i> Transport
+            </div>
+            {% endif %}
+        </div>
+
+        <div class="young-card-body">
+            <div class="young-name">{{ member.full_name }}</div>
+            <div class="young-age">
+                {{ member.age }} ans
+                {% if member.is_minor %}<span class="text-warning ms-1">(mineur)</span>{% endif %}
+            </div>
+
+            {% if member.group %}
+            <span class="young-group-badge" style="background: {{ member.group.color }};">
+                {{ member.group.name }}
+            </span>
+            {% endif %}
+
+            <div class="young-info">
+                {% if member.phone %}
+                <div class="young-info-item">
+                    <i class="bi bi-telephone"></i> {{ member.phone }}
+                </div>
+                {% endif %}
+                {% if member.parent_name %}
+                <div class="young-info-item mt-1">
+                    <i class="bi bi-person"></i> {{ member.parent_name }}
+                </div>
+                {% endif %}
+            </div>
+
+            <div class="young-card-actions">
+                <a href="{% url 'young:member_detail' member.pk %}" class="btn btn-outline-primary btn-sm">
+                    <i class="bi bi-eye me-1"></i>Voir
+                </a>
+                <a href="{% url 'young:member_edit' member.pk %}" class="btn btn-primary btn-sm">
+                    <i class="bi bi-pencil me-1"></i>Modifier
+                </a>
+            </div>
+        </div>
+    </div>
+    {% empty %}
+    <div class="text-center py-5" style="grid-column: 1 / -1;">
+        <div style="width: 100px; height: 100px; border-radius: 50%; background: var(--eebc-gray-100); display: flex; align-items: center; justify-content: center; margin: 0 auto 1.5rem; font-size: 2.5rem; color: var(--eebc-gray-400);">
+            <i class="bi bi-people"></i>
+        </div>
+        <h5>Aucun jeune trouvé</h5>
+        <p class="text-muted">Ajustez vos filtres ou inscrivez un nouveau jeune.</p>
+        <a href="{% url 'young:member_create' %}" class="btn btn-primary">
+            <i class="bi bi-person-plus me-2"></i>Inscrire un jeune
+        </a>
+    </div>
+    {% endfor %}
+</div>
+
+<!-- Pagination -->
+{% if page_obj.has_other_pages %}
+<nav class="mt-4">
+    <ul class="pagination justify-content-center">
+        {% if page_obj.has_previous %}
+        <li class="page-item">
+            <a class="page-link" href="?page={{ page_obj.previous_page_number }}">&laquo;</a>
+        </li>
+        {% endif %}
+        {% for num in page_obj.paginator.page_range %}
+        <li class="page-item {% if page_obj.number == num %}active{% endif %}">
+            <a class="page-link" href="?page={{ num }}">{{ num }}</a>
+        </li>
+        {% endfor %}
+        {% if page_obj.has_next %}
+        <li class="page-item">
+            <a class="page-link" href="?page={{ page_obj.next_page_number }}">&raquo;</a>
+        </li>
+        {% endif %}
+    </ul>
+</nav>
+{% endif %}
+{% endblock %}

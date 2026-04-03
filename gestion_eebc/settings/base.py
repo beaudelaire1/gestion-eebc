@@ -79,6 +79,7 @@ INSTALLED_APPS = [
     'apps.worship',
     'apps.imports',  # Import Excel pour membres et enfants
     'apps.api',  # API REST pour application mobile
+    'apps.young',  # Module Jeunesse
 ]
 
 

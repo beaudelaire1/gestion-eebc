@@ -1,0 +1,136 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ event.title }} - Jeunesse{% endblock %}
+{% block page_title %}{{ event.title }}{% endblock %}
+{% block page_subtitle %}{{ event.get_event_type_display }} — {{ event.date|date:"d/m/Y" }}{% endblock %}
+
+{% block content %}
+<div class="row g-4">
+    <!-- Event Info -->
+    <div class="col-lg-4">
+        <div class="card mb-4">
+            <div class="card-body">
+                <h6 class="text-muted mb-3">Détails de l'activité</h6>
+                <p><i class="bi bi-calendar me-2 text-primary"></i>{{ event.date|date:"l d F Y" }}</p>
+                {% if event.start_time %}
+                <p><i class="bi bi-clock me-2 text-primary"></i>{{ event.start_time|time:"H:i" }}{% if event.end_time %} - {{ event.end_time|time:"H:i" }}{% endif %}</p>
+                {% endif %}
+                {% if event.location %}
+                <p><i class="bi bi-geo-alt me-2 text-primary"></i>{{ event.location }}</p>
+                {% endif %}
+                {% if event.description %}
+                <hr>
+                <p class="mb-0">{{ event.description }}</p>
+                {% endif %}
+
+                {% if event.is_cancelled %}
+                <div class="alert alert-danger mt-3 mb-0">
+                    <i class="bi bi-x-circle me-2"></i>Activité annulée
+                </div>
+                {% endif %}
+            </div>
+            <div class="card-footer d-flex gap-2">
+                <a href="{% url 'young:event_edit' event.pk %}" class="btn btn-sm btn-outline-primary flex-fill">
+                    <i class="bi bi-pencil me-1"></i>Modifier
+                </a>
+                <a href="{% url 'young:take_attendance' event.pk %}" class="btn btn-sm btn-success flex-fill">
+                    <i class="bi bi-clipboard-check me-1"></i>Appel
+                </a>
+            </div>
+        </div>
+
+        <!-- Stats -->
+        <div class="card">
+            <div class="card-header">
+                <h6 class="card-title"><i class="bi bi-bar-chart me-2"></i>Résumé</h6>
+            </div>
+            <div class="card-body">
+                <div class="d-flex justify-content-between mb-2">
+                    <span class="text-muted">Présents</span>
+                    <span class="badge bg-success">{{ stats.present }}</span>
+                </div>
+                <div class="d-flex justify-content-between mb-2">
+                    <span class="text-muted">Retards</span>
+                    <span class="badge bg-warning">{{ stats.retard }}</span>
+                </div>
+                <div class="d-flex justify-content-between mb-2">
+                    <span class="text-muted">Excusés</span>
+                    <span class="badge bg-info">{{ stats.excuse }}</span>
+                </div>
+                <div class="d-flex justify-content-between mb-2">
+                    <span class="text-muted">Absents</span>
+                    <span class="badge bg-danger">{{ stats.absent }}</span>
+                </div>
+                <hr>
+                <div class="d-flex justify-content-between">
+                    <span class="text-muted">Transportés</span>
+                    <span class="badge bg-warning text-dark">
+                        <i class="bi bi-truck me-1"></i>{{ stats.transported }}
+                    </span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Attendance List -->
+    <div class="col-lg-8">
+        <div class="card">
+            <div class="card-header">
+                <h6 class="card-title"><i class="bi bi-clipboard-check me-2"></i>Liste de présence</h6>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0">
+                        <thead>
+                            <tr>
+                                <th>Jeune</th>
+                                <th>Groupe</th>
+                                <th>Statut</th>
+                                <th>Arrivée</th>
+                                <th>Transporté</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for att in attendances %}
+                            <tr>
+                                <td>
+                                    <a href="{% url 'young:member_detail' att.young_member.pk %}">
+                                        {{ att.young_member.full_name }}
+                                    </a>
+                                </td>
+                                <td>
+                                    {% if att.young_member.group %}
+                                    <span class="badge" style="background: {{ att.young_member.group.color }};">
+                                        {{ att.young_member.group.name }}
+                                    </span>
+                                    {% else %}—{% endif %}
+                                </td>
+                                <td>
+                                    <span class="badge bg-{% if att.status == 'present' %}success{% elif att.status == 'retard' %}warning{% elif att.status == 'excuse' %}info{% else %}danger{% endif %}">
+                                        {{ att.get_status_display }}
+                                    </span>
+                                </td>
+                                <td>{{ att.check_in_time|time:"H:i"|default:"-" }}</td>
+                                <td>
+                                    {% if att.transported %}
+                                    <i class="bi bi-check-circle text-success"></i>
+                                    {% else %}
+                                    <i class="bi bi-dash text-muted"></i>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="5" class="text-center py-4 text-muted">
+                                    Aucune présence enregistrée. <a href="{% url 'young:take_attendance' event.pk %}">Faire l'appel</a>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

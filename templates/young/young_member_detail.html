@@ -1,0 +1,252 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ member.full_name }} - Jeunesse{% endblock %}
+{% block page_title %}{{ member.full_name }}{% endblock %}
+{% block page_subtitle %}Fiche jeune{% endblock %}
+
+{% block content %}
+<div class="row g-4">
+    <!-- Profile Card -->
+    <div class="col-lg-4">
+        <div class="card mb-4">
+            <div class="card-body text-center">
+                {% if member.photo %}
+                <img src="{{ member.photo.url }}" class="rounded-circle mb-3"
+                     style="width: 120px; height: 120px; object-fit: cover; border: 3px solid var(--eebc-primary);"
+                     alt="{{ member.full_name }}">
+                {% else %}
+                <div class="avatar mx-auto mb-3"
+                     style="width: 120px; height: 120px; font-size: 3rem;
+                            background: {% if member.gender == 'M' %}linear-gradient(135deg, #3b82f6, #1d4ed8){% else %}linear-gradient(135deg, #ec4899, #be185d){% endif %};">
+                    {{ member.first_name|slice:":1"|upper }}{{ member.last_name|slice:":1"|upper }}
+                </div>
+                {% endif %}
+                <h4 class="mb-1">{{ member.full_name }}</h4>
+                <p class="text-muted mb-2">{{ member.age }} ans {% if member.is_minor %}<span class="badge bg-warning text-dark">Mineur</span>{% endif %}</p>
+
+                {% if member.group %}
+                <span class="badge mb-3" style="background: {{ member.group.color }}; font-size: 0.85rem; padding: 0.5rem 1rem;">
+                    {{ member.group.name }}
+                </span>
+                {% endif %}
+
+                <div class="d-flex justify-content-center gap-2 mt-3 flex-wrap">
+                    {% if member.is_baptized %}
+                    <span class="badge bg-purple" style="background: #8b5cf6;">
+                        <i class="bi bi-water me-1"></i>Baptisé
+                    </span>
+                    {% endif %}
+                    {% if member.is_born_again %}
+                    <span class="badge bg-success">
+                        <i class="bi bi-heart me-1"></i>Converti
+                    </span>
+                    {% endif %}
+                    {% if member.needs_transport %}
+                    <span class="badge bg-warning text-dark">
+                        <i class="bi bi-truck me-1"></i>Transport
+                    </span>
+                    {% endif %}
+                </div>
+
+                <div class="d-flex justify-content-center gap-2 mt-4">
+                    <a href="{% url 'young:member_edit' member.pk %}" class="btn btn-primary">
+                        <i class="bi bi-pencil me-2"></i>Modifier
+                    </a>
+                    <a href="{% url 'young:member_delete' member.pk %}" class="btn btn-outline-danger">
+                        <i class="bi bi-trash me-2"></i>Désactiver
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Attendance Stats -->
+        <div class="card">
+            <div class="card-header">
+                <h6 class="card-title"><i class="bi bi-bar-chart me-2"></i>Statistiques</h6>
+            </div>
+            <div class="card-body">
+                <div class="text-center mb-4">
+                    <div class="stat-value"
+                         style="font-size: 3rem; color: {% if attendance_rate >= 80 %}var(--eebc-success){% elif attendance_rate >= 50 %}var(--eebc-warning){% else %}var(--eebc-danger){% endif %};">
+                        {{ attendance_rate|floatformat:0 }}%
+                    </div>
+                    <div class="text-muted">Taux de présence</div>
+                </div>
+                <div class="progress mb-3" style="height: 10px;">
+                    <div class="progress-bar bg-{% if attendance_rate >= 80 %}success{% elif attendance_rate >= 50 %}warning{% else %}danger{% endif %}"
+                         style="width: {{ attendance_rate }}%;"></div>
+                </div>
+                <div class="text-center text-muted">
+                    {{ present_count }} présences sur {{ total_events }} activités
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Details -->
+    <div class="col-lg-8">
+        <!-- Coordonnées -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <h6 class="card-title"><i class="bi bi-person-vcard me-2"></i>Coordonnées</h6>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        {% if member.phone %}
+                        <p class="mb-1"><i class="bi bi-telephone me-2 text-muted"></i>{{ member.phone }}</p>
+                        {% endif %}
+                        {% if member.email %}
+                        <p class="mb-1"><i class="bi bi-envelope me-2 text-muted"></i>{{ member.email }}</p>
+                        {% endif %}
+                    </div>
+                    <div class="col-md-6">
+                        {% if member.address %}
+                        <p class="mb-1"><i class="bi bi-geo-alt me-2 text-muted"></i>{{ member.address }}</p>
+                        {% endif %}
+                        {% if member.city %}
+                        <p class="mb-0">{{ member.postal_code }} {{ member.city }}</p>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Parent / Tuteur -->
+        {% if member.parent_name %}
+        <div class="card mb-4">
+            <div class="card-header">
+                <h6 class="card-title"><i class="bi bi-people me-2"></i>Parent / Tuteur</h6>
+            </div>
+            <div class="card-body">
+                <p class="mb-1"><strong>{{ member.parent_name }}</strong></p>
+                {% if member.parent_phone %}
+                <p class="mb-1"><i class="bi bi-telephone me-2 text-muted"></i>{{ member.parent_phone }}</p>
+                {% endif %}
+                {% if member.parent_email %}
+                <p class="mb-0"><i class="bi bi-envelope me-2 text-muted"></i>{{ member.parent_email }}</p>
+                {% endif %}
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Vie spirituelle -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <h6 class="card-title"><i class="bi bi-book me-2"></i>Vie spirituelle</h6>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <p class="mb-1">
+                            <strong>Baptisé :</strong>
+                            {% if member.is_baptized %}
+                            <span class="text-success">Oui</span>
+                            {% if member.baptism_date %} — {{ member.baptism_date|date:"d/m/Y" }}{% endif %}
+                            {% else %}
+                            <span class="text-muted">Non</span>
+                            {% endif %}
+                        </p>
+                    </div>
+                    <div class="col-md-6">
+                        <p class="mb-1">
+                            <strong>Converti :</strong>
+                            {% if member.is_born_again %}
+                            <span class="text-success">Oui</span>
+                            {% if member.conversion_date %} — {{ member.conversion_date|date:"d/m/Y" }}{% endif %}
+                            {% else %}
+                            <span class="text-muted">Non</span>
+                            {% endif %}
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Santé -->
+        {% if member.allergies or member.medical_notes %}
+        <div class="card mb-4">
+            <div class="card-header">
+                <h6 class="card-title"><i class="bi bi-heart-pulse me-2"></i>Informations médicales</h6>
+            </div>
+            <div class="card-body">
+                {% if member.allergies %}
+                <div class="alert alert-warning">
+                    <strong><i class="bi bi-exclamation-triangle me-2"></i>Allergies :</strong>
+                    {{ member.allergies }}
+                </div>
+                {% endif %}
+                {% if member.medical_notes %}
+                <p class="mb-0">{{ member.medical_notes }}</p>
+                {% endif %}
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Transport -->
+        {% if member.needs_transport %}
+        <div class="card mb-4">
+            <div class="card-header">
+                <h6 class="card-title"><i class="bi bi-truck me-2"></i>Transport</h6>
+            </div>
+            <div class="card-body">
+                <p><strong>Adresse de ramassage :</strong></p>
+                <p class="mb-3">{{ member.pickup_address }}</p>
+                {% if member.assigned_driver %}
+                <p class="mb-0">
+                    <strong>Chauffeur assigné :</strong> {{ member.assigned_driver }}
+                </p>
+                {% endif %}
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Dernières présences -->
+        <div class="card">
+            <div class="card-header">
+                <h6 class="card-title"><i class="bi bi-calendar-check me-2"></i>Dernières présences</h6>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0">
+                        <thead>
+                            <tr>
+                                <th>Activité</th>
+                                <th>Date</th>
+                                <th>Statut</th>
+                                <th>Transporté</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for att in recent_attendances %}
+                            <tr>
+                                <td>{{ att.event.title }}</td>
+                                <td>{{ att.event.date|date:"d/m/Y" }}</td>
+                                <td>
+                                    <span class="badge bg-{% if att.status == 'present' %}success{% elif att.status == 'retard' %}warning{% elif att.status == 'excuse' %}info{% else %}danger{% endif %}">
+                                        {{ att.get_status_display }}
+                                    </span>
+                                </td>
+                                <td>
+                                    {% if att.transported %}
+                                    <i class="bi bi-check-circle text-success"></i>
+                                    {% else %}
+                                    <i class="bi bi-dash text-muted"></i>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="4" class="text-center py-4 text-muted">
+                                    Aucune présence enregistrée
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

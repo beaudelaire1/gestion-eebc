@@ -10,6 +10,12 @@ from .base import *
 DEBUG = True
 ALLOWED_HOSTS = ['localhost', '127.0.0.1', '*']
 
+# =============================================================================
+# CORS - Autoriser toutes les origines en dev (Flutter web ports aléatoires)
+# =============================================================================
+CORS_ORIGIN_ALLOW_ALL = True
+CORS_ALLOW_ALL_ORIGINS = True
+
 
 # =============================================================================
 # DATABASE - SQLite pour le développement
@@ -89,3 +95,12 @@ LOGGING = {
         },
     },
 }
+
+
+# =============================================================================
+# CAPTCHA - Désactivé en dev (Turnstile nécessite un domaine autorisé)
+# =============================================================================
+TURNSTILE_SITE_KEY = ''
+TURNSTILE_SECRET_KEY = ''
+RECAPTCHA_PUBLIC_KEY = ''
+RECAPTCHA_PRIVATE_KEY = ''

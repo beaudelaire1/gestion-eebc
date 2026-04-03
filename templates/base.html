@@ -128,6 +128,32 @@
             </div>
 
             <div class="nav-section">
+                <div class="nav-section__title">Jeunesse</div>
+                <nav class="nav flex-column">
+                    <a class="nav-link {% if request.path == '/app/young/' %}nav-link--active{% endif %}"
+                        href="{% url 'young:home' %}">
+                        <i class="bi bi-mortarboard nav-link__icon"></i>
+                        <span>Vue d'ensemble</span>
+                    </a>
+                    <a class="nav-link {% if '/young/members' in request.path %}nav-link--active{% endif %}"
+                        href="{% url 'young:member_list' %}">
+                        <i class="bi bi-people-fill nav-link__icon"></i>
+                        <span>Jeunes</span>
+                    </a>
+                    <a class="nav-link {% if '/young/groups' in request.path %}nav-link--active{% endif %}"
+                        href="{% url 'young:group_list' %}">
+                        <i class="bi bi-collection-fill nav-link__icon"></i>
+                        <span>Groupes</span>
+                    </a>
+                    <a class="nav-link {% if '/young/events' in request.path %}nav-link--active{% endif %}"
+                        href="{% url 'young:event_list' %}">
+                        <i class="bi bi-calendar-event-fill nav-link__icon"></i>
+                        <span>Activités & Appels</span>
+                    </a>
+                </nav>
+            </div>
+
+            <div class="nav-section">
                 <div class="nav-section__title">Vie d'Église</div>
                 <nav class="nav flex-column">
                     <a class="nav-link {% if 'worship' in request.path and 'planning' not in request.path %}nav-link--active{% endif %}"

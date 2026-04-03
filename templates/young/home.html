@@ -1,0 +1,188 @@
+{% extends 'base.html' %}
+{% load humanize %}
+
+{% block title %}Jeunesse - EEBC{% endblock %}
+{% block page_title %}Jeunesse{% endblock %}
+{% block page_subtitle %}Gestion des jeunes, groupes et activités{% endblock %}
+
+{% block content %}
+<!-- Stats -->
+<div class="row g-4 mb-4">
+    <div class="col-md-3">
+        <div class="stat-card">
+            <div class="d-flex justify-content-between align-items-start mb-3">
+                <div class="stat-icon">
+                    <i class="bi bi-people-fill"></i>
+                </div>
+            </div>
+            <div class="stat-value">{{ stats.total_young }}</div>
+            <div class="stat-label">Jeunes inscrits</div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="stat-card">
+            <div class="d-flex justify-content-between align-items-start mb-3">
+                <div class="stat-icon" style="background: linear-gradient(135deg, #10b981 0%, #059669 100%);">
+                    <i class="bi bi-collection-fill"></i>
+                </div>
+            </div>
+            <div class="stat-value">{{ stats.total_groups }}</div>
+            <div class="stat-label">Groupes actifs</div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="stat-card">
+            <div class="d-flex justify-content-between align-items-start mb-3">
+                <div class="stat-icon" style="background: linear-gradient(135deg, #8b5cf6 0%, #6d28d9 100%);">
+                    <i class="bi bi-water"></i>
+                </div>
+            </div>
+            <div class="stat-value">{{ stats.total_baptized }}</div>
+            <div class="stat-label">Baptisés</div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="stat-card">
+            <div class="d-flex justify-content-between align-items-start mb-3">
+                <div class="stat-icon" style="background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);">
+                    <i class="bi bi-truck"></i>
+                </div>
+            </div>
+            <div class="stat-value">{{ stats.total_transport }}</div>
+            <div class="stat-label">Transport requis</div>
+        </div>
+    </div>
+</div>
+
+<!-- Quick Actions -->
+<div class="row g-4 mb-4">
+    <div class="col-6 col-md-3">
+        <a href="{% url 'young:member_create' %}" class="quick-link">
+            <i class="bi bi-person-plus"></i>
+            <span>Inscrire un jeune</span>
+        </a>
+    </div>
+    <div class="col-6 col-md-3">
+        <a href="{% url 'young:member_list' %}" class="quick-link">
+            <i class="bi bi-people"></i>
+            <span>Liste des jeunes</span>
+        </a>
+    </div>
+    <div class="col-6 col-md-3">
+        <a href="{% url 'young:group_list' %}" class="quick-link">
+            <i class="bi bi-collection"></i>
+            <span>Groupes</span>
+        </a>
+    </div>
+    <div class="col-6 col-md-3">
+        <a href="{% url 'young:event_create' %}" class="quick-link">
+            <i class="bi bi-calendar-plus"></i>
+            <span>Nouvelle activité</span>
+        </a>
+    </div>
+</div>
+
+<div class="row g-4">
+    <!-- Recent Events -->
+    <div class="col-lg-6">
+        <div class="card h-100">
+            <div class="card-header">
+                <h6 class="card-title">
+                    <i class="bi bi-calendar-event me-2"></i>Activités récentes
+                </h6>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0">
+                        <thead>
+                            <tr>
+                                <th>Activité</th>
+                                <th>Type</th>
+                                <th>Date</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for event in recent_events %}
+                            <tr>
+                                <td>
+                                    <a href="{% url 'young:event_detail' event.pk %}">{{ event.title }}</a>
+                                </td>
+                                <td>
+                                    <span class="badge bg-primary">{{ event.get_event_type_display }}</span>
+                                </td>
+                                <td>{{ event.date|date:"d/m/Y" }}</td>
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="3" class="text-center py-4 text-muted">
+                                    Aucune activité enregistrée
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            <div class="card-footer text-center">
+                <a href="{% url 'young:event_list' %}" class="btn btn-sm btn-outline-primary">
+                    Voir toutes les activités
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Recent Members -->
+    <div class="col-lg-6">
+        <div class="card h-100">
+            <div class="card-header">
+                <h6 class="card-title">
+                    <i class="bi bi-person-plus me-2"></i>Derniers inscrits
+                </h6>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0">
+                        <thead>
+                            <tr>
+                                <th>Nom</th>
+                                <th>Groupe</th>
+                                <th>Date</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for member in recent_members %}
+                            <tr>
+                                <td>
+                                    <a href="{% url 'young:member_detail' member.pk %}">{{ member.full_name }}</a>
+                                </td>
+                                <td>
+                                    {% if member.group %}
+                                    <span class="badge" style="background: {{ member.group.color }};">
+                                        {{ member.group.name }}
+                                    </span>
+                                    {% else %}
+                                    <span class="text-muted">—</span>
+                                    {% endif %}
+                                </td>
+                                <td>{{ member.registration_date|date:"d/m/Y" }}</td>
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="3" class="text-center py-4 text-muted">
+                                    Aucun jeune inscrit
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            <div class="card-footer text-center">
+                <a href="{% url 'young:member_list' %}" class="btn btn-sm btn-outline-primary">
+                    Voir tous les jeunes
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

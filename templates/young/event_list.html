@@ -1,0 +1,101 @@
+{% extends 'base.html' %}
+
+{% block title %}Activités - Jeunesse - EEBC{% endblock %}
+{% block page_title %}Activités{% endblock %}
+{% block page_subtitle %}Liste des activités de la jeunesse{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4 flex-wrap gap-2">
+    <div class="d-flex gap-2 flex-wrap">
+        <a href="{% url 'young:event_list' %}"
+           class="btn btn-sm {% if not current_type %}btn-primary{% else %}btn-outline-primary{% endif %}">
+            Toutes
+        </a>
+        {% for value, label in event_types %}
+        <a href="?type={{ value }}"
+           class="btn btn-sm {% if current_type == value %}btn-primary{% else %}btn-outline-primary{% endif %}">
+            {{ label }}
+        </a>
+        {% endfor %}
+    </div>
+    <a href="{% url 'young:event_create' %}" class="btn btn-primary">
+        <i class="bi bi-plus-lg me-2"></i>Nouvelle activité
+    </a>
+</div>
+
+<div class="card">
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover mb-0">
+                <thead>
+                    <tr>
+                        <th>Activité</th>
+                        <th>Type</th>
+                        <th>Date</th>
+                        <th>Lieu</th>
+                        <th>Présents</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for event in page_obj %}
+                    <tr {% if event.is_cancelled %}class="text-decoration-line-through text-muted"{% endif %}>
+                        <td>
+                            <a href="{% url 'young:event_detail' event.pk %}" class="fw-bold">{{ event.title }}</a>
+                        </td>
+                        <td><span class="badge bg-primary">{{ event.get_event_type_display }}</span></td>
+                        <td>{{ event.date|date:"d/m/Y" }}</td>
+                        <td>{{ event.location|default:"-" }}</td>
+                        <td>
+                            <span class="badge bg-success">{{ event.attendance_count }}</span>
+                        </td>
+                        <td>
+                            <div class="d-flex gap-1">
+                                <a href="{% url 'young:take_attendance' event.pk %}"
+                                   class="btn btn-sm btn-outline-success" title="Faire l'appel">
+                                    <i class="bi bi-clipboard-check"></i>
+                                </a>
+                                <a href="{% url 'young:event_edit' event.pk %}"
+                                   class="btn btn-sm btn-outline-primary" title="Modifier">
+                                    <i class="bi bi-pencil"></i>
+                                </a>
+                            </div>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="6" class="text-center py-5">
+                            <i class="bi bi-calendar-x text-muted" style="font-size: 2rem;"></i>
+                            <p class="text-muted mt-2 mb-0">Aucune activité enregistrée</p>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Pagination -->
+{% if page_obj.has_other_pages %}
+<nav class="mt-4">
+    <ul class="pagination justify-content-center">
+        {% if page_obj.has_previous %}
+        <li class="page-item">
+            <a class="page-link" href="?page={{ page_obj.previous_page_number }}&type={{ current_type|default:'' }}">&laquo;</a>
+        </li>
+        {% endif %}
+        {% for num in page_obj.paginator.page_range %}
+        <li class="page-item {% if page_obj.number == num %}active{% endif %}">
+            <a class="page-link" href="?page={{ num }}&type={{ current_type|default:'' }}">{{ num }}</a>
+        </li>
+        {% endfor %}
+        {% if page_obj.has_next %}
+        <li class="page-item">
+            <a class="page-link" href="?page={{ page_obj.next_page_number }}&type={{ current_type|default:'' }}">&raquo;</a>
+        </li>
+        {% endif %}
+    </ul>
+</nav>
+{% endif %}
+{% endblock %}
