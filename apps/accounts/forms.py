@@ -122,3 +122,43 @@ class FirstLoginPasswordChangeForm(EnhancedForm):
                 raise ValidationError("Les deux mots de passe ne correspondent pas. Veuillez les saisir à nouveau.")
         
         return cleaned_data
+
+
+class ProfileForm(forms.ModelForm):
+    """Formulaire de mise à jour du profil utilisateur."""
+
+    phone = forms.CharField(
+        max_length=20,
+        min_length=10,
+        required=False,
+        label="Téléphone",
+        validators=[phone_validator],
+        widget=forms.TextInput(attrs={'placeholder': '0694 XX XX XX'})
+    )
+
+    class Meta:
+        model = User
+        fields = ['first_name', 'last_name', 'email', 'phone']
+        widgets = {
+            'first_name': forms.TextInput(attrs={'placeholder': 'Prénom'}),
+            'last_name': forms.TextInput(attrs={'placeholder': 'Nom de famille'}),
+            'email': forms.EmailInput(attrs={'placeholder': 'email@exemple.com'}),
+        }
+
+    def clean_email(self):
+        email = self.cleaned_data['email']
+        if User.objects.filter(email=email).exclude(pk=self.instance.pk).exists():
+            raise ValidationError("Un autre utilisateur utilise déjà cette adresse email.")
+        return email
+
+    def clean_first_name(self):
+        first_name = self.cleaned_data['first_name'].strip()
+        if not first_name:
+            raise ValidationError("Le prénom est obligatoire.")
+        return first_name.title()
+
+    def clean_last_name(self):
+        last_name = self.cleaned_data['last_name'].strip()
+        if not last_name:
+            raise ValidationError("Le nom de famille est obligatoire.")
+        return last_name.upper()

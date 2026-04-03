@@ -13,9 +13,14 @@ import pandas as pd
 from .models import ImportLog
 from .forms import ImportForm
 from .services import ExcelImportService, generate_template_excel, export_members_to_excel, export_children_to_excel
+from apps.core.permissions import role_required
+
+ALLOWED_IMPORT_EXTENSIONS = {'.xlsx', '.xls'}
+MAX_IMPORT_FILE_SIZE = 10 * 1024 * 1024  # 10 MB
 
 
 @login_required
+@role_required('admin', 'secretariat')
 def import_list(request):
     """
     Liste des imports effectués.
@@ -57,6 +62,7 @@ def import_list(request):
 
 
 @login_required
+@role_required('admin', 'secretariat')
 def import_create(request):
     """
     Créer un nouvel import.
@@ -64,6 +70,17 @@ def import_create(request):
     if request.method == 'POST':
         form = ImportForm(request.POST, request.FILES)
         if form.is_valid():
+            uploaded_file = request.FILES.get('file')
+            if uploaded_file:
+                import os
+                ext = os.path.splitext(uploaded_file.name)[1].lower()
+                if ext not in ALLOWED_IMPORT_EXTENSIONS:
+                    messages.error(request, 'Type de fichier non autorisé. Seuls les fichiers Excel (.xlsx, .xls) sont acceptés.')
+                    return render(request, 'imports/import_create.html', {'form': form, 'import_types': ImportLog.ImportType.choices})
+                if uploaded_file.size > MAX_IMPORT_FILE_SIZE:
+                    messages.error(request, 'Fichier trop volumineux. La taille maximale est de 10 Mo.')
+                    return render(request, 'imports/import_create.html', {'form': form, 'import_types': ImportLog.ImportType.choices})
+
             import_log = form.save(commit=False)
             import_log.imported_by = request.user
             import_log.save()
@@ -74,7 +91,11 @@ def import_create(request):
                     service = ExcelImportService(import_log)
                     service.process_import()
                 except Exception as e:
-                    print(f"Erreur lors de l'import: {e}")
+                    import logging
+                    logging.getLogger(__name__).error(f"Erreur lors de l'import {import_log.pk}: {e}")
+                    import_log.status = ImportLog.Status.FAILED
+                    import_log.error_message = str(e)
+                    import_log.save(update_fields=['status', 'error_message'])
             
             thread = threading.Thread(target=run_import)
             thread.daemon = True

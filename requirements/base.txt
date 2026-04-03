@@ -33,6 +33,7 @@ qrcode[pil]>=7.4.0
 # Sécurité
 django-cryptography>=1.1
 django-cors-headers>=4.2.0
+django-csp>=3.7
 
 # API et HTTP (pour Hostinger)
 requests>=2.31.0

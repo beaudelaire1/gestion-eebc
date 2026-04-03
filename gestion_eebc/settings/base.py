@@ -50,6 +50,7 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'django.contrib.humanize',
+    'django.contrib.sitemaps',
     
     # Third party apps
     'django_htmx',
@@ -99,6 +100,7 @@ MIDDLEWARE = [
     'apps.core.middleware.RateLimitMiddleware',  # Rate limiting middleware
     'apps.core.signals.AuditMiddleware',  # Audit logging middleware
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'csp.middleware.CSPMiddleware',  # Content Security Policy
     'django_htmx.middleware.HtmxMiddleware',
 ]
 
@@ -162,6 +164,7 @@ CSP_SCRIPT_SRC = [
     "'unsafe-inline'",  # Nécessaire pour HTMX et Bootstrap
     "https://cdn.jsdelivr.net",
     "https://unpkg.com",
+    "https://challenges.cloudflare.com",
 ]
 CSP_STYLE_SRC = [
     "'self'",
@@ -175,7 +178,8 @@ CSP_FONT_SRC = [
     "https://cdn.jsdelivr.net",
 ]
 CSP_IMG_SRC = ["'self'", "data:", "https:"]
-CSP_CONNECT_SRC = ["'self'"]
+CSP_CONNECT_SRC = ["'self'", "https://challenges.cloudflare.com"]
+CSP_FRAME_SRC = ["'self'", "https://challenges.cloudflare.com", "https://js.stripe.com"]
 
 # Security Headers
 SECURE_REFERRER_POLICY = 'strict-origin-when-cross-origin'

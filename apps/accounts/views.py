@@ -9,7 +9,7 @@ from django.contrib.auth.password_validation import validate_password
 from django.db.models import Q
 from django.urls import reverse
 from urllib.parse import urlencode
-from .forms import UserCreationByTeamForm, FirstLoginPasswordChangeForm
+from .forms import UserCreationByTeamForm, FirstLoginPasswordChangeForm, ProfileForm
 from .services import AuthenticationService, AccountsService
 
 User = get_user_model()
@@ -270,18 +270,15 @@ def logout_view(request):
 def profile_view(request):
     """Vue du profil utilisateur."""
     if request.method == 'POST':
-        # Mise à jour du profil
-        user = request.user
-        user.first_name = request.POST.get('first_name', '')
-        user.last_name = request.POST.get('last_name', '')
-        user.email = request.POST.get('email', '')
-        user.phone = request.POST.get('phone', '')
-        user.save()
-        
-        messages.success(request, 'Profil mis à jour avec succès.')
-        return redirect('accounts:profile')
+        form = ProfileForm(request.POST, instance=request.user)
+        if form.is_valid():
+            form.save()
+            messages.success(request, 'Profil mis à jour avec succès.')
+            return redirect('accounts:profile')
+    else:
+        form = ProfileForm(instance=request.user)
     
-    return render(request, 'accounts/profile.html')
+    return render(request, 'accounts/profile.html', {'form': form})
 
 
 # =============================================================================

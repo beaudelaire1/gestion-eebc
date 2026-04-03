@@ -5,6 +5,7 @@ Utilise WeasyPrint pour générer des PDF conformes.
 """
 
 import io
+import os
 import logging
 import base64
 from pathlib import Path
@@ -18,12 +19,12 @@ logger = logging.getLogger(__name__)
 
 # ─── Informations de l'église (centralisées) ────────────────────────────────
 CHURCH_INFO = {
-    'name': "Église Évangélique Baptiste de Cabassou",
-    'address': "5 rue Calimbés 2, Route de Cabassou, 97300 Cayenne",
-    'phone': "",  # À configurer
-    'email': "contact@eglise-ebc.org",
-    'siret': "",  # À configurer
-    'rna': "",  # À configurer
+    'name': os.environ.get('CHURCH_NAME', "Église Évangélique Baptiste de Cabassou"),
+    'address': os.environ.get('CHURCH_ADDRESS', "5 rue Calimbés 2, Route de Cabassou, 97300 Cayenne"),
+    'phone': os.environ.get('CHURCH_PHONE', ""),
+    'email': os.environ.get('CHURCH_EMAIL', "contact@eglise-ebc.org"),
+    'siret': os.environ.get('CHURCH_SIRET', ""),
+    'rna': os.environ.get('CHURCH_RNA', ""),
 }
 
 

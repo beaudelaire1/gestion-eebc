@@ -5,13 +5,16 @@ from datetime import date
 from django.shortcuts import render, get_object_or_404, redirect
 from django.views.generic import TemplateView, ListView, DetailView, CreateView
 from django.contrib import messages
+from django.conf import settings
 from django.utils import timezone
+from django.db import models
 from django.db.models import Q
 
 from .models import (
     Site, PageContent, NewsArticle, ContactMessage, 
     VisitorRegistration, PublicEvent, Slider, SiteSettings
 )
+from .utils.turnstile import validate_turnstile_with_ip
 
 
 def get_visible_articles_queryset():
@@ -120,9 +123,12 @@ class NewsDetailView(PublicMixin, DetailView):
     
     def get_object(self, queryset=None):
         obj = super().get_object(queryset)
-        # Incrémenter le compteur de vues
-        obj.views_count += 1
-        obj.save(update_fields=['views_count'])
+        # Incrémenter le compteur de vues (dédupliqué par session)
+        viewed_key = f'viewed_article_{obj.pk}'
+        if not self.request.session.get(viewed_key):
+            NewsArticle.objects.filter(pk=obj.pk).update(views_count=models.F('views_count') + 1)
+            obj.refresh_from_db()
+            self.request.session[viewed_key] = True
         return obj
 
 
@@ -160,9 +166,16 @@ class ContactView(PublicMixin, CreateView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context['subjects'] = ContactMessage.Subject.choices
+        context['turnstile_site_key'] = getattr(settings, 'TURNSTILE_SITE_KEY', '')
         return context
     
     def form_valid(self, form):
+        # Valider le CAPTCHA Turnstile
+        is_valid, error = validate_turnstile_with_ip(self.request)
+        if not is_valid:
+            messages.error(self.request, error or 'Vérification de sécurité échouée.')
+            return self.form_invalid(form)
+
         # Enregistrer l'IP
         x_forwarded_for = self.request.META.get('HTTP_X_FORWARDED_FOR')
         if x_forwarded_for:
@@ -195,9 +208,16 @@ class VisitorRegistrationView(PublicMixin, CreateView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context['interests'] = VisitorRegistration.Interest.choices
+        context['turnstile_site_key'] = getattr(settings, 'TURNSTILE_SITE_KEY', '')
         return context
     
     def form_valid(self, form):
+        # Valider le CAPTCHA Turnstile
+        is_valid, error = validate_turnstile_with_ip(self.request)
+        if not is_valid:
+            messages.error(self.request, error or 'Vérification de sécurité échouée.')
+            return self.form_invalid(form)
+
         response = super().form_valid(form)
         
         # Envoyer les emails de notification

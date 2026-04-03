@@ -790,13 +790,21 @@ Merci pour votre générosité.
 EEBC - Église Évangélique Baptiste de Cabassou
 """
         
-        # TODO: Ajouter la pièce jointe PDF
-        notification_service.send_notification(
-            recipient={'email': self.donor_email, 'name': self.donor_name},
-            message=message,
+        # Envoyer avec pièce jointe PDF
+        from django.core.mail import EmailMessage as DjangoEmailMessage
+        email_msg = DjangoEmailMessage(
             subject=f"Reçu fiscal {self.receipt_number} - EEBC",
-            channels=['email']
+            body=message,
+            from_email=settings.DEFAULT_FROM_EMAIL,
+            to=[self.donor_email],
         )
+        if self.pdf_file:
+            email_msg.attach(
+                f"recu_fiscal_{self.receipt_number}.pdf",
+                self.pdf_file.read(),
+                'application/pdf'
+            )
+        email_msg.send()
         
         self.status = self.Status.SENT
         self.sent_date = timezone.now().date()

@@ -5,13 +5,21 @@ from django.contrib import admin
 from django.urls import path, include
 from django.conf import settings
 from django.conf.urls.static import static
+from django.contrib.sitemaps.views import sitemap
+from django.views.generic import TemplateView
 
 # Import des vues admin personnalisées
 from apps.members.admin_views import members_map_view, members_map_data
 # Import des vues de confirmation publiques
 from apps.worship.confirmation_views import confirm_role, decline_role
+# SEO sitemaps
+from apps.core.sitemaps import sitemaps
 
 urlpatterns = [
+    # SEO
+    path('sitemap.xml', sitemap, {'sitemaps': sitemaps}, name='django.contrib.sitemaps.views.sitemap'),
+    path('robots.txt', TemplateView.as_view(template_name='robots.txt', content_type='text/plain'), name='robots_txt'),
+
     # Site vitrine public (page d'accueil par défaut)
     path('', include('apps.core.urls')),
     

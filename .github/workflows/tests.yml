@@ -99,7 +99,8 @@ jobs:
     
     - name: Check for known vulnerabilities
       run: |
-        safety check --json || true
+        safety check --json
+      continue-on-error: true
     
     - name: Django security checks
       env:
@@ -134,7 +135,3 @@ jobs:
         SECRET_KEY: test-secret-key-for-ci
       run: |
         python manage.py collectstatic --noinput --dry-run
-    
-    - name: Build Docker image
-      run: |
-        docker build . -t eebc:${{ github.sha }} -t eebc:latest || true
