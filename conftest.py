@@ -233,11 +233,9 @@ def complete_setup(db, sites, users, members, events, financial_transactions):
 # FIXTURES - Marqueurs personnalisés
 # ==================================================================================
 
-@pytest.fixture
-def django_db_setup(django_db_blocker):
-    """Configuration BD pour les tests."""
+@pytest.fixture(autouse=True, scope='session')
+def _create_default_sites(django_db_setup, django_db_blocker):
+    """Crée les sites par défaut après la création de la BD."""
     with django_db_blocker.unblock():
-        from django.core.management import call_command
-        # Créer les sites par défaut
         Site.objects.get_or_create(name="Cayenne", defaults={'city': 'Cayenne', 'code': 'CAY'})
         Site.objects.get_or_create(name="Remire-Montjoly", defaults={'city': 'Remire-Montjoly', 'code': 'REM'})

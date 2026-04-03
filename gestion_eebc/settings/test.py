@@ -1,7 +1,7 @@
 """
 Django settings - Tests
 """
-
+import os
 from .base import *
 
 # =============================================================================
@@ -11,14 +11,21 @@ DEBUG = False
 
 
 # =============================================================================
-# DATABASE - SQLite en mémoire pour les tests
+# DATABASE - PostgreSQL en CI (via DATABASE_URL), SQLite sinon
 # =============================================================================
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': ':memory:',
+DATABASE_URL = os.environ.get('DATABASE_URL')
+if DATABASE_URL:
+    import dj_database_url
+    DATABASES = {
+        'default': dj_database_url.parse(DATABASE_URL, conn_max_age=0)
     }
-}
+else:
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.sqlite3',
+            'NAME': ':memory:',
+        }
+    }
 
 
 # =============================================================================

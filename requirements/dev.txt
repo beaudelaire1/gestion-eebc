@@ -21,6 +21,8 @@ factory-boy>=3.3.0
 faker>=15.0.0
 hypothesis>=6.80.0
 responses>=0.23.0
+dj-database-url>=2.1.0
+psycopg2-binary>=2.9.0
 
 # Linting & Formatting
 flake8>=6.1.0

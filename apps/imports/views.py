@@ -7,13 +7,15 @@ from django.utils import timezone
 from django.core.paginator import Paginator
 from django.db.models import Q
 import io
-import threading
+import logging
 import pandas as pd
 
 from .models import ImportLog
 from .forms import ImportForm
 from .services import ExcelImportService, generate_template_excel, export_members_to_excel, export_children_to_excel
 from apps.core.permissions import role_required
+
+logger = logging.getLogger(__name__)
 
 ALLOWED_IMPORT_EXTENSIONS = {'.xlsx', '.xls'}
 MAX_IMPORT_FILE_SIZE = 10 * 1024 * 1024  # 10 MB
@@ -85,23 +87,18 @@ def import_create(request):
             import_log.imported_by = request.user
             import_log.save()
             
-            # Lancer l'import en arrière-plan
-            def run_import():
-                try:
-                    service = ExcelImportService(import_log)
-                    service.process_import()
-                except Exception as e:
-                    import logging
-                    logging.getLogger(__name__).error(f"Erreur lors de l'import {import_log.pk}: {e}")
-                    import_log.status = ImportLog.Status.FAILED
-                    import_log.error_message = str(e)
-                    import_log.save(update_fields=['status', 'error_message'])
+            # Traitement synchrone de l'import
+            try:
+                service = ExcelImportService(import_log)
+                service.process_import()
+                messages.success(request, 'Import terminé avec succès.')
+            except Exception as e:
+                logger.error(f"Erreur lors de l'import {import_log.pk}: {e}")
+                import_log.status = ImportLog.Status.FAILED
+                import_log.error_message = str(e)
+                import_log.save(update_fields=['status', 'error_message'])
+                messages.warning(request, "L'import a rencontré une erreur. Consultez les détails.")
             
-            thread = threading.Thread(target=run_import)
-            thread.daemon = True
-            thread.start()
-            
-            messages.success(request, 'Import lancé avec succès. Vous pouvez suivre le progrès dans la liste des imports.')
             return redirect('imports:detail', pk=import_log.pk)
     else:
         form = ImportForm()
