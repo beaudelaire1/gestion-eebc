@@ -29,10 +29,17 @@
                         {% endif %}
                     </div>
                 </div>
+                
+                <div class="mb-4">
+                    <a href="{% url 'public:donation_receipt_pdf' donation.stripe_session_id %}" 
+                       class="btn btn-outline-primary" target="_blank">
+                        <i class="bi bi-file-earmark-pdf me-2"></i>Télécharger le reçu PDF
+                    </a>
+                </div>
                 {% endif %}
                 
                 <p class="text-muted mb-4">
-                    Un reçu vous sera envoyé par email.
+                    Un reçu vous a été envoyé par email avec le PDF en pièce jointe.
                 </p>
                 
                 <blockquote class="blockquote">

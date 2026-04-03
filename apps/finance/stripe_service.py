@@ -9,9 +9,11 @@ Gère :
 
 import stripe
 import logging
+import hashlib
 from decimal import Decimal
 from django.conf import settings
 from django.urls import reverse
+from django.utils import timezone
 
 logger = logging.getLogger(__name__)
 
@@ -31,6 +33,12 @@ class StripeService:
     def is_configured(self):
         """Vérifie si Stripe est configuré."""
         return bool(self.api_key and self.public_key)
+    
+    @staticmethod
+    def _generate_idempotency_key(*args):
+        """Génère une clé d'idempotence basée sur les paramètres."""
+        raw = '|'.join(str(a) for a in args)
+        return hashlib.sha256(raw.encode()).hexdigest()[:64]
     
     def create_donation_session(self, amount, donation_type, donor_email=None, 
                                  donor_name=None, member_id=None, site_id=None,
@@ -72,6 +80,11 @@ class StripeService:
         }
         
         try:
+            idempotency_key = self._generate_idempotency_key(
+                'donation', amount_cents, donation_type, donor_email, 
+                member_id, site_id, timezone.now().strftime('%Y%m%d%H%M')
+            )
+            
             session = stripe.checkout.Session.create(
                 payment_method_types=['card'],
                 line_items=[{
@@ -93,6 +106,7 @@ class StripeService:
                 payment_intent_data={
                     'metadata': metadata,
                 },
+                idempotency_key=idempotency_key,
             )
             
             return {
@@ -139,11 +153,17 @@ class StripeService:
         }
         
         try:
-            # Créer ou récupérer le produit
-            product = stripe.Product.create(
-                name=f"{type_labels.get(donation_type, 'Don récurrent')} - EEBC",
-                metadata=metadata,
-            )
+            # Récupérer ou créer le produit (réutiliser un seul produit par type)
+            product_name = f"{type_labels.get(donation_type, 'Don récurrent')} - EEBC"
+            products = stripe.Product.search(query=f"name:'{product_name}' AND active:'true'")
+            
+            if products.data:
+                product = products.data[0]
+            else:
+                product = stripe.Product.create(
+                    name=product_name,
+                    metadata={'donation_type': donation_type, 'church': 'EEBC'},
+                )
             
             # Créer le prix récurrent
             price = stripe.Price.create(
@@ -154,6 +174,11 @@ class StripeService:
             )
             
             # Créer la session d'abonnement
+            idempotency_key = self._generate_idempotency_key(
+                'subscription', amount_cents, donation_type, interval,
+                donor_email, member_id, site_id, timezone.now().strftime('%Y%m%d%H%M')
+            )
+            
             session = stripe.checkout.Session.create(
                 payment_method_types=['card'],
                 line_items=[{
@@ -165,6 +190,7 @@ class StripeService:
                 cancel_url=cancel_url or settings.STRIPE_CANCEL_URL,
                 customer_email=donor_email,
                 metadata=metadata,
+                idempotency_key=idempotency_key,
             )
             
             return {
@@ -293,8 +319,8 @@ class StripeService:
             try:
                 subscription = stripe.Subscription.retrieve(subscription_id)
                 metadata = subscription.get('metadata', {})
-            except:
-                pass
+            except stripe.error.StripeError as e:
+                logger.warning(f"Failed to retrieve subscription {subscription_id}: {e}")
         
         donation_type = metadata.get('donation_type', 'don')
         type_mapping = {
@@ -328,38 +354,54 @@ class StripeService:
         return {'status': 'acknowledged'}
     
     def _send_donation_receipt(self, online_donation):
-        """Envoie un reçu de don par email."""
-        from apps.communication.notification_service import notification_service
-        
-        message = f"""Reçu de don en ligne - EEBC
-
-Merci pour votre générosité !
-
-Montant : {online_donation.amount}€
-Type : {online_donation.get_donation_type_display()}
-Date : {online_donation.created_at.strftime('%d/%m/%Y à %H:%M')}
-Référence : {online_donation.transaction.reference if online_donation.transaction else 'N/A'}
-
-"Chacun donne comme il l'a résolu en son cœur, sans tristesse ni contrainte ; 
-car Dieu aime celui qui donne avec joie." - 2 Corinthiens 9:7
-
-Que Dieu vous bénisse,
-EEBC - Église Évangélique Baptiste de Cabassou
-"""
+        """Envoie un reçu de don professionnel (PDF) par email."""
+        from django.core.mail import EmailMessage
+        from .pdf_service import generate_donation_receipt_pdf
         
         try:
-            notification_service.send_notification(
-                recipient={'email': online_donation.donor_email},
-                message=message,
-                subject="Reçu de don - EEBC",
-                channels=['email']
+            # Générer le PDF professionnel
+            pdf_bytes, receipt_number = generate_donation_receipt_pdf(online_donation)
+            
+            donor_name = online_donation.donor_name or 'Frère/Sœur'
+            ref = online_donation.transaction.reference if online_donation.transaction else receipt_number
+            
+            # Corps de l'email (texte)
+            body = f"""Bonjour {donor_name},
+
+Nous vous remercions chaleureusement pour votre don de {online_donation.amount}€ \
+({online_donation.get_donation_type_display()}).
+
+Votre générosité contribue à l'avancement de l'œuvre de Dieu au sein de notre communauté.
+
+Vous trouverez ci-joint votre reçu de don (PDF) portant la référence {ref}.
+
+« Chacun donne comme il l'a résolu en son cœur, sans tristesse ni contrainte ; \
+car Dieu aime celui qui donne avec joie. » — 2 Corinthiens 9:7
+
+Que Dieu vous bénisse abondamment,
+Église Évangélique Baptiste de Cabassou
+"""
+            
+            email = EmailMessage(
+                subject=f"Reçu de don {ref} - EEBC",
+                body=body,
+                from_email=None,  # Utilise DEFAULT_FROM_EMAIL
+                to=[online_donation.donor_email],
             )
+            
+            # Attacher le PDF
+            email.attach(
+                f"recu_don_{receipt_number}.pdf",
+                pdf_bytes,
+                'application/pdf'
+            )
+            
+            email.send()
+            logger.info(f"Donation receipt email sent to {online_donation.donor_email}: {receipt_number}")
+            
         except Exception as e:
-            logger.error(f"Failed to send donation receipt: {e}")
+            logger.error(f"Failed to send donation receipt: {e}", exc_info=True)
 
-
-# Import timezone
-from django.utils import timezone
 
 # Instance singleton
 stripe_service = StripeService()

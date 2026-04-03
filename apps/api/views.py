@@ -8,15 +8,30 @@ from django.utils import timezone
 from rest_framework import viewsets, status, filters
 from rest_framework.views import APIView
 from rest_framework.response import Response
-from rest_framework.permissions import IsAuthenticated
+from rest_framework.permissions import IsAuthenticated, IsAuthenticatedOrReadOnly
 from rest_framework.decorators import action
 from django_filters.rest_framework import DjangoFilterBackend
+from rest_framework.permissions import AllowAny
+from django.core.cache import cache
+import logging
+import time
+
+logger = logging.getLogger(__name__)
 
 from apps.members.models import Member
 from apps.events.models import Event, EventRegistration
 from apps.worship.models import WorshipService, RoleAssignment
 from apps.communication.models import Announcement
 from apps.finance.models import OnlineDonation, TaxReceipt
+from apps.core.models import (
+    Site,
+    NewsArticle,
+    PublicEvent,
+    ContactMessage,
+    VisitorRegistration,
+    SiteSettings,
+    WorshipSchedule,
+)
 
 from .serializers import (
     MemberListSerializer, MemberDetailSerializer,
@@ -26,8 +41,53 @@ from .serializers import (
     AnnouncementListSerializer, AnnouncementDetailSerializer,
     DonationListSerializer, DonationCreateSerializer, TaxReceiptSerializer,
     ProfileSerializer, DeviceTokenSerializer,
+    PublicSiteSerializer, PublicNewsListSerializer, PublicNewsDetailSerializer,
+    PublicEventListSerializer, PublicEventDetailSerializer,
+    PublicWorshipScheduleSerializer, PublicSettingsSerializer,
+    ContactMessageCreateSerializer, VisitorRegistrationCreateSerializer,
 )
 
+def _get_client_ip(request):
+    """Extract client IP from request (handles proxy headers)."""
+    x_forwarded_for = request.META.get('HTTP_X_FORWARDED_FOR')
+    if x_forwarded_for:
+        return x_forwarded_for.split(',')[0].strip()
+    return request.META.get('REMOTE_ADDR')
+
+
+class PublicRateLimitMixin:
+    """Basic rate limiting for public form endpoints."""
+    rate_limit_count = 3
+    rate_limit_window_seconds = 10 * 60
+    rate_limit_scope = 'public-form'
+
+    def _rate_limit_key(self, request):
+        ip = _get_client_ip(request) or 'unknown'
+        bucket = int(time.time()) // self.rate_limit_window_seconds
+        return f"{self.rate_limit_scope}:{ip}:{bucket}"
+
+    def allow_request(self, request):
+        key = self._rate_limit_key(request)
+        current = cache.get(key, 0)
+        if current >= self.rate_limit_count:
+            return False
+        cache.set(key, current + 1, timeout=self.rate_limit_window_seconds)
+        return True
+
+
+def _get_visible_news_queryset():
+    """Return public-visible news articles."""
+    today = date.today()
+    now = timezone.now()
+
+    return NewsArticle.objects.filter(
+        is_published=True,
+        publish_date__lte=now
+    ).filter(
+        Q(display_start_date__isnull=True) | Q(display_start_date__lte=today)
+    ).filter(
+        Q(display_end_date__isnull=True) | Q(display_end_date__gte=today)
+    )
 
 # =============================================================================
 # MEMBER VIEWSET
@@ -74,7 +134,7 @@ class EventViewSet(viewsets.ReadOnlyModelViewSet):
     GET /api/v1/events/ - List upcoming events
     GET /api/v1/events/{id}/ - Event detail
     """
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticatedOrReadOnly]
     filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
     search_fields = ['title', 'description', 'location']
     ordering_fields = ['start_date', 'start_time']
@@ -191,7 +251,7 @@ class WorshipServiceViewSet(viewsets.ReadOnlyModelViewSet):
     GET /api/v1/worship/services/ - List upcoming services
     GET /api/v1/worship/services/{id}/ - Service detail
     """
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticatedOrReadOnly]
     ordering = ['-event__start_date']
     
     def get_queryset(self):
@@ -321,7 +381,7 @@ class AnnouncementViewSet(viewsets.ReadOnlyModelViewSet):
     GET /api/v1/announcements/ - List current announcements
     GET /api/v1/announcements/{id}/ - Announcement detail
     """
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticatedOrReadOnly]
     filter_backends = [filters.SearchFilter]
     search_fields = ['title', 'content']
     
@@ -436,9 +496,10 @@ class DonationViewSet(viewsets.ModelViewSet):
             }, status=status.HTTP_201_CREATED)
             
         except Exception as e:
+            logger.error(f"API donation session creation error: {e}", exc_info=True)
             return Response({
                 'success': False,
-                'error': {'message': str(e)}
+                'error': {'message': 'Une erreur est survenue lors du traitement. Veuillez réessayer.'}
             }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
     
     @action(detail=False, methods=['get'])
@@ -653,4 +714,150 @@ class BibleClubMyChildrenView(APIView):
             'success': True,
             'data': children_data
         })
+
+
+# =============================================================================
+# PUBLIC WEBSITE API ENDPOINTS
+# =============================================================================
+
+class PublicSiteViewSet(viewsets.ReadOnlyModelViewSet):
+    """Public list of church sites."""
+    permission_classes = [AllowAny]
+    serializer_class = PublicSiteSerializer
+    queryset = Site.objects.filter(is_active=True)
+
+
+class PublicNewsViewSet(viewsets.ReadOnlyModelViewSet):
+    """Public news list and detail (by slug)."""
+    permission_classes = [AllowAny]
+    lookup_field = 'slug'
+    filter_backends = [filters.SearchFilter]
+    search_fields = ['title', 'content', 'excerpt']
+
+    def get_queryset(self):
+        return _get_visible_news_queryset().order_by('-is_featured', '-publish_date')
+
+    def get_serializer_class(self):
+        if self.action == 'retrieve':
+            return PublicNewsDetailSerializer
+        return PublicNewsListSerializer
+
+
+class PublicEventViewSet(viewsets.ReadOnlyModelViewSet):
+    """Public events list and detail (by slug)."""
+    permission_classes = [AllowAny]
+    lookup_field = 'slug'
+
+    def get_queryset(self):
+        return PublicEvent.objects.filter(
+            is_published=True,
+            start_date__gte=date.today()
+        ).order_by('start_date')
+
+    def get_serializer_class(self):
+        if self.action == 'retrieve':
+            return PublicEventDetailSerializer
+        return PublicEventListSerializer
+
+
+class PublicWorshipScheduleViewSet(viewsets.ReadOnlyModelViewSet):
+    """Public worship schedules list."""
+    permission_classes = [AllowAny]
+    serializer_class = PublicWorshipScheduleSerializer
+
+    def get_queryset(self):
+        return WorshipSchedule.objects.filter(is_active=True).select_related('site')
+
+
+class PublicSettingsView(APIView):
+    """Public settings for the public site."""
+    permission_classes = [AllowAny]
+
+    def get(self, request):
+        settings = SiteSettings.get_settings()
+        serializer = PublicSettingsSerializer(settings, context={'request': request})
+        return Response({'success': True, 'data': serializer.data})
+
+
+class PublicMetaView(APIView):
+    """Public metadata (choices for forms)."""
+    permission_classes = [AllowAny]
+
+    def get(self, request):
+        subjects = [
+            {'value': key, 'label': label}
+            for key, label in ContactMessage.Subject.choices
+        ]
+        interests = [
+            {'value': key, 'label': label}
+            for key, label in VisitorRegistration.Interest.choices
+        ]
+        return Response({
+            'success': True,
+            'data': {
+                'contact_subjects': subjects,
+                'visitor_interests': interests,
+            }
+        })
+
+
+class PublicContactView(PublicRateLimitMixin, APIView):
+    """Public contact form submission."""
+    permission_classes = [AllowAny]
+    rate_limit_scope = 'public-contact'
+
+    def post(self, request):
+        if not self.allow_request(request):
+            return Response({
+                'success': False,
+                'error': {'message': 'Trop de requetes. Reessayez plus tard.'}
+            }, status=status.HTTP_429_TOO_MANY_REQUESTS)
+
+        serializer = ContactMessageCreateSerializer(data=request.data)
+        if serializer.is_valid():
+            contact = serializer.save()
+            contact.ip_address = _get_client_ip(request)
+            contact.save(update_fields=['ip_address'])
+
+            return Response({
+                'success': True,
+                'message': 'Message envoye avec succes.'
+            }, status=status.HTTP_201_CREATED)
+
+        return Response({
+            'success': False,
+            'error': {
+                'message': 'Donnees invalides',
+                'details': serializer.errors
+            }
+        }, status=status.HTTP_400_BAD_REQUEST)
+
+
+class PublicInterestView(PublicRateLimitMixin, APIView):
+    """Public visitor registration form."""
+    permission_classes = [AllowAny]
+    rate_limit_scope = 'public-interest'
+
+    def post(self, request):
+        if not self.allow_request(request):
+            return Response({
+                'success': False,
+                'error': {'message': 'Trop de requetes. Reessayez plus tard.'}
+            }, status=status.HTTP_429_TOO_MANY_REQUESTS)
+
+        serializer = VisitorRegistrationCreateSerializer(data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response({
+                'success': True,
+                'message': 'Inscription enregistree. Nous vous contacterons bientot.'
+            }, status=status.HTTP_201_CREATED)
+
+        return Response({
+            'success': False,
+            'error': {
+                'message': 'Donnees invalides',
+                'details': serializer.errors
+            }
+        }, status=status.HTTP_400_BAD_REQUEST)
 

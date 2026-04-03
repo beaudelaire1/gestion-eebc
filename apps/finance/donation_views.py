@@ -3,7 +3,8 @@ Vues pour les dons en ligne via Stripe.
 """
 
 import json
-from decimal import Decimal
+import logging
+from decimal import Decimal, InvalidOperation
 from django.shortcuts import render, redirect
 from django.views import View
 from django.views.generic import TemplateView
@@ -15,6 +16,8 @@ from django.conf import settings
 
 from .stripe_service import stripe_service
 from .models import OnlineDonation
+
+logger = logging.getLogger(__name__)
 
 
 class DonationPageView(TemplateView):
@@ -53,6 +56,7 @@ class CreateDonationSessionView(View):
             
             donation_type = data.get('type', 'don')
             donor_email = data.get('email', '')
+            donor_name = data.get('donor_name', '')
             site_id = data.get('site_id')
             is_recurring = data.get('recurring', False)
             
@@ -82,6 +86,7 @@ class CreateDonationSessionView(View):
                     amount=amount,
                     donation_type=donation_type,
                     donor_email=donor_email,
+                    donor_name=donor_name,
                     member_id=member_id,
                     site_id=site_id,
                     success_url=success_url,
@@ -90,10 +95,16 @@ class CreateDonationSessionView(View):
             
             return JsonResponse(result)
         
-        except Exception as e:
+        except (ValueError, InvalidOperation) as e:
+            logger.warning(f"Donation validation error: {e}")
             return JsonResponse({
-                'error': str(e)
+                'error': 'Données de don invalides. Veuillez vérifier le montant et réessayer.'
             }, status=400)
+        except Exception as e:
+            logger.error(f"Donation session creation error: {e}", exc_info=True)
+            return JsonResponse({
+                'error': 'Une erreur est survenue lors du traitement. Veuillez réessayer.'
+            }, status=500)
 
 
 class DonationSuccessView(TemplateView):
@@ -117,6 +128,31 @@ class DonationSuccessView(TemplateView):
 class DonationCancelView(TemplateView):
     """Page d'annulation de don."""
     template_name = 'finance/donation_cancel.html'
+
+
+class DonationReceiptPDFView(View):
+    """Télécharge le reçu PDF d'un don en ligne."""
+    
+    def get(self, request, session_id):
+        try:
+            donation = OnlineDonation.objects.get(
+                stripe_session_id=session_id,
+                status='completed',
+            )
+        except OnlineDonation.DoesNotExist:
+            return HttpResponse("Don introuvable.", status=404)
+        
+        from .pdf_service import generate_donation_receipt_pdf
+        
+        try:
+            pdf_bytes, receipt_number = generate_donation_receipt_pdf(donation)
+        except Exception:
+            logger.error(f"PDF generation failed for donation {session_id}", exc_info=True)
+            return HttpResponse("Erreur lors de la génération du reçu.", status=500)
+        
+        response = HttpResponse(pdf_bytes, content_type='application/pdf')
+        response['Content-Disposition'] = f'inline; filename="recu_don_{receipt_number}.pdf"'
+        return response
 
 
 @method_decorator(csrf_exempt, name='dispatch')

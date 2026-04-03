@@ -95,6 +95,13 @@
                                 <div class="form-text">Pour recevoir votre reçu de don</div>
                             </div>
                             
+                            <!-- Nom -->
+                            <div class="mb-4">
+                                <label for="donor_name" class="form-label fw-bold">Nom complet (optionnel)</label>
+                                <input type="text" class="form-control" id="donor_name" name="donor_name" 
+                                       placeholder="Prénom Nom">
+                            </div>
+                            
                             <!-- Site -->
                             <div class="mb-4">
                                 <label for="site" class="form-label fw-bold">Site (optionnel)</label>
@@ -181,6 +188,7 @@ document.addEventListener('DOMContentLoaded', function() {
             amount: parseFloat(amountInput.value),
             type: document.querySelector('input[name="donation_type"]:checked').value,
             email: document.getElementById('email').value,
+            donor_name: document.getElementById('donor_name').value || null,
             site_id: document.getElementById('site').value || null,
             recurring: document.getElementById('recurring').checked,
         };
