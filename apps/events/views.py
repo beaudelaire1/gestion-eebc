@@ -550,8 +550,14 @@ def event_create(request):
             
             # Ajouter l'utilisateur actuel comme organisateur par défaut
             event.save()
+            form.save_m2m()
             if not event.organizers.exists():
                 event.organizers.add(request.user)
+            
+            # Envoyer les notifications si configurées
+            if event.notification_scope != 'none':
+                from .tasks import send_immediate_notification
+                send_immediate_notification.delay(event.id)
             
             messages.success(request, f"L'événement '{event.title}' a été créé avec succès.")
             return redirect('events:detail', pk=event.pk)
@@ -609,6 +615,12 @@ def event_update(request, pk):
         form = EventForm(request.POST, request.FILES, instance=event)
         if form.is_valid():
             event = form.save()
+            
+            # Re-notifier si la portée de notification a changé ou n'est pas 'none'
+            if event.notification_scope != 'none' and not event.notification_sent:
+                from .tasks import send_immediate_notification
+                send_immediate_notification.delay(event.id)
+            
             messages.success(request, f"L'événement '{event.title}' a été modifié avec succès.")
             return redirect('events:detail', pk=event.pk)
     else:

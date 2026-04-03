@@ -451,6 +451,132 @@ Marquer une annonce comme lue.
 
 ---
 
+## Public (site vitrine)
+
+Endpoints accessibles sans authentification pour l'app mobile.
+
+### GET /public/sites/
+
+Liste des eglises actives (coordonnees, horaires, contact).
+
+**Response (200):**
+```json
+{
+  "count": 2,
+  "results": [
+    {
+      "id": 1,
+      "code": "CAB",
+      "name": "Cabassou",
+      "address": "123 Rue Exemple",
+      "city": "Cayenne",
+      "postal_code": "97300",
+      "phone": "+594694123456",
+      "email": "contact@eglise-ebc.org",
+      "latitude": 4.93821,
+      "longitude": -52.32011,
+      "worship_schedule": "Dimanche 9h et 11h",
+      "is_main_site": true
+    }
+  ]
+}
+```
+
+### GET /public/news/
+
+Liste des actualites publiees (visibles public).
+
+### GET /public/news/{slug}/
+
+Detail d'un article public.
+
+### GET /public/events/
+
+Liste des evenements publics a venir.
+
+### GET /public/events/{slug}/
+
+Detail d'un evenement public.
+
+### GET /public/worship-schedules/
+
+Liste des horaires de culte publics.
+
+### GET /public/settings/
+
+Parametres du site vitrine (contact, reseaux sociaux, maintenance).
+
+### GET /public/meta/
+
+Choix pour formulaires publics (sujets et interesses).
+
+**Response (200):**
+```json
+{
+  "success": true,
+  "data": {
+    "contact_subjects": [
+      {"value": "general", "label": "Question generale"}
+    ],
+    "visitor_interests": [
+      {"value": "visit", "label": "Visiter l'eglise"}
+    ]
+  }
+}
+```
+
+### POST /public/contact/
+
+Formulaire de contact public.
+
+**Request Body:**
+```json
+{
+  "name": "Jane Doe",
+  "email": "jane@example.com",
+  "phone": "+594694000000",
+  "subject": "general",
+  "message": "Bonjour",
+  "site": 1
+}
+```
+
+**Response (201):**
+```json
+{
+  "success": true,
+  "message": "Message envoye avec succes."
+}
+```
+
+### POST /public/interest/
+
+Formulaire "Je suis interesse(e)".
+
+**Request Body:**
+```json
+{
+  "first_name": "Jane",
+  "last_name": "Doe",
+  "email": "jane@example.com",
+  "phone": "+594694000000",
+  "city": "Cayenne",
+  "interest": "visit",
+  "preferred_site": 1,
+  "message": "Je voudrais visiter."
+}
+```
+
+**Response (201):**
+```json
+{
+  "success": true,
+  "message": "Inscription enregistree. Nous vous contacterons bientot."
+}
+```
+
+---
+
 ## Dons
 
 ### GET /donations/

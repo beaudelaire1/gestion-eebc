@@ -23,6 +23,10 @@ router.register(r'events', views.EventViewSet, basename='event')
 router.register(r'worship/services', views.WorshipServiceViewSet, basename='worship-service')
 router.register(r'announcements', views.AnnouncementViewSet, basename='announcement')
 router.register(r'donations', views.DonationViewSet, basename='donation')
+router.register(r'public/sites', views.PublicSiteViewSet, basename='public-site')
+router.register(r'public/news', views.PublicNewsViewSet, basename='public-news')
+router.register(r'public/events', views.PublicEventViewSet, basename='public-event')
+router.register(r'public/worship-schedules', views.PublicWorshipScheduleViewSet, basename='public-worship-schedule')
 
 urlpatterns = [
     # Authentication endpoints
@@ -45,6 +49,12 @@ urlpatterns = [
     
     # BibleClub - For parents to see children's attendance
     path('bibleclub/my-children/', views.BibleClubMyChildrenView.as_view(), name='bibleclub_my_children'),
+
+    # Public website endpoints
+    path('public/settings/', views.PublicSettingsView.as_view(), name='public_settings'),
+    path('public/meta/', views.PublicMetaView.as_view(), name='public_meta'),
+    path('public/contact/', views.PublicContactView.as_view(), name='public_contact'),
+    path('public/interest/', views.PublicInterestView.as_view(), name='public_interest'),
     
     # Router URLs
     path('', include(router.urls)),

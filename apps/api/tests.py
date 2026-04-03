@@ -23,7 +23,15 @@ from apps.accounts.models import User
 from apps.members.models import Member
 from apps.events.models import Event, EventRegistration
 from apps.communication.models import Announcement
-from apps.core.models import Site
+from apps.core.models import (
+    Site,
+    NewsArticle,
+    PublicEvent,
+    ContactMessage,
+    VisitorRegistration,
+    WorshipSchedule,
+    SiteSettings,
+)
 from apps.api.models import DeviceToken, AnnouncementReadStatus
 
 
@@ -522,4 +530,114 @@ class DonationAPITests(APITestCase):
         response = self.client.get(reverse('api:donation-receipts'))
         
         self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertTrue(response.data['success'])
+
+
+class PublicApiTests(APITestCase):
+    """Tests for public API endpoints used by the mobile app."""
+
+    def setUp(self):
+        self.site = Site.objects.create(
+            code='CAB',
+            name='Cabassou',
+            address='123 Test St',
+            city='Cayenne',
+            phone='+594694123456',
+            email='contact@eglise-ebc.org',
+            is_active=True,
+            is_main_site=True,
+        )
+
+        self.news = NewsArticle.objects.create(
+            title='Actu test',
+            slug='actu-test',
+            category=NewsArticle.Category.NEWS,
+            excerpt='Resume test',
+            content='Contenu test',
+            is_published=True,
+            publish_date=timezone.now(),
+            site=self.site,
+        )
+
+        self.public_event = PublicEvent.objects.create(
+            title='Evenement public',
+            slug='evenement-public',
+            description='Description',
+            start_date=date.today() + timedelta(days=2),
+            is_published=True,
+            site=self.site,
+        )
+
+        WorshipSchedule.objects.create(
+            site=self.site,
+            name='Culte dominical',
+            day_of_week=7,
+            start_time='09:00:00',
+            end_time='11:00:00',
+            is_active=True,
+        )
+
+        settings = SiteSettings.get_settings()
+        settings.site_name = 'EEBC'
+        settings.email = 'contact@eglise-ebc.org'
+        settings.save()
+
+    def test_public_sites_list(self):
+        response = self.client.get(reverse('api:public-site-list'))
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertGreaterEqual(len(response.data.get('results', [])), 1)
+
+    def test_public_news_list(self):
+        response = self.client.get(reverse('api:public-news-list'))
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertGreaterEqual(len(response.data.get('results', [])), 1)
+
+    def test_public_events_list(self):
+        response = self.client.get(reverse('api:public-event-list'))
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertGreaterEqual(len(response.data.get('results', [])), 1)
+
+    def test_public_settings(self):
+        response = self.client.get(reverse('api:public_settings'))
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertTrue(response.data['success'])
+
+    def test_public_meta(self):
+        response = self.client.get(reverse('api:public_meta'))
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertTrue(response.data['success'])
+        self.assertIn('contact_subjects', response.data['data'])
+        self.assertIn('visitor_interests', response.data['data'])
+
+    def test_public_contact_rate_limit(self):
+        payload = {
+            'name': 'Jane Doe',
+            'email': 'jane@example.com',
+            'phone': '+594694000000',
+            'subject': ContactMessage.Subject.GENERAL,
+            'message': 'Bonjour',
+            'site': self.site.id,
+        }
+
+        for _ in range(3):
+            response = self.client.post(reverse('api:public_contact'), payload)
+            self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+
+        response = self.client.post(reverse('api:public_contact'), payload)
+        self.assertEqual(response.status_code, status.HTTP_429_TOO_MANY_REQUESTS)
+
+    def test_public_interest_submission(self):
+        payload = {
+            'first_name': 'Jane',
+            'last_name': 'Doe',
+            'email': 'jane@example.com',
+            'phone': '+594694000000',
+            'city': 'Cayenne',
+            'interest': VisitorRegistration.Interest.VISIT,
+            'preferred_site': self.site.id,
+            'message': 'Je voudrais visiter.',
+        }
+
+        response = self.client.post(reverse('api:public_interest'), payload)
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         self.assertTrue(response.data['success'])

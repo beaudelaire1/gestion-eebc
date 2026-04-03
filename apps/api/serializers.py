@@ -12,7 +12,16 @@ from apps.events.models import Event, EventRegistration
 from apps.worship.models import WorshipService, ServiceRole, ScheduledService, RoleAssignment
 from apps.communication.models import Announcement
 from apps.finance.models import FinancialTransaction, OnlineDonation, TaxReceipt
-from apps.core.models import Site, Family
+from apps.core.models import (
+    Site,
+    Family,
+    NewsArticle,
+    PublicEvent,
+    ContactMessage,
+    VisitorRegistration,
+    SiteSettings,
+    WorshipSchedule,
+)
 
 User = get_user_model()
 
@@ -308,12 +317,13 @@ class WorshipServiceListSerializer(serializers.ModelSerializer):
     start_time = serializers.TimeField(source='event.start_time')
     site = SiteSerializer(source='event.site', read_only=True)
     user_assignments = serializers.SerializerMethodField()
+    service_type_display = serializers.CharField(source='get_service_type_display', read_only=True)
     
     class Meta:
         model = WorshipService
         fields = [
             'id', 'date', 'start_time', 'service_type', 'theme',
-            'is_confirmed', 'site', 'user_assignments'
+            'service_type_display', 'is_confirmed', 'site', 'user_assignments'
         ]
     
     def get_user_assignments(self, obj):
@@ -409,6 +419,162 @@ class DonationListSerializer(serializers.ModelSerializer):
             'id', 'amount', 'donation_type', 'donation_type_display',
             'status', 'status_display', 'is_recurring', 'created_at'
         ]
+
+
+# =============================================================================
+# PUBLIC WEBSITE SERIALIZERS
+# =============================================================================
+
+class PublicSiteSerializer(serializers.ModelSerializer):
+    """Serializer for public church sites."""
+
+    class Meta:
+        model = Site
+        fields = [
+            'id', 'code', 'name', 'address', 'city', 'postal_code',
+            'phone', 'email', 'latitude', 'longitude',
+            'worship_schedule', 'is_main_site'
+        ]
+
+
+class PublicNewsListSerializer(serializers.ModelSerializer):
+    """Serializer for public news list."""
+    author = serializers.CharField(source='display_author', read_only=True)
+    image_url = serializers.SerializerMethodField()
+    site = SiteSerializer(read_only=True)
+
+    class Meta:
+        model = NewsArticle
+        fields = [
+            'id', 'title', 'slug', 'excerpt', 'category', 'author',
+            'publish_date', 'is_featured', 'image_url', 'site'
+        ]
+
+    def get_image_url(self, obj):
+        request = self.context.get('request')
+        if obj.featured_image:
+            url = obj.featured_image.url
+            return request.build_absolute_uri(url) if request else url
+        return None
+
+
+class PublicNewsDetailSerializer(PublicNewsListSerializer):
+    """Serializer for public news detail."""
+
+    class Meta(PublicNewsListSerializer.Meta):
+        fields = PublicNewsListSerializer.Meta.fields + ['content']
+
+
+class PublicEventListSerializer(serializers.ModelSerializer):
+    """Serializer for public events."""
+    image_url = serializers.SerializerMethodField()
+    site = SiteSerializer(read_only=True)
+
+    class Meta:
+        model = PublicEvent
+        fields = [
+            'id', 'title', 'slug', 'description', 'start_date', 'start_time',
+            'end_date', 'end_time', 'location', 'address', 'site',
+            'is_featured', 'allow_registration', 'image_url'
+        ]
+
+    def get_image_url(self, obj):
+        request = self.context.get('request')
+        if obj.image:
+            url = obj.image.url
+            return request.build_absolute_uri(url) if request else url
+        return None
+
+
+class PublicEventDetailSerializer(PublicEventListSerializer):
+    """Serializer for public event detail."""
+
+    class Meta(PublicEventListSerializer.Meta):
+        fields = PublicEventListSerializer.Meta.fields
+
+
+class PublicWorshipScheduleSerializer(serializers.ModelSerializer):
+    """Serializer for worship schedules shown on public site."""
+    site = SiteSerializer(read_only=True)
+    day_of_week_display = serializers.CharField(source='get_day_of_week_display', read_only=True)
+
+    class Meta:
+        model = WorshipSchedule
+        fields = [
+            'id', 'site', 'name', 'day_of_week', 'day_of_week_display',
+            'start_time', 'end_time', 'description'
+        ]
+
+
+class PublicSettingsSerializer(serializers.ModelSerializer):
+    """Serializer for global public site settings."""
+    logo_url = serializers.SerializerMethodField()
+    favicon_url = serializers.SerializerMethodField()
+
+    class Meta:
+        model = SiteSettings
+        fields = [
+            'site_name', 'tagline', 'email', 'phone',
+            'facebook_url', 'youtube_url', 'instagram_url',
+            'meta_description', 'footer_text',
+            'maintenance_mode', 'maintenance_message',
+            'logo_url', 'favicon_url'
+        ]
+
+    def get_logo_url(self, obj):
+        request = self.context.get('request')
+        if obj.logo:
+            url = obj.logo.url
+            return request.build_absolute_uri(url) if request else url
+        return None
+
+    def get_favicon_url(self, obj):
+        request = self.context.get('request')
+        if obj.favicon:
+            url = obj.favicon.url
+            return request.build_absolute_uri(url) if request else url
+        return None
+
+
+class ContactMessageCreateSerializer(serializers.ModelSerializer):
+    """Serializer for public contact submissions."""
+    honeypot = serializers.CharField(write_only=True, required=False, allow_blank=True)
+    site = serializers.PrimaryKeyRelatedField(
+        queryset=Site.objects.filter(is_active=True),
+        required=False,
+        allow_null=True
+    )
+
+    class Meta:
+        model = ContactMessage
+        fields = ['name', 'email', 'phone', 'subject', 'message', 'site', 'honeypot']
+
+    def validate_honeypot(self, value):
+        if value:
+            raise serializers.ValidationError('Requete invalide.')
+        return value
+
+
+class VisitorRegistrationCreateSerializer(serializers.ModelSerializer):
+    """Serializer for public visitor registrations."""
+    honeypot = serializers.CharField(write_only=True, required=False, allow_blank=True)
+    preferred_site = serializers.PrimaryKeyRelatedField(
+        queryset=Site.objects.filter(is_active=True),
+        required=False,
+        allow_null=True
+    )
+
+    class Meta:
+        model = VisitorRegistration
+        fields = [
+            'first_name', 'last_name', 'email', 'phone', 'address',
+            'city', 'interest', 'message', 'preferred_site', 'honeypot'
+        ]
+
+    def validate_honeypot(self, value):
+        if value:
+            raise serializers.ValidationError('Requete invalide.')
+        return value
 
 
 class DonationCreateSerializer(serializers.Serializer):
