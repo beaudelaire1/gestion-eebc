@@ -58,6 +58,17 @@ services:
         value: "https://eglise-ebc.org/don/succes/"
       - key: STRIPE_CANCEL_URL
         value: "https://eglise-ebc.org/don/annule/"
+      # Meta WhatsApp Cloud API
+      - key: META_WHATSAPP_ACCESS_TOKEN
+        sync: false
+      - key: META_WHATSAPP_PHONE_NUMBER_ID
+        sync: false
+      - key: META_WHATSAPP_VERIFY_TOKEN
+        sync: false
+      - key: META_WHATSAPP_APP_SECRET
+        sync: false
+      - key: META_WHATSAPP_API_VERSION
+        value: "v23.0"
       # Site
       - key: SITE_URL
         sync: false
