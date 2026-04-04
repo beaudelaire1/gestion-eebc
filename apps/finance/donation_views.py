@@ -14,6 +14,7 @@ from django.http import JsonResponse, HttpResponse
 from django.contrib import messages
 from django.conf import settings
 from django.core import signing
+from apps.core.models import SiteSettings, PageContent
 
 from .stripe_service import stripe_service
 from .models import OnlineDonation
@@ -29,6 +30,11 @@ class DonationPageView(TemplateView):
         context = super().get_context_data(**kwargs)
         context['stripe_public_key'] = stripe_service.public_key
         context['stripe_configured'] = stripe_service.is_configured
+        context['settings'] = SiteSettings.get_settings()
+        context['menu_pages'] = PageContent.objects.filter(
+            is_published=True,
+            show_in_menu=True
+        ).order_by('menu_order')
         
         # Sites disponibles
         from apps.core.models import Site
