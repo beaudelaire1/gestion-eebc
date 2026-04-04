@@ -52,7 +52,7 @@
     <link rel="stylesheet" href="{% static 'css/luxe-design.css' %}">
     
     <!-- Animated Verse Banner CSS -->
-    <link rel="stylesheet" href="{% static 'css/animated-verse-banner.css' %}">>
+    <link rel="stylesheet" href="{% static 'css/animated-verse-banner.css' %}">
     
     <!-- E3: JSON-LD Structured Data (Church Organization) -->
     {% block json_ld %}
@@ -62,7 +62,7 @@
         "@type": "Organization",
         "name": "{{ settings.site_name|default:'EEBC' }}",
         "alternateName": "Église Évangélique Baptiste de Cabassou",
-        "url": "{{ request.build_absolute_uri '/' }}",
+        "url": "{{ request.scheme }}://{{ request.get_host }}/",
         "logo": "{{ settings.og_image_url|default:'/static/img/logo.png' }}",
         "description": "{{ settings.meta_description|default:'Église Évangélique Baptiste de Cabassou' }}",
         "sameAs": [
