@@ -210,9 +210,27 @@
             background-color: var(--secondary-color);
             color: white;
         }
+
+        footer h1,
+        footer h2,
+        footer h3,
+        footer h4,
+        footer h5,
+        footer h6,
+        footer strong,
+        footer p,
+        footer li,
+        footer i {
+            color: #ffffff !important;
+        }
+
+        footer small,
+        footer .text-white-50 {
+            color: rgba(255, 255, 255, 0.82) !important;
+        }
         
         footer a {
-            color: rgba(255,255,255,0.8);
+            color: rgba(255,255,255,0.92);
             text-decoration: none;
         }
         
@@ -477,18 +495,18 @@
 
     <!-- Bannière RGPD - Consentement cookies -->
     <div id="cookie-banner" style="display:none; position:fixed; bottom:0; left:0; right:0; z-index:99999;
-         background:#1a1a2e; color:#fff; padding:1rem 1.5rem; box-shadow:0 -4px 20px rgba(0,0,0,0.3);">
+         background:#0f1738; color:#fff; padding:1rem 1.5rem; box-shadow:0 -4px 20px rgba(0,0,0,0.35); border-top:1px solid rgba(255,255,255,0.16);">
         <div style="max-width:1200px; margin:0 auto; display:flex; align-items:center; gap:1rem; flex-wrap:wrap; justify-content:space-between;">
             <div style="flex:1; min-width:250px;">
-                <strong><i class="bi bi-shield-lock me-2"></i>Cookies &amp; Confidentialité</strong>
-                <p style="margin:0.25rem 0 0; font-size:0.87rem; opacity:0.85;">
+                <strong style="color:#ffffff;"><i class="bi bi-shield-lock me-2"></i>Cookies &amp; Confidentialité</strong>
+                <p style="margin:0.35rem 0 0; font-size:0.95rem; line-height:1.45; color:#ffffff; opacity:1;">
                     Ce site utilise des cookies essentiels à son fonctionnement (session, sécurité CSRF).
                     En continuant, vous acceptez leur utilisation conformément à notre politique de confidentialité.
                 </p>
             </div>
             <div style="display:flex; gap:0.75rem; flex-shrink:0;">
                 <button onclick="setCookieConsent('refused')"
-                        style="background:transparent; border:1px solid rgba(255,255,255,0.4); color:#fff;
+                        style="background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.65); color:#fff;
                                padding:0.5rem 1rem; border-radius:6px; cursor:pointer; font-size:0.875rem;">
                     Refuser
                 </button>

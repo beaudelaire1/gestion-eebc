@@ -22,6 +22,16 @@ body {
 }
 
 /* Sidebar Navigation - Utilise les variables du thème actuel */
+.sidebar__brand,
+.sidebar__brand * {
+    color: #ffffff !important;
+}
+
+.sidebar__brand-title,
+.sidebar__brand-subtitle {
+    color: #ffffff !important;
+}
+
 .nav-section__title {
     color: var(--text-muted) !important;
 }
