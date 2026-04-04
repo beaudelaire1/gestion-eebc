@@ -4,9 +4,6 @@ from . import views
 app_name = 'communication'
 
 urlpatterns = [
-    # Webhook Meta WhatsApp
-    path('webhooks/whatsapp/', views.whatsapp_webhook, name='whatsapp_webhook'),
-
     # Notifications
     path('notifications/', views.notifications_list, name='notifications'),
     path('notifications/<int:pk>/', views.notification_detail, name='notification_detail'),

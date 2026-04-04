@@ -12,6 +12,8 @@ from django.views.generic import TemplateView
 from apps.members.admin_views import members_map_view, members_map_data
 # Import des vues de confirmation publiques
 from apps.worship.confirmation_views import confirm_role, decline_role
+# Webhook WhatsApp Meta
+from apps.communication.views import whatsapp_webhook
 # SEO sitemaps
 from apps.core.sitemaps import sitemaps
 
@@ -30,6 +32,9 @@ urlpatterns = [
     # API REST pour application mobile
     path('api/v1/', include('apps.api.urls')),
     
+    # Webhook WhatsApp Meta (endpoint public pour Meta)
+    path('webhooks/whatsapp/', whatsapp_webhook, name='whatsapp_webhook'),
+
     # Confirmation des rôles (accessible sans connexion)
     path('worship/confirm/<uuid:token>/', confirm_role, name='public_confirm_role'),
     path('worship/decline/<uuid:token>/', decline_role, name='public_decline_role'),

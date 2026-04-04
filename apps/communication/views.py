@@ -6,11 +6,8 @@ from django.utils import timezone
 from django.db.models import Q
 from django.conf import settings
 from django.views.decorators.csrf import csrf_exempt
-from django.views.decorators.http import require_http_methods
 from datetime import date
 import json
-import hashlib
-import hmac
 
 from .models import Notification, Announcement, EmailLog, SMSLog
 from .forms import AnnouncementForm, EmailLogFilterForm, SMSLogFilterForm
@@ -387,67 +384,22 @@ def sms_log_delete(request, pk):
 
 
 @csrf_exempt
-@require_http_methods(["GET", "POST"])
 def whatsapp_webhook(request):
-    """Webhook Meta WhatsApp: vérification et mise à jour des statuts de livraison."""
-    if request.method == 'GET':
-        mode = request.GET.get('hub.mode')
-        token = request.GET.get('hub.verify_token')
-        challenge = request.GET.get('hub.challenge', '')
-        verify_token = getattr(settings, 'META_WHATSAPP_VERIFY_TOKEN', '')
+    """Webhook Meta WhatsApp Cloud API."""
+    if request.method == "GET":
+        mode = request.GET.get("hub.mode")
+        token = request.GET.get("hub.verify_token")
+        challenge = request.GET.get("hub.challenge")
 
-        if mode == 'subscribe' and verify_token and token == verify_token:
-            return HttpResponse(challenge, status=200)
-        return HttpResponse('forbidden', status=403)
+        if mode == "subscribe" and token == settings.META_WHATSAPP_VERIFY_TOKEN:
+            return HttpResponse(challenge, content_type="text/plain", status=200)
 
-    app_secret = getattr(settings, 'META_WHATSAPP_APP_SECRET', '')
-    signature = request.headers.get('X-Hub-Signature-256', '')
-    if app_secret and signature.startswith('sha256='):
-        expected = hmac.new(
-            app_secret.encode('utf-8'),
-            request.body,
-            hashlib.sha256,
-        ).hexdigest()
-        received = signature.split('=', 1)[1]
-        if not hmac.compare_digest(expected, received):
-            return JsonResponse({'success': False, 'error': 'Invalid signature'}, status=403)
+        return HttpResponse("Invalid verify token", status=403)
 
-    try:
-        payload = json.loads(request.body.decode('utf-8'))
-    except (ValueError, UnicodeDecodeError):
-        return JsonResponse({'success': False, 'error': 'Invalid JSON'}, status=400)
+    if request.method == "POST":
+        return JsonResponse({"status": "received"}, status=200)
 
-    status_mapping = {
-        'sent': SMSLog.Status.SENT,
-        'delivered': SMSLog.Status.DELIVERED,
-        'read': SMSLog.Status.DELIVERED,
-        'failed': SMSLog.Status.FAILED,
-        'undelivered': SMSLog.Status.FAILED,
-    }
-
-    for entry in payload.get('entry', []):
-        for change in entry.get('changes', []):
-            value = change.get('value', {})
-            for status_data in value.get('statuses', []):
-                message_id = status_data.get('id')
-                if not message_id:
-                    continue
-
-                mapped_status = status_mapping.get(status_data.get('status'))
-                if not mapped_status:
-                    continue
-
-                update_fields = {'status': mapped_status}
-                if mapped_status == SMSLog.Status.DELIVERED:
-                    update_fields['delivered_at'] = timezone.now()
-                if mapped_status == SMSLog.Status.FAILED:
-                    errors = status_data.get('errors') or []
-                    if errors:
-                        update_fields['error_message'] = errors[0].get('message', 'Delivery failed')
-
-                SMSLog.objects.filter(external_id=message_id).update(**update_fields)
-
-    return JsonResponse({'success': True})
+    return HttpResponse(status=405)
 
 
 def send_notification(user, title, message, notification_type='info', link=''):
