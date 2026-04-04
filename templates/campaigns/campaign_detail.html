@@ -101,6 +101,25 @@
         </div>
         {% endif %}
 
+        <div class="card mb-4">
+            <div class="card-header">
+                <h6 class="card-title"><i class="bi bi-phone me-2"></i>Participation mobile (lien + QR)</h6>
+            </div>
+            <div class="card-body">
+                <p class="text-muted mb-3">Partagez ce lien sécurisé pour permettre un don depuis un téléphone.</p>
+                <div class="input-group mb-3">
+                    <input type="text" class="form-control" id="campaignPublicLink" value="{{ public_donation_url }}" readonly>
+                    <button class="btn btn-outline-primary" type="button" onclick="copyCampaignLink()">
+                        <i class="bi bi-clipboard me-1"></i>Copier
+                    </button>
+                </div>
+                <div class="text-center">
+                    <img src="{{ qr_code_url }}" alt="QR code de don pour {{ campaign.name }}" class="img-fluid" style="max-width: 220px; border-radius: 12px;">
+                    <div class="small text-muted mt-2">Scannez ce QR code pour ouvrir la page de don de la campagne.</div>
+                </div>
+            </div>
+        </div>
+
         <div class="card">
             <div class="card-header d-flex justify-content-between align-items-center">
                 <h6 class="card-title"><i class="bi bi-coin me-2"></i>Derniers dons</h6>
@@ -164,6 +183,19 @@
 
 {% block extra_js %}
 <script>
+    function copyCampaignLink() {
+        const input = document.getElementById('campaignPublicLink');
+        input.select();
+        input.setSelectionRange(0, 99999);
+        navigator.clipboard.writeText(input.value)
+            .then(() => {
+                if (window.toastManager && window.toastManager.show) {
+                    window.toastManager.show('Lien copié dans le presse-papiers', 'success');
+                }
+            })
+            .catch(() => {});
+    }
+
     // Mise à jour en temps réel de la progression
     function updateCampaignProgress() {
         fetch(`/campaigns/{{ campaign.pk }}/progress/`)

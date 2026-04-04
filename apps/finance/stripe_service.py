@@ -41,7 +41,7 @@ class StripeService:
         return hashlib.sha256(raw.encode()).hexdigest()[:64]
     
     def create_donation_session(self, amount, donation_type, donor_email=None, 
-                                 donor_name=None, member_id=None, site_id=None,
+                                 donor_name=None, member_id=None, site_id=None, campaign_id=None,
                                  success_url=None, cancel_url=None):
         """
         Crée une session de paiement Stripe pour un don.
@@ -70,6 +70,7 @@ class StripeService:
             'donation_type': donation_type,
             'site_id': str(site_id) if site_id else '',
             'member_id': str(member_id) if member_id else '',
+            'campaign_id': str(campaign_id) if campaign_id else '',
         }
         
         # Labels pour les types de dons
@@ -82,7 +83,7 @@ class StripeService:
         try:
             idempotency_key = self._generate_idempotency_key(
                 'donation', amount_cents, donation_type, donor_email, 
-                member_id, site_id, timezone.now().strftime('%Y%m%d%H%M')
+                member_id, site_id, campaign_id, timezone.now().strftime('%Y%m%d%H%M')
             )
             
             session = stripe.checkout.Session.create(
@@ -120,7 +121,7 @@ class StripeService:
             raise
     
     def create_recurring_donation(self, amount, donation_type, interval='month',
-                                   donor_email=None, member_id=None, site_id=None,
+                                   donor_email=None, member_id=None, site_id=None, campaign_id=None,
                                    success_url=None, cancel_url=None):
         """
         Crée un don récurrent (abonnement).
@@ -143,6 +144,7 @@ class StripeService:
             'donation_type': donation_type,
             'site_id': str(site_id) if site_id else '',
             'member_id': str(member_id) if member_id else '',
+            'campaign_id': str(campaign_id) if campaign_id else '',
             'recurring': 'true',
         }
         
@@ -176,7 +178,7 @@ class StripeService:
             # Créer la session d'abonnement
             idempotency_key = self._generate_idempotency_key(
                 'subscription', amount_cents, donation_type, interval,
-                donor_email, member_id, site_id, timezone.now().strftime('%Y%m%d%H%M')
+                donor_email, member_id, site_id, campaign_id, timezone.now().strftime('%Y%m%d%H%M')
             )
             
             session = stripe.checkout.Session.create(
@@ -287,6 +289,23 @@ class StripeService:
         
         online_donation.transaction = transaction
         online_donation.save()
+
+        # Rattacher automatiquement le don à une campagne si campaign_id présent.
+        campaign_id = metadata.get('campaign_id')
+        if campaign_id:
+            try:
+                from apps.campaigns.models import Campaign, Donation as CampaignDonation
+                campaign = Campaign.objects.filter(pk=campaign_id, is_active=True).first()
+                if campaign:
+                    donor_name = session.get('customer_details', {}).get('name') or session.get('customer_email', 'Donateur en ligne')
+                    CampaignDonation.objects.create(
+                        campaign=campaign,
+                        donor_name=donor_name,
+                        amount=amount,
+                        notes='Don en ligne (Stripe) lié à la campagne',
+                    )
+            except Exception as e:
+                logger.warning(f"Campaign donation link failed for campaign_id={campaign_id}: {e}")
         
         # Envoyer un reçu par email
         if session.get('customer_email'):
@@ -340,6 +359,22 @@ class StripeService:
             site_id=metadata.get('site_id') or None,
             member_id=metadata.get('member_id') or None,
         )
+
+        campaign_id = metadata.get('campaign_id')
+        if campaign_id:
+            try:
+                from apps.campaigns.models import Campaign, Donation as CampaignDonation
+                campaign = Campaign.objects.filter(pk=campaign_id, is_active=True).first()
+                if campaign:
+                    donor_name = invoice.get('customer_email') or 'Donateur récurrent'
+                    CampaignDonation.objects.create(
+                        campaign=campaign,
+                        donor_name=donor_name,
+                        amount=amount,
+                        notes='Don récurrent en ligne (Stripe) lié à la campagne',
+                    )
+            except Exception as e:
+                logger.warning(f"Recurring campaign donation link failed for campaign_id={campaign_id}: {e}")
         
         logger.info(f"Recurring donation processed: {transaction.reference} - {amount}€")
         

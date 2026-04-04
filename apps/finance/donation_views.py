@@ -13,6 +13,7 @@ from django.utils.decorators import method_decorator
 from django.http import JsonResponse, HttpResponse
 from django.contrib import messages
 from django.conf import settings
+from django.core import signing
 
 from .stripe_service import stripe_service
 from .models import OnlineDonation
@@ -32,6 +33,22 @@ class DonationPageView(TemplateView):
         # Sites disponibles
         from apps.core.models import Site
         context['sites'] = Site.objects.filter(is_active=True)
+
+        # Campagne sélectionnée via token signé (partage mobile sécurisé)
+        token = self.request.GET.get('c')
+        selected_campaign = None
+        if token:
+            try:
+                payload = signing.loads(token, salt='campaign-donation', max_age=60 * 60 * 24 * 365)
+                campaign_id = payload.get('campaign_id')
+                if campaign_id:
+                    from apps.campaigns.models import Campaign
+                    selected_campaign = Campaign.objects.filter(pk=campaign_id, is_active=True).first()
+            except signing.BadSignature:
+                selected_campaign = None
+
+        context['selected_campaign'] = selected_campaign
+        context['campaign_token'] = token if selected_campaign else ''
         
         return context
 
@@ -59,6 +76,19 @@ class CreateDonationSessionView(View):
             donor_name = data.get('donor_name', '')
             site_id = data.get('site_id')
             is_recurring = data.get('recurring', False)
+            campaign_id = None
+
+            campaign_token = data.get('campaign_token')
+            if campaign_token:
+                try:
+                    payload = signing.loads(campaign_token, salt='campaign-donation', max_age=60 * 60 * 24 * 365)
+                    campaign_id = payload.get('campaign_id')
+                    if campaign_id:
+                        from apps.campaigns.models import Campaign
+                        if not Campaign.objects.filter(pk=campaign_id, is_active=True).exists():
+                            return JsonResponse({'error': 'Campagne invalide ou inactive.'}, status=400)
+                except signing.BadSignature:
+                    return JsonResponse({'error': 'Lien de campagne invalide ou expiré.'}, status=400)
             
             # Membre connecté ?
             member_id = None
@@ -78,6 +108,7 @@ class CreateDonationSessionView(View):
                     donor_email=donor_email,
                     member_id=member_id,
                     site_id=site_id,
+                    campaign_id=campaign_id,
                     success_url=success_url,
                     cancel_url=cancel_url,
                 )
@@ -89,6 +120,7 @@ class CreateDonationSessionView(View):
                     donor_name=donor_name,
                     member_id=member_id,
                     site_id=site_id,
+                    campaign_id=campaign_id,
                     success_url=success_url,
                     cancel_url=cancel_url,
                 )

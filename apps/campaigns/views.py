@@ -3,6 +3,9 @@ from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.http import JsonResponse
 from django.views.decorators.http import require_http_methods
+from django.urls import reverse
+from django.core import signing
+from urllib.parse import quote_plus
 from apps.core.permissions import role_required
 from .models import Campaign, Donation
 from .forms import CampaignForm, DonationForm
@@ -30,10 +33,17 @@ def campaign_detail(request, pk):
     """Détail d'une campagne."""
     campaign = get_object_or_404(Campaign, pk=pk)
     donations = campaign.donations.all()[:20]
+
+    campaign_token = signing.dumps({'campaign_id': campaign.pk}, salt='campaign-donation')
+    donation_path = f"{reverse('public:donation')}?c={campaign_token}"
+    public_donation_url = request.build_absolute_uri(donation_path)
+    qr_code_url = f"https://quickchart.io/qr?size=280&text={quote_plus(public_donation_url)}"
     
     context = {
         'campaign': campaign,
         'donations': donations,
+        'public_donation_url': public_donation_url,
+        'qr_code_url': qr_code_url,
     }
     return render(request, 'campaigns/campaign_detail.html', context)
 
