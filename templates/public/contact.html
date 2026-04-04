@@ -1,7 +1,7 @@
 {% extends 'public/base.html' %}
 
-{% block title %}Contact - {{ settings.site_name|default:'EEBC' }}{% endblock %}
-
+{% block title %}Contact - {{ settings.site_name|default:'EEBC' }}{% endblock %}{% block meta_description %}Contactez {{ settings.site_name|default:'EEBC' }} pour toute question ou prendre rendez-vous.{% endblock %}
+{% block og_title %}Contactez-nous{% endblock %}
 {% block content %}
 <section class="hero-section py-5">
     <div class="container text-center">

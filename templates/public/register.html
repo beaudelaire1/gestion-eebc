@@ -1,6 +1,8 @@
 {% extends 'public/base.html' %}
 
 {% block title %}Inscription - {{ settings.site_name|default:'EEBC' }}{% endblock %}
+{% block meta_description %}Inscrivez-vous auprès de {{ settings.site_name|default:'EEBC' }} pour recevoir nos actualités et rejoindre notre communauté.{% endblock %}
+{% block og_title %}Inscription{% endblock %}
 
 {% block content %}
 <section class="hero-section py-5">

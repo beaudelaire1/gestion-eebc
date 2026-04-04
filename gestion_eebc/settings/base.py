@@ -193,6 +193,17 @@ PERMISSIONS_POLICY = {
     "camera": [],
 }
 
+# =============================================================================
+# SESSION & CSRF SECURITY
+# =============================================================================
+SESSION_COOKIE_HTTPONLY = True  # S2: Prevent JavaScript access to session cookie
+SESSION_COOKIE_SAMESITE = 'Strict'  # S2: CSRF protection
+SESSION_COOKIE_SECURE = False  # Overridden to True in prod.py
+CSRF_COOKIE_HTTPONLY = True  # S2: Secure CSRF token
+CSRF_COOKIE_SAMESITE = 'Strict'  # S2: CSRF protection
+CSRF_COOKIE_SECURE = False  # Overridden to True in prod.py
+X_FRAME_OPTIONS = 'DENY'  # S3: Prevent clickjacking - deny all iframe embedding
+
 
 # =============================================================================
 # BUSINESS LOGIC CONFIGURATION

@@ -21,7 +21,7 @@ dependencies:
   # Navigation
   go_router: ^13.2.0
   # UI Components
-  google_fonts: ^6.1.0
+  google_fonts: ^8.0.0
   flutter_spinkit: ^5.2.0
   cached_network_image: ^3.3.1
   flutter_svg: ^2.0.9

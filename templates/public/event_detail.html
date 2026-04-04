@@ -2,6 +2,13 @@
 
 {% block title %}{{ event.title }} - {{ settings.site_name|default:'EEBC' }}{% endblock %}
 
+{% block meta_description %}{{ event.description|truncatewords:30|default:'Événement de '|add:settings.site_name }}{% endblock %}
+
+{% block og_title %}{{ event.title }}{% endblock %}
+{% block og_description %}{{ event.description|truncatewords:30|default:settings.meta_description }}{% endblock %}
+{% block og_image %}{{ event.image.url|default:settings.og_image_url|default:'/static/img/og-image.png' }}{% endblock %}
+{% block og_type %}event{% endblock %}
+
 {% block content %}
 <!-- Header -->
 {% if event.image %}

@@ -6,6 +6,28 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="description" content="{% block meta_description %}{{ settings.meta_description|default:'Église Évangélique Baptiste de Cabassou - Guyane' }}{% endblock %}">
     
+    <!-- E2: Canonical URL (prevent duplicate content) -->
+    {% block canonical %}
+    <link rel="canonical" href="{{ request.build_absolute_uri }}">
+    {% endblock %}
+    
+    <!-- E1: Open Graph Meta Tags (social sharing) -->
+    <meta property="og:title" content="{% block og_title %}{{ block.super|truncatewords:8 }}{% endblock %}">
+    <meta property="og:description" content="{% block og_description %}{{ block.super|default:settings.meta_description|default:'Église Évangélique Baptiste de Cabassou'|truncatewords:30 }}{% endblock %}">
+    <meta property="og:image" content="{% block og_image %}{{ settings.og_image_url|default:'/static/img/og-image.png' }}{% endblock %}">
+    <meta property="og:image:alt" content="{% block og_image_alt %}{{ settings.site_name|default:'EEBC' }}{% endblock %}">
+    <meta property="og:type" content="{% block og_type %}website{% endblock %}">
+    <meta property="og:url" content="{{ request.build_absolute_uri }}">
+    <meta property="og:site_name" content="{{ settings.site_name|default:'EEBC' }}">
+    <meta property="og:locale" content="fr_FR">
+    
+    <!-- E1: Twitter Card Meta Tags -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="{% block twitter_title %}{{ block.super|truncatewords:8 }}{% endblock %}">
+    <meta name="twitter:description" content="{% block twitter_description %}{{ block.super|default:settings.meta_description|default:'Église Évangélique Baptiste de Cabassou'|truncatewords:30 }}{% endblock %}">
+    <meta name="twitter:image" content="{% block twitter_image %}{{ settings.og_image_url|default:'/static/img/og-image.png' }}{% endblock %}">
+    <meta name="twitter:image:alt" content="{% block twitter_image_alt %}{{ settings.site_name|default:'EEBC' }}{% endblock %}">
+    
     <title>{% block title %}{{ settings.site_name|default:'EEBC' }}{% endblock %}</title>
     
     <!-- PWA Meta Tags -->
@@ -26,14 +48,43 @@
     <!-- Public Pages CSS (thème fixe) -->
     <link rel="stylesheet" href="{% static 'css/public.css' %}">
     
+    <!-- Luxe Design CSS - Premium UX/UI enhancements -->
+    <link rel="stylesheet" href="{% static 'css/luxe-design.css' %}">
+    
     <!-- Animated Verse Banner CSS -->
     <link rel="stylesheet" href="{% static 'css/animated-verse-banner.css' %}">>
     
-    <!-- Theme initialization (prevent flash) -->
-    <script>
-        // Thème fixe pour les pages publiques - pas de sélecteur
-        document.documentElement.setAttribute('data-theme', 'default');
+    <!-- E3: JSON-LD Structured Data (Church Organization) -->
+    {% block json_ld %}
+    <script type="application/ld+json">
+    {
+        "@context": "https://schema.org",
+        "@type": "Organization",
+        "name": "{{ settings.site_name|default:'EEBC' }}",
+        "alternateName": "Église Évangélique Baptiste de Cabassou",
+        "url": "{{ request.build_absolute_uri '/' }}",
+        "logo": "{{ settings.og_image_url|default:'/static/img/logo.png' }}",
+        "description": "{{ settings.meta_description|default:'Église Évangélique Baptiste de Cabassou' }}",
+        "sameAs": [
+            "https://www.facebook.com/egliseebc",
+            "https://www.instagram.com/egliseebc"
+        ],
+        "contact": {
+            "@type": "ContactPoint",
+            "telephone": "[PHONE]",
+            "contactType": "Customer Service"
+        },
+        "areaServed": "GF",
+        "address": {
+            "@type": "PostalAddress",
+            "streetAddress": "[ADDRESS]",
+            "addressLocality": "Cabassou",
+            "postalCode": "[ZIP]",
+            "addressCountry": "GF"
+        }
+    }
     </script>
+    {% endblock %}
     
     <style>
         :root {
@@ -60,6 +111,21 @@
         .nav-link {
             font-weight: 500;
             transition: color 0.3s;
+        }
+        
+        /* A3: Focus styles for keyboard navigation accessibility */
+        a:focus-visible,
+        button:focus-visible,
+        input:focus-visible,
+        textarea:focus-visible,
+        select:focus-visible {
+            outline: 3px solid var(--accent-color);
+            outline-offset: 2px;
+            border-radius: 2px;
+        }
+        
+        .nav-link:focus-visible {
+            color: var(--accent-color);
         }
         
         .btn-primary {
@@ -236,8 +302,18 @@
     {% block extra_css %}{% endblock %}
 </head>
 <body>
+    <!-- A1: Skip to content link for accessibility -->
+    <a href="#main-content" class="btn btn-primary position-absolute top-0 start-0 m-2" style="z-index: 9999; transform: translateY(-200%)" id="skip-link">Aller au contenu principal</a>
+    <style>
+        #skip-link:focus {
+            transform: translateY(0);
+            top: 0 !important;
+            left: 0 !important;
+        }
+    </style>
+    
     <!-- Navigation -->
-    <nav class="navbar navbar-expand-lg navbar-light bg-white sticky-top">
+    <nav class="navbar navbar-expand-lg navbar-light bg-white sticky-top" role="navigation" aria-label="Navigation principale">
         <div class="container">
             <a class="navbar-brand text-primary" href="{% url 'public:home' %}">
                 {% if settings.logo %}
@@ -303,7 +379,7 @@
     {% endif %}
     
     <!-- Main Content -->
-    <main>
+    <main id="main-content" role="main">
         {% block content %}{% endblock %}
     </main>
     
@@ -376,14 +452,14 @@
         </div>
     </footer>
     
-    <!-- Bootstrap JS -->
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- P3: Bootstrap JS with defer for non-blocking render -->
+    <script defer src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
     
     <!-- Animated Verse Banner System -->
-    <script src="{% static 'js/animated-verse-banner.js' %}"></script>
+    <script defer src="{% static 'js/animated-verse-banner.js' %}"></script>
     
-    <!-- Service Worker Registration -->
-    <script>
+    <!-- P3: Service Worker Registration (deferred) -->
+    <script defer>
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', function() {
                 navigator.serviceWorker.register('/static/sw.js')

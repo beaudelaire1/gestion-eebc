@@ -79,7 +79,11 @@ def login_view(request):
                 
                 # Connexion normale
                 login(request, user)
+                # S1: Validate next URL to prevent open redirect
+                from django.utils.http import url_has_allowed_host_and_scheme
                 next_url = request.GET.get('next', 'dashboard:home')
+                if not url_has_allowed_host_and_scheme(next_url, allowed_hosts={request.get_host()}):
+                    next_url = 'dashboard:home'
                 return redirect(next_url)
             else:
                 messages.error(request, error_message)

@@ -3,157 +3,67 @@ from django.contrib.auth.decorators import login_required
 from django.db.models import Count, Sum, Q
 from django.urls import reverse
 from datetime import date, timedelta
+from apps.dashboard.services import DashboardService
 
 
 @login_required
 def home(request):
     """
-    Page d'accueil / Tableau de bord principal.
-    Vue globale avec stats et accès rapides.
+    Page d'accueil / Tableau de bord principal (refactored).
+    Utilise DashboardService pour extraction de logique et caching.
     """
-    from apps.members.models import Member, LifeEvent, VisitationLog
-    from apps.bibleclub.models import Child, Session, Attendance, BibleClass
-    from apps.events.models import Event
+    from apps.members.models import LifeEvent, VisitationLog
     from apps.campaigns.models import Campaign
-    from apps.communication.models import Announcement
-    from apps.groups.models import Group
-    from apps.finance.models import FinancialTransaction
-    from apps.worship.models import WorshipService, ServiceRole
     
     today = date.today()
-    start_of_month = today.replace(day=1)
     
-    # Événements à venir (30 prochains jours)
-    upcoming_events_count = Event.objects.filter(
-        start_date__gte=today,
-        start_date__lte=today + timedelta(days=30),
-        is_cancelled=False
-    ).count()
+    # Q6: Extract stats via service layer with caching
+    stats = DashboardService.get_member_stats(request)
+    children_classes = DashboardService.get_children_and_classes_stats()
+    stats.update({
+        'total_children': children_classes['total_children'],
+        'total_classes': children_classes['total_classes'],
+        'total_groups': DashboardService.get_groups_count(),
+        'total_events': DashboardService.get_events_count(),
+    })
     
-    # Stats globales
-    members_qs = Member.objects.all()
-    members_by_status = {
-        s['status']: s['n']
-        for s in members_qs.values('status').annotate(n=Count('id'))
-    }
-    stats = {
-        'total_members': members_qs.count(),
-        'members_actif': members_by_status.get('actif', 0),
-        'members_visiteur': members_by_status.get('visiteur', 0),
-        'members_inactif': members_by_status.get('inactif', 0),
-        'members_transfere': members_by_status.get('transfere', 0),
-        'total_children': Child.objects.filter(is_active=True).count(),
-        'total_classes': BibleClass.objects.filter(is_active=True).count(),
-        'total_groups': Group.objects.filter(is_active=True).count(),
-        'total_events': upcoming_events_count,
-    }
+    finance_stats = DashboardService.get_finance_stats()
+    pastoral_stats = DashboardService.get_pastoral_stats(request)
+    worship_stats = DashboardService.get_worship_stats(request)
     
-    # ========== STATS FINANCE ==========
-    month_transactions = FinancialTransaction.objects.filter(
-        transaction_date__gte=start_of_month,
-        status='valide'
-    )
-    finance_stats = {
-        'month_income': month_transactions.filter(
-            transaction_type__in=['don', 'dime', 'offrande']
-        ).aggregate(total=Sum('amount'))['total'] or 0,
-        'month_expenses': month_transactions.filter(
-            transaction_type='depense'
-        ).aggregate(total=Sum('amount'))['total'] or 0,
-        'pending_transactions': FinancialTransaction.objects.filter(
-            status='en_attente'
-        ).count(),
-    }
-    finance_stats['month_balance'] = finance_stats['month_income'] - finance_stats['month_expenses']
-    
-    # ========== STATS PASTORAL CRM ==========
-    # Membres nécessitant une visite (pas visités depuis 6 mois)
-    members_needing_visit = []
-    for member in Member.objects.filter(status='actif')[:100]:  # Limiter pour perf
-        if member.needs_visit:
-            members_needing_visit.append(member)
-    
-    # Événements de vie récents (30 derniers jours)
+    # Fetch related data
     recent_life_events = LifeEvent.objects.filter(
         event_date__gte=today - timedelta(days=30)
     ).select_related('primary_member').order_by('-event_date')[:5]
     
-    # Visites à faire
     pending_visits = VisitationLog.objects.filter(
         status__in=['planifie', 'a_faire']
     ).select_related('member').order_by('scheduled_date')[:5]
     
-    pastoral_stats = {
-        'members_needing_visit': len(members_needing_visit[:10]),
-        'recent_life_events_count': recent_life_events.count(),
-        'pending_visits_count': pending_visits.count(),
-    }
-    
-    # ========== STATS WORSHIP ==========
-    # Prochain culte
-    next_service = WorshipService.objects.filter(
-        event__start_date__gte=today
-    ).select_related('event').order_by('event__start_date').first()
-    
-    # Rôles non confirmés pour le prochain culte
+    # Get unconfirmed roles for next service
     unconfirmed_roles = []
-    if next_service:
-        unconfirmed_roles = next_service.roles.filter(
+    if worship_stats['next_service']:
+        unconfirmed_roles = list(worship_stats['next_service'].roles.filter(
             status='en_attente'
-        ).select_related('member')[:5]
+        ).select_related('member')[:5])
     
-    worship_stats = {
-        'next_service': next_service,
-        'unconfirmed_roles_count': len(unconfirmed_roles),
-    }
-    
-    # Événements à venir (liste pour affichage)
-    upcoming_events = Event.objects.filter(
-        start_date__gte=today,
-        start_date__lte=today + timedelta(days=14),
-        is_cancelled=False
-    ).select_related('category').order_by('start_date')[:4]
-    
-    # Campagnes actives avec alertes
-    active_campaigns = Campaign.objects.filter(is_active=True)
+    upcoming_events = DashboardService.get_upcoming_events(days=14, limit=4)
+    active_campaigns = Campaign.objects.filter(is_active=True)[:3]
     critical_campaigns = [c for c in active_campaigns if c.is_critical]
+    session_stats = DashboardService.get_session_stats()
+    announcements = DashboardService.get_active_announcements(request)
     
-    # Dernière session du club biblique
-    last_session = Session.objects.filter(is_cancelled=False).order_by('-date').first()
-    session_stats = None
-    if last_session:
-        attendances = last_session.attendances.all()
-        present = attendances.filter(status='present').count()
-        late = attendances.filter(status='late').count()
-        absent = attendances.filter(status='absent').count()
-        total = attendances.count()
-        session_stats = {
-            'session': last_session,
-            'present': present,
-            'late': late,
-            'absent': absent,
-            'total': total,
-            'rate': ((present + late) / total * 100) if total > 0 else 0
-        }
-    
-    # Annonces actives
-    announcements = Announcement.objects.filter(is_active=True).filter(
-        Q(start_date__isnull=True) | Q(start_date__lte=today)
-    ).filter(
-        Q(end_date__isnull=True) | Q(end_date__gte=today)
-    ).order_by('-is_pinned', '-created_at')[:4]
-    
-    # Notifications non lues
+    # Notifications
     try:
         unread_notifications = request.user.notifications.filter(is_read=False).count()
     except:
         unread_notifications = 0
     
-    # Alertes
+    # Build alerts
     alerts = []
     
-    # Alerte campagnes critiques
-    for campaign in critical_campaigns[:1]:
+    if critical_campaigns:
+        campaign = critical_campaigns[0]
         alerts.append({
             'type': 'warning',
             'icon': 'exclamation-triangle',
@@ -162,7 +72,6 @@ def home(request):
             'link': f'/campaigns/{campaign.id}/'
         })
     
-    # Alerte visites pastorales (réservée aux pasteurs, anciens et diacres)
     if pastoral_stats['members_needing_visit'] > 5 and request.user.can_view_member_alerts:
         alerts.append({
             'type': 'info',
@@ -172,16 +81,15 @@ def home(request):
             'link': reverse('members:members_needing_visit')
         })
     
-    # Alerte rôles non confirmés
-    if worship_stats['unconfirmed_roles_count'] > 0 and next_service:
-        days_until = (next_service.event.start_date - today).days
+    if worship_stats['unconfirmed_roles_count'] > 0 and worship_stats['next_service']:
+        days_until = (worship_stats['next_service'].event.start_date - today).days
         if days_until <= 3:
             alerts.append({
                 'type': 'warning',
                 'icon': 'person-exclamation',
                 'title': 'Rôles non confirmés',
                 'message': f"{worship_stats['unconfirmed_roles_count']} rôle(s) non confirmé(s) pour le culte de dimanche.",
-                'link': f'/app/worship/services/{next_service.pk}/'
+                'link': f'/app/worship/services/{worship_stats["next_service"].pk}/'
             })
     
     context = {
@@ -193,7 +101,7 @@ def home(request):
         'pending_visits': pending_visits,
         'unconfirmed_roles': unconfirmed_roles,
         'upcoming_events': upcoming_events,
-        'active_campaigns': active_campaigns[:3],
+        'active_campaigns': active_campaigns,
         'critical_campaigns': critical_campaigns,
         'session_stats': session_stats,
         'announcements': announcements,

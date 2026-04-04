@@ -1,0 +1,523 @@
+/* =============================================================================
+   LUXE DESIGN ENHANCEMENTS - Premium UX/UI for EEBC
+   Based on luxury design principles: generous spacing, subtle shadows, premium typography
+   ============================================================================= */
+
+:root {
+    /* Luxe Spacing Scale (8px grid) */
+    --space-xs: 0.25rem;   /*  4px  */
+    --space-sm: 0.5rem;    /*  8px  */
+    --space-md: 1rem;      /* 16px  */
+    --space-lg: 1.5rem;    /* 24px  */
+    --space-xl: 2rem;      /* 32px  */
+    --space-2xl: 3rem;     /* 48px  */
+    --space-3xl: 4rem;     /* 64px  */
+    --space-4xl: 6rem;     /* 96px  */
+    --space-5xl: 8rem;     /* 128px */
+    
+    /* Premium Shadows (multi-layer, subtle) */
+    --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.04), 0 1px 3px rgba(0, 0, 0, 0.06);
+    --shadow-md: 0 4px 6px rgba(0, 0, 0, 0.04), 0 2px 4px rgba(0, 0, 0, 0.06);
+    --shadow-lg: 0 10px 15px rgba(0, 0, 0, 0.06), 0 4px 6px rgba(0, 0, 0, 0.04);
+    --shadow-glow: 0 0 20px rgba(10, 54, 255, 0.12);
+    
+    /* Luxe Border Radius */
+    --radius-sm: 2px;
+    --radius-md: 4px;
+    --radius-lg: 8px;
+    --radius-xl: 16px;
+    
+    /* Typography */
+    --transition-smooth: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    --transition-fast: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* =============================================================================
+   TYPOGRAPHY - Premium fine-tuning
+   ============================================================================= */
+
+body {
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    text-rendering: optimizeLegibility;
+    letter-spacing: -0.3px;
+}
+
+h1, h2, h3, h4, h5, h6 {
+    font-weight: 700;
+    letter-spacing: -0.5px;
+    color: var(--public-text-primary);
+}
+
+h1 {
+    font-size: 3.75rem;
+    line-height: 1.1;
+    margin-bottom: var(--space-2xl);
+    font-weight: 800;
+}
+
+h2 {
+    font-size: 2.5rem;
+    line-height: 1.2;
+    margin-bottom: var(--space-xl);
+    font-weight: 700;
+}
+
+h3 {
+    font-size: 1.75rem;
+    line-height: 1.3;
+    margin-bottom: var(--space-lg);
+}
+
+p {
+    line-height: 1.65;
+    letter-spacing: 0.2px;
+    color: var(--public-text-primary);
+}
+
+.subtitle {
+    font-size: 1.1rem;
+    color: var(--public-text-secondary);
+    font-weight: 500;
+    letter-spacing: 0px;
+}
+
+.lead {
+    font-size: 1.2rem;
+    font-weight: 500;
+    color: var(--public-text-secondary);
+    line-height: 1.6;
+}
+
+/* =============================================================================
+   CARDS - Premium styling with subtle shadows
+   ============================================================================= */
+
+.card {
+    border: none;
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-sm);
+    transition: var(--transition-smooth);
+    background: var(--public-bg-primary);
+    overflow: hidden;
+}
+
+.card:hover {
+    transform: translateY(-4px);
+    box-shadow: var(--shadow-lg);
+}
+
+.card-body {
+    padding: var(--space-xl);
+}
+
+.card-header {
+    background: transparent;
+    border-bottom: 1px solid var(--public-border-light);
+    padding: var(--space-lg);
+}
+
+/* Event Cards - Premium enhancement */
+.event-card {
+    border: none;
+    border-radius: var(--radius-xl);
+    overflow: hidden;
+    box-shadow: var(--shadow-md);
+    transition: var(--transition-smooth);
+    position: relative;
+}
+
+.event-card:hover {
+    transform: translateY(-8px);
+    box-shadow: var(--shadow-lg), var(--shadow-glow);
+}
+
+.event-card-img {
+    height: 200px;
+    overflow: hidden;
+    position: relative;
+    background: linear-gradient(135deg, #f5f5f5 0%, #ffffff 100%);
+}
+
+.event-card-img img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform 0.3s ease;
+}
+
+.event-card:hover .event-card-img img {
+    transform: scale(1.05);
+}
+
+.event-date-badge {
+    position: absolute;
+    top: var(--space-lg);
+    left: var(--space-lg);
+    background: var(--public-primary);
+    color: white;
+    padding: var(--space-md);
+    border-radius: var(--radius-md);
+    text-align: center;
+    font-weight: 700;
+    box-shadow: var(--shadow-md);
+    z-index: 10;
+}
+
+.event-date-badge .day {
+    font-size: 1.5rem;
+    line-height: 1;
+}
+
+.event-date-badge .month {
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    opacity: 0.9;
+    margin-top: 4px;
+}
+
+/* =============================================================================
+   BUTTONS - Premium CTA styling
+   ============================================================================= */
+
+.btn {
+    font-weight: 600;
+    padding: 0.875rem 2rem;
+    border-radius: var(--radius-md);
+    letter-spacing: 0.5px;
+    transition: var(--transition-fast);
+    border: none;
+    position: relative;
+    overflow: hidden;
+    font-size: 0.95rem;
+    text-transform: none;
+}
+
+.btn::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 0;
+    height: 0;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.2);
+    transform: translate(-50%, -50%);
+    transition: width 0.3s, height 0.3s;
+}
+
+.btn:hover::before {
+    width: 300px;
+    height: 300px;
+}
+
+.btn-primary {
+    background: linear-gradient(135deg, var(--public-primary) 0%, #0830d9 100%);
+    color: white;
+    box-shadow: 0 4px 15px rgba(10, 54, 255, 0.25);
+}
+
+.btn-primary:hover {
+    color: white;
+    box-shadow: 0 8px 25px rgba(10, 54, 255, 0.35);
+    transform: translateY(-2px);
+}
+
+.btn-primary:active {
+    transform: translateY(0);
+    box-shadow: 0 2px 10px rgba(10, 54, 255, 0.25);
+}
+
+.btn-outline-primary {
+    color: var(--public-primary);
+    border: 2px solid var(--public-primary);
+    position: relative;
+    z-index: 1;
+}
+
+.btn-outline-primary::before {
+    background: var(--public-primary);
+    z-index: -1;
+}
+
+.btn-outline-primary:hover {
+    color: white;
+    border-color: var(--public-primary);
+    box-shadow: 0 4px 15px rgba(10, 54, 255, 0.25);
+}
+
+.btn-outline-light {
+    color: white;
+    border: 2px solid rgba(255, 255, 255, 0.5);
+}
+
+.btn-outline-light:hover {
+    background: rgba(255, 255, 255, 0.1);
+    border-color: white;
+    color: white;
+}
+
+/* Size variations */
+.btn-lg {
+    padding: 1rem 3rem;
+    font-size: 1rem;
+}
+
+.btn-sm {
+    padding: 0.5rem 1.5rem;
+    font-size: 0.875rem;
+}
+
+/* =============================================================================
+   FORMS - Premium input styling
+   ============================================================================= */
+
+.form-control,
+.form-select {
+    border: 1px solid var(--public-border-color);
+    border-radius: var(--radius-md);
+    padding: 0.875rem var(--space-md);
+    font-size: 0.95rem;
+    transition: var(--transition-fast);
+    background: var(--public-bg-primary);
+}
+
+.form-control:focus,
+.form-select:focus {
+    border-color: var(--public-primary);
+    box-shadow: 0 0 0 3px rgba(10, 54, 255, 0.1);
+    outline: none;
+}
+
+.form-label {
+    font-weight: 600;
+    margin-bottom: var(--space-sm);
+    color: var(--public-text-primary);
+    letter-spacing: 0.3px;
+}
+
+textarea.form-control {
+    resize: vertical;
+    min-height: 120px;
+}
+
+/* =============================================================================
+   SECTIONS & SPACING - Luxury breathing room
+   ============================================================================= */
+
+section {
+    padding: var(--space-4xl) 0;
+}
+
+section.hero-section {
+    padding: var(--space-5xl) 0 var(--space-4xl);
+    background: linear-gradient(135deg, var(--public-bg-secondary) 0%, var(--public-bg-primary) 100%);
+    position: relative;
+    overflow: hidden;
+}
+
+section.hero-section::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    right: 0;
+    width: 300px;
+    height: 300px;
+    background: radial-gradient(circle, rgba(10, 54, 255, 0.05) 0%, transparent 70%);
+    border-radius: 50%;
+    pointer-events: none;
+}
+
+.section-header {
+    text-align: center;
+    margin-bottom: var(--space-4xl);
+    position: relative;
+}
+
+.divider {
+    width: 60px;
+    height: 3px;
+    background: linear-gradient(90deg, var(--public-primary) 0%, var(--public-info) 100%);
+    margin: var(--space-lg) auto;
+    border-radius: 2px;
+}
+
+/* =============================================================================
+   CONTAINER & LAYOUT - Premium max-width and margins
+   ============================================================================= */
+
+.container {
+    max-width: 1280px;
+    padding-left: var(--space-xl);
+    padding-right: var(--space-xl);
+}
+
+@media (max-width: 768px) {
+    .container {
+        padding-left: var(--space-lg);
+        padding-right: var(--space-lg);
+    }
+    
+    h1 {
+        font-size: 2.5rem;
+        margin-bottom: var(--space-xl);
+    }
+    
+    h2 {
+        font-size: 1.75rem;
+        margin-bottom: var(--space-lg);
+    }
+    
+    section {
+        padding: var(--space-3xl) 0;
+    }
+}
+
+/* =============================================================================
+   IMAGES & MEDIA - Premium treatment
+   ============================================================================= */
+
+img {
+    border-radius: var(--radius-lg);
+    max-width: 100%;
+    height: auto;
+    display: block;
+}
+
+.img-fluid {
+    border-radius: var(--radius-lg);
+}
+
+figure {
+    margin: 0;
+}
+
+figcaption {
+    font-size: 0.875rem;
+    color: var(--public-text-secondary);
+    margin-top: var(--space-md);
+    text-align: center;
+    font-style: italic;
+}
+
+/* =============================================================================
+   NAVBAR - Premium header treatment
+   ============================================================================= */
+
+.navbar {
+    backdrop-filter: blur(10px);
+    background-color: rgba(255, 255, 255, 0.95) !important;
+}
+
+.navbar-brand {
+    font-weight: 800;
+    font-size: 1.5rem;
+    letter-spacing: -0.5px;
+    color: var(--public-primary) !important;
+}
+
+.nav-link {
+    position: relative;
+    font-weight: 500;
+    letter-spacing: 0.3px;
+    padding: var(--space-md) var(--space-lg) !important;
+}
+
+.nav-link::after {
+    content: '';
+    position: absolute;
+    width: 0;
+    height: 2px;
+    bottom: 0;
+    left: 50%;
+    background: var(--public-primary);
+    transition: width 0.3s, left 0.3s;
+    transform: translateX(-50%);
+}
+
+.nav-link:hover::after {
+    width: 100%;
+}
+
+/* =============================================================================
+   FOOTER - Premium footer styling
+   ============================================================================= */
+
+footer {
+    background: linear-gradient(135deg, var(--public-secondary) 0%, #0f2947 100%);
+    color: white;
+    margin-top: var(--space-5xl);
+    position: relative;
+    overflow: hidden;
+}
+
+footer::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: radial-gradient(circle at 20% 50%, rgba(10, 54, 255, 0.1) 0%, transparent 50%),
+                radial-gradient(circle at 80% 80%, rgba(248, 181, 0, 0.05) 0%, transparent 50%);
+    pointer-events: none;
+}
+
+footer a {
+    color: rgba(255, 255, 255, 0.8);
+    text-decoration: none;
+    transition: var(--transition-fast);
+    position: relative;
+}
+
+footer a:hover {
+    color: white;
+}
+
+footer h5 {
+    font-weight: 700;
+    letter-spacing: 0.5px;
+    margin-bottom: var(--space-lg);
+}
+
+/* =============================================================================
+   ACCESSIBILITY - Premium focus states
+   ============================================================================= */
+
+a:focus-visible,
+button:focus-visible,
+input:focus-visible,
+.nav-link:focus-visible {
+    outline: 3px solid var(--public-accent);
+    outline-offset: 2px;
+    border-radius: var(--radius-sm);
+}
+
+/* =============================================================================
+   UTILITIES & HELPERS
+   ============================================================================= */
+
+.text-gradient {
+    background: linear-gradient(135deg, var(--public-primary) 0%, var(--public-info) 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+.divider-line {
+    height: 1px;
+    background: linear-gradient(90deg, rgba(0,0,0,0) 0%, rgba(0,0,0,0.1) 50%, rgba(0,0,0,0) 100%);
+    margin: var(--space-2xl) 0;
+}
+
+/* Smooth transitions for all interactive elements */
+* {
+    transition-property: background-color, border-color, color, fill, stroke, box-shadow, opacity, transform;
+    transition-duration: 150ms;
+    transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+*:focus-visible {
+    transition-duration: 0ms;
+}

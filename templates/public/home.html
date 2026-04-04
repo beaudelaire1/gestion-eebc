@@ -2,6 +2,8 @@
 {% load static %}
 
 {% block title %}Accueil - {{ settings.site_name|default:'EEBC' }}{% endblock %}
+{% block meta_description %}Bienvenue à {{ settings.site_name|default:'EEBC' }}. Découvrez nos services, événements et actualités.{% endblock %}
+{% block og_title %}Accueil - {{ settings.site_name|default:'EEBC' }}{% endblock %}
 
 {% block extra_css %}
 <style>
@@ -602,7 +604,7 @@
                 <div class="card event-card h-100">
                     <div class="event-card-img">
                         {% if event.image %}
-                        <img src="{{ event.image.url }}" alt="{{ event.title }}">
+                        <img src="{{ event.image.url }}" alt="{{ event.title }}" loading="lazy">
                         {% else %}
                         <i class="bi bi-calendar-event text-white" style="font-size: 4rem; opacity: 0.5;"></i>
                         {% endif %}
@@ -658,7 +660,7 @@
             <div class="col-md-4" data-aos="fade-up" data-aos-delay="{{ forloop.counter0 }}00">
                 <div class="card h-100" style="border-radius: 20px; overflow: hidden;">
                     {% if article.featured_image %}
-                    <img src="{{ article.featured_image.url }}" class="card-img-top" alt="{{ article.title }}" style="height: 200px; object-fit: cover;">
+                    <img src="{{ article.featured_image.url }}" class="card-img-top" alt="{{ article.title }}" loading="lazy" style="height: 200px; object-fit: cover;">
                     {% else %}
                     <div class="card-img-top bg-secondary d-flex align-items-center justify-content-center" style="height: 200px;">
                         <i class="bi bi-newspaper text-white" style="font-size: 3rem; opacity: 0.5;"></i>
