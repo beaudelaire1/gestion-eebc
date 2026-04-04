@@ -68,12 +68,13 @@
 
 .hero-text {
     max-width: 700px;
-    color: white;
+    color: #ffffff !important;
 }
 
 .hero-text h1 {
     font-size: 4rem;
     font-weight: 700;
+    color: #ffffff !important;
     margin-bottom: 1.5rem;
     opacity: 0;
     transform: translateY(50px);
@@ -83,6 +84,7 @@
 
 .hero-text p {
     font-size: 1.4rem;
+    color: #ffffff !important;
     margin-bottom: 2rem;
     opacity: 0;
     transform: translateY(50px);
@@ -108,21 +110,26 @@
     padding: 15px 40px;
     font-size: 1.1rem;
     font-weight: 600;
+    color: #ffffff !important;
     border-radius: 50px;
     transition: all 0.4s ease;
     text-transform: uppercase;
     letter-spacing: 1px;
 }
 
+.hero-btn:visited,
+.hero-btn:hover,
+.hero-btn:focus {
+    color: #ffffff !important;
+}
+
 .hero-btn-primary {
-    background: white;
-    color: var(--primary-color);
-    border: none;
+    background: rgba(255,255,255,0.16);
+    border: 2px solid rgba(255,255,255,0.8);
 }
 
 .hero-btn-primary:hover {
-    background: var(--accent-color);
-    color: white;
+    background: rgba(255,255,255,0.28);
     transform: translateY(-3px);
     box-shadow: 0 10px 30px rgba(0,0,0,0.3);
 }

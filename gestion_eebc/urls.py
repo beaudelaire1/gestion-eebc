@@ -34,12 +34,12 @@ urlpatterns = [
     path('worship/confirm/<uuid:token>/', confirm_role, name='public_confirm_role'),
     path('worship/decline/<uuid:token>/', decline_role, name='public_decline_role'),
     
-    # Vues admin personnalisées (avant admin/)
-    path('admin/members/map/', members_map_view, name='admin_members_map'),
-    path('admin/members/map/data/', members_map_data, name='admin_members_map_data'),
+    # Vues admin personnalisées (avant route admin principale)
+    path('gestion-eebc/members/map/', members_map_view, name='admin_members_map'),
+    path('gestion-eebc/members/map/data/', members_map_data, name='admin_members_map_data'),
     
-    # Administration Django
-    path('admin/', admin.site.urls),
+    # Administration Django (route durcie)
+    path('gestion-eebc/', admin.site.urls),
     
     # Application interne (après connexion)
     path('app/', include('apps.dashboard.urls')),
