@@ -146,8 +146,7 @@
                                     {% else %}
                                     {{ donation.donor_name|default:"Non spécifié" }}
                                     {% endif %}
-                                    {% if donation.is_cancelled %}<span class="badge bg-danger ms-2">Annulé</span>{%
-                                    endif %}
+                                    {% if donation.is_cancelled %}<span class="badge bg-danger ms-2">Annulé</span>{% endif %}
                                 </td>
                                 <td><strong>{{ donation.amount }}€</strong></td>
                                 <td>{{ donation.donation_date|date:"d/m/Y" }}</td>
