@@ -13,11 +13,28 @@ class DashboardService:
     """Service for dashboard statistics and data gathering."""
     
     CACHE_TIMEOUT = 600  # 10 minutes
+
+    @staticmethod
+    def _site_scope_key(request) -> str:
+        """Build a stable cache scope key even when User has no direct site field."""
+        user = getattr(request, 'user', None)
+        if not user or not getattr(user, 'is_authenticated', False):
+            return 'anonymous'
+
+        direct_site_id = getattr(user, 'site_id', None)
+        if direct_site_id is not None:
+            return str(direct_site_id)
+
+        member_profile = getattr(user, 'member_profile', None)
+        if member_profile and getattr(member_profile, 'site_id', None) is not None:
+            return str(member_profile.site_id)
+
+        return f'user-{user.pk}'
     
     @staticmethod
     def get_member_stats(request) -> Dict:
         """Get member statistics with select_related to avoid N+1 queries."""
-        cache_key = f'dashboard_member_stats_{request.user.site_id}'
+        cache_key = f"dashboard_member_stats_{DashboardService._site_scope_key(request)}"
         cached = cache.get(cache_key)
         if cached:
             return cached
@@ -97,7 +114,7 @@ class DashboardService:
     @staticmethod
     def get_pastoral_stats(request) -> Dict:
         """Get pastoral care statistics."""
-        cache_key = f'dashboard_pastoral_stats_{request.user.site_id}'
+        cache_key = f"dashboard_pastoral_stats_{DashboardService._site_scope_key(request)}"
         cached = cache.get(cache_key)
         if cached:
             return cached
@@ -106,15 +123,14 @@ class DashboardService:
         
         today = date.today()
         
-        # Members needing visit (use select_related to avoid N+1)
-        members_needing_visit_qs = Member.objects.filter(
+        # Member.needs_visit est une propriété Python (pas un champ SQL).
+        members_active_qs = Member.objects.filter(
             status='actif'
-        ).select_related('site').filter(
-            Q(last_visited__isnull=True) | Q(last_visited__lte=today - timedelta(days=180))
-        )
+        ).select_related('site')
+        members_needing_visit_count = sum(1 for member in members_active_qs if member.needs_visit)
         
         pastoral_stats = {
-            'members_needing_visit': min(members_needing_visit_qs.count(), 10),
+            'members_needing_visit': min(members_needing_visit_count, 10),
             'recent_life_events_count': LifeEvent.objects.filter(
                 event_date__gte=today - timedelta(days=30)
             ).count(),
@@ -174,7 +190,7 @@ class DashboardService:
         
         last_session = Session.objects.filter(
             is_cancelled=False
-        ).select_related('bible_class').order_by('-date').first()
+        ).order_by('-date').first()
         
         if not last_session:
             return None

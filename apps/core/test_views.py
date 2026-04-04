@@ -5,11 +5,18 @@ Tests pour les vues (permissionsf, CRUD, etc.).
 import pytest
 from django.urls import reverse
 from django.test import Client
+from django.test.utils import override_settings
 from apps.accounts.models import User
 from apps.members.models import Member
 from test_factories import UserFactory, MemberFactory, SiteFactory
 
 pytestmark = pytest.mark.django_db
+
+
+@pytest.fixture
+def user():
+    """Utilisateur staff/admin partagé pour les tests qui exigent une authentification."""
+    return UserFactory(is_staff=True, role='admin')
 
 
 class TestMemberViews:
@@ -25,7 +32,7 @@ class TestMemberViews:
     
     def test_member_list_view_requires_login(self, client):
         """La vue member_list nécessite l'authentification."""
-        response = client.get('/members/')
+        response = client.get(reverse('members:list'))
         assert response.status_code in [302, 401]  # Redirect ou Unauthorized
     
     def test_member_list_view_authenticated(self, client, user):
@@ -72,6 +79,7 @@ class TestAccountViews:
         response = client.get(reverse('accounts:login'))
         assert response.status_code == 200
     
+    @override_settings(DEBUG=True, TURNSTILE_SITE_KEY='', RECAPTCHA_PUBLIC_KEY='')
     def test_login_with_valid_credentials(self, client):
         """Login avec identifiants valides."""
         user = UserFactory(username='testuser')

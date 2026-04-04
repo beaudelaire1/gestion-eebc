@@ -26,7 +26,7 @@ class TestMemberModel:
     def test_member_str(self):
         """Vérifier la représentation string d'un membre."""
         member = MemberFactory()
-        expected = f"{member.first_name} {member.last_name}"
+        expected = f"[{member.member_id}] {member.first_name} {member.last_name}" if member.member_id else f"{member.first_name} {member.last_name}"
         assert str(member) == expected
     
     def test_member_full_name(self):
