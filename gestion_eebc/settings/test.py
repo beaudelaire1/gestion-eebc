@@ -73,6 +73,11 @@ STRIPE_PUBLIC_KEY = ''
 STRIPE_SECRET_KEY = ''
 TWILIO_ACCOUNT_SID = ''
 TWILIO_AUTH_TOKEN = ''
+META_WHATSAPP_ACCESS_TOKEN = ''
+META_WHATSAPP_PHONE_NUMBER_ID = ''
+META_WHATSAPP_VERIFY_TOKEN = ''
+META_WHATSAPP_APP_SECRET = ''
+META_WHATSAPP_API_VERSION = 'v23.0'
 
 
 # =============================================================================

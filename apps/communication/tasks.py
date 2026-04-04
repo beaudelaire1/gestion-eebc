@@ -26,6 +26,7 @@ def send_event_reminders():
     """
     from apps.events.models import Event
     from .notification_service import notification_service
+    from .services import send_whatsapp_parent_event_reminder
     
     today = date.today()
     
@@ -47,10 +48,18 @@ def send_event_reminders():
         if notify_date <= today:
             try:
                 notification_service.send_event_reminder(event)
+                whatsapp_result = send_whatsapp_parent_event_reminder(event)
                 event.notification_sent = True
                 event.save(update_fields=['notification_sent'])
                 sent_count += 1
                 logger.info(f"Reminder sent for event: {event.title}")
+                if not whatsapp_result.get('skipped'):
+                    logger.info(
+                        "WhatsApp parents reminder for %s: %s sent / %s failed",
+                        event.title,
+                        whatsapp_result.get('sent', 0),
+                        whatsapp_result.get('failed', 0),
+                    )
             except Exception as e:
                 logger.error(f"Failed to send reminder for event {event.id}: {e}")
     

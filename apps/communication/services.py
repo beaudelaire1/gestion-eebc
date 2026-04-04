@@ -6,6 +6,7 @@ le logging automatique et les notifications d'événements.
 """
 import logging
 from typing import List, Dict, Optional, Union
+import requests
 from django.core.mail import EmailMultiAlternatives
 from django.template.loader import render_to_string
 from django.template import Template, Context
@@ -14,7 +15,7 @@ from django.conf import settings
 from django.utils import timezone
 from django.contrib.auth import get_user_model
 
-from .models import EmailLog, EmailTemplate
+from .models import Announcement, EmailLog, EmailTemplate, SMSLog
 
 logger = logging.getLogger(__name__)
 User = get_user_model()
@@ -597,3 +598,251 @@ def send_email(recipient_email, subject, template_name, context=None, **kwargs):
 def send_bulk_emails(recipients, subject, template_name, context=None, **kwargs):
     """Raccourci pour envoyer des emails en masse."""
     return EmailService.send_bulk_emails(recipients, subject, template_name, context, **kwargs)
+
+
+class WhatsAppMetaService:
+    """Service d'envoi WhatsApp via Meta Cloud API."""
+
+    @staticmethod
+    def _is_configured() -> bool:
+        return bool(
+            getattr(settings, 'META_WHATSAPP_ACCESS_TOKEN', '')
+            and getattr(settings, 'META_WHATSAPP_PHONE_NUMBER_ID', '')
+        )
+
+    @staticmethod
+    def _normalize_phone(phone: str) -> str:
+        """Normalise les numéros pour WhatsApp (E.164)."""
+        if not phone:
+            return ''
+
+        digits = ''.join(ch for ch in str(phone) if ch.isdigit())
+        if not digits:
+            return ''
+
+        if digits.startswith('00'):
+            digits = digits[2:]
+
+        # Guyane locale: 0XXXXXXXXX -> +594XXXXXXXXX
+        if digits.startswith('0'):
+            digits = f"594{digits[1:]}"
+
+        return f"+{digits}"
+
+    @staticmethod
+    def _build_endpoint() -> str:
+        api_version = getattr(settings, 'META_WHATSAPP_API_VERSION', 'v23.0')
+        phone_number_id = getattr(settings, 'META_WHATSAPP_PHONE_NUMBER_ID', '')
+        return f"https://graph.facebook.com/{api_version}/{phone_number_id}/messages"
+
+    @staticmethod
+    def _build_headers() -> Dict[str, str]:
+        token = getattr(settings, 'META_WHATSAPP_ACCESS_TOKEN', '')
+        return {
+            'Authorization': f'Bearer {token}',
+            'Content-Type': 'application/json',
+        }
+
+    @classmethod
+    def send_text_message(
+        cls,
+        recipient_phone: str,
+        message: str,
+        recipient_name: str = '',
+    ) -> Dict:
+        normalized_phone = cls._normalize_phone(recipient_phone)
+        if not normalized_phone:
+            return {'success': False, 'error': 'Numéro invalide'}
+
+        log = SMSLog.objects.create(
+            recipient_phone=normalized_phone,
+            recipient_name=recipient_name,
+            message=message,
+            status=SMSLog.Status.PENDING,
+        )
+
+        if not cls._is_configured():
+            log.status = SMSLog.Status.FAILED
+            log.error_message = 'Meta WhatsApp non configuré (token ou phone_number_id manquant).'
+            log.save(update_fields=['status', 'error_message'])
+            return {'success': False, 'log_id': log.id, 'error': log.error_message}
+
+        payload = {
+            'messaging_product': 'whatsapp',
+            'to': normalized_phone,
+            'type': 'text',
+            'text': {'body': message},
+        }
+
+        try:
+            response = requests.post(
+                cls._build_endpoint(),
+                headers=cls._build_headers(),
+                json=payload,
+                timeout=20,
+            )
+
+            if response.ok:
+                data = response.json()
+                external_id = ''
+                messages = data.get('messages') or []
+                if messages and isinstance(messages, list):
+                    external_id = messages[0].get('id', '')
+
+                log.status = SMSLog.Status.SENT
+                log.sent_at = timezone.now()
+                log.external_id = external_id
+                log.save(update_fields=['status', 'sent_at', 'external_id'])
+                return {'success': True, 'log_id': log.id, 'external_id': external_id}
+
+            error_message = f"HTTP {response.status_code}"
+            try:
+                error_json = response.json()
+                error_message = error_json.get('error', {}).get('message', error_message)
+            except Exception:
+                pass
+
+            log.status = SMSLog.Status.FAILED
+            log.error_message = error_message
+            log.save(update_fields=['status', 'error_message'])
+            return {'success': False, 'log_id': log.id, 'error': error_message}
+
+        except requests.RequestException as exc:
+            log.status = SMSLog.Status.FAILED
+            log.error_message = str(exc)
+            log.save(update_fields=['status', 'error_message'])
+            return {'success': False, 'log_id': log.id, 'error': str(exc)}
+
+    @staticmethod
+    def _is_staff_member(member) -> bool:
+        if not getattr(member, 'user', None):
+            return False
+        return member.user.has_any_role(
+            'admin', 'secretariat', 'pasteur', 'ancien', 'diacre',
+            'responsable_club', 'moniteur', 'finance',
+        )
+
+    @classmethod
+    def get_announcement_recipients(cls, visibility: str) -> List[Dict[str, str]]:
+        from apps.members.models import Member
+
+        queryset = Member.objects.filter(
+            status=Member.Status.ACTIF,
+            notify_by_whatsapp=True,
+        ).exclude(whatsapp_number='').select_related('user')
+
+        recipients = []
+        for member in queryset:
+            if visibility == Announcement.Visibility.STAFF and not cls._is_staff_member(member):
+                continue
+
+            recipients.append({
+                'name': member.full_name,
+                'phone': member.whatsapp_number,
+            })
+
+        return recipients
+
+    @classmethod
+    def send_announcement(cls, announcement: Announcement) -> Dict:
+        recipients = cls.get_announcement_recipients(announcement.visibility)
+
+        priority_prefix = {
+            Announcement.Priority.LOW: 'Info',
+            Announcement.Priority.NORMAL: 'Annonce',
+            Announcement.Priority.HIGH: 'Important',
+            Announcement.Priority.URGENT: 'Urgent',
+        }.get(announcement.priority, 'Annonce')
+
+        message = (
+            f"[{priority_prefix}] {announcement.title}\n\n"
+            f"{announcement.content}\n\n"
+            "EEBC"
+        )
+
+        sent_count = 0
+        failed_count = 0
+        for recipient in recipients:
+            result = cls.send_text_message(
+                recipient_phone=recipient['phone'],
+                recipient_name=recipient['name'],
+                message=message,
+            )
+            if result.get('success'):
+                sent_count += 1
+            else:
+                failed_count += 1
+
+        return {
+            'total': len(recipients),
+            'sent': sent_count,
+            'failed': failed_count,
+        }
+
+    @staticmethod
+    def _is_child_related_event(event) -> bool:
+        category_name = ''
+        if getattr(event, 'category', None):
+            category_name = (event.category.name or '').lower()
+
+        text = f"{event.title} {event.description or ''} {category_name}".lower()
+        keywords = ['club', 'biblique', 'enfant', 'ado', 'jeunesse', 'famille']
+        return any(keyword in text for keyword in keywords)
+
+    @classmethod
+    def send_parent_event_reminder(cls, event) -> Dict:
+        from apps.bibleclub.models import Child
+
+        if not cls._is_child_related_event(event):
+            return {'total': 0, 'sent': 0, 'failed': 0, 'skipped': True}
+
+        children = Child.objects.filter(is_active=True)
+        recipients = {}
+
+        for child in children:
+            if child.father_phone:
+                recipients[cls._normalize_phone(child.father_phone)] = f"Parent de {child.full_name}"
+            if child.mother_phone:
+                recipients[cls._normalize_phone(child.mother_phone)] = f"Parent de {child.full_name}"
+
+        recipients = {phone: name for phone, name in recipients.items() if phone}
+
+        start_time = event.start_time.strftime('%H:%M') if event.start_time else 'non précisée'
+        location = event.location or 'Lieu non précisé'
+        message = (
+            f"Rappel événement EEBC: {event.title}\n"
+            f"Date: {event.start_date.strftime('%d/%m/%Y')}\n"
+            f"Heure: {start_time}\n"
+            f"Lieu: {location}\n\n"
+            "Merci de votre présence."
+        )
+
+        sent_count = 0
+        failed_count = 0
+        for phone, name in recipients.items():
+            result = cls.send_text_message(
+                recipient_phone=phone,
+                recipient_name=name,
+                message=message,
+            )
+            if result.get('success'):
+                sent_count += 1
+            else:
+                failed_count += 1
+
+        return {
+            'total': len(recipients),
+            'sent': sent_count,
+            'failed': failed_count,
+            'skipped': False,
+        }
+
+
+def send_whatsapp_announcement(announcement: Announcement) -> Dict:
+    """Raccourci pour envoyer une annonce via WhatsApp Meta."""
+    return WhatsAppMetaService.send_announcement(announcement)
+
+
+def send_whatsapp_parent_event_reminder(event) -> Dict:
+    """Raccourci pour envoyer un rappel d'événement aux parents."""
+    return WhatsAppMetaService.send_parent_event_reminder(event)

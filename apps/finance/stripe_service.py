@@ -25,9 +25,40 @@ class StripeService:
         self.api_key = getattr(settings, 'STRIPE_SECRET_KEY', None)
         self.public_key = getattr(settings, 'STRIPE_PUBLIC_KEY', None)
         self.webhook_secret = getattr(settings, 'STRIPE_WEBHOOK_SECRET', None)
-        
+
+        self.api_key = self._sanitize_key(self.api_key, key_type='secret')
+        self.public_key = self._sanitize_key(self.public_key, key_type='public')
+
         if self.api_key:
             stripe.api_key = self.api_key
+
+    @staticmethod
+    def _sanitize_key(raw_key, key_type='secret'):
+        """Nettoie/valide une clé Stripe issue de la configuration."""
+        if not raw_key:
+            return ''
+
+        key = str(raw_key).strip()
+        if not key:
+            return ''
+
+        # Cas fréquent de mauvaise config sur l'hébergeur: valeur littérale Python.
+        if key.startswith('os.environ.get('):
+            logger.error(
+                "Configuration Stripe invalide: la clé %s contient une expression os.environ.get(...) au lieu d'une vraie clé.",
+                key_type,
+            )
+            return ''
+
+        if key_type == 'secret' and not (key.startswith('sk_test_') or key.startswith('sk_live_')):
+            logger.error("Configuration Stripe invalide: STRIPE_SECRET_KEY n'a pas un format Stripe valide.")
+            return ''
+
+        if key_type == 'public' and not (key.startswith('pk_test_') or key.startswith('pk_live_')):
+            logger.error("Configuration Stripe invalide: STRIPE_PUBLIC_KEY n'a pas un format Stripe valide.")
+            return ''
+
+        return key
     
     @property
     def is_configured(self):

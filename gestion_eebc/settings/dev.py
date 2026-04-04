@@ -59,6 +59,9 @@ CELERY_TASK_EAGER_PROPAGATES = True
 STRIPE_PUBLIC_KEY = os.environ.get('STRIPE_PUBLIC_KEY', '')
 STRIPE_SECRET_KEY = os.environ.get('STRIPE_SECRET_KEY', '')
 STRIPE_WEBHOOK_SECRET = os.environ.get('STRIPE_WEBHOOK_SECRET', '')
+# STRIPE_SUCCESS_URL = os.environ.get('STRIPE_SUCCESS_URL', 'https://eglise-ebc.org/don/succes/')
+ # STRIPE_CANCEL_URL = os.environ.get('STRIPE_CANCEL_URL', 'https://eglise-ebc.org/don/annule/')
+# Localhost (ancien):
 STRIPE_SUCCESS_URL = 'http://localhost:8000/don/succes/'
 STRIPE_CANCEL_URL = 'http://localhost:8000/don/annule/'
 
@@ -70,6 +73,15 @@ TWILIO_ACCOUNT_SID = ''
 TWILIO_AUTH_TOKEN = ''
 TWILIO_PHONE_NUMBER = ''
 TWILIO_WHATSAPP_NUMBER = ''
+
+# =============================================================================
+# META WHATSAPP CLOUD API - Désactivé en dev
+# =============================================================================
+META_WHATSAPP_ACCESS_TOKEN = ''
+META_WHATSAPP_PHONE_NUMBER_ID = ''
+META_WHATSAPP_VERIFY_TOKEN = ''
+META_WHATSAPP_APP_SECRET = ''
+META_WHATSAPP_API_VERSION = 'v23.0'
 
 
 # =============================================================================

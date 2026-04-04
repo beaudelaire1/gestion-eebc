@@ -47,6 +47,17 @@ services:
         sync: false
       - key: DEFAULT_FROM_EMAIL
         value: "EEBC <communication@eglise-ebc.org>"
+      # Stripe (configuré manuellement dans Render)
+      - key: STRIPE_PUBLIC_KEY
+        sync: false
+      - key: STRIPE_SECRET_KEY
+        sync: false
+      - key: STRIPE_WEBHOOK_SECRET
+        sync: false
+      - key: STRIPE_SUCCESS_URL
+        value: "https://eglise-ebc.org/don/succes/"
+      - key: STRIPE_CANCEL_URL
+        value: "https://eglise-ebc.org/don/annule/"
       # Site
       - key: SITE_URL
         sync: false
