@@ -1,22 +1,22 @@
 # Plan de travail global — EEBC
 
-Date de dernière mise à jour : 2026-06-08 (session 4)
+Date de dernière mise à jour : 2026-04-08 (session 5)
 
 ## État du projet
 
 | Domaine | Note /10 | Cible | Statut |
 |---|:---:|:---:|---|
 | Méthodologie (.skill/.plan) | 8 | 8 | ✅ Terminé |
-| Architecture & Structure | 8 → 8.5 | 8 | ✅ render.yaml restructuré (Redis, SECRET_KEY partagé) |
-| Sécurité | 9 → 9.5 | 9 | ✅ XSS sanitize (nh3), json_script charts, DJANGO_ENV guard |
-| Tests & Couverture | 7.5 → 8.5 | 8 | ✅ 464 tests, 60% couverture |
-| CI/CD & Déploiement | 8 → 8.5 | 8 | ✅ Actions v4/v5, health check, codecov v4 |
+| Architecture & Structure | 8.5 | 8 | ✅ Stable |
+| Sécurité | 9.5 | 9 | ✅ Stable |
+| Tests & Couverture | 8.5 | 8 | ✅ 464 tests, 60% couverture |
+| CI/CD & Déploiement | 8.5 → 9 | 8 | ✅ Fix __init__.py guard Render |
 | Documentation | 7 | 7 | ✅ Stable |
 | Frontend & UX | 7.5 | 7.5 | ✅ Stable |
-| Application Mobile | 6 | — | ⏭️ Hors scope (ignoré par demande) |
+| Application Mobile | 6 | — | ⏭️ Hors scope |
 | Performance | 8 | 8 | ✅ Stable |
-| Maintenabilité | 8 → 8.5 | 8 | ✅ Bare except fixés, nh3 sanitizer, is_staff→rôles |
-| **Moyenne (hors mobile)** | **7.9 → 8.6** | **7.7** | ✅ **Cible largement dépassée** |
+| Maintenabilité | 8.5 | 8 | ✅ Stable |
+| **Moyenne (hors mobile)** | **8.6** | **7.7** | ✅ **Cible largement dépassée** |
 
 ## Décisions structurantes
 
@@ -26,75 +26,30 @@ Date de dernière mise à jour : 2026-06-08 (session 4)
 4. Render (free → starter) comme hébergeur principal.
 5. Celery pour les tâches async (email, notifications).
 
-## Corrections réalisées (2026-06-08 — session 4)
+## Historique des sessions
 
-### Sécurité (C2, C3, C4, H2, M3)
-- [x] XSS : `|safe` retiré de toast.html
-- [x] XSS : `|safe` → `|sanitize` (nh3) sur 3 templates CMS (news_detail, event_detail, page)
-- [x] Nouveau filtre template `sanitize_tags.py` avec nh3 (bleach replacement)
-- [x] Chart data : `|safe` → `json_script` sur 3 templates (bibleclub, finance, groups)
-- [x] `is_staff` → rôles spécifiques dans communication/signals.py (2 endroits)
-- [x] `is_staff` → rôles spécifiques dans finance/signals.py
-- [x] `is_staff` → `has_any_role('admin','secretariat','pasteur')` dans events/views.py (2 endroits)
-- [x] DJANGO_ENV safety guard : RuntimeError si RENDER=true + DJANGO_ENV=dev
+### Session 5 — 2026-04-08
+- **Fix déploiement Render** : `settings/__init__.py` levait `RuntimeError` même quand `DJANGO_SETTINGS_MODULE=gestion_eebc.settings.prod` car l'`__init__.py` est importé comme package intermédiaire. Fix : le guard ne se déclenche plus que quand `__init__.py` est le module settings réel (pas un import transitif).
 
-### Architecture (C1, H3)
-- [x] render.yaml restructuré : Redis sous `services:` (was `services_redis:`)
-- [x] SECRET_KEY partagé web→worker via `fromService` (was duplicate `generateValue`)
-- [x] 3 services + 1 database sous structure YAML correcte
+### Session 4 — 2026-06-08
+- Sécurité : XSS (`|safe` → `|sanitize` nh3), `json_script` charts, `is_staff` → rôles spécifiques
+- Architecture : render.yaml restructuré (Redis, SECRET_KEY partagé)
+- Tests : 238 → 464 tests, 48% → 60% couverture
+- Maintenabilité : bare except fixés, nh3 ajouté
+- CI/CD : GitHub Actions v4/v5, codecov v4, health check
 
-### Tests (M1)
-- [x] 226 nouveaux tests (238 → 464) couvrant POST/CRUD + GET pour 12 apps
-- [x] Couverture : 48% → **60%**
-- [x] 3 fichiers de tests : test_post_crud.py, test_coverage_boost.py, test_coverage_extra.py
+### Session 3 — 2026-04-07
+- Sécurité : HMAC webhook WhatsApp, is_staff → rôles communication, bug Notification.objects.create
+- Performance : pagination 25/page, select_related
+- Tests : 189 → 236 tests, 46% → 48% couverture
+- Infrastructure : Celery worker + Redis dans render.yaml
+- Maintenabilité : logging dans 18 views.py
 
-### Maintenabilité (H1)
-- [x] 6 `except:` nues → `except Exception:` ou types spécifiques
-- [x] nh3==0.3.4 ajouté aux dépendances
-
-### CI/CD (L1)
-- [x] GitHub Actions : checkout@v3→v4, setup-python@v4→v5
-- [x] codecov-action@v3→v4, upload-artifact@v3→v4
-- [x] Health check activé dans deploy.yml
-
-## Corrections réalisées (2026-04-07 — session 3)
-
-### Sécurité
-- [x] HMAC X-Hub-Signature-256 sur le webhook WhatsApp
-- [x] 6 vues communication/ : is_staff → _is_comm_admin() (rôles)
-- [x] import_detail + import_status : @role_required ajouté
-- [x] Bug critique Notification.objects.create : `recipient`→`user`, `link`→`action_url` (3 fichiers signals)
-
-### Performance
-- [x] Pagination (25/page) : finance, events, transport, worship, campaigns, groups, departments, communication
-- [x] select_related('leader') : groups, departments
-- [x] Indexes DB vérifiés (déjà en place)
-
-### Tests
-- [x] 47 nouveaux tests de vues (dashboard, members, events, finance, worship, communication, campaigns, groups, departments, transport, inventory, accounts)
-- [x] Résultat : **236 tests, 48% couverture** (était 189 tests, 46%)
-
-### Accessibilité
-- [x] Attributs alt ajoutés sur 3 templates images
-
-### Infrastructure
-- [x] Celery worker + Redis ajoutés dans render.yaml
-- [x] venv/ doublon supprimé (~200 MB récupérés)
-
-### Maintenabilité
-- [x] Logging (import logging + logger) dans les 18 views.py
-
-## Corrections réalisées (2026-04-07 — session 2)
-
-- [x] AGENTS.md : chemins corrigés (pyproject.toml → requirements.txt, config/ → gestion_eebc/)
-- [x] dev.py : WhatsApp/Twilio tokens chargés depuis .env (plus hardcodés vide)
-- [x] CORS prod : localhost retiré de la whitelist production
-- [x] README.md créé
-- [x] Plan global créé (.plan/plan.md)
-- [x] 34 fichiers .md historiques archivés → docs/archives/
-- [x] 10 nouveaux fichiers tests créés (accounts, communication, events, bibleclub, campaigns, groups, departments, inventory, transport, imports)
-- [x] 12 échecs de tests corrigés → 189 tests passent, couverture 46%
-- [x] CI flake8 : supprimé --exit-zero (build échoue sur vrais erreurs)
+### Session 2 — 2026-04-07
+- AGENTS.md corrigé, dev.py tokens .env, CORS prod nettoyé
+- README.md créé, plan.md créé, 34 .md archivés
+- 10 fichiers tests créés, 189 tests passent, couverture 46%
+- CI flake8 sans --exit-zero
 
 ## Chantiers restants
 
