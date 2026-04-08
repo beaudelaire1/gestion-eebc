@@ -112,6 +112,7 @@ def import_create(request):
 
 
 @login_required
+@role_required('admin', 'secretariat')
 def import_detail(request, pk):
     """
     Détail d'un import.
@@ -126,6 +127,7 @@ def import_detail(request, pk):
 
 
 @login_required
+@role_required('admin', 'secretariat')
 def import_status(request, pk):
     """
     API pour récupérer le statut d'un import (AJAX).

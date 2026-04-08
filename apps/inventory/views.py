@@ -7,6 +7,10 @@ from apps.core.permissions import role_required
 from apps.core.models import AuditLog
 from .models import Equipment, Category
 from .forms import EquipmentForm
+import logging
+
+logger = logging.getLogger(__name__)
+
 
 
 @login_required

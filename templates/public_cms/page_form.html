@@ -57,8 +57,7 @@
                     <div class="d-flex justify-content-end gap-2 mt-4">
                         <a href="{% url 'public_cms:page_list' %}" class="btn btn-outline-secondary">Annuler</a>
                         <button type="submit" class="btn btn-primary">
-                            <i class="bi bi-save me-2"></i>{% if form.instance.pk %}Enregistrer{% else %}Créer la page{%
-                            endif %}
+                            <i class="bi bi-save me-2"></i>{% if form.instance.pk %}Enregistrer{% else %}Créer la page{% endif %}
                         </button>
                     </div>
                 </form>

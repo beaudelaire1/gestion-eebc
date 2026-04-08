@@ -12,12 +12,17 @@ Travailler sur ce dépôt sans casser les flux existants.
 
 ## Lire d'abord
 - README.md
-- pyproject.toml
+- LIRE_DABORD.md
 - requirements.txt
-- config/settings/
+- requirements/base.txt
+- gestion_eebc/settings/base.py
+- gestion_eebc/settings/dev.py
+- gestion_eebc/settings/prod.py
 - apps/*/models.py
 - apps/*/views.py
 - templates/
+- conftest.py
+- render.yaml
 
 ## Commandes
 - Tests : pytest

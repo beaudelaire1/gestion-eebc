@@ -8,6 +8,9 @@ from datetime import date, timedelta
 from .models import Member, LifeEvent, VisitationLog
 from apps.core.permissions import role_required
 from apps.core.optimization import get_optimized_queryset
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 @login_required
@@ -328,7 +331,6 @@ def visit_list(request):
 def visit_create(request):
     """Créer une visite pastorale."""
     from .forms import VisitationLogForm
-    
     if request.method == 'POST':
         form = VisitationLogForm(request.POST)
         if form.is_valid():

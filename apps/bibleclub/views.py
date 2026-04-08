@@ -16,6 +16,9 @@ from .permissions import (
     can_access_child, is_club_admin, is_club_staff
 )
 from .services import OptimizedBibleClubService
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 @login_required
@@ -467,7 +470,6 @@ def take_attendance(request, session_pk, class_pk):
                         stats=stats
                     )
         except Exception as e:
-            import logging
             logging.getLogger(__name__).error(f"Erreur notification appel: {e}")
         
         if request.htmx:

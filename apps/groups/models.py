@@ -125,6 +125,9 @@ class GroupMeeting(models.Model):
         verbose_name = "Réunion"
         verbose_name_plural = "Réunions"
         ordering = ['-date']
+        indexes = [
+            models.Index(fields=['date'], name='grp_meeting_date_idx'),
+        ]
     
     def __str__(self):
         return f"{self.group.name} - {self.date}"

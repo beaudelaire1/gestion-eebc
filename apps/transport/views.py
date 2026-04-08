@@ -1,6 +1,7 @@
 from django.shortcuts import render, get_object_or_404, redirect
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
+from django.core.paginator import Paginator
 from django.core.mail import send_mail
 from django.conf import settings
 from django.template.loader import render_to_string
@@ -8,6 +9,9 @@ from datetime import date
 from apps.core.permissions import role_required
 from .models import DriverProfile, TransportRequest
 from .forms import DriverProfileForm, TransportRequestForm, DriverAssignmentForm
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 @login_required
@@ -77,8 +81,10 @@ def driver_detail(request, pk):
 @login_required
 def transport_requests(request):
     """Liste des demandes de transport."""
-    requests = TransportRequest.objects.select_related('driver__user').order_by('-event_date', '-event_time')
-    return render(request, 'transport/transport_requests.html', {'requests': requests})
+    requests_qs = TransportRequest.objects.select_related('driver__user').order_by('-event_date', '-event_time')
+    paginator = Paginator(requests_qs, 25)
+    page_obj = paginator.get_page(request.GET.get('page', 1))
+    return render(request, 'transport/transport_requests.html', {'requests': page_obj, 'page_obj': page_obj})
 
 
 @login_required
@@ -215,7 +221,6 @@ def transport_calendar_data(request):
     """API JSON pour les données du calendrier."""
     from django.http import JsonResponse
     from datetime import datetime, timedelta
-    
     # Récupérer les paramètres de date
     start = request.GET.get('start')
     end = request.GET.get('end')

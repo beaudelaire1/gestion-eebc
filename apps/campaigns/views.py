@@ -1,6 +1,7 @@
 from django.shortcuts import render, get_object_or_404, redirect
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
+from django.core.paginator import Paginator
 from django.http import JsonResponse
 from django.views.decorators.http import require_http_methods
 from django.urls import reverse
@@ -9,6 +10,10 @@ from urllib.parse import quote_plus
 from apps.core.permissions import role_required
 from .models import Campaign, Donation
 from .forms import CampaignForm, DonationForm
+import logging
+
+logger = logging.getLogger(__name__)
+
 
 
 @login_required
@@ -21,8 +26,12 @@ def campaign_list(request):
     if active_only:
         campaigns = campaigns.filter(is_active=True)
     
+    paginator = Paginator(campaigns, 25)
+    page_obj = paginator.get_page(request.GET.get('page', 1))
+    
     context = {
-        'campaigns': campaigns,
+        'campaigns': page_obj,
+        'page_obj': page_obj,
         'active_only': active_only,
     }
     return render(request, 'campaigns/campaign_list.html', context)

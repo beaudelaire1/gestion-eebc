@@ -18,6 +18,9 @@ User = get_user_model()
 from django.conf import settings
 from apps.core.utils.recaptcha import validate_recaptcha
 from apps.core.utils.turnstile import validate_turnstile_with_ip
+import logging
+
+logger = logging.getLogger(__name__)
 
 def login_view(request):
     """Vue de connexion personnalisée avec rate limiting, tokens sécurisés et CAPTCHA.

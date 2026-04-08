@@ -129,14 +129,16 @@ CORS_ALLOWED_ORIGINS = [
     "https://www.eebc.org",
     "https://eglise-ebc.org",
     "https://www.eglise-ebc.org",
-    "http://localhost:3000",
-    "http://localhost:8000",
-    "http://127.0.0.1:8000",
 ]
 
-# Allow Flutter web with random ports in dev only
+# Dev-only origins (localhost, Expo, Metro)
 if DEBUG:
     CORS_ORIGIN_ALLOW_ALL = True
+    CORS_ALLOWED_ORIGINS += [
+        "http://localhost:3000",
+        "http://localhost:8000",
+        "http://127.0.0.1:8000",
+    ]
 else:
     CORS_ORIGIN_ALLOW_ALL = False
 
@@ -558,14 +560,12 @@ API_MAX_LOGIN_ATTEMPTS = int(os.environ.get('API_MAX_LOGIN_ATTEMPTS', 5))
 # Lockout duration in minutes
 API_LOCKOUT_DURATION_MINUTES = int(os.environ.get('API_LOCKOUT_DURATION_MINUTES', 15))
 
-# CORS settings for mobile app
-CORS_ALLOWED_ORIGINS += [
-    "http://localhost:19006",  # Expo development
-    "http://localhost:8081",   # Metro bundler
-]
-
-# Allow credentials for mobile app
-CORS_ALLOW_CREDENTIALS = True
+# CORS settings for mobile app (dev only)
+if DEBUG:
+    CORS_ALLOWED_ORIGINS += [
+        "http://localhost:19006",  # Expo development
+        "http://localhost:8081",   # Metro bundler
+    ]
 # =============================================================================
 # JAZZMIN ADMIN CONFIGURATION
 # =============================================================================

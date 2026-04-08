@@ -1,4 +1,5 @@
 {% extends 'public/base.html' %}
+{% load sanitize_tags %}
 
 {% block title %}{{ event.title }} - {{ settings.site_name|default:'EEBC' }}{% endblock %}
 
@@ -36,7 +37,7 @@
                     <div class="card-body p-4">
                         <h4 class="mb-4">Description</h4>
                         <div class="event-content">
-                            {{ event.description|safe|linebreaks }}
+                            {{ event.description|sanitize|linebreaks }}
                         </div>
                     </div>
                 </div>

@@ -3,6 +3,7 @@
 from django.shortcuts import render, get_object_or_404, redirect
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
+from django.core.paginator import Paginator
 from django.http import JsonResponse, HttpResponse
 from django.template.loader import render_to_string
 from django.views.decorators.http import require_POST
@@ -26,8 +27,12 @@ def service_list(request):
     if upcoming_only:
         services = services.filter(event__start_date__gte=date.today())
     
+    paginator = Paginator(services, 25)
+    page_obj = paginator.get_page(request.GET.get('page', 1))
+    
     context = {
-        'services': services,
+        'services': page_obj,
+        'page_obj': page_obj,
         'upcoming_only': upcoming_only,
     }
     
@@ -284,6 +289,9 @@ def apply_template(request, service_pk, template_pk):
 # =============================================================================
 
 from .models import MonthlySchedule, ScheduledService, ServiceNotification
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 @login_required
@@ -489,7 +497,6 @@ def scheduled_service_edit(request, pk):
     service = get_object_or_404(ScheduledService, pk=pk)
     
     from apps.members.models import Member
-    
     if request.method == 'POST':
         service.theme = request.POST.get('theme', '')
         service.bible_text = request.POST.get('bible_text', '')

@@ -15,6 +15,7 @@ from rest_framework.permissions import AllowAny
 from django.core.cache import cache
 import logging
 import time
+from apps.core.utils.turnstile import validate_turnstile, get_client_ip
 
 logger = logging.getLogger(__name__)
 
@@ -813,6 +814,16 @@ class PublicContactView(PublicRateLimitMixin, APIView):
                 'error': {'message': 'Trop de requetes. Reessayez plus tard.'}
             }, status=status.HTTP_429_TOO_MANY_REQUESTS)
 
+        # Valider le CAPTCHA Turnstile
+        turnstile_token = request.data.get('turnstile_token')
+        ip_address = get_client_ip(request)
+        is_valid, captcha_error = validate_turnstile(turnstile_token, ip_address)
+        if not is_valid:
+            return Response({
+                'success': False,
+                'error': {'message': captcha_error or 'Verification de securite echouee.'}
+            }, status=status.HTTP_403_FORBIDDEN)
+
         serializer = ContactMessageCreateSerializer(data=request.data)
         if serializer.is_valid():
             contact = serializer.save()
@@ -844,6 +855,16 @@ class PublicInterestView(PublicRateLimitMixin, APIView):
                 'success': False,
                 'error': {'message': 'Trop de requetes. Reessayez plus tard.'}
             }, status=status.HTTP_429_TOO_MANY_REQUESTS)
+
+        # Valider le CAPTCHA Turnstile
+        turnstile_token = request.data.get('turnstile_token')
+        ip_address = get_client_ip(request)
+        is_valid, captcha_error = validate_turnstile(turnstile_token, ip_address)
+        if not is_valid:
+            return Response({
+                'success': False,
+                'error': {'message': captcha_error or 'Verification de securite echouee.'}
+            }, status=status.HTTP_403_FORBIDDEN)
 
         serializer = VisitorRegistrationCreateSerializer(data=request.data)
         if serializer.is_valid():

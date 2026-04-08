@@ -34,7 +34,7 @@
                                     <h6 class="card-title">Photo</h6>
                                     {% if form.instance.author_photo %}
                                     <img src="{{ form.instance.author_photo.url }}" class="img-thumbnail mb-2"
-                                        width="100">
+                                        width="100" alt="Photo de l'auteur">
                                     {% endif %}
                                     {{ form.author_photo|as_crispy_field }}
                                 </div>

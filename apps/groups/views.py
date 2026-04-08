@@ -1,6 +1,7 @@
 from django.shortcuts import render, get_object_or_404, redirect
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
+from django.core.paginator import Paginator
 from django.http import JsonResponse
 from django.db.models import Count, Avg
 from django.utils import timezone
@@ -9,6 +10,10 @@ from apps.core.permissions import role_required
 from .models import Group, GroupMeeting
 from .forms import GroupForm, GroupMembersForm, GroupMeetingForm, GroupMeetingAttendanceForm
 from .services import GroupService, GroupMeetingService
+import logging
+
+logger = logging.getLogger(__name__)
+
 
 
 @login_required
@@ -20,8 +25,12 @@ def group_list(request):
     if group_type:
         groups = groups.filter(group_type=group_type)
     
+    paginator = Paginator(groups, 25)
+    page_obj = paginator.get_page(request.GET.get('page', 1))
+    
     context = {
-        'groups': groups,
+        'groups': page_obj,
+        'page_obj': page_obj,
         'group_types': Group.GroupType.choices,
     }
     return render(request, 'groups/group_list.html', context)
@@ -30,7 +39,7 @@ def group_list(request):
 @login_required
 def group_detail(request, pk):
     """Détail d'un groupe."""
-    group = get_object_or_404(Group, pk=pk)
+    group = get_object_or_404(Group.objects.select_related('leader'), pk=pk)
     members = group.members.all()
     recent_meetings = GroupMeetingService.get_recent_meetings(group)
     

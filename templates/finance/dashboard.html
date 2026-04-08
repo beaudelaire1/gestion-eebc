@@ -267,6 +267,8 @@
 {% endblock %}
 
 {% block extra_js %}
+{{ donations_chart_data.labels|json_script:"donations-labels" }}
+{{ donations_chart_data.data|json_script:"donations-data" }}
 <script>
 document.addEventListener('DOMContentLoaded', function() {
     // Configuration du graphique d'évolution des dons
@@ -274,10 +276,10 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Données initiales (12 mois)
     const donationsData = {
-        labels: {{ donations_chart_data.labels|safe }},
+        labels: JSON.parse(document.getElementById('donations-labels').textContent),
         datasets: [{
             label: 'Dons (€)',
-            data: {{ donations_chart_data.data|safe }},
+            data: JSON.parse(document.getElementById('donations-data').textContent),
             borderColor: 'rgb(10, 54, 255)',
             backgroundColor: 'rgba(10, 54, 255, 0.1)',
             borderWidth: 3,

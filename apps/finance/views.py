@@ -3,6 +3,7 @@
 from django.shortcuts import render, get_object_or_404, redirect
 from django.contrib.auth.decorators import login_required, permission_required
 from django.contrib import messages
+from django.core.paginator import Paginator
 from django.db.models import Sum, Count, Q
 from django.utils import timezone
 from django.http import JsonResponse
@@ -111,8 +112,12 @@ def transaction_list(request):
     
     transactions = transactions.order_by(sort_by)
     
+    paginator = Paginator(transactions, 25)
+    page_obj = paginator.get_page(request.GET.get('page', 1))
+    
     context = {
-        'transactions': transactions,
+        'transactions': page_obj,
+        'page_obj': page_obj,
         'transaction_types': FinancialTransaction.TransactionType.choices,
         'statuses': FinancialTransaction.Status.choices,
         'current_sort': request.GET.get('sort', 'transaction_date'),
@@ -268,8 +273,12 @@ def tax_receipt_list(request):
     # Stats
     total_amount = receipts.filter(status='issued').aggregate(Sum('total_amount'))['total_amount__sum'] or 0
     
+    paginator = Paginator(receipts, 25)
+    page_obj = paginator.get_page(request.GET.get('page', 1))
+    
     context = {
-        'receipts': receipts,
+        'receipts': page_obj,
+        'page_obj': page_obj,
         'total_amount': total_amount,
         'years': TaxReceipt.objects.values_list('fiscal_year', flat=True).distinct().order_by('-fiscal_year'),
         'statuses': TaxReceipt.Status.choices if hasattr(TaxReceipt, 'Status') else [],
@@ -317,7 +326,7 @@ def tax_receipt_create(request):
             try:
                 last_num = int(last_receipt.receipt_number.split('-')[-1])
                 new_num = last_num + 1
-            except:
+            except (ValueError, IndexError):
                 new_num = 1
         else:
             new_num = 1
@@ -502,6 +511,9 @@ def batch_retry_ocr(request):
 # =============================================================================
 
 from django.http import JsonResponse
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 @login_required
@@ -666,7 +678,6 @@ def receipt_process_ocr(request, pk):
     
     try:
         from .tasks import process_ocr_task
-        
         # Réinitialiser le statut
         proof.ocr_status = ReceiptProof.OCRStatus.NON_TRAITE
         proof.ocr_raw_text = ''

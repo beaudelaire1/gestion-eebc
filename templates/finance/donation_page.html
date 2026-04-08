@@ -136,6 +136,9 @@
                                     Paiement sécurisé par Stripe
                                 </small>
                             </div>
+
+                            <!-- Cloudflare Turnstile CAPTCHA -->
+                            <div class="cf-turnstile mt-3" data-sitekey="{{ turnstile_site_key }}" data-theme="light" id="turnstile-widget"></div>
                         </form>
                     </div>
                 </div>
@@ -200,6 +203,7 @@ document.addEventListener('DOMContentLoaded', function() {
             site_id: document.getElementById('site').value || null,
             recurring: document.getElementById('recurring').checked,
             campaign_token: document.getElementById('campaign_token') ? document.getElementById('campaign_token').value : null,
+            turnstile_token: document.querySelector('[name="cf-turnstile-response"]') ? document.querySelector('[name="cf-turnstile-response"]').value : null,
         };
         
         try {

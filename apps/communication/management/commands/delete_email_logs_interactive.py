@@ -207,7 +207,7 @@ class Command(BaseCommand):
             try:
                 with open(tracking_file, 'a') as f:
                     f.write(f"\n[{timestamp}] Supprimés {deleted_count} logs (IDs: {ids_to_delete})\n")
-            except:
+            except Exception:
                 pass
 
             # Faire le commit Git

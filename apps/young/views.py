@@ -16,6 +16,9 @@ from .models import YoungMember, YouthGroup, YouthEvent, YouthAttendance
 from .forms import (
     YoungMemberForm, YouthGroupForm, YouthEventForm, YoungMemberSearchForm,
 )
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 YOUNG_ROLES = ('admin', 'secretariat', 'responsable_groupe', 'pasteur')

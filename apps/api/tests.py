@@ -16,6 +16,7 @@ from decimal import Decimal
 from django.test import TestCase, override_settings
 from django.urls import reverse
 from django.utils import timezone
+from unittest.mock import patch
 from rest_framework.test import APITestCase, APIClient
 from rest_framework import status
 
@@ -609,7 +610,8 @@ class PublicApiTests(APITestCase):
         self.assertIn('contact_subjects', response.data['data'])
         self.assertIn('visitor_interests', response.data['data'])
 
-    def test_public_contact_rate_limit(self):
+    @patch('apps.api.views.validate_turnstile', return_value=(True, None))
+    def test_public_contact_rate_limit(self, mock_turnstile):
         payload = {
             'name': 'Jane Doe',
             'email': 'jane@example.com',
@@ -626,7 +628,8 @@ class PublicApiTests(APITestCase):
         response = self.client.post(reverse('api:public_contact'), payload)
         self.assertEqual(response.status_code, status.HTTP_429_TOO_MANY_REQUESTS)
 
-    def test_public_interest_submission(self):
+    @patch('apps.api.views.validate_turnstile', return_value=(True, None))
+    def test_public_interest_submission(self, mock_turnstile):
         payload = {
             'first_name': 'Jane',
             'last_name': 'Doe',

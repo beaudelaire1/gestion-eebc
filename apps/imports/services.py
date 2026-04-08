@@ -715,7 +715,7 @@ class GenericExportService:
                     'erreur': getattr(sms, 'error_message', '') or '',
                     'expediteur': getattr(sms, 'sender', {}).get('username', '') if hasattr(sms, 'sender') else ''
                 })
-        except:
+        except Exception:
             pass  # SMSLog peut ne pas exister
         
         return pd.DataFrame(export_data)

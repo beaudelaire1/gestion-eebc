@@ -1,6 +1,7 @@
 from django.shortcuts import render, get_object_or_404, redirect
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
+from django.core.paginator import Paginator
 from django.http import JsonResponse, HttpResponse
 from django.template.loader import render_to_string
 from django.db.models import Q
@@ -12,6 +13,9 @@ import calendar as cal_module
 from apps.core.permissions import role_required
 from .models import Event, EventCategory, EventRegistration
 from .forms import EventForm, EventCancelForm, EventDuplicateForm, EventSearchForm, EventCategoryForm
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 @login_required
@@ -65,7 +69,7 @@ def events_json(request):
     # Filtrer par visibilité
     if not request.user.is_authenticated:
         events = events.filter(visibility='public')
-    elif not request.user.is_staff:
+    elif not request.user.has_any_role('admin', 'secretariat', 'pasteur'):
         events = events.filter(Q(visibility='public') | Q(visibility='members'))
     
     # Inclure les événements annulés pour les admins/organisateurs
@@ -142,8 +146,12 @@ def event_list(request):
     
     categories = EventCategory.objects.all()
     
+    paginator = Paginator(events, 25)
+    page_obj = paginator.get_page(request.GET.get('page', 1))
+    
     context = {
-        'events': events,
+        'events': page_obj,
+        'page_obj': page_obj,
         'categories': categories,
         'show_past': show_past,
     }
@@ -784,7 +792,7 @@ def event_list_advanced(request):
     events = Event.objects.select_related('category').prefetch_related('organizers')
     
     # Appliquer les filtres de base
-    if not request.user.is_staff:
+    if not request.user.has_any_role('admin', 'secretariat', 'pasteur'):
         # Filtrer par visibilité pour les non-staff
         events = events.filter(Q(visibility='public') | Q(visibility='members'))
     

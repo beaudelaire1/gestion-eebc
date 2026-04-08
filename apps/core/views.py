@@ -1,6 +1,7 @@
 """
 Vues du site vitrine public.
 """
+import logging
 from datetime import date
 from django.shortcuts import render, get_object_or_404, redirect
 from django.views.generic import TemplateView, ListView, DetailView, CreateView
@@ -9,6 +10,8 @@ from django.conf import settings
 from django.utils import timezone
 from django.db import models
 from django.db.models import Q
+
+logger = logging.getLogger(__name__)
 
 from .models import (
     Site, PageContent, NewsArticle, ContactMessage, 

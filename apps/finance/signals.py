@@ -22,13 +22,13 @@ def notify_large_transaction(sender, instance, created, **kwargs):
         from apps.accounts.models import User
         
         # Notifier les trésoriers/admins
-        admins = User.objects.filter(is_staff=True, is_active=True)
+        admins = User.objects.filter(role__icontains='finance', is_active=True) | User.objects.filter(role__icontains='admin', is_active=True)
         
         for admin in admins:
             Notification.objects.create(
-                recipient=admin,
+                user=admin,
                 title=f"Transaction importante : {instance.reference}",
                 message=f"Une {instance.get_transaction_type_display().lower()} de {instance.amount}€ a été enregistrée.",
                 notification_type='info',
-                link=f"/admin/finance/financialtransaction/{instance.pk}/change/"
+                action_url=f"/admin/finance/financialtransaction/{instance.pk}/change/"
             )

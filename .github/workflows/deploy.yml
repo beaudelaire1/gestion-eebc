@@ -15,7 +15,7 @@ jobs:
     if: github.event_name == 'push' || github.event.workflow_run.conclusion == 'success'
     
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
     
     - name: Deploy to Render
       env:
@@ -39,9 +39,7 @@ jobs:
     
     - name: Health check
       run: |
-        # À adapter avec votre domaine Render
-        # curl -f https://gestion-eebc.onrender.com/health || exit 1
-        echo "Health check would be performed here"
+        curl -sf https://gestion-eebc.onrender.com/healthz/ping/ || echo "Health check failed (service may still be starting)"
     
     - name: Slack notification on success
       if: success()

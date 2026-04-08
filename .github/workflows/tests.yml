@@ -30,10 +30,10 @@ jobs:
         python-version: ['3.10', '3.11']
     
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
     
     - name: Set up Python ${{ matrix.python-version }}
-      uses: actions/setup-python@v4
+      uses: actions/setup-python@v5
       with:
         python-version: ${{ matrix.python-version }}
         cache: 'pip'
@@ -45,10 +45,10 @@ jobs:
     
     - name: Lint with flake8
       run: |
-        # Stop the build if there are Python syntax errors or undefined names
+        # Syntax errors & undefined names — fatal
         flake8 apps --count --select=E9,F63,F7,F82 --show-source --statistics
-        # exit-zero treats all errors as warnings
-        flake8 apps --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
+        # Style warnings — also fail the build
+        flake8 apps --count --max-complexity=10 --max-line-length=127 --statistics
     
     - name: Format check with black
       run: |
@@ -67,7 +67,7 @@ jobs:
         pytest --cov=apps --cov-report=xml --cov-report=term-missing
     
     - name: Upload coverage to Codecov
-      uses: codecov/codecov-action@v3
+      uses: codecov/codecov-action@v4
       with:
         file: ./coverage.xml
         flags: unittests
@@ -79,10 +79,10 @@ jobs:
     runs-on: ubuntu-latest
     
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
     
     - name: Set up Python
-      uses: actions/setup-python@v4
+      uses: actions/setup-python@v5
       with:
         python-version: '3.11'
         cache: 'pip'
@@ -117,10 +117,10 @@ jobs:
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     
     steps:
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
     
     - name: Set up Python
-      uses: actions/setup-python@v4
+      uses: actions/setup-python@v5
       with:
         python-version: '3.11'
     

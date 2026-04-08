@@ -181,8 +181,8 @@ def age_group(db):
 def child(db, member, age_group):
     """Enfant simple."""
     bible_class = BibleClass.objects.create(
-        name="Classe test",
-        age_group=age_group
+        age_group=age_group,
+        room="Classe test"
     )
     return Child.objects.create(
         first_name="Test",

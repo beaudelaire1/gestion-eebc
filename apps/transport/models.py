@@ -91,6 +91,9 @@ class TransportRequest(models.Model):
         verbose_name = "Demande de Transport"
         verbose_name_plural = "Demandes de Transport"
         ordering = ['-event_date', '-event_time']
+        indexes = [
+            models.Index(fields=['event_date', 'event_time'], name='trans_req_date_time_idx'),
+        ]
     
     def __str__(self):
         return f"{self.requester_name} - {self.event_date}"

@@ -157,7 +157,7 @@
             <div class="card-body">
                 <div class="mb-2">
                     <small class="text-muted">Enregistré par</small>
-                    <div>{{ transaction.recorded_by.get_full_name|default:transaction.recorded_by.username|default:"-" }}</div>
+                    <div>{% if transaction.recorded_by %}{{ transaction.recorded_by.get_full_name|default:transaction.recorded_by.username }}{% else %}-{% endif %}</div>
                 </div>
                 <div class="mb-2">
                     <small class="text-muted">Créé le</small>

@@ -33,7 +33,7 @@
                             <div class="d-flex align-items-center">
                                 {% if testimony.author_photo %}
                                 <img src="{{ testimony.author_photo.url }}" class="rounded-circle me-2" width="32"
-                                    height="32" style="object-fit: cover;">
+                                    height="32" style="object-fit: cover;" alt="Photo de {{ testimony.author_name }}">
                                 {% else %}
                                 <div class="avatar avatar--sm me-2 bg-light text-secondary">
                                     <i class="bi bi-person"></i>

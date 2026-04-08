@@ -18,6 +18,7 @@ from apps.core.models import SiteSettings, PageContent
 
 from .stripe_service import stripe_service
 from .models import OnlineDonation
+from apps.core.utils.turnstile import validate_turnstile, get_client_ip
 
 logger = logging.getLogger(__name__)
 
@@ -35,6 +36,7 @@ class DonationPageView(TemplateView):
             is_published=True,
             show_in_menu=True
         ).order_by('menu_order')
+        context['turnstile_site_key'] = getattr(settings, 'TURNSTILE_SITE_KEY', '')
         
         # Sites disponibles
         from apps.core.models import Site
@@ -70,6 +72,15 @@ class CreateDonationSessionView(View):
         
         try:
             data = json.loads(request.body)
+            
+            # Valider le CAPTCHA Turnstile
+            turnstile_token = data.get('turnstile_token')
+            ip_address = get_client_ip(request)
+            is_valid, captcha_error = validate_turnstile(turnstile_token, ip_address)
+            if not is_valid:
+                return JsonResponse({
+                    'error': captcha_error or 'Vérification de sécurité échouée.'
+                }, status=403)
             
             amount = Decimal(data.get('amount', 0))
             if amount < 1:

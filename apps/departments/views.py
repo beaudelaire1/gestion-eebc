@@ -1,18 +1,25 @@
 from django.shortcuts import render, get_object_or_404, redirect
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
+from django.core.paginator import Paginator
 from django.db import transaction
 from apps.core.permissions import role_required
 from apps.members.models import Member
 from .models import Department
 from .forms import DepartmentForm, DepartmentMembersForm
+import logging
+
+logger = logging.getLogger(__name__)
+
 
 
 @login_required
 def department_list(request):
     """Liste des départements."""
-    departments = Department.objects.filter(is_active=True)
-    return render(request, 'departments/department_list.html', {'departments': departments})
+    departments = Department.objects.filter(is_active=True).select_related('leader')
+    paginator = Paginator(departments, 25)
+    page_obj = paginator.get_page(request.GET.get('page', 1))
+    return render(request, 'departments/department_list.html', {'departments': page_obj, 'page_obj': page_obj})
 
 
 @login_required

@@ -67,21 +67,21 @@ STRIPE_CANCEL_URL = 'http://localhost:8000/don/annule/'
 
 
 # =============================================================================
-# TWILIO - Désactivé en dev
+# TWILIO - Chargé depuis .env si disponible, sinon désactivé
 # =============================================================================
-TWILIO_ACCOUNT_SID = ''
-TWILIO_AUTH_TOKEN = ''
-TWILIO_PHONE_NUMBER = ''
-TWILIO_WHATSAPP_NUMBER = ''
+TWILIO_ACCOUNT_SID = os.environ.get('TWILIO_ACCOUNT_SID', '')
+TWILIO_AUTH_TOKEN = os.environ.get('TWILIO_AUTH_TOKEN', '')
+TWILIO_PHONE_NUMBER = os.environ.get('TWILIO_PHONE_NUMBER', '')
+TWILIO_WHATSAPP_NUMBER = os.environ.get('TWILIO_WHATSAPP_NUMBER', '')
 
 # =============================================================================
-# META WHATSAPP CLOUD API - Désactivé en dev
+# META WHATSAPP CLOUD API - Chargé depuis .env si disponible
 # =============================================================================
-META_WHATSAPP_ACCESS_TOKEN = ''
-META_WHATSAPP_PHONE_NUMBER_ID = ''
-META_WHATSAPP_VERIFY_TOKEN = ''
-META_WHATSAPP_APP_SECRET = ''
-META_WHATSAPP_API_VERSION = 'v23.0'
+META_WHATSAPP_ACCESS_TOKEN = os.environ.get('META_WHATSAPP_ACCESS_TOKEN', '')
+META_WHATSAPP_PHONE_NUMBER_ID = os.environ.get('META_WHATSAPP_PHONE_NUMBER_ID', '')
+META_WHATSAPP_VERIFY_TOKEN = os.environ.get('META_WHATSAPP_VERIFY_TOKEN', '')
+META_WHATSAPP_APP_SECRET = os.environ.get('META_WHATSAPP_APP_SECRET', '')
+META_WHATSAPP_API_VERSION = os.environ.get('META_WHATSAPP_API_VERSION', 'v23.0')
 
 
 # =============================================================================
@@ -110,9 +110,10 @@ LOGGING = {
 
 
 # =============================================================================
-# CAPTCHA - Désactivé en dev (Turnstile nécessite un domaine autorisé)
+# CAPTCHA - Clés de test Cloudflare Turnstile (widget visible, toujours valide)
+# https://developers.cloudflare.com/turnstile/troubleshooting/testing/
 # =============================================================================
-TURNSTILE_SITE_KEY = ''
-TURNSTILE_SECRET_KEY = ''
+TURNSTILE_SITE_KEY = '1x00000000000000000000AA'
+TURNSTILE_SECRET_KEY = '1x0000000000000000000000000000000AA'
 RECAPTCHA_PUBLIC_KEY = ''
 RECAPTCHA_PRIVATE_KEY = ''

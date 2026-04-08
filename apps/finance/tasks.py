@@ -108,7 +108,7 @@ def process_ocr_task(self, receipt_proof_id):
             receipt_proof = ReceiptProof.objects.get(id=receipt_proof_id)
             receipt_proof.ocr_status = ReceiptProof.OCRStatus.ECHEC
             receipt_proof.save()
-        except:
+        except Exception:
             pass
         
         # Retry si possible

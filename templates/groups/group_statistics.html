@@ -150,9 +150,10 @@
     </div>
 </div>
 
+{{ chart_data|json_script:"group-chart-data" }}
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    const chartData = {{ chart_data|safe }};
+    const chartData = JSON.parse(document.getElementById('group-chart-data').textContent);
     
     const ctx = document.getElementById('attendanceChart').getContext('2d');
     const chart = new Chart(ctx, {

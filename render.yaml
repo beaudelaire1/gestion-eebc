@@ -74,6 +74,47 @@ services:
         sync: false
       - key: SITE_NAME
         value: "EEBC"
+      - key: CELERY_BROKER_URL
+        fromService:
+          type: redis
+          name: eebc-redis
+          property: connectionString
+
+  # Worker Celery (tâches asynchrones : emails, imports, rappels)
+  - type: worker
+    name: gestion-eebc-worker
+    runtime: python
+    region: frankfurt
+    plan: free
+    buildCommand: pip install -r requirements.txt
+    startCommand: celery -A gestion_eebc worker --loglevel=info --concurrency=2
+    autoDeploy: true
+    envVars:
+      - key: PYTHON_VERSION
+        value: "3.11.4"
+      - key: DJANGO_SETTINGS_MODULE
+        value: gestion_eebc.settings.prod
+      - key: SECRET_KEY
+        fromService:
+          type: web
+          name: gestion-eebc
+          envVarKey: SECRET_KEY
+      - key: DATABASE_URL
+        fromDatabase:
+          name: eebc-db
+          property: connectionString
+      - key: CELERY_BROKER_URL
+        fromService:
+          type: redis
+          name: eebc-redis
+          property: connectionString
+
+  # Redis (broker Celery + cache)
+  - type: redis
+    name: eebc-redis
+    region: frankfurt
+    plan: free
+    maxmemoryPolicy: allkeys-lru
 
 # Base de données PostgreSQL (Free tier)
 databases:

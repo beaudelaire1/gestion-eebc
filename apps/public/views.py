@@ -6,6 +6,10 @@ from django.shortcuts import redirect
 
 from apps.core.models import NewsArticle, PageContent, Testimony, WorshipSchedule
 from .forms import NewsArticleForm, PageContentForm, TestimonyForm, WorshipScheduleForm
+import logging
+
+logger = logging.getLogger(__name__)
+
 
 class CMSRoleRequiredMixin(LoginRequiredMixin, UserPassesTestMixin):
     """Vérifie que l'utilisateur a les droits d'administration du CMS."""

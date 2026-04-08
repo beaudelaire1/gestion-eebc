@@ -86,6 +86,10 @@
                                 <textarea class="form-control" id="id_message" name="message" rows="3" placeholder="Dites-nous en plus sur vous ou vos attentes..."></textarea>
                             </div>
                             
+                            {% if turnstile_site_key %}
+                            <div class="cf-turnstile mb-3" data-sitekey="{{ turnstile_site_key }}" data-theme="light"></div>
+                            {% endif %}
+
                             <button type="submit" class="btn btn-primary btn-lg">
                                 <i class="bi bi-send me-2"></i>Envoyer
                             </button>

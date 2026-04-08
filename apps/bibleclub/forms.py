@@ -136,7 +136,7 @@ class ChildForm(forms.ModelForm):
         try:
             self.fields['assigned_driver'].queryset = DriverProfile.objects.filter(is_active=True)
             self.fields['assigned_driver'].empty_label = "Aucun chauffeur"
-        except:
+        except Exception:
             # Si le modèle DriverProfile n'existe pas encore
             self.fields['assigned_driver'].widget = forms.HiddenInput()
         

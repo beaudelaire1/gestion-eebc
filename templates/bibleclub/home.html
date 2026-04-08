@@ -281,6 +281,8 @@
 {% endblock %}
 
 {% block extra_js %}
+{{ attendance_chart_data.labels|json_script:"chart-labels" }}
+{{ attendance_chart_data.data|json_script:"chart-data" }}
 <script>
 document.addEventListener('DOMContentLoaded', function() {
     // Configuration du graphique de présences
@@ -288,10 +290,10 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Données initiales (12 mois)
     const attendanceData = {
-        labels: {{ attendance_chart_data.labels|safe }},
+        labels: JSON.parse(document.getElementById('chart-labels').textContent),
         datasets: [{
             label: 'Taux de présence (%)',
-            data: {{ attendance_chart_data.data|safe }},
+            data: JSON.parse(document.getElementById('chart-data').textContent),
             backgroundColor: 'rgba(16, 185, 129, 0.2)',
             borderColor: 'rgb(16, 185, 129)',
             borderWidth: 3,

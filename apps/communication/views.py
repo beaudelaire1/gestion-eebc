@@ -1,17 +1,28 @@
 from django.shortcuts import render, get_object_or_404, redirect
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
+from django.core.paginator import Paginator
 from django.http import JsonResponse, HttpResponse
 from django.utils import timezone
 from django.db.models import Q
 from django.conf import settings
 from django.views.decorators.csrf import csrf_exempt
 from datetime import date
+import hashlib
+import hmac
 import json
+import logging
 
 from .models import Notification, Announcement, EmailLog, SMSLog
 from .forms import AnnouncementForm, EmailLogFilterForm, SMSLogFilterForm
 from .services import send_whatsapp_announcement
+
+logger = logging.getLogger(__name__)
+
+
+def _is_comm_admin(user):
+    """Vérifie si l'utilisateur a les droits d'administration communication."""
+    return user.is_admin or user.has_any_role('admin', 'secretariat', 'pasteur')
 
 
 @login_required
@@ -210,7 +221,7 @@ def announcement_delete(request, pk):
 @login_required
 def announcement_toggle_active(request, pk):
     """Activer/désactiver une annonce."""
-    if not request.user.is_staff:
+    if not _is_comm_admin(request.user):
         return JsonResponse({'success': False, 'error': 'Permission refusée'})
     
     announcement = get_object_or_404(Announcement, pk=pk)
@@ -228,7 +239,7 @@ def announcement_toggle_active(request, pk):
 @login_required
 def email_logs(request):
     """Logs des emails envoyés avec suppression en masse."""
-    if not request.user.is_staff:
+    if not _is_comm_admin(request.user):
         messages.error(request, "Accès réservé aux administrateurs.")
         return redirect('dashboard:home')
 
@@ -261,7 +272,6 @@ def email_logs(request):
             | Q(recipient_name__icontains=search)
         )
 
-    from django.core.paginator import Paginator
     paginator = Paginator(logs, 50)
     page_obj = paginator.get_page(request.GET.get('page', 1))
 
@@ -288,7 +298,7 @@ def email_logs(request):
 @login_required
 def email_log_delete(request, pk):
     """Supprimer un log d'email."""
-    if not request.user.is_staff:
+    if not _is_comm_admin(request.user):
         return JsonResponse({'success': False, 'error': 'Permission refusée'})
     
     log = get_object_or_404(EmailLog, pk=pk)
@@ -307,7 +317,7 @@ def email_log_delete(request, pk):
 @login_required
 def email_logs_clear_old(request):
     """Supprimer les anciens logs d'emails (plus de 30 jours)."""
-    if not request.user.is_staff:
+    if not _is_comm_admin(request.user):
         return JsonResponse({'success': False, 'error': 'Permission refusée'})
     
     if request.method == 'POST':
@@ -333,7 +343,7 @@ def email_logs_clear_old(request):
 @login_required
 def sms_logs(request):
     """Logs des SMS envoyés."""
-    if not request.user.is_staff:
+    if not _is_comm_admin(request.user):
         messages.error(request, "Accès réservé aux administrateurs.")
         return redirect('dashboard:home')
     
@@ -355,8 +365,12 @@ def sms_logs(request):
         if to_date:
             logs = logs.filter(created_at__date__lte=to_date)
     
+    paginator = Paginator(logs, 50)
+    page_obj = paginator.get_page(request.GET.get('page', 1))
+    
     context = {
-        'logs': logs[:200],
+        'logs': page_obj,
+        'page_obj': page_obj,
         'filter_form': filter_form,
         'total_count': SMSLog.objects.count(),
     }
@@ -367,7 +381,7 @@ def sms_logs(request):
 @login_required
 def sms_log_delete(request, pk):
     """Supprimer un log de SMS."""
-    if not request.user.is_staff:
+    if not _is_comm_admin(request.user):
         return JsonResponse({'success': False, 'error': 'Permission refusée'})
     
     log = get_object_or_404(SMSLog, pk=pk)
@@ -385,7 +399,7 @@ def sms_log_delete(request, pk):
 
 @csrf_exempt
 def whatsapp_webhook(request):
-    """Webhook Meta WhatsApp Cloud API."""
+    """Webhook Meta WhatsApp Cloud API avec vérification HMAC."""
     if request.method == "GET":
         mode = request.GET.get("hub.mode")
         token = request.GET.get("hub.verify_token")
@@ -397,6 +411,24 @@ def whatsapp_webhook(request):
         return HttpResponse("Invalid verify token", status=403)
 
     if request.method == "POST":
+        # Vérification de la signature HMAC X-Hub-Signature-256
+        app_secret = getattr(settings, 'META_WHATSAPP_APP_SECRET', '')
+        if app_secret:
+            signature_header = request.headers.get('X-Hub-Signature-256', '')
+            if not signature_header.startswith('sha256='):
+                logger.warning("WhatsApp webhook: signature HMAC manquante")
+                return HttpResponse("Missing signature", status=403)
+            expected = hmac.new(
+                app_secret.encode('utf-8'),
+                request.body,
+                hashlib.sha256,
+            ).hexdigest()
+            received = signature_header[7:]  # strip "sha256="
+            if not hmac.compare_digest(expected, received):
+                logger.warning("WhatsApp webhook: signature HMAC invalide")
+                return HttpResponse("Invalid signature", status=403)
+
+        logger.info("WhatsApp webhook: message reçu")
         return JsonResponse({"status": "received"}, status=200)
 
     return HttpResponse(status=405)

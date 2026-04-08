@@ -4,6 +4,9 @@ from django.db.models import Count, Sum, Q
 from django.urls import reverse
 from datetime import date, timedelta
 from apps.dashboard.services import DashboardService
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 @login_required
@@ -56,7 +59,7 @@ def home(request):
     # Notifications
     try:
         unread_notifications = request.user.notifications.filter(is_read=False).count()
-    except:
+    except Exception:
         unread_notifications = 0
     
     # Build alerts
@@ -118,7 +121,6 @@ def quick_stats(request):
     """Stats rapides pour mise à jour HTMX."""
     from apps.members.models import Member
     from apps.bibleclub.models import Child
-    
     stats = {
         'total_members': Member.objects.filter(status='actif').count(),
         'total_children': Child.objects.filter(is_active=True).count(),

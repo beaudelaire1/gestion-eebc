@@ -52,6 +52,9 @@ class EmailLog(models.Model):
         verbose_name = "Log email"
         verbose_name_plural = "Logs emails"
         ordering = ['-created_at']
+        indexes = [
+            models.Index(fields=['status'], name='comm_emaillog_status_idx'),
+        ]
     
     def __str__(self):
         return f"{self.recipient_email} - {self.subject}"
@@ -216,6 +219,9 @@ class Notification(models.Model):
         verbose_name = "Notification"
         verbose_name_plural = "Notifications"
         ordering = ['-created_at']
+        indexes = [
+            models.Index(fields=['user', 'is_read'], name='comm_notif_user_read_idx'),
+        ]
     
     def __str__(self):
         username = self.user.username if self.user else "Système"
