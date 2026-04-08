@@ -509,6 +509,21 @@
                 }
             }
 
+            // Restaurer la position de scroll du sidebar
+            const sidebarContent = document.querySelector('.sidebar__content');
+            if (sidebarContent) {
+                const savedScroll = sessionStorage.getItem('sidebarScrollPos');
+                if (savedScroll) {
+                    sidebarContent.scrollTop = parseInt(savedScroll, 10);
+                }
+                // Sauvegarder la position avant chaque navigation
+                document.querySelectorAll('.sidebar a[href]').forEach(function (link) {
+                    link.addEventListener('click', function () {
+                        sessionStorage.setItem('sidebarScrollPos', sidebarContent.scrollTop);
+                    });
+                });
+            }
+
             // Fermer le sidebar mobile lors du redimensionnement vers desktop
             window.addEventListener('resize', function () {
                 if (!isMobile()) {
