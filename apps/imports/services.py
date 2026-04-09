@@ -7,6 +7,7 @@ from django.core.exceptions import ValidationError
 from django.core.cache import cache
 from apps.members.models import Member
 from apps.bibleclub.models import Child, BibleClass, AgeGroup
+from apps.young.models import YoungMember, YouthGroup
 from .models import ImportLog
 
 
@@ -81,6 +82,8 @@ class ExcelImportService:
                 self._import_members()
             elif self.import_log.import_type == ImportLog.ImportType.CHILDREN:
                 self._import_children()
+            elif self.import_log.import_type == ImportLog.ImportType.YOUNG_MEMBERS:
+                self._import_young_members()
             
             self._finalize_import()
             
@@ -381,6 +384,172 @@ class ExcelImportService:
             self.created_count += 1
             self.successes.append(f"Ligne {row_number}: {child.full_name} créé")
     
+    def _import_young_members(self):
+        """Importe les jeunes depuis un fichier Excel."""
+        df = pd.read_excel(self.import_log.file_path.path)
+        
+        expected_columns = {
+            'prenom': 'first_name', 'nom': 'last_name', 'date_naissance': 'date_of_birth',
+            'genre': 'gender', 'telephone': 'phone', 'email': 'email',
+            'adresse': 'address', 'ville': 'city', 'code_postal': 'postal_code',
+            'nom_parent': 'parent_name', 'telephone_parent': 'parent_phone',
+            'email_parent': 'parent_email',
+            'contact_urgence': 'emergency_contact', 'telephone_urgence': 'emergency_phone',
+            'allergies': 'allergies', 'notes_medicales': 'medical_notes',
+            'baptise': 'is_baptized', 'date_bapteme': 'baptism_date',
+            'ne_de_nouveau': 'is_born_again', 'date_conversion': 'conversion_date',
+            'besoin_transport': 'needs_transport', 'adresse_ramassage': 'pickup_address',
+            'statut': 'status', 'notes': 'notes'
+        }
+        
+        self.import_log.total_rows = len(df)
+        self.import_log.save()
+        
+        for index, row in df.iterrows():
+            try:
+                with transaction.atomic():
+                    self._process_young_member_row(row, expected_columns, index + 1)
+                    self.import_log.success_rows += 1
+            except Exception as e:
+                self.import_log.error_rows += 1
+                self.errors.append(f"Ligne {index + 1}: {str(e)}")
+            
+            self.import_log.processed_rows += 1
+            if self.import_log.processed_rows % 10 == 0:
+                self.import_log.save()
+    
+    def _process_young_member_row(self, row, column_mapping, row_number):
+        """Traite une ligne de jeune avec validations avancées."""
+        young_data = {}
+        row_warnings = []
+        
+        for excel_col, model_field in column_mapping.items():
+            if excel_col in row and pd.notna(row[excel_col]):
+                value = row[excel_col]
+                
+                # ── Dates ──
+                if model_field in ['date_of_birth', 'baptism_date', 'conversion_date']:
+                    if isinstance(value, str):
+                        for fmt in ('%d/%m/%Y', '%Y-%m-%d', '%d-%m-%Y', '%d.%m.%Y'):
+                            try:
+                                value = datetime.strptime(value.strip(), fmt).date()
+                                break
+                            except ValueError:
+                                continue
+                        else:
+                            raise ValidationError(f"Format de date invalide: {value}")
+                    elif hasattr(value, 'date'):
+                        value = value.date()
+                    
+                    if model_field == 'date_of_birth' and value > date.today():
+                        raise ValidationError(f"Date de naissance dans le futur: {value}")
+                    if model_field in ['baptism_date', 'conversion_date'] and value > date.today():
+                        raise ValidationError(f"Date dans le futur: {value}")
+                
+                # ── Genre ──
+                elif model_field == 'gender':
+                    value = str(value).strip().upper()
+                    gender_mapping = {
+                        'MASCULIN': 'M', 'FÉMININ': 'F', 'FEMININ': 'F',
+                        'GARÇON': 'M', 'GARCON': 'M', 'FILLE': 'F',
+                        'HOMME': 'M', 'FEMME': 'F', 'H': 'M',
+                    }
+                    value = gender_mapping.get(value, value)
+                    if value not in ['M', 'F']:
+                        row_warnings.append(f"Genre '{value}' non reconnu, champ ignoré")
+                        continue
+                
+                # ── Booléens ──
+                elif model_field in ['is_baptized', 'is_born_again', 'needs_transport']:
+                    if isinstance(value, str):
+                        value = value.strip().lower() in ['oui', 'yes', 'true', '1', 'vrai']
+                    else:
+                        value = bool(value)
+                
+                # ── Statut ──
+                elif model_field == 'status':
+                    status_mapping = {
+                        'actif': YoungMember.Status.ACTIF,
+                        'inactif': YoungMember.Status.INACTIF,
+                        'visiteur': YoungMember.Status.VISITEUR,
+                    }
+                    value = status_mapping.get(str(value).strip().lower(), YoungMember.Status.ACTIF)
+                
+                # ── Email ──
+                elif model_field in ['email', 'parent_email']:
+                    value = str(value).strip()
+                    if value:
+                        try:
+                            value = validate_email(value)
+                        except ValidationError:
+                            row_warnings.append(f"Email invalide ignoré: {value}")
+                            continue
+                
+                # ── Téléphone ──
+                elif model_field in ['phone', 'parent_phone', 'emergency_phone']:
+                    value = str(value).strip()
+                    if value:
+                        try:
+                            value = validate_phone(value)
+                        except ValidationError:
+                            row_warnings.append(f"Téléphone douteux: {value}")
+                
+                # ── Code postal ──
+                elif model_field == 'postal_code':
+                    value = validate_postal_code(value)
+                
+                # ── Nettoyage texte générique ──
+                elif isinstance(value, str):
+                    value = value.strip()
+                
+                young_data[model_field] = value
+        
+        # Champs obligatoires
+        if not young_data.get('first_name') or not young_data.get('last_name'):
+            raise ValidationError("Prénom et nom obligatoires")
+        if not young_data.get('date_of_birth'):
+            raise ValidationError("Date de naissance obligatoire")
+        
+        # Auto-assignation au groupe selon l'âge
+        dob = young_data['date_of_birth']
+        age = (date.today() - dob).days // 365
+        youth_group = YouthGroup.objects.filter(
+            min_age__lte=age, max_age__gte=age, is_active=True
+        ).first()
+        if youth_group:
+            young_data['group'] = youth_group
+        
+        # ── Déduplication : prénom + nom + date de naissance ──
+        first = young_data['first_name'].strip()
+        last = young_data['last_name'].strip()
+        
+        existing = YoungMember.objects.filter(
+            first_name__iexact=first,
+            last_name__iexact=last,
+            date_of_birth=dob,
+        ).first()
+        
+        if existing:
+            updated_fields = []
+            for field, value in young_data.items():
+                if field in ('first_name', 'last_name', 'date_of_birth'):
+                    continue
+                current = getattr(existing, field, None)
+                if value and not current:
+                    setattr(existing, field, value)
+                    updated_fields.append(field)
+            if updated_fields:
+                existing.save(update_fields=updated_fields)
+            self.updated_count += 1
+            self.successes.append(f"Ligne {row_number}: {existing.full_name} existant (inchangé ou complété)")
+        else:
+            young = YoungMember.objects.create(**young_data)
+            self.created_count += 1
+            self.successes.append(f"Ligne {row_number}: {young.full_name} créé")
+        
+        for w in row_warnings:
+            self.warnings.append(f"Ligne {row_number}: {w}")
+    
     def _finalize_import(self):
         """Finalise l'import et met à jour les logs."""
         self.import_log.error_log = '\n'.join(self.errors)
@@ -463,6 +632,33 @@ def generate_template_excel(import_type):
             'adresse_ramassage': ['123 Rue de la Paix', ''],  # Valeur vide pour le second
             'notes': ['Enfant calme', 'Très active']
         }
+    elif import_type == 'young_members':
+        sample_data = {
+            'prenom': ['Kévin', 'Sarah'],
+            'nom': ['Dupont', 'Martin'],
+            'date_naissance': ['15/03/2005', '22/07/2008'],
+            'genre': ['M', 'F'],
+            'telephone': ['0694123456', '0694654321'],
+            'email': ['kevin.dupont@email.com', ''],
+            'adresse': ['123 Rue de la Paix', '456 Avenue des Fleurs'],
+            'ville': ['Cayenne', 'Kourou'],
+            'code_postal': ['97300', '97310'],
+            'nom_parent': ['Jean Dupont', 'Pierre Martin'],
+            'telephone_parent': ['0694123457', '0694654322'],
+            'email_parent': ['jean.dupont@email.com', 'pierre.martin@email.com'],
+            'contact_urgence': ['Grand-mère Dupont', 'Oncle Martin'],
+            'telephone_urgence': ['0694123458', '0694654323'],
+            'allergies': ['Aucune', 'Arachides'],
+            'notes_medicales': ['', 'Asthme léger'],
+            'baptise': ['oui', 'non'],
+            'date_bapteme': ['15/02/2023', ''],
+            'ne_de_nouveau': ['oui', 'oui'],
+            'date_conversion': ['01/01/2022', '15/06/2023'],
+            'besoin_transport': ['non', 'oui'],
+            'adresse_ramassage': ['', '456 Avenue des Fleurs'],
+            'statut': ['actif', 'actif'],
+            'notes': ['Leader de louange', 'Nouvelle dans le groupe']
+        }
     
     return pd.DataFrame(sample_data)
 
@@ -524,6 +720,47 @@ def export_children_to_excel():
             'besoin_transport': 'oui' if child.needs_transport else 'non',
             'adresse_ramassage': child.pickup_address or '',
             'notes': child.notes or ''
+        })
+    
+    return pd.DataFrame(export_data)
+
+
+def export_young_members_to_excel():
+    """Exporte tous les jeunes actifs vers un fichier Excel."""
+    
+    young_members = YoungMember.objects.filter(
+        is_active=True
+    ).select_related('group').order_by('last_name', 'first_name')
+    
+    export_data = []
+    for young in young_members:
+        export_data.append({
+            'prenom': young.first_name,
+            'nom': young.last_name,
+            'date_naissance': young.date_of_birth.strftime('%d/%m/%Y') if young.date_of_birth else '',
+            'age': young.age,
+            'genre': young.gender or '',
+            'groupe': str(young.group) if young.group else '',
+            'telephone': young.phone or '',
+            'email': young.email or '',
+            'adresse': young.address or '',
+            'ville': young.city or '',
+            'code_postal': young.postal_code or '',
+            'nom_parent': young.parent_name or '',
+            'telephone_parent': young.parent_phone or '',
+            'email_parent': young.parent_email or '',
+            'contact_urgence': young.emergency_contact or '',
+            'telephone_urgence': young.emergency_phone or '',
+            'allergies': young.allergies or '',
+            'notes_medicales': young.medical_notes or '',
+            'baptise': 'oui' if young.is_baptized else 'non',
+            'date_bapteme': young.baptism_date.strftime('%d/%m/%Y') if young.baptism_date else '',
+            'ne_de_nouveau': 'oui' if young.is_born_again else 'non',
+            'date_conversion': young.conversion_date.strftime('%d/%m/%Y') if young.conversion_date else '',
+            'besoin_transport': 'oui' if young.needs_transport else 'non',
+            'adresse_ramassage': young.pickup_address or '',
+            'statut': young.status or '',
+            'notes': young.notes or ''
         })
     
     return pd.DataFrame(export_data)

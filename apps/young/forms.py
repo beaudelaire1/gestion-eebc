@@ -12,7 +12,7 @@ class YoungMemberForm(EnhancedModelForm):
         model = YoungMember
         fields = [
             'first_name', 'last_name', 'date_of_birth', 'gender', 'photo',
-            'site', 'group', 'family',
+            'site', 'group', 'family', 'linked_member',
             'phone', 'email', 'address', 'city', 'postal_code',
             'parent_name', 'parent_phone', 'parent_email',
             'emergency_contact', 'emergency_phone',

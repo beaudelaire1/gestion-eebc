@@ -180,6 +180,40 @@
             <button type="submit" class="btn btn-primary flex-fill">
                 <i class="bi bi-funnel"></i> Filtrer
             </button>
+            <div class="dropdown">
+                <button class="btn btn-outline-primary dropdown-toggle" type="button" 
+                        data-bs-toggle="dropdown" aria-expanded="false" title="Import / Export Excel">
+                    <i class="bi bi-upload"></i>
+                </button>
+                <ul class="dropdown-menu dropdown-menu-end">
+                    <li>
+                        <a class="dropdown-item" href="{% url 'imports:create' %}?type=young_members">
+                            <i class="bi bi-upload text-primary me-2"></i>
+                            Importer des jeunes
+                        </a>
+                    </li>
+                    <li>
+                        <a class="dropdown-item" href="{% url 'imports:template' 'young_members' %}">
+                            <i class="bi bi-download text-success me-2"></i>
+                            Télécharger template
+                        </a>
+                    </li>
+                    <li><hr class="dropdown-divider"></li>
+                    <li>
+                        <a class="dropdown-item" href="{% url 'imports:export_young_members' %}">
+                            <i class="bi bi-file-earmark-excel text-warning me-2"></i>
+                            Exporter tous les jeunes
+                        </a>
+                    </li>
+                    <li><hr class="dropdown-divider"></li>
+                    <li>
+                        <a class="dropdown-item" href="{% url 'imports:list' %}">
+                            <i class="bi bi-clock-history text-info me-2"></i>
+                            Historique imports
+                        </a>
+                    </li>
+                </ul>
+            </div>
             <a href="{% url 'young:member_create' %}" class="btn btn-success" title="Inscrire">
                 <i class="bi bi-plus-lg"></i>
             </a>

@@ -10,6 +10,7 @@ class ImportLog(models.Model):
     class ImportType(models.TextChoices):
         MEMBERS = 'members', 'Membres'
         CHILDREN = 'children', 'Enfants'
+        YOUNG_MEMBERS = 'young_members', 'Jeunes'
         EXPORT = 'export', 'Export'  # Nouveau type pour les exports
     
     class Status(models.TextChoices):

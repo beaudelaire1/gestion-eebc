@@ -12,7 +12,7 @@ import pandas as pd
 
 from .models import ImportLog
 from .forms import ImportForm
-from .services import ExcelImportService, generate_template_excel, export_members_to_excel, export_children_to_excel
+from .services import ExcelImportService, generate_template_excel, export_members_to_excel, export_children_to_excel, export_young_members_to_excel
 from apps.core.permissions import role_required
 
 logger = logging.getLogger(__name__)
@@ -154,7 +154,7 @@ def download_template(request, import_type):
     """
     Télécharger un template Excel pour l'import.
     """
-    if import_type not in ['members', 'children']:
+    if import_type not in ['members', 'children', 'young_members']:
         messages.error(request, 'Type d\'import invalide.')
         return redirect('imports:list')
     
@@ -217,6 +217,19 @@ def _get_column_descriptions(import_type):
             'Notes médicales', 'Besoin de transport (oui/non)', 'Adresse de ramassage',
             'Notes diverses'
         ]
+    elif import_type == 'young_members':
+        return [
+            'Prénom du jeune', 'Nom de famille', 'Date de naissance (JJ/MM/AAAA)',
+            'Genre (M ou F)', 'Numéro de téléphone', 'Adresse email',
+            'Adresse complète', 'Ville', 'Code postal',
+            'Nom du parent / responsable', 'Téléphone parent', 'Email parent',
+            'Nom du contact d\'urgence', 'Téléphone d\'urgence',
+            'Allergies connues', 'Notes médicales',
+            'Baptisé (oui/non)', 'Date de baptême',
+            'Né de nouveau (oui/non)', 'Date de conversion',
+            'Besoin de transport (oui/non)', 'Adresse de ramassage',
+            'Statut (actif/inactif/visiteur)', 'Notes diverses'
+        ]
 
 
 def _get_required_columns(import_type):
@@ -227,6 +240,16 @@ def _get_required_columns(import_type):
     elif import_type == 'children':
         required = ['Oui', 'Oui', 'Oui', 'Oui', 'Oui', 'Oui', 'Non', 'Non', 'Non', 'Non',
                    'Non', 'Non', 'Non', 'Non', 'Non', 'Non', 'Non']
+    elif import_type == 'young_members':
+        required = ['Oui', 'Oui', 'Oui', 'Non', 'Non', 'Non',
+                   'Non', 'Non', 'Non',
+                   'Non', 'Non', 'Non',
+                   'Non', 'Non',
+                   'Non', 'Non',
+                   'Non', 'Non',
+                   'Non', 'Non',
+                   'Non', 'Non',
+                   'Non', 'Non']
     
     return required
 
@@ -244,6 +267,18 @@ def _get_column_formats(import_type):
             'Texte', 'Texte', 'JJ/MM/AAAA', 'M ou F', 'Texte', 'Téléphone', 'Email',
             'Texte', 'Téléphone', 'Email', 'Texte', 'Téléphone', 'Texte', 'Texte',
             'oui/non', 'Texte', 'Texte'
+        ]
+    elif import_type == 'young_members':
+        return [
+            'Texte', 'Texte', 'JJ/MM/AAAA', 'M ou F', 'Téléphone', 'Email',
+            'Texte', 'Texte', 'Texte',
+            'Texte', 'Téléphone', 'Email',
+            'Texte', 'Téléphone',
+            'Texte', 'Texte',
+            'oui/non', 'JJ/MM/AAAA',
+            'oui/non', 'JJ/MM/AAAA',
+            'oui/non', 'Texte',
+            'actif/inactif/visiteur', 'Texte'
         ]
 
 
@@ -337,6 +372,49 @@ def export_children(request):
     except Exception as e:
         messages.error(request, f'Erreur lors de l\'export des enfants: {str(e)}')
         return redirect('bibleclub:children_list')
+
+
+@login_required
+def export_young_members(request):
+    """
+    Exporte tous les jeunes actifs vers un fichier Excel.
+    """
+    try:
+        df = export_young_members_to_excel()
+        
+        output = io.BytesIO()
+        
+        with pd.ExcelWriter(output, engine='openpyxl') as writer:
+            df.to_excel(writer, index=False, sheet_name='Jeunes')
+            
+            info_data = {
+                'Information': ['Date d\'export', 'Nombre de jeunes', 'Utilisateur'],
+                'Valeur': [
+                    timezone.now().strftime('%d/%m/%Y %H:%M'),
+                    len(df),
+                    request.user.get_full_name() or request.user.username
+                ]
+            }
+            
+            info_df = pd.DataFrame(info_data)
+            info_df.to_excel(writer, index=False, sheet_name='Informations')
+        
+        output.seek(0)
+        
+        filename = f'export_jeunes_{timezone.now().strftime("%Y%m%d_%H%M")}.xlsx'
+        response = HttpResponse(
+            output.getvalue(),
+            content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+        )
+        response['Content-Disposition'] = f'attachment; filename="{filename}"'
+        
+        messages.success(request, f'{len(df)} jeunes exportés avec succès!')
+        return response
+        
+    except Exception as e:
+        messages.error(request, f'Erreur lors de l\'export des jeunes: {str(e)}')
+        return redirect('young:member_list')
+
 
 @login_required
 def export_hub(request):

@@ -19,6 +19,7 @@ urlpatterns = [
     # Exports existants (membres & enfants)
     path('export/members/', views.export_members, name='export_members'),
     path('export/children/', views.export_children, name='export_children'),
+    path('export/young-members/', views.export_young_members, name='export_young_members'),
     
     # Nouveaux exports
     path('export/groups/', views.export_groups, name='export_groups'),

@@ -64,6 +64,16 @@ EXPORT_REGISTRY = {
         format_type='excel'
     ),
     
+    'young_members': ExportConfig(
+        name='Jeunes',
+        description='Exporter tous les jeunes du ministère de la jeunesse',
+        icon='bi-mortarboard-fill',
+        url_name='imports:export_young_members',
+        permissions=['young.view_youngmember'],
+        category='Personnes',
+        format_type='excel'
+    ),
+    
     # ========================================
     # NOUVEAUX EXPORTS
     # ========================================
