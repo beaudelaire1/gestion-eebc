@@ -94,6 +94,30 @@ class DashboardService:
             status='valide'
         )
         
+        # Si aucune transaction ce mois-ci, fallback sur le dernier mois ayant des données
+        fallback_label = None
+        if not month_transactions.exists():
+            last_tx = FinancialTransaction.objects.filter(
+                status='valide'
+            ).order_by('-transaction_date').first()
+            if last_tx:
+                fb_date = last_tx.transaction_date
+                start_of_month = fb_date.replace(day=1)
+                if fb_date.month == 12:
+                    end_of_month = fb_date.replace(year=fb_date.year + 1, month=1, day=1)
+                else:
+                    end_of_month = fb_date.replace(month=fb_date.month + 1, day=1)
+                month_transactions = FinancialTransaction.objects.filter(
+                    transaction_date__gte=start_of_month,
+                    transaction_date__lt=end_of_month,
+                    status='valide'
+                )
+                MOIS = [
+                    '', 'Janvier', 'Février', 'Mars', 'Avril', 'Mai', 'Juin',
+                    'Juillet', 'Août', 'Septembre', 'Octobre', 'Novembre', 'Décembre'
+                ]
+                fallback_label = f"{MOIS[fb_date.month]} {fb_date.year}"
+        
         finance_stats = {
             'month_income': month_transactions.filter(
                 transaction_type__in=['don', 'dime', 'offrande']
@@ -104,6 +128,7 @@ class DashboardService:
             'pending_transactions': FinancialTransaction.objects.filter(
                 status='en_attente'
             ).count(),
+            'fallback_label': fallback_label,
         }
         
         finance_stats['month_balance'] = finance_stats['month_income'] - finance_stats['month_expenses']

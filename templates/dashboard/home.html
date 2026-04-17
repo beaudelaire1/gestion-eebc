@@ -938,7 +938,7 @@
     <div id="section-finance" class="col-lg-4">
         <div class="modern-card">
             <div class="card-header">
-                <h6><i class="bi bi-cash-coin text-success"></i> Trésorerie du mois</h6>
+                <h6><i class="bi bi-cash-coin text-success"></i> Trésorerie {% if finance_stats.fallback_label %}({{ finance_stats.fallback_label }}){% else %}du mois{% endif %}</h6>
                 <a href="{% url 'finance:dashboard' %}" class="btn btn-sm btn-outline-secondary">Détails</a>
             </div>
             <div class="card-body">
