@@ -97,9 +97,9 @@
         </div>
     </div>
 
-    <!-- Graphique solde net -->
+    <!-- Graphique courbes annuelles -->
     <div class="comp-chart-wrap mb-4">
-        <h6 class="mb-3 fw-bold"><i class="bi bi-cash-stack text-primary me-1"></i>Solde net mensuel (Recettes − Dépenses)</h6>
+        <h6 class="mb-3 fw-bold"><i class="bi bi-activity text-primary me-1"></i>Évolution annuelle du solde net</h6>
         <canvas id="chartNet"></canvas>
     </div>
 
@@ -263,37 +263,49 @@ document.addEventListener('DOMContentLoaded', function() {
         };
     }
 
-    // Recettes - deux séries en barres + deux courbes annuelles
+    // Recettes - 2 bâtons par mois : 2026 et 2025
     new Chart(document.getElementById('chartIncome'), {
         type: 'bar',
         data: {
             labels: months,
             datasets: [
                 buildBarDataset('Recettes ' + yearN + ' (barres)', incomeN, palette.incomeNBar, palette.incomeNBorder),
-                buildBarDataset('Recettes ' + yearN1 + ' (barres)', incomeN1, palette.incomeN1Bar, palette.incomeN1Border),
-                buildLineDataset('Recettes ' + yearN + ' (courbe)', incomeN, palette.incomeNLine, false),
-                buildLineDataset('Recettes ' + yearN1 + ' (courbe)', incomeN1, palette.incomeN1Line, true)
+                buildBarDataset('Recettes ' + yearN1 + ' (barres)', incomeN1, palette.incomeN1Bar, palette.incomeN1Border)
             ]
         },
-        options: commonOpts
+        options: {
+            ...commonOpts,
+            datasets: {
+                bar: {
+                    categoryPercentage: 0.72,
+                    barPercentage: 0.88
+                }
+            }
+        }
     });
 
-    // Dépenses - deux séries en barres + deux courbes annuelles
+    // Dépenses - 2 bâtons par mois : 2026 et 2025
     new Chart(document.getElementById('chartExpense'), {
         type: 'bar',
         data: {
             labels: months,
             datasets: [
                 buildBarDataset('Dépenses ' + yearN + ' (barres)', expenseN, palette.expenseNBar, palette.expenseNBorder),
-                buildBarDataset('Dépenses ' + yearN1 + ' (barres)', expenseN1, palette.expenseN1Bar, palette.expenseN1Border),
-                buildLineDataset('Dépenses ' + yearN + ' (courbe)', expenseN, palette.expenseNLine, false),
-                buildLineDataset('Dépenses ' + yearN1 + ' (courbe)', expenseN1, palette.expenseN1Line, true)
+                buildBarDataset('Dépenses ' + yearN1 + ' (barres)', expenseN1, palette.expenseN1Bar, palette.expenseN1Border)
             ]
         },
-        options: commonOpts
+        options: {
+            ...commonOpts,
+            datasets: {
+                bar: {
+                    categoryPercentage: 0.72,
+                    barPercentage: 0.88
+                }
+            }
+        }
     });
 
-    // Solde net
+    // Courbes annuelles - une courbe par année
     var netN = incomeN.map(function(v, i) { return v - expenseN[i]; });
     var netN1 = incomeN1.map(function(v, i) { return v - expenseN1[i]; });
 
