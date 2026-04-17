@@ -171,6 +171,11 @@
                         <i class="bi bi-cash-coin nav-link__icon"></i>
                         <span>Trésorerie</span>
                     </a>
+                    <a class="nav-link {% if 'comparison' in request.path %}nav-link--active{% endif %}"
+                        href="{% url 'finance:yearly_comparison' %}">
+                        <i class="bi bi-bar-chart-line nav-link__icon"></i>
+                        <span>Comparatif N/N-1</span>
+                    </a>
                     <a class="nav-link {% if 'tax-receipts' in request.path %}nav-link--active{% endif %}"
                         href="{% url 'finance:tax_receipt_list' %}">
                         <i class="bi bi-receipt nav-link__icon"></i>
