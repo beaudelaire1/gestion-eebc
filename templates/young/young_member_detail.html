@@ -48,9 +48,12 @@
                     {% endif %}
                 </div>
 
-                <div class="d-flex justify-content-center gap-2 mt-4">
+                <div class="d-flex justify-content-center gap-2 mt-4 flex-wrap">
                     <a href="{% url 'young:member_edit' member.pk %}" class="btn btn-primary">
                         <i class="bi bi-pencil me-2"></i>Modifier
+                    </a>
+                    <a href="{% url 'young:member_print_registration' member.pk %}" class="btn btn-outline-success" title="Télécharger la fiche d'inscription en PDF">
+                        <i class="bi bi-printer me-2"></i>Imprimer la fiche
                     </a>
                     <a href="{% url 'young:member_delete' member.pk %}" class="btn btn-outline-danger">
                         <i class="bi bi-trash me-2"></i>Désactiver

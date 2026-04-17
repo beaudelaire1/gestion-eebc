@@ -25,26 +25,50 @@ def dashboard(request):
     Utilise TransactionService pour récupérer les statistiques.
     Requirements: 7.2, 21.1
     """
+    available_years = list(
+        FinancialTransaction.objects.filter(status=FinancialTransaction.Status.VALIDE)
+        .dates('transaction_date', 'year', order='DESC')
+    )
+    available_year_values = [year.year for year in available_years]
+
+    year_param = request.GET.get('year', '').strip()
+    if year_param.isdigit():
+        selected_year = int(year_param)
+    elif available_year_values:
+        selected_year = available_year_values[0]
+    else:
+        selected_year = date.today().year
+
     # Déléguer la logique métier au service
-    stats = TransactionService.get_dashboard_stats()
+    stats = TransactionService.get_dashboard_stats(year=selected_year)
     
     # Données pour le graphique d'évolution des dons (12 mois)
-    donations_chart_data = TransactionService.get_monthly_donations_data(12)
+    donations_chart_data = TransactionService.get_monthly_donations_data(12, year=selected_year)
     
     # Données pour le graphique de répartition des dépenses (12 mois)
-    expenses_chart_data = TransactionService.get_expenses_distribution_data(12)
+    expenses_chart_data = TransactionService.get_expenses_distribution_data(12, year=selected_year)
     
     context = {
         'month_income': stats['month_income'],
         'month_expenses': stats['month_expenses'],
         'month_balance': stats['month_balance'],
+        'month_dedicated_funds': stats['month_dedicated_funds'],
         'year_income': stats['year_income'],
         'year_expenses': stats['year_expenses'],
         'year_balance': stats['year_balance'],
+        'dedicated_funds_total': stats['dedicated_funds_total'],
+        'closing_balance': stats['closing_balance'],
+        'income_summary': stats['income_summary'],
+        'expense_summary': stats['expense_summary'],
+        'dedicated_funds_summary': stats['dedicated_funds_summary'],
         'recent_transactions': stats['recent_transactions'],
         'pending_count': stats['pending_count'],
         'donations_chart_data': donations_chart_data,
         'expenses_chart_data': expenses_chart_data,
+        'available_years': available_year_values,
+        'selected_year': selected_year,
+        'reference_date': stats['reference_date'],
+        'current_year': date.today().year,
     }
     
     return render(request, 'finance/dashboard.html', context)
@@ -60,6 +84,8 @@ def dashboard_chart_data(request):
     """
     months = int(request.GET.get('months', 12))
     chart_type = request.GET.get('type', 'donations')
+    year_param = request.GET.get('year', '').strip()
+    selected_year = int(year_param) if year_param.isdigit() else None
     
     # Limiter le nombre de mois pour éviter les abus
     if months not in [3, 6, 12, 24]:
@@ -67,9 +93,9 @@ def dashboard_chart_data(request):
     
     # Récupérer les données via le service selon le type
     if chart_type == 'expenses':
-        chart_data = TransactionService.get_expenses_distribution_data(months)
+        chart_data = TransactionService.get_expenses_distribution_data(months, year=selected_year)
     else:  # donations par défaut
-        chart_data = TransactionService.get_monthly_donations_data(months)
+        chart_data = TransactionService.get_monthly_donations_data(months, year=selected_year)
     
     return JsonResponse(chart_data)
 

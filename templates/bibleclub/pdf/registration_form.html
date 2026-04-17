@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <title>Fiche d'Inscription - Enfant (Club Biblique)</title>
+    <style>
+        body { font-family: sans-serif; font-size: 11pt; color: #333; }
+        .header { text-align: center; border-bottom: 2px solid #0d6efd; padding-bottom: 10px; margin-bottom: 20px; }
+        .title { font-size: 18pt; color: #0d6efd; font-weight: bold; margin-bottom: 5px; }
+        .subtitle { font-size: 12pt; color: #555; }
+        .section { margin-bottom: 20px; }
+        .section-title { font-size: 14pt; color: #0d6efd; border-bottom: 1px solid #ccc; padding-bottom: 5px; margin-bottom: 10px; }
+        .row { display: flex; margin-bottom: 8px; }
+        .label { font-weight: bold; width: 180px; display: inline-block; }
+        .value { border-bottom: 1px dotted #999; flex-grow: 1; padding-left: 10px; }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div class="title">Club Biblique EEBC</div>
+        <div class="subtitle">Fiche d'Inscription</div>
+    </div>
+    
+    <div class="section">
+        <div class="section-title">Informations de l'Enfant</div>
+        <div class="row"><span class="label">Nom:</span> <span class="value">{{ child.last_name|upper }}</span></div>
+        <div class="row"><span class="label">Prénoms:</span> <span class="value">{{ child.first_name }}</span></div>
+        <div class="row"><span class="label">Sexe:</span> <span class="value">{{ child.get_gender_display|default:"" }}</span></div>
+        <div class="row"><span class="label">Date de naissance:</span> <span class="value">{{ child.date_of_birth|date:"d/m/Y"|default:"" }}</span></div>
+        <div class="row"><span class="label">Classe/Niveau scolaire:</span> <span class="value">{{ child.school_level|default:"" }}</span></div>
+        <div class="row"><span class="label">Tranche d'âge:</span> <span class="value">{{ child.age_group.name|default:"" }}</span></div>
+    </div>
+
+    <div class="section">
+        <div class="section-title">Santé & Précautions</div>
+        <div class="row"><span class="label">Allergies/Maladies:</span> <span class="value">{{ child.health_issues|default:"Aucune" }}</span></div>
+        <div class="row"><span class="label">Instructions spéciales:</span> <span class="value">{{ child.special_instructions|default:"N/A" }}</span></div>
+    </div>
+
+    <div class="section">
+        <div class="section-title">Parents / Tuteurs</div>
+        <div class="row"><span class="label">Père/Tuteur:</span> <span class="value">{{ child.father_name|default:"" }}</span></div>
+        <div class="row"><span class="label">Téléphone (Père):</span> <span class="value">{{ child.father_phone|default:"" }}</span></div>
+        <div class="row"><span class="label">Mère/Tutrice:</span> <span class="value">{{ child.mother_name|default:"" }}</span></div>
+        <div class="row"><span class="label">Téléphone (Mère):</span> <span class="value">{{ child.mother_phone|default:"" }}</span></div>
+        <div class="row"><span class="label">Email contact:</span> <span class="value">{{ child.contact_email|default:"" }}</span></div>
+        <div class="row"><span class="label">Adresse:</span> <span class="value">{{ child.address|default:"" }}</span></div>
+    </div>
+
+    <div style="margin-top: 50px; text-align: right;">
+        <p>Signature des parents: ___________________________</p>
+    </div>
+</body>
+</html>

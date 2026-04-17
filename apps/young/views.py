@@ -140,6 +140,21 @@ def young_member_detail(request, pk):
 
 @login_required
 @role_required(*YOUNG_ROLES)
+def young_member_print_registration(request, pk):
+    """Télécharge la fiche d'inscription du jeune en PDF."""
+    from apps.core.pdf_service import PDFService
+    youth = get_object_or_404(YoungMember, pk=pk)
+    filename = f"fiche_inscription_jeune_{youth.last_name}_{youth.first_name}.pdf"
+    return PDFService.generate_pdf_download(
+        'young/pdf/registration_form.html',
+        {'youth': youth},
+        filename=filename,
+        request=request,
+    )
+
+
+@login_required
+@role_required(*YOUNG_ROLES)
 def young_member_create(request):
     """Inscrire un nouveau jeune."""
     if request.method == 'POST':

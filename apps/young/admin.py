@@ -70,7 +70,19 @@ class YoungMemberAdmin(admin.ModelAdmin):
             'fields': ('status', 'is_active', 'registration_date', 'notes'),
         }),
     )
+    actions = ['print_registration_form']
 
+    @admin.action(description="Imprimer la fiche d'inscription en PDF")
+    def print_registration_form(self, request, queryset):
+        from apps.core.pdf_service import PDFService
+        
+        if queryset.count() == 1:
+            youth = queryset.first()
+            context = {'youth': youth}
+            filename = f"Fiche_Inscription_Jeune_{youth.id}.pdf"
+            return PDFService.generate_pdf_download('young/pdf/registration_form.html', context, filename, request)
+        else:
+            self.message_user(request, "Veuillez sélectionner un seul jeune à la fois pour l'impression.", level='WARNING')
     @admin.display(description='Photo')
     def photo_thumbnail(self, obj):
         if obj.photo:

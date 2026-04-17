@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <title>Fiche d'Inscription - Jeune</title>
+    <style>
+        body { font-family: sans-serif; font-size: 11pt; color: #333; }
+        .header { text-align: center; border-bottom: 2px solid #28a745; padding-bottom: 10px; margin-bottom: 20px; }
+        .title { font-size: 18pt; color: #28a745; font-weight: bold; margin-bottom: 5px; }
+        .subtitle { font-size: 12pt; color: #555; }
+        .section { margin-bottom: 20px; }
+        .section-title { font-size: 14pt; color: #28a745; border-bottom: 1px solid #ccc; padding-bottom: 5px; margin-bottom: 10px; }
+        .row { display: flex; margin-bottom: 8px; }
+        .label { font-weight: bold; width: 160px; display: inline-block; }
+        .value { border-bottom: 1px dotted #999; flex-grow: 1; padding-left: 10px; }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div class="title">Département des Jeunes EEBC</div>
+        <div class="subtitle">Fiche d'Inscription</div>
+    </div>
+    
+    <div class="section">
+        <div class="section-title">Informations Personnelles</div>
+        <div class="row"><span class="label">Nom:</span> <span class="value">{{ youth.last_name|upper }}</span></div>
+        <div class="row"><span class="label">Prénoms:</span> <span class="value">{{ youth.first_name }}</span></div>
+        <div class="row"><span class="label">Sexe:</span> <span class="value">{{ youth.get_gender_display|default:"" }}</span></div>
+        <div class="row"><span class="label">Date de naissance:</span> <span class="value">{{ youth.date_of_birth|date:"d/m/Y"|default:"" }}</span></div>
+    </div>
+
+    <div class="section">
+        <div class="section-title">Scolarité & Profession</div>
+        <div class="row"><span class="label">Statut actuel:</span> <span class="value">{{ youth.get_occupation_status_display|default:"" }}</span></div>
+        <div class="row"><span class="label">Niveau d'études:</span> <span class="value">{{ youth.education_level|default:"" }}</span></div>
+        <div class="row"><span class="label">Établissement/Entreprise:</span> <span class="value">{{ youth.institution|default:"" }}</span></div>
+    </div>
+
+    <div class="section">
+        <div class="section-title">Coordonnées</div>
+        <div class="row"><span class="label">Téléphone:</span> <span class="value">{{ youth.phone|default:"" }}</span></div>
+        <div class="row"><span class="label">Email:</span> <span class="value">{{ youth.email|default:"" }}</span></div>
+        <div class="row"><span class="label">Adresse:</span> <span class="value">{{ youth.address|default:"" }}</span></div>
+    </div>
+
+    <div class="section">
+        <div class="section-title">Engagement & Spiritualité</div>
+        <div class="row"><span class="label">Membre baptisé:</span> <span class="value">{% if youth.is_baptized %}Oui{% else %}Non{% endif %}</span></div>
+        <div class="row"><span class="label">Pôle / Cellule:</span> <span class="value">{{ youth.cell_group.name|default:"" }}</span></div>
+    </div>
+
+    <div style="margin-top: 50px; text-align: right;">
+        <p>Date et Signature : ___________________________</p>
+    </div>
+</body>
+</html>

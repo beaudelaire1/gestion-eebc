@@ -13,6 +13,7 @@ urlpatterns = [
     path('<int:pk>/', views.member_detail, name='detail'),
     path('<int:pk>/edit/', views.member_edit, name='edit'),
     path('<int:pk>/delete/', views.member_delete, name='delete'),
+    path('<int:pk>/print/', views.member_print_registration, name='print_registration'),
     
     # Carte des membres
     path('map/', admin_views.members_map_view, name='map'),

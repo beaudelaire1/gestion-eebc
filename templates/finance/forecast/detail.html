@@ -1,0 +1,402 @@
+{% extends 'base.html' %}
+{% load humanize form_tags %}
+
+{% block title %}{{ forecast.name }} - Prévisionnel {{ forecast.year }}{% endblock %}
+
+{% block page_title %}{{ forecast.name }}{% endblock %}
+{% block page_subtitle %}Prévisionnel {{ forecast.year }} — {{ forecast.get_scenario_display }}{% endblock %}
+
+{% block extra_css %}
+<style>
+    .forecast-chart-note {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.75rem;
+        align-items: center;
+        margin-bottom: 1rem;
+        padding: 0.9rem 1rem;
+        border: 1px solid rgba(148, 163, 184, 0.24);
+        border-radius: 18px;
+        background: linear-gradient(180deg, rgba(255, 255, 255, 0.96), rgba(248, 250, 252, 0.92));
+    }
+
+    .forecast-chart-note__pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 0.45rem 0.8rem;
+        border-radius: 999px;
+        font-size: 0.82rem;
+        font-weight: 600;
+        letter-spacing: 0.01em;
+    }
+
+    .forecast-chart-note__pill::before {
+        content: "";
+        width: 0.8rem;
+        height: 0.8rem;
+        border-radius: 999px;
+        background: currentColor;
+        box-shadow: 0 0 0 4px rgba(255, 255, 255, 0.78);
+    }
+
+    .forecast-chart-note__pill--income {
+        color: #15803d !important;
+        background: rgba(22, 163, 74, 0.10);
+    }
+
+    .forecast-chart-note__pill--expense {
+        color: #dc2626 !important;
+        background: rgba(220, 38, 38, 0.10);
+    }
+
+    .forecast-chart-note__pill--forecast::before {
+        border-radius: 0;
+        height: 2px;
+    }
+
+    .forecast-chart-note__text {
+        color: var(--text-secondary, #64748b) !important;
+        font-size: 0.92rem;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Actions -->
+    <div class="d-flex gap-2 mb-4">
+        <a href="{% url 'finance:forecast_list' %}" class="btn btn-outline-secondary btn-sm">
+            <i class="bi bi-arrow-left me-1"></i>Retour
+        </a>
+        <a href="{% url 'finance:forecast_edit' forecast.pk %}" class="btn btn-outline-primary btn-sm">
+            <i class="bi bi-pencil me-1"></i>Modifier
+        </a>
+        <a href="{% url 'finance:forecast_export_excel' forecast.pk %}" class="btn btn-outline-success btn-sm">
+            <i class="bi bi-file-earmark-excel me-1"></i>Export Excel
+        </a>
+        <a href="{% url 'finance:forecast_delete' forecast.pk %}" class="btn btn-outline-danger btn-sm ms-auto">
+            <i class="bi bi-trash me-1"></i>Supprimer
+        </a>
+    </div>
+
+    <!-- Résumé -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card border-0 shadow-sm text-center">
+                <div class="card-body">
+                    <i class="bi bi-arrow-up-circle text-success display-6"></i>
+                    <h6 class="text-muted mt-2 mb-1">Recettes prévisionnelles</h6>
+                    <h4 class="text-success mb-0">{{ total_income_forecast|floatformat:2 }} €</h4>
+                    <small class="text-muted">Réalisé : {{ total_income_actual|floatformat:2 }} €</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card border-0 shadow-sm text-center">
+                <div class="card-body">
+                    <i class="bi bi-arrow-down-circle text-danger display-6"></i>
+                    <h6 class="text-muted mt-2 mb-1">Dépenses prévisionnelles</h6>
+                    <h4 class="text-danger mb-0">{{ total_expense_forecast|floatformat:2 }} €</h4>
+                    <small class="text-muted">Réalisé : {{ total_expense_actual|floatformat:2 }} €</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card border-0 shadow-sm text-center">
+                <div class="card-body">
+                    <i class="bi bi-wallet2 text-primary display-6"></i>
+                    <h6 class="text-muted mt-2 mb-1">Solde net prévu</h6>
+                    <h4 class="{% if net_forecast >= 0 %}text-success{% else %}text-danger{% endif %} mb-0">{{ net_forecast|floatformat:2 }} €</h4>
+                    <small class="text-muted">Réalisé : {{ net_actual|floatformat:2 }} €</small>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card border-0 shadow-sm text-center">
+                <div class="card-body">
+                    <i class="bi bi-speedometer2 text-warning display-6"></i>
+                    <h6 class="text-muted mt-2 mb-1">Écart recettes</h6>
+                    {% with variance=total_income_actual|add:total_income_forecast|default:0 %}
+                    <h4 class="{% if total_income_actual >= total_income_forecast %}text-success{% else %}text-warning{% endif %} mb-0">
+                        {% if total_income_forecast > 0 %}
+                            {{ total_income_actual|floatformat:0 }} / {{ total_income_forecast|floatformat:0 }}
+                        {% else %}
+                            N/A
+                        {% endif %}
+                    </h4>
+                    {% endwith %}
+                    <small class="text-muted">Réalisé vs Prévu</small>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Graphique -->
+    <div class="card shadow-sm mb-4">
+        <div class="card-header">
+            <h5 class="mb-0"><i class="bi bi-bar-chart me-2"></i>Prévisionnel vs Réalisé</h5>
+        </div>
+        <div class="card-body">
+            <div class="forecast-chart-note">
+                <span class="forecast-chart-note__pill forecast-chart-note__pill--income">Vert = recettes</span>
+                <span class="forecast-chart-note__pill forecast-chart-note__pill--expense">Rouge = dépenses</span>
+                <span class="forecast-chart-note__pill forecast-chart-note__pill--forecast">Lignes = prévisionnel</span>
+                <span class="forecast-chart-note__text">Barres = réalisé comptable importé dans la trésorerie.</span>
+            </div>
+            <canvas id="forecastChart" height="100"></canvas>
+        </div>
+    </div>
+
+    <!-- Tableau comparatif mensuel -->
+    <div class="card shadow-sm mb-4">
+        <div class="card-header">
+            <h5 class="mb-0"><i class="bi bi-table me-2"></i>Détail mensuel — Prévisionnel vs Réalisé</h5>
+        </div>
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-sm table-hover table-striped mb-0">
+                    <thead class="table-dark">
+                        <tr>
+                            <th>Mois</th>
+                            <th class="text-end">Recettes prévues</th>
+                            <th class="text-end">Recettes réalisées</th>
+                            <th class="text-end">Écart</th>
+                            <th class="text-end">Dépenses prévues</th>
+                            <th class="text-end">Dépenses réalisées</th>
+                            <th class="text-end">Écart</th>
+                            <th class="text-end">Net prévu</th>
+                            <th class="text-end">Net réalisé</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for m in forecast_by_month %}
+                        <tr>
+                            <td class="fw-bold">{{ m.month }}</td>
+                            <td class="text-end">{{ m.income_forecast|floatformat:2 }}</td>
+                            <td class="text-end">{{ m.income_actual|floatformat:2 }}</td>
+                            <td class="text-end {% if m.income_variance >= 0 %}text-success{% else %}text-danger{% endif %}">
+                                {% if m.income_variance > 0 %}+{% endif %}{{ m.income_variance|floatformat:2 }}
+                            </td>
+                            <td class="text-end">{{ m.expense_forecast|floatformat:2 }}</td>
+                            <td class="text-end">{{ m.expense_actual|floatformat:2 }}</td>
+                            <td class="text-end {% if m.expense_variance <= 0 %}text-success{% else %}text-danger{% endif %}">
+                                {% if m.expense_variance > 0 %}+{% endif %}{{ m.expense_variance|floatformat:2 }}
+                            </td>
+                            <td class="text-end fw-bold {% if m.net_forecast >= 0 %}text-success{% else %}text-danger{% endif %}">
+                                {{ m.net_forecast|floatformat:2 }}
+                            </td>
+                            <td class="text-end fw-bold {% if m.net_actual >= 0 %}text-success{% else %}text-danger{% endif %}">
+                                {{ m.net_actual|floatformat:2 }}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                    <tfoot class="table-primary fw-bold">
+                        <tr>
+                            <td>TOTAUX</td>
+                            <td class="text-end">{{ total_income_forecast|floatformat:2 }}</td>
+                            <td class="text-end">{{ total_income_actual|floatformat:2 }}</td>
+                            <td class="text-end"></td>
+                            <td class="text-end">{{ total_expense_forecast|floatformat:2 }}</td>
+                            <td class="text-end">{{ total_expense_actual|floatformat:2 }}</td>
+                            <td class="text-end"></td>
+                            <td class="text-end {% if net_forecast >= 0 %}text-success{% else %}text-danger{% endif %}">{{ net_forecast|floatformat:2 }}</td>
+                            <td class="text-end {% if net_actual >= 0 %}text-success{% else %}text-danger{% endif %}">{{ net_actual|floatformat:2 }}</td>
+                        </tr>
+                    </tfoot>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Détail des lignes -->
+    {% if income_lines %}
+    <div class="card shadow-sm mb-4">
+        <div class="card-header bg-success bg-opacity-10">
+            <h5 class="mb-0 text-success"><i class="bi bi-arrow-up-circle me-2"></i>Détail des recettes</h5>
+        </div>
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-sm mb-0">
+                    <thead>
+                        <tr>
+                            <th>Libellé</th>
+                            {% for label in month_labels %}
+                            <th class="text-end">{{ label|truncatechars:4 }}</th>
+                            {% endfor %}
+                            <th class="text-end fw-bold">Total</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for line in income_lines %}
+                        <tr>
+                            <td>{{ line.label }}</td>
+                            {% for mf in month_fields %}
+                            <td class="text-end">{{ line|get_item:mf|default:"0"|floatformat:0 }}</td>
+                            {% endfor %}
+                            <td class="text-end fw-bold">{{ line.amount|floatformat:0 }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    {% if expense_lines %}
+    <div class="card shadow-sm mb-4">
+        <div class="card-header bg-danger bg-opacity-10">
+            <h5 class="mb-0 text-danger"><i class="bi bi-arrow-down-circle me-2"></i>Détail des dépenses</h5>
+        </div>
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-sm mb-0">
+                    <thead>
+                        <tr>
+                            <th>Libellé</th>
+                            {% for label in month_labels %}
+                            <th class="text-end">{{ label|truncatechars:4 }}</th>
+                            {% endfor %}
+                            <th class="text-end fw-bold">Total</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for line in expense_lines %}
+                        <tr>
+                            <td>{{ line.label }}</td>
+                            {% for mf in month_fields %}
+                            <td class="text-end">{{ line|get_item:mf|default:"0"|floatformat:0 }}</td>
+                            {% endfor %}
+                            <td class="text-end fw-bold">{{ line.amount|floatformat:0 }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    {% if forecast.description %}
+    <div class="card shadow-sm mb-4">
+        <div class="card-body">
+            <h6><i class="bi bi-chat-text me-1"></i>Notes</h6>
+            <p class="mb-0">{{ forecast.description }}</p>
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const chartData = JSON.parse('{{ chart_data|escapejs }}');
+    const ctx = document.getElementById('forecastChart').getContext('2d');
+    const css = getComputedStyle(document.documentElement);
+    const textPrimary = (css.getPropertyValue('--text-primary') || '#0f172a').trim();
+    const textMuted = (css.getPropertyValue('--text-muted') || '#64748b').trim();
+    const borderColor = (css.getPropertyValue('--border-color') || 'rgba(148, 163, 184, 0.18)').trim();
+    
+    new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: chartData.labels,
+            datasets: [
+                {
+                    label: 'Recettes prévues',
+                    data: chartData.income_forecast,
+                    type: 'line',
+                    borderColor: '#16A34A',
+                    backgroundColor: 'rgba(22, 163, 74, 0.08)',
+                    borderWidth: 3,
+                    borderDash: [10, 6],
+                    pointRadius: 3,
+                    pointHoverRadius: 5,
+                    pointBackgroundColor: '#16A34A',
+                    pointBorderColor: '#ffffff',
+                    pointBorderWidth: 1,
+                    tension: 0.35,
+                    fill: false,
+                    order: 1,
+                },
+                {
+                    label: 'Recettes réalisées',
+                    data: chartData.income_actual,
+                    backgroundColor: 'rgba(22, 163, 74, 0.72)',
+                    borderColor: '#15803D',
+                    borderWidth: 1,
+                    borderRadius: 10,
+                    maxBarThickness: 18,
+                    type: 'bar',
+                    order: 3,
+                },
+                {
+                    label: 'Dépenses prévues',
+                    data: chartData.expense_forecast,
+                    type: 'line',
+                    borderColor: '#DC2626',
+                    backgroundColor: 'rgba(220, 38, 38, 0.08)',
+                    borderWidth: 3,
+                    borderDash: [10, 6],
+                    pointRadius: 3,
+                    pointHoverRadius: 5,
+                    pointBackgroundColor: '#DC2626',
+                    pointBorderColor: '#ffffff',
+                    pointBorderWidth: 1,
+                    tension: 0.35,
+                    fill: false,
+                    order: 2,
+                },
+                {
+                    label: 'Dépenses réalisées',
+                    data: chartData.expense_actual,
+                    backgroundColor: 'rgba(220, 38, 38, 0.72)',
+                    borderColor: '#B91C1C',
+                    borderWidth: 1,
+                    borderRadius: 10,
+                    maxBarThickness: 18,
+                    type: 'bar',
+                    order: 4,
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    position: 'top',
+                    labels: {
+                        color: textPrimary,
+                        usePointStyle: true,
+                        boxWidth: 10,
+                    },
+                },
+                title: { display: false }
+            },
+            scales: {
+                x: {
+                    grid: {
+                        color: borderColor,
+                    },
+                    ticks: {
+                        color: textPrimary,
+                    },
+                },
+                y: {
+                    beginAtZero: true,
+                    grid: {
+                        color: borderColor,
+                    },
+                    ticks: {
+                        color: textMuted,
+                        callback: function(value) { return value.toLocaleString('fr-FR') + ' €'; }
+                    }
+                }
+            }
+        }
+    });
+});
+</script>
+{% endblock %}

@@ -69,6 +69,19 @@ class MemberAdmin(admin.ModelAdmin):
     )
     
     readonly_fields = ['member_id', 'photo_preview']
+    actions = ['print_registration_form']
+    
+    @admin.action(description="Imprimer la fiche d'inscription en PDF")
+    def print_registration_form(self, request, queryset):
+        from apps.core.pdf_service import PDFService
+        
+        if queryset.count() == 1:
+            member = queryset.first()
+            context = {'member': member}
+            filename = f"Fiche_Inscription_Membre_{member.member_id}.pdf"
+            return PDFService.generate_pdf_download('members/pdf/registration_form.html', context, filename, request)
+        else:
+            self.message_user(request, "Veuillez sélectionner un seul membre à la fois pour l'impression.", level='WARNING')
     
     @admin.display(description='Photo')
     def photo_thumbnail(self, obj):

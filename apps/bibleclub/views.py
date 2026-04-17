@@ -334,6 +334,22 @@ def child_detail(request, pk):
 
 @login_required
 @club_staff_required
+@child_access_required
+def child_print_registration(request, pk):
+    """Télécharge la fiche d'inscription de l'enfant en PDF."""
+    from apps.core.pdf_service import PDFService
+    child = get_object_or_404(Child, pk=pk)
+    filename = f"fiche_inscription_enfant_{child.last_name}_{child.first_name}.pdf"
+    return PDFService.generate_pdf_download(
+        'bibleclub/pdf/registration_form.html',
+        {'child': child},
+        filename=filename,
+        request=request,
+    )
+
+
+@login_required
+@club_staff_required
 def session_list(request):
     """Liste des sessions."""
     sessions = Session.objects.annotate(

@@ -5,105 +5,117 @@
     <title>Reçu de don N° {{ receipt_number }}</title>
 </head>
 <body>
-    <!-- En-tête église -->
+    <!-- Filigrane décoratif -->
+    <div class="watermark">EEBC</div>
+
+    <!-- Bordure dorée supérieure -->
+    <div class="gold-border-top"></div>
+
+    <!-- En-tête -->
     <div class="header">
         <div class="logo-area">
             {% if logo_base64 %}
-            <img src="data:image/png;base64,{{ logo_base64 }}" alt="Logo" class="church-logo">
+            <img src="data:image/png;base64,{{ logo_base64 }}" alt="Logo EEBC" class="church-logo">
             {% endif %}
             <div class="church-name-block">
                 <div class="church-name">{{ church_name }}</div>
                 <div class="church-subtitle">Association cultuelle</div>
+                <div class="church-address-line">{{ church_address }}</div>
+                {% if church_phone %}<div class="church-contact">Tél : {{ church_phone }}</div>{% endif %}
+                {% if church_email %}<div class="church-contact">{{ church_email }}</div>{% endif %}
             </div>
         </div>
         <div class="header-right">
-            <div class="receipt-label">REÇU DE DON</div>
+            <div class="receipt-badge">
+                <div class="receipt-label">REÇU DE DON</div>
+            </div>
             <div class="receipt-number">N° {{ receipt_number }}</div>
+            <div class="receipt-date">Cayenne, le {{ issue_date|date:"d F Y" }}</div>
         </div>
     </div>
 
     <div class="header-line"></div>
 
-    <!-- Informations de l'église -->
-    <div class="church-info">
-        <p>
-            {{ church_address }}<br>
-            {% if church_phone %}Tél : {{ church_phone }} &nbsp;|&nbsp; {% endif %}
-            {% if church_email %}Email : {{ church_email }}{% endif %}
-        </p>
-    </div>
-
-    <!-- Date d'émission -->
-    <div class="issue-date">
-        Cayenne, le {{ issue_date|date:"d F Y" }}
-    </div>
-
     <!-- Deux colonnes: Donateur / Détails -->
     <div class="columns">
         <div class="col-left">
-            <div class="section-title">DONATEUR</div>
-            <div class="donor-info">
-                {% if donor_name %}<strong>{{ donor_name }}</strong><br>{% endif %}
-                {{ donor_email }}
-                {% if member_name and not donor_name %}<br><strong>{{ member_name }}</strong>{% endif %}
+            <div class="section-title">
+                <span class="section-icon">&#9679;</span> DONATEUR
+            </div>
+            <div class="donor-card">
+                {% if donor_name %}<div class="donor-name">{{ donor_name }}</div>{% endif %}
+                {% if member_name and not donor_name %}<div class="donor-name">{{ member_name }}</div>{% endif %}
+                <div class="donor-email">{{ donor_email }}</div>
             </div>
         </div>
         <div class="col-right">
-            <div class="section-title">DÉTAILS DU DON</div>
-            <div class="detail-row">
-                <span class="detail-label">Date :</span>
-                <span class="detail-value">{{ donation_date|date:"d/m/Y à H:i" }}</span>
+            <div class="section-title">
+                <span class="section-icon">&#9679;</span> DÉTAILS DU DON
             </div>
-            <div class="detail-row">
-                <span class="detail-label">Type :</span>
-                <span class="detail-value">{{ donation_type_display }}</span>
+            <div class="detail-card">
+                <div class="detail-row">
+                    <span class="detail-label">Date</span>
+                    <span class="detail-value">{{ donation_date|date:"d/m/Y à H:i" }}</span>
+                </div>
+                <div class="detail-row">
+                    <span class="detail-label">Type</span>
+                    <span class="detail-value">{{ donation_type_display }}</span>
+                </div>
+                <div class="detail-row">
+                    <span class="detail-label">Mode de paiement</span>
+                    <span class="detail-value">Carte bancaire (Stripe)</span>
+                </div>
+                {% if reference %}
+                <div class="detail-row">
+                    <span class="detail-label">Référence</span>
+                    <span class="detail-value detail-mono">{{ reference }}</span>
+                </div>
+                {% endif %}
             </div>
-            <div class="detail-row">
-                <span class="detail-label">Mode :</span>
-                <span class="detail-value">Carte bancaire (Stripe)</span>
-            </div>
-            {% if reference %}
-            <div class="detail-row">
-                <span class="detail-label">Référence :</span>
-                <span class="detail-value">{{ reference }}</span>
-            </div>
-            {% endif %}
         </div>
     </div>
 
-    <!-- Montant -->
-    <div class="amount-box">
-        <div class="amount-label">MONTANT DU DON</div>
-        <div class="amount-value">{{ amount|floatformat:2 }} €</div>
-        <div class="amount-words">{{ amount_words }}</div>
+    <!-- Montant principal -->
+    <div class="amount-section">
+        <div class="amount-box">
+            <div class="amount-label">MONTANT DU DON</div>
+            <div class="amount-value">{{ amount|floatformat:2 }}<span class="currency"> €</span></div>
+            <div class="amount-divider"></div>
+            <div class="amount-words">{{ amount_words }}</div>
+        </div>
     </div>
 
     <!-- Statut du paiement -->
     <div class="status-box">
-        <span class="status-icon">✓</span>
-        <span class="status-text">Paiement confirmé — Transaction sécurisée via Stripe</span>
+        <div class="status-check">✓</div>
+        <div class="status-content">
+            <div class="status-title">Paiement confirmé</div>
+            <div class="status-detail">Transaction sécurisée via Stripe — {{ donation_date|date:"d/m/Y à H:i" }}</div>
+        </div>
     </div>
 
     {% if is_recurring %}
     <div class="recurring-info">
-        <strong>Don récurrent</strong> — Ce don sera renouvelé automatiquement 
+        <strong>&#8635; Don récurrent</strong> — Ce don sera renouvelé automatiquement
         {% if recurring_interval == 'month' %}chaque mois{% else %}chaque année{% endif %}.
         Vous pouvez annuler à tout moment en nous contactant.
     </div>
     {% endif %}
 
-    <!-- Message spirituel -->
+    <!-- Citation biblique -->
     <div class="spiritual-box">
+        <div class="verse-decoration">&laquo;</div>
         <div class="verse">
-            « Chacun donne comme il l'a résolu en son cœur, sans tristesse ni contrainte ;
-            car Dieu aime celui qui donne avec joie. »
+            Chacun donne comme il l'a résolu en son cœur,<br>
+            sans tristesse ni contrainte ;<br>
+            car Dieu aime celui qui donne avec joie.
         </div>
-        <div class="verse-ref">— 2 Corinthiens 9:7</div>
+        <div class="verse-ref">2 Corinthiens 9:7</div>
     </div>
 
     <!-- Note légale -->
     <div class="legal-text">
-        <strong>Note :</strong> Ce document est un reçu de don et non un reçu fiscal.
+        <strong>Avis important :</strong> Ce document est un reçu de don et non un reçu fiscal.
         Un reçu fiscal conforme à l'article 200 du Code Général des Impôts pourra vous
         être délivré sur demande en fin d'année civile pour l'ensemble de vos dons.
     </div>
@@ -111,14 +123,21 @@
     <!-- Pied de page -->
     <div class="footer">
         <div class="footer-line"></div>
-        <p>
-            {{ church_name }}<br>
-            {{ church_address }}<br>
-            {% if church_phone %}{{ church_phone }} — {% endif %}{% if church_email %}{{ church_email }}{% endif %}
-        </p>
-        <p class="footer-legal">
-            Document généré automatiquement le {{ generation_date|date:"d/m/Y à H:i" }}
-        </p>
+        <div class="footer-content">
+            <div class="footer-org">{{ church_name }}</div>
+            <div class="footer-address">{{ church_address }}</div>
+            <div class="footer-contacts">
+                {% if church_phone %}{{ church_phone }}{% endif %}
+                {% if church_phone and church_email %} — {% endif %}
+                {% if church_email %}{{ church_email }}{% endif %}
+            </div>
+        </div>
+        <div class="footer-generated">
+            Document généré le {{ generation_date|date:"d/m/Y à H:i" }} — Réf. {{ receipt_number }}
+        </div>
     </div>
+
+    <!-- Bordure dorée inférieure -->
+    <div class="gold-border-bottom"></div>
 </body>
 </html>

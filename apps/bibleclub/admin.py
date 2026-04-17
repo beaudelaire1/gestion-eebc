@@ -118,7 +118,20 @@ class ChildAdmin(admin.ModelAdmin):
     )
     
     readonly_fields = ['photo_preview']
-    
+    actions = ['print_registration_form']
+
+    @admin.action(description="Imprimer la fiche d'inscription en PDF")
+    def print_registration_form(self, request, queryset):
+        from apps.core.pdf_service import PDFService
+        
+        if queryset.count() == 1:
+            child = queryset.first()
+            context = {'child': child}
+            filename = f"Fiche_Inscription_Enfant_{child.id}.pdf"
+            return PDFService.generate_pdf_download('bibleclub/pdf/registration_form.html', context, filename, request)
+        else:
+            self.message_user(request, "Veuillez sélectionner un seul enfant à la fois pour l'impression.", level='WARNING')
+
     @admin.display(description='Photo')
     def photo_thumbnail(self, obj):
         if obj.photo:

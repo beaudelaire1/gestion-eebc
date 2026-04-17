@@ -26,6 +26,7 @@ urlpatterns = [
     path('children/<int:pk>/', views.child_detail, name='child_detail'),
     path('children/<int:pk>/edit/', views.child_edit, name='child_edit'),
     path('children/<int:pk>/delete/', views.child_delete, name='child_delete'),
+    path('children/<int:pk>/print/', views.child_print_registration, name='child_print_registration'),
     
     # Sessions
     path('sessions/', views.session_list, name='session_list'),

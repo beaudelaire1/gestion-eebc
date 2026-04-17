@@ -20,7 +20,7 @@ logger = logging.getLogger(__name__)
 # ─── Informations de l'église (centralisées) ────────────────────────────────
 CHURCH_INFO = {
     'name': os.environ.get('CHURCH_NAME', "Église Évangélique Baptiste de Cabassou"),
-    'address': os.environ.get('CHURCH_ADDRESS', "5 rue Calimbés 2, Route de Cabassou, 97300 Cayenne"),
+    'address': os.environ.get('CHURCH_ADDRESS', "11 lot Calimbé 2, rte de Cabassou, 97300 Cayenne"),
     'phone': os.environ.get('CHURCH_PHONE', ""),
     'email': os.environ.get('CHURCH_EMAIL', "contact@eglise-ebc.org"),
     'siret': os.environ.get('CHURCH_SIRET', ""),
@@ -43,9 +43,13 @@ def generate_tax_receipt_pdf(tax_receipt):
     except ImportError:
         raise ImportError("WeasyPrint n'est pas installé. Installez-le avec: pip install weasyprint")
     
+    # Charger le logo
+    logo_base64 = _get_logo_base64()
+
     # Contexte pour le template
     context = {
         'receipt': tax_receipt,
+        'logo_base64': logo_base64,
         'church_name': CHURCH_INFO['name'],
         'church_address': CHURCH_INFO['address'],
         'church_siret': CHURCH_INFO['siret'],
@@ -61,113 +65,160 @@ def generate_tax_receipt_pdf(tax_receipt):
             size: A4;
             margin: 2cm;
         }
-        
+
         body {
-            font-family: 'Helvetica', 'Arial', sans-serif;
+            font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
             font-size: 11pt;
             line-height: 1.5;
-            color: #333;
+            color: #1e293b;
         }
-        
+
+        .gold-border-top {
+            height: 4px;
+            background: linear-gradient(90deg, #b8860b, #daa520, #f0c850, #daa520, #b8860b);
+            margin-bottom: 25px;
+            border-radius: 2px;
+        }
+
+        .gold-border-bottom {
+            height: 4px;
+            background: linear-gradient(90deg, #b8860b, #daa520, #f0c850, #daa520, #b8860b);
+            margin-top: 20px;
+            border-radius: 2px;
+        }
+
         .header {
             text-align: center;
-            margin-bottom: 30px;
-            border-bottom: 2px solid #0A36FF;
+            margin-bottom: 25px;
+            border-bottom: 2px solid #0f2557;
             padding-bottom: 20px;
         }
-        
+
+        .header-logo {
+            width: 80px;
+            height: 80px;
+            object-fit: contain;
+            margin-bottom: 10px;
+        }
+
         .header h1 {
-            color: #0A36FF;
+            color: #0f2557;
             font-size: 18pt;
+            font-weight: 800;
             margin: 0;
+            letter-spacing: 0.5px;
         }
-        
+
         .header h2 {
-            font-size: 14pt;
-            color: #666;
-            margin: 10px 0 0 0;
+            font-size: 12pt;
+            color: #daa520;
+            margin: 8px 0 0 0;
+            text-transform: uppercase;
+            letter-spacing: 3px;
+            font-weight: 700;
         }
-        
+
+        .header-legal-ref {
+            font-size: 9pt;
+            color: #64748b;
+            margin-top: 4px;
+            font-style: italic;
+        }
+
         .receipt-number {
             text-align: right;
             font-size: 12pt;
-            color: #0A36FF;
+            color: #0f2557;
             font-weight: bold;
             margin-bottom: 20px;
+            font-family: "Courier New", monospace;
         }
-        
+
         .section {
             margin-bottom: 25px;
         }
-        
+
         .section-title {
-            font-weight: bold;
-            color: #0A36FF;
-            border-bottom: 1px solid #ddd;
-            padding-bottom: 5px;
-            margin-bottom: 10px;
+            font-weight: 700;
+            color: #0f2557;
+            border-bottom: 2px solid #0f2557;
+            padding-bottom: 6px;
+            margin-bottom: 12px;
+            text-transform: uppercase;
+            font-size: 9pt;
+            letter-spacing: 2px;
         }
-        
+
         .info-row {
             display: flex;
             margin-bottom: 5px;
         }
-        
+
         .info-label {
             width: 150px;
             font-weight: bold;
         }
-        
+
         .amount-box {
-            background: #f5f5f5;
-            border: 2px solid #0A36FF;
-            padding: 20px;
+            background: linear-gradient(135deg, #0f2557 0%, #1a3a6b 100%);
+            border-radius: 8px;
+            padding: 25px;
             text-align: center;
             margin: 30px 0;
+            color: #ffffff;
         }
-        
+
         .amount-box .amount {
-            font-size: 24pt;
-            font-weight: bold;
-            color: #0A36FF;
+            font-size: 28pt;
+            font-weight: 900;
+            color: #ffffff;
         }
-        
+
         .amount-box .amount-text {
-            font-size: 12pt;
-            color: #666;
-            margin-top: 5px;
+            font-size: 11pt;
+            color: #cbd5e1;
+            margin-top: 6px;
+            font-style: italic;
         }
-        
+
         .legal-text {
-            font-size: 9pt;
-            color: #666;
-            border: 1px solid #ddd;
-            padding: 15px;
+            font-size: 8.5pt;
+            color: #64748b;
+            border: 1px solid #e2e8f0;
+            padding: 15px 18px;
             margin-top: 30px;
-            background: #fafafa;
+            background: #f8fafc;
+            border-radius: 4px;
+            line-height: 1.6;
         }
-        
+
         .signature-section {
             margin-top: 40px;
             display: flex;
             justify-content: space-between;
         }
-        
+
         .signature-box {
             width: 45%;
         }
-        
+
         .signature-line {
-            border-bottom: 1px solid #333;
+            border-bottom: 1px solid #1e293b;
             height: 60px;
             margin-top: 10px;
         }
-        
+
         .footer {
-            margin-top: 50px;
+            margin-top: 40px;
             text-align: center;
-            font-size: 9pt;
-            color: #999;
+            font-size: 8.5pt;
+            color: #94a3b8;
+        }
+
+        .footer-line-tax {
+            height: 1px;
+            background: linear-gradient(90deg, transparent, #cbd5e1, transparent);
+            margin-bottom: 12px;
         }
     ''')
     
@@ -201,7 +252,7 @@ def save_tax_receipt_pdf(tax_receipt):
 # =============================================================================
 
 def _get_logo_base64():
-    """Récupère le logo de l'église en base64 (SiteSettings ou fallback icône PWA)."""
+    """Récupère le logo de l'église en base64 (SiteSettings ou fallback EEBC/logo1.png)."""
     # 1. Essayer le logo depuis SiteSettings
     try:
         from apps.core.models import SiteSettings
@@ -213,7 +264,12 @@ def _get_logo_base64():
     except Exception:
         pass
     
-    # 2. Fallback sur l'icône PWA
+    # 2. Fallback sur le logo EEBC du projet
+    eebc_logo = Path(settings.BASE_DIR) / 'EEBC' / 'logo1.png'
+    if eebc_logo.exists():
+        return base64.b64encode(eebc_logo.read_bytes()).decode('utf-8')
+    
+    # 3. Fallback sur l'icône PWA
     fallback = Path(settings.BASE_DIR) / 'static' / 'icons' / 'icon-192x192.png'
     if fallback.exists():
         return base64.b64encode(fallback.read_bytes()).decode('utf-8')
@@ -347,99 +403,146 @@ def generate_donation_receipt_pdf(online_donation):
     css = CSS(string='''
         @page {
             size: A4;
-            margin: 2cm 2.5cm;
+            margin: 1.8cm 2cm;
+
+            @bottom-center {
+                content: "";
+            }
         }
 
         body {
             font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
             font-size: 10.5pt;
             line-height: 1.6;
-            color: #2c2c2c;
+            color: #1e293b;
+            position: relative;
+        }
+
+        /* ── Filigrane ───────────────────────── */
+        .watermark {
+            position: fixed;
+            top: 35%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 160pt;
+            font-weight: 900;
+            color: rgba(26, 58, 107, 0.03);
+            letter-spacing: 20px;
+            z-index: -1;
+            pointer-events: none;
+        }
+
+        /* ── Bordures dorées ─────────────────── */
+        .gold-border-top {
+            height: 4px;
+            background: linear-gradient(90deg, #b8860b, #daa520, #f0c850, #daa520, #b8860b);
+            margin-bottom: 25px;
+            border-radius: 2px;
+        }
+
+        .gold-border-bottom {
+            height: 4px;
+            background: linear-gradient(90deg, #b8860b, #daa520, #f0c850, #daa520, #b8860b);
+            margin-top: 20px;
+            border-radius: 2px;
         }
 
         /* ── En-tête ─────────────────────────── */
         .header {
             display: flex;
             justify-content: space-between;
-            align-items: flex-end;
+            align-items: flex-start;
             margin-bottom: 8px;
         }
 
         .logo-area {
             display: flex;
-            align-items: center;
-            gap: 14px;
+            align-items: flex-start;
+            gap: 16px;
         }
 
         .church-logo {
-            width: 55px;
-            height: 55px;
-            border-radius: 8px;
+            width: 70px;
+            height: 70px;
+            border-radius: 6px;
+            object-fit: contain;
         }
 
         .church-name {
-            font-size: 16pt;
-            font-weight: 700;
-            color: #1a3a6b;
+            font-size: 14pt;
+            font-weight: 800;
+            color: #0f2557;
             letter-spacing: 0.3px;
+            margin-bottom: 2px;
         }
 
         .church-subtitle {
-            font-size: 9pt;
-            color: #7a8a9e;
+            font-size: 8pt;
+            color: #b8860b;
             text-transform: uppercase;
-            letter-spacing: 1.5px;
-            margin-top: 2px;
+            letter-spacing: 2.5px;
+            font-weight: 600;
+            margin-bottom: 6px;
+        }
+
+        .church-address-line {
+            font-size: 8.5pt;
+            color: #64748b;
+            line-height: 1.4;
+        }
+
+        .church-contact {
+            font-size: 8pt;
+            color: #94a3b8;
         }
 
         .header-right {
             text-align: right;
+            padding-top: 4px;
+        }
+
+        .receipt-badge {
+            background: linear-gradient(135deg, #0f2557, #1a3a6b);
+            color: #ffffff;
+            padding: 8px 20px;
+            border-radius: 4px;
+            display: inline-block;
+            margin-bottom: 8px;
         }
 
         .receipt-label {
-            font-size: 13pt;
+            font-size: 11pt;
             font-weight: 700;
-            color: #1a3a6b;
             text-transform: uppercase;
-            letter-spacing: 1px;
+            letter-spacing: 2px;
         }
 
         .receipt-number {
             font-size: 10pt;
-            color: #5a6a7e;
-            margin-top: 2px;
+            color: #0f2557;
+            font-weight: 700;
+            font-family: "Courier New", monospace;
+        }
+
+        .receipt-date {
+            font-size: 9pt;
+            color: #64748b;
+            margin-top: 4px;
+            font-style: italic;
         }
 
         .header-line {
-            height: 3px;
-            background: linear-gradient(90deg, #1a3a6b, #3a7bd5);
-            margin-bottom: 20px;
-            border-radius: 2px;
-        }
-
-        /* ── Infos église ────────────────────── */
-        .church-info {
-            font-size: 9pt;
-            color: #6a7a8e;
+            height: 2px;
+            background: linear-gradient(90deg, #0f2557 0%, #1a3a6b 40%, #daa520 60%, #f0c850 100%);
             margin-bottom: 25px;
-        }
-
-        .church-info p { margin: 0; }
-
-        /* ── Date ────────────────────────────── */
-        .issue-date {
-            text-align: right;
-            font-size: 10pt;
-            color: #4a5a6e;
-            margin-bottom: 30px;
-            font-style: italic;
+            border-radius: 1px;
         }
 
         /* ── Colonnes ────────────────────────── */
         .columns {
             display: flex;
-            gap: 40px;
-            margin-bottom: 30px;
+            gap: 30px;
+            margin-bottom: 25px;
         }
 
         .col-left, .col-right {
@@ -447,156 +550,258 @@ def generate_donation_receipt_pdf(online_donation):
         }
 
         .section-title {
-            font-size: 8.5pt;
+            font-size: 8pt;
             font-weight: 700;
-            color: #1a3a6b;
+            color: #0f2557;
             text-transform: uppercase;
-            letter-spacing: 1.5px;
-            border-bottom: 1.5px solid #d0d8e4;
+            letter-spacing: 2px;
+            border-bottom: 2px solid #0f2557;
             padding-bottom: 6px;
-            margin-bottom: 12px;
+            margin-bottom: 14px;
         }
 
-        .donor-info {
-            font-size: 10.5pt;
-            line-height: 1.7;
+        .section-icon {
+            color: #daa520;
+            font-size: 6pt;
+            margin-right: 4px;
+        }
+
+        .donor-card {
+            background: #f8fafc;
+            border-left: 3px solid #0f2557;
+            padding: 12px 16px;
+            border-radius: 0 4px 4px 0;
+        }
+
+        .donor-name {
+            font-size: 12pt;
+            font-weight: 700;
+            color: #0f2557;
+            margin-bottom: 4px;
+        }
+
+        .donor-email {
+            font-size: 9.5pt;
+            color: #64748b;
+        }
+
+        .detail-card {
+            background: #f8fafc;
+            border-left: 3px solid #daa520;
+            padding: 8px 16px;
+            border-radius: 0 4px 4px 0;
         }
 
         .detail-row {
             display: flex;
             justify-content: space-between;
-            padding: 4px 0;
-            border-bottom: 1px dotted #e4e8ee;
+            padding: 6px 0;
+            border-bottom: 1px solid #e2e8f0;
+        }
+
+        .detail-row:last-child {
+            border-bottom: none;
         }
 
         .detail-label {
-            font-size: 9.5pt;
-            color: #6a7a8e;
+            font-size: 9pt;
+            color: #64748b;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
         }
 
         .detail-value {
             font-weight: 600;
             font-size: 10pt;
+            color: #1e293b;
+        }
+
+        .detail-mono {
+            font-family: "Courier New", monospace;
+            font-size: 9pt;
         }
 
         /* ── Montant ─────────────────────────── */
+        .amount-section {
+            margin: 25px 0;
+        }
+
         .amount-box {
-            background: #f4f7fb;
-            border: 2px solid #1a3a6b;
-            border-radius: 6px;
-            padding: 25px;
+            background: linear-gradient(135deg, #0f2557 0%, #1a3a6b 100%);
+            border-radius: 8px;
+            padding: 28px 30px;
             text-align: center;
-            margin: 30px 0;
+            color: #ffffff;
+            position: relative;
         }
 
         .amount-label {
-            font-size: 8.5pt;
+            font-size: 8pt;
             text-transform: uppercase;
-            letter-spacing: 2px;
-            color: #6a7a8e;
-            margin-bottom: 8px;
+            letter-spacing: 3px;
+            color: #daa520;
+            margin-bottom: 10px;
+            font-weight: 600;
         }
 
         .amount-value {
-            font-size: 28pt;
-            font-weight: 800;
-            color: #1a3a6b;
-            letter-spacing: 1px;
+            font-size: 34pt;
+            font-weight: 900;
+            color: #ffffff;
+            letter-spacing: 2px;
+        }
+
+        .currency {
+            font-size: 22pt;
+            font-weight: 400;
+        }
+
+        .amount-divider {
+            width: 60px;
+            height: 2px;
+            background: #daa520;
+            margin: 12px auto;
+            border-radius: 1px;
         }
 
         .amount-words {
-            font-size: 9.5pt;
-            color: #5a6a7e;
-            margin-top: 6px;
+            font-size: 10pt;
+            color: #cbd5e1;
             font-style: italic;
+            letter-spacing: 0.5px;
         }
 
         /* ── Statut ──────────────────────────── */
         .status-box {
-            background: #eafbf0;
-            border: 1px solid #a8e6c3;
-            border-radius: 4px;
-            padding: 12px 20px;
+            background: #f0fdf4;
+            border: 1px solid #86efac;
+            border-radius: 6px;
+            padding: 14px 20px;
             display: flex;
             align-items: center;
-            gap: 10px;
-            margin-bottom: 20px;
+            gap: 14px;
+            margin-bottom: 18px;
         }
 
-        .status-icon {
+        .status-check {
+            width: 32px;
+            height: 32px;
+            background: #16a34a;
+            border-radius: 50%;
+            color: #ffffff;
             font-size: 16pt;
-            color: #27ae60;
             font-weight: bold;
+            text-align: center;
+            line-height: 32px;
+            flex-shrink: 0;
         }
 
-        .status-text {
-            font-size: 10pt;
-            color: #27ae60;
-            font-weight: 600;
+        .status-title {
+            font-size: 10.5pt;
+            color: #16a34a;
+            font-weight: 700;
+        }
+
+        .status-detail {
+            font-size: 8.5pt;
+            color: #4ade80;
+            margin-top: 2px;
         }
 
         /* ── Récurrent ───────────────────────── */
         .recurring-info {
-            background: #fef9e7;
-            border: 1px solid #f0d76e;
-            border-radius: 4px;
+            background: #fffbeb;
+            border: 1px solid #fbbf24;
+            border-radius: 6px;
             padding: 12px 20px;
             font-size: 9.5pt;
-            color: #7d6608;
-            margin-bottom: 20px;
+            color: #92400e;
+            margin-bottom: 18px;
         }
 
         /* ── Citation ────────────────────────── */
         .spiritual-box {
             text-align: center;
-            margin: 30px 20px;
-            padding: 20px;
+            margin: 28px 30px;
+            padding: 20px 25px;
+            position: relative;
+        }
+
+        .verse-decoration {
+            font-size: 36pt;
+            color: #daa520;
+            font-family: Georgia, serif;
+            line-height: 1;
+            margin-bottom: 4px;
+            opacity: 0.7;
         }
 
         .verse {
+            font-family: Georgia, "Times New Roman", serif;
             font-style: italic;
             font-size: 10.5pt;
-            color: #4a5a6e;
-            line-height: 1.8;
+            color: #334155;
+            line-height: 2;
         }
 
         .verse-ref {
-            font-size: 9pt;
-            color: #8a9aae;
-            margin-top: 8px;
+            font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+            font-size: 8.5pt;
+            color: #daa520;
+            margin-top: 10px;
+            font-weight: 600;
+            letter-spacing: 1px;
+            text-transform: uppercase;
         }
 
         /* ── Mentions légales ────────────────── */
         .legal-text {
-            font-size: 8.5pt;
-            color: #7a8a9e;
-            background: #f9fafb;
-            border: 1px solid #e4e8ee;
+            font-size: 8pt;
+            color: #64748b;
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
             border-radius: 4px;
             padding: 14px 18px;
             margin-top: 20px;
+            line-height: 1.5;
         }
 
         /* ── Pied de page ────────────────────── */
         .footer {
-            margin-top: 40px;
+            margin-top: 30px;
             text-align: center;
-            font-size: 8.5pt;
-            color: #9aaabe;
         }
 
         .footer-line {
             height: 1px;
-            background: #d0d8e4;
+            background: linear-gradient(90deg, transparent, #cbd5e1, transparent);
             margin-bottom: 15px;
         }
 
-        .footer p { margin: 0 0 4px 0; }
+        .footer-org {
+            font-size: 9pt;
+            font-weight: 700;
+            color: #0f2557;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+        }
 
-        .footer-legal {
-            font-size: 7.5pt;
-            color: #b0b8c8;
-            margin-top: 8px;
+        .footer-address {
+            font-size: 8.5pt;
+            color: #64748b;
+            margin: 2px 0;
+        }
+
+        .footer-contacts {
+            font-size: 8pt;
+            color: #94a3b8;
+        }
+
+        .footer-generated {
+            font-size: 7pt;
+            color: #cbd5e1;
+            margin-top: 10px;
+            letter-spacing: 0.5px;
         }
     ''')
 

@@ -5,6 +5,9 @@
 
 set -o errexit
 
+# S'assurer que le settings module est défini pour toutes les commandes manage.py
+export DJANGO_SETTINGS_MODULE="gestion_eebc.settings.prod"
+
 echo "=== Création des répertoires nécessaires ==="
 mkdir -p logs
 mkdir -p media

@@ -67,4 +67,12 @@ urlpatterns = [
     # API endpoints pour OCR
     path('api/receipts/<int:pk>/ocr-status/', views.receipt_ocr_status_api, name='receipt_ocr_status_api'),
     path('api/receipts/batch-ocr-status/', views.batch_ocr_status_api, name='batch_ocr_status_api'),
+    
+    # Prévisionnel budgétaire
+    path('forecasts/', budget_views.forecast_list, name='forecast_list'),
+    path('forecasts/create/', budget_views.forecast_create, name='forecast_create'),
+    path('forecasts/<int:forecast_id>/', budget_views.forecast_detail, name='forecast_detail'),
+    path('forecasts/<int:forecast_id>/edit/', budget_views.forecast_edit, name='forecast_edit'),
+    path('forecasts/<int:forecast_id>/delete/', budget_views.forecast_delete, name='forecast_delete'),
+    path('forecasts/<int:forecast_id>/export-excel/', budget_views.forecast_export_excel, name='forecast_export_excel'),
 ]

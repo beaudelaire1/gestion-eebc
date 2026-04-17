@@ -1,0 +1,663 @@
+{% extends 'base.html' %}
+
+{% block title %}Prévisionnels Budgétaires - EEBC{% endblock %}
+
+{% block page_title %}Prévisionnels Budgétaires{% endblock %}
+{% block page_subtitle %}Pilotage financier, scénarios et lecture rapide{% endblock %}
+
+{% block extra_css %}
+<style>
+    .forecast-shell {
+        --forecast-ink: #0f172a;
+        --forecast-muted: #64748b;
+        --forecast-border: rgba(15, 23, 42, 0.08);
+        --forecast-panel: rgba(255, 255, 255, 0.92);
+        --forecast-panel-strong: rgba(255, 255, 255, 0.98);
+        --forecast-navy: #102542;
+        --forecast-gold: #c49a3a;
+        --forecast-green: #14835d;
+        --forecast-red: #d2415d;
+        --forecast-shadow: 0 24px 60px rgba(15, 23, 42, 0.10);
+        position: relative;
+        padding-bottom: 2rem;
+    }
+
+    .forecast-shell::before {
+        content: "";
+        position: absolute;
+        inset: -1.5rem -1rem auto;
+        height: 22rem;
+        border-radius: 32px;
+        background:
+            radial-gradient(circle at top left, rgba(196, 154, 58, 0.22), transparent 34%),
+            radial-gradient(circle at top right, rgba(17, 37, 66, 0.20), transparent 38%),
+            linear-gradient(135deg, rgba(255, 255, 255, 0.96), rgba(246, 248, 252, 0.82));
+        pointer-events: none;
+        z-index: 0;
+    }
+
+    .forecast-shell > * {
+        position: relative;
+        z-index: 1;
+    }
+
+    .forecast-hero {
+        display: grid;
+        grid-template-columns: minmax(0, 1.7fr) minmax(280px, 0.9fr);
+        gap: 1.5rem;
+        align-items: stretch;
+        padding: 2rem;
+        margin-bottom: 1.5rem;
+        border: 1px solid rgba(196, 154, 58, 0.18);
+        border-radius: 28px;
+        background: linear-gradient(135deg, rgba(16, 37, 66, 0.98), rgba(13, 25, 43, 0.93));
+        box-shadow: var(--forecast-shadow);
+        overflow: hidden;
+    }
+
+    .forecast-hero::after {
+        content: "";
+        position: absolute;
+        inset: auto -4rem -5rem auto;
+        width: 14rem;
+        height: 14rem;
+        border-radius: 50%;
+        background: radial-gradient(circle, rgba(196, 154, 58, 0.18), transparent 70%);
+    }
+
+    .forecast-kicker {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.55rem;
+        padding: 0.45rem 0.9rem;
+        border-radius: 999px;
+        margin-bottom: 1rem;
+        background: rgba(255, 255, 255, 0.08);
+        color: rgba(255, 255, 255, 0.76);
+        font-size: 0.75rem;
+        font-weight: 600;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+    }
+
+    .forecast-headline {
+        max-width: 42rem;
+        margin: 0;
+        color: #f8fafc;
+        font-size: clamp(2rem, 3vw, 3rem);
+        line-height: 1.05;
+        font-weight: 700;
+    }
+
+    .forecast-lead {
+        max-width: 42rem;
+        margin: 1rem 0 0;
+        color: rgba(226, 232, 240, 0.82);
+        font-size: 1rem;
+        line-height: 1.75;
+    }
+
+    .forecast-hero__stats {
+        display: grid;
+        gap: 1rem;
+        align-content: center;
+    }
+
+    .forecast-stat {
+        padding: 1rem 1.1rem;
+        border: 1px solid rgba(255, 255, 255, 0.08);
+        border-radius: 20px;
+        background: rgba(255, 255, 255, 0.07);
+        -webkit-backdrop-filter: blur(12px);
+        backdrop-filter: blur(12px);
+    }
+
+    .forecast-stat__value {
+        display: block;
+        color: #fff;
+        font-size: 1.6rem;
+        font-weight: 700;
+        line-height: 1.1;
+    }
+
+    .forecast-stat__label {
+        display: block;
+        margin-top: 0.35rem;
+        color: rgba(226, 232, 240, 0.72);
+        font-size: 0.84rem;
+    }
+
+    .forecast-toolbar {
+        display: flex;
+        justify-content: space-between;
+        gap: 1rem;
+        align-items: center;
+        margin-bottom: 1.5rem;
+    }
+
+    .forecast-filter {
+        display: flex;
+        gap: 0.85rem;
+        align-items: center;
+        padding: 0.95rem 1rem;
+        border: 1px solid var(--forecast-border);
+        border-radius: 20px;
+        background: var(--forecast-panel-strong);
+        box-shadow: 0 10px 30px rgba(15, 23, 42, 0.06);
+    }
+
+    .forecast-filter__label {
+        color: var(--forecast-muted);
+        font-size: 0.82rem;
+        font-weight: 600;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        white-space: nowrap;
+    }
+
+    .forecast-filter .form-select {
+        min-width: 200px;
+        border-radius: 14px;
+        border-color: rgba(148, 163, 184, 0.35);
+        font-weight: 600;
+        box-shadow: none;
+    }
+
+    .forecast-button-primary {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.65rem;
+        padding: 0.95rem 1.25rem;
+        border: 0;
+        border-radius: 18px;
+        background: linear-gradient(135deg, #2563eb, #1d4ed8);
+        color: #fff;
+        font-weight: 600;
+        text-decoration: none;
+        box-shadow: 0 20px 35px rgba(37, 99, 235, 0.24);
+        transition: transform 0.28s ease, box-shadow 0.28s ease;
+    }
+
+    .forecast-button-primary:hover {
+        color: #fff;
+        transform: translateY(-2px);
+        box-shadow: 0 24px 42px rgba(37, 99, 235, 0.30);
+    }
+
+    .forecast-card {
+        position: relative;
+        height: 100%;
+        padding: 1.4rem;
+        border: 1px solid var(--forecast-border);
+        border-radius: 24px;
+        background: linear-gradient(180deg, rgba(255, 255, 255, 0.98), rgba(248, 250, 252, 0.94));
+        box-shadow: 0 18px 46px rgba(15, 23, 42, 0.08);
+        transition: transform 0.28s ease, box-shadow 0.28s ease;
+        overflow: hidden;
+    }
+
+    .forecast-card:hover {
+        transform: translateY(-6px);
+        box-shadow: 0 28px 54px rgba(15, 23, 42, 0.14);
+    }
+
+    .forecast-card::before {
+        content: "";
+        position: absolute;
+        inset: 0 0 auto;
+        height: 4px;
+        background: linear-gradient(90deg, var(--scenario-start), var(--scenario-end));
+    }
+
+    .forecast-card--realiste {
+        --scenario-start: #2563eb;
+        --scenario-end: #38bdf8;
+    }
+
+    .forecast-card--realise {
+        --scenario-start: #0f766e;
+        --scenario-end: #2dd4bf;
+    }
+
+    .forecast-card--optimiste {
+        --scenario-start: #15803d;
+        --scenario-end: #84cc16;
+    }
+
+    .forecast-card--pessimiste {
+        --scenario-start: #c2410c;
+        --scenario-end: #f59e0b;
+    }
+
+    .forecast-card__top {
+        display: flex;
+        justify-content: space-between;
+        gap: 1rem;
+        align-items: flex-start;
+        margin-bottom: 1.2rem;
+    }
+
+    .forecast-card__eyebrow {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.45rem;
+        color: var(--forecast-muted);
+        font-size: 0.76rem;
+        font-weight: 700;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+    }
+
+    .forecast-card__title {
+        margin: 0.55rem 0 0;
+        color: var(--forecast-ink);
+        font-size: 1.65rem;
+        line-height: 1.08;
+        font-weight: 700;
+    }
+
+    .forecast-badge {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        padding: 0.58rem 0.9rem;
+        border-radius: 999px;
+        color: #fff;
+        font-size: 0.84rem;
+        font-weight: 700;
+        white-space: nowrap;
+    }
+
+    .forecast-badge--realiste {
+        background: linear-gradient(135deg, #2563eb, #1d4ed8);
+    }
+
+    .forecast-badge--realise {
+        background: linear-gradient(135deg, #0f766e, #0d9488);
+    }
+
+    .forecast-badge--optimiste {
+        background: linear-gradient(135deg, #15803d, #65a30d);
+    }
+
+    .forecast-badge--pessimiste {
+        background: linear-gradient(135deg, #c2410c, #f59e0b);
+    }
+
+    .forecast-card__meta {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.9rem;
+        margin-bottom: 1rem;
+        color: var(--forecast-muted);
+        font-size: 0.88rem;
+    }
+
+    .forecast-card__meta span {
+        display: inline-flex;
+        gap: 0.45rem;
+        align-items: center;
+    }
+
+    .forecast-metrics {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 0.8rem;
+        margin-bottom: 1.15rem;
+    }
+
+    .forecast-metric {
+        padding: 0.9rem;
+        border: 1px solid rgba(148, 163, 184, 0.18);
+        border-radius: 18px;
+        background: var(--forecast-panel);
+    }
+
+    .forecast-metric__label {
+        display: block;
+        margin-bottom: 0.45rem;
+        color: var(--forecast-muted);
+        font-size: 0.82rem;
+    }
+
+    .forecast-metric__value {
+        display: block;
+        font-size: 1.45rem;
+        line-height: 1;
+        font-weight: 700;
+        letter-spacing: -0.02em;
+    }
+
+    .forecast-metric__value.is-income {
+        color: var(--forecast-green);
+    }
+
+    .forecast-metric__value.is-expense {
+        color: var(--forecast-red);
+    }
+
+    .forecast-metric__value.is-net-positive {
+        color: var(--forecast-green);
+    }
+
+    .forecast-metric__value.is-net-negative {
+        color: var(--forecast-red);
+    }
+
+    .forecast-card__description {
+        min-height: 5.4rem;
+        margin: 0;
+        color: #475569;
+        line-height: 1.75;
+    }
+
+    .forecast-card__footer {
+        display: flex;
+        gap: 0.75rem;
+        align-items: center;
+        margin-top: 1.35rem;
+    }
+
+    .forecast-button-secondary {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.55rem;
+        min-height: 48px;
+        padding: 0.8rem 1rem;
+        border: 1px solid rgba(37, 99, 235, 0.18);
+        border-radius: 16px;
+        background: rgba(37, 99, 235, 0.06);
+        color: #2563eb;
+        font-weight: 600;
+        text-decoration: none;
+        transition: all 0.25s ease;
+    }
+
+    .forecast-button-secondary:hover {
+        color: #1d4ed8;
+        border-color: rgba(37, 99, 235, 0.32);
+        background: rgba(37, 99, 235, 0.10);
+    }
+
+    .forecast-button-secondary--ghost {
+        width: 48px;
+        padding: 0;
+        border-color: rgba(15, 23, 42, 0.10);
+        background: #fff;
+        color: #475569;
+    }
+
+    .forecast-button-secondary--ghost:hover {
+        color: var(--forecast-ink);
+        border-color: rgba(15, 23, 42, 0.24);
+        background: rgba(15, 23, 42, 0.03);
+    }
+
+    .forecast-button-secondary--excel {
+        color: #0f9d58;
+        border-color: rgba(15, 157, 88, 0.18);
+        background: rgba(15, 157, 88, 0.06);
+    }
+
+    .forecast-button-secondary--excel:hover {
+        color: #0b7a45;
+        border-color: rgba(15, 157, 88, 0.30);
+        background: rgba(15, 157, 88, 0.12);
+    }
+
+    .forecast-empty {
+        padding: 4rem 2rem;
+        border: 1px dashed rgba(148, 163, 184, 0.35);
+        border-radius: 28px;
+        background: rgba(255, 255, 255, 0.86);
+        text-align: center;
+    }
+
+    .forecast-empty__icon {
+        display: inline-grid;
+        place-items: center;
+        width: 88px;
+        height: 88px;
+        margin-bottom: 1.25rem;
+        border-radius: 24px;
+        background: linear-gradient(135deg, rgba(16, 37, 66, 0.10), rgba(196, 154, 58, 0.20));
+        color: var(--forecast-navy);
+        font-size: 2rem;
+    }
+
+    .forecast-shell .forecast-kicker,
+    .forecast-shell .forecast-kicker * {
+        color: rgba(255, 255, 255, 0.84) !important;
+    }
+
+    .forecast-shell .forecast-headline,
+    .forecast-shell .forecast-headline * {
+        color: #f8fafc !important;
+    }
+
+    .forecast-shell .forecast-lead,
+    .forecast-shell .forecast-lead * {
+        color: rgba(226, 232, 240, 0.84) !important;
+    }
+
+    .forecast-shell .forecast-stat__value,
+    .forecast-shell .forecast-stat__value *,
+    .forecast-shell .forecast-stat__label,
+    .forecast-shell .forecast-stat__label * {
+        color: #f8fafc !important;
+    }
+
+    .forecast-shell .forecast-card__eyebrow,
+    .forecast-shell .forecast-card__eyebrow *,
+    .forecast-shell .forecast-card__meta,
+    .forecast-shell .forecast-card__meta *,
+    .forecast-shell .forecast-metric__label,
+    .forecast-shell .forecast-metric__label * {
+        color: var(--forecast-muted) !important;
+    }
+
+    .forecast-shell .forecast-card__title,
+    .forecast-shell .forecast-card__title *,
+    .forecast-shell .forecast-card__description,
+    .forecast-shell .forecast-card__description * {
+        color: var(--forecast-ink) !important;
+    }
+
+    .forecast-shell .forecast-button-primary,
+    .forecast-shell .forecast-button-primary *,
+    .forecast-shell .forecast-button-secondary,
+    .forecast-shell .forecast-button-secondary * {
+        text-decoration: none !important;
+    }
+
+    .forecast-shell .forecast-button-primary,
+    .forecast-shell .forecast-button-primary * {
+        color: #ffffff !important;
+    }
+
+    .forecast-shell .forecast-button-secondary,
+    .forecast-shell .forecast-button-secondary * {
+        color: inherit !important;
+    }
+
+    @media (max-width: 1199.98px) {
+        .forecast-hero {
+            grid-template-columns: 1fr;
+        }
+    }
+
+    @media (max-width: 767.98px) {
+        .forecast-hero,
+        .forecast-filter,
+        .forecast-card {
+            border-radius: 22px;
+        }
+
+        .forecast-toolbar {
+            flex-direction: column;
+            align-items: stretch;
+        }
+
+        .forecast-filter {
+            flex-direction: column;
+            align-items: stretch;
+        }
+
+        .forecast-filter .form-select {
+            width: 100%;
+            min-width: 0;
+        }
+
+        .forecast-metrics {
+            grid-template-columns: 1fr;
+        }
+
+        .forecast-card__top {
+            flex-direction: column;
+        }
+
+        .forecast-card__footer {
+            flex-wrap: wrap;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid forecast-shell">
+    <section class="forecast-hero">
+        <div>
+            <span class="forecast-kicker">
+                <i class="bi bi-graph-up-arrow"></i>
+                Pilotage financier
+            </span>
+            <h2 class="forecast-headline">Des scénarios lisibles, fiables et exploitables sans friction.</h2>
+            <p class="forecast-lead">
+                Cette vue centralise le prévisionnel de l'église, le réalisé comptable et les scénarios de repli,
+                avec une lecture immédiate des masses financières et des hypothèses importées.
+            </p>
+        </div>
+        <div class="forecast-hero__stats">
+            <div class="forecast-stat">
+                <span class="forecast-stat__value">{{ forecast_count }}</span>
+                <span class="forecast-stat__label">scénario{% if forecast_count > 1 %}s{% endif %} affiché{% if forecast_count > 1 %}s{% endif %}</span>
+            </div>
+            <div class="forecast-stat">
+                <span class="forecast-stat__value">{{ year_count }}</span>
+                <span class="forecast-stat__label">année{% if year_count > 1 %}s{% endif %} disponible{% if year_count > 1 %}s{% endif %}</span>
+            </div>
+            <div class="forecast-stat">
+                <span class="forecast-stat__value">{% if latest_update %}{{ latest_update|date:"d/m/Y" }}{% else %}--{% endif %}</span>
+                <span class="forecast-stat__label">dernière actualisation</span>
+            </div>
+        </div>
+    </section>
+
+    <div class="forecast-toolbar">
+        <form method="get" class="forecast-filter">
+            <label class="forecast-filter__label" for="forecast-year">Filtrer par année</label>
+            <select id="forecast-year" name="year" class="form-select" onchange="this.form.submit()">
+                <option value="">Toutes les années</option>
+                {% for y in years %}
+                <option value="{{ y }}" {% if year_filter|stringformat:"s" == y|stringformat:"s" %}selected{% endif %}>{{ y }}</option>
+                {% endfor %}
+                {% if current_year not in years %}
+                <option value="{{ current_year }}" {% if year_filter|stringformat:"s" == current_year|stringformat:"s" %}selected{% endif %}>{{ current_year }}</option>
+                {% endif %}
+            </select>
+        </form>
+
+        <a href="{% url 'finance:forecast_create' %}" class="forecast-button-primary">
+            <i class="bi bi-plus-lg"></i>
+            Nouveau prévisionnel
+        </a>
+    </div>
+
+    {% if forecasts %}
+    <div class="row g-4">
+        {% for forecast in forecasts %}
+        <div class="col-12 col-lg-6 col-xl-4">
+            <article class="forecast-card forecast-card--{{ forecast.scenario }}">
+                <div class="forecast-card__top">
+                    <div>
+                        <span class="forecast-card__eyebrow">
+                            <i class="bi bi-calendar3"></i>
+                            Exercice {{ forecast.year }}
+                        </span>
+                        <h3 class="forecast-card__title">{{ forecast.name }}</h3>
+                    </div>
+                    <span class="forecast-badge forecast-badge--{{ forecast.scenario }}">{{ forecast.get_scenario_display }}</span>
+                </div>
+
+                <div class="forecast-card__meta">
+                    <span>
+                        <i class="bi bi-layers"></i>
+                        {{ forecast.annotated_lines_count }} lignes
+                    </span>
+                    <span>
+                        <i class="bi bi-person"></i>
+                        {% if forecast.created_by %}{{ forecast.created_by.get_full_name|default:forecast.created_by.username }}{% else %}Système{% endif %}
+                    </span>
+                    <span>
+                        <i class="bi bi-clock-history"></i>
+                        {{ forecast.created_at|date:"d/m/Y" }}
+                    </span>
+                </div>
+
+                <div class="forecast-metrics">
+                    <div class="forecast-metric">
+                        <span class="forecast-metric__label">Recettes</span>
+                        <strong class="forecast-metric__value is-income">{{ forecast.annotated_total_income|floatformat:0 }} €</strong>
+                    </div>
+                    <div class="forecast-metric">
+                        <span class="forecast-metric__label">Dépenses</span>
+                        <strong class="forecast-metric__value is-expense">{{ forecast.annotated_total_expense|floatformat:0 }} €</strong>
+                    </div>
+                    <div class="forecast-metric">
+                        <span class="forecast-metric__label">Solde net</span>
+                        <strong class="forecast-metric__value {% if forecast.annotated_net_forecast >= 0 %}is-net-positive{% else %}is-net-negative{% endif %}">
+                            {{ forecast.annotated_net_forecast|floatformat:0 }} €
+                        </strong>
+                    </div>
+                </div>
+
+                <p class="forecast-card__description">
+                    {% if forecast.description %}
+                    {{ forecast.description|truncatewords:28 }}
+                    {% else %}
+                    Aucune hypothèse détaillée n'a encore été renseignée sur ce scénario.
+                    {% endif %}
+                </p>
+
+                <div class="forecast-card__footer">
+                    <a href="{% url 'finance:forecast_detail' forecast.pk %}" class="forecast-button-secondary flex-grow-1">
+                        <i class="bi bi-eye"></i>
+                        Détail
+                    </a>
+                    <a href="{% url 'finance:forecast_edit' forecast.pk %}" class="forecast-button-secondary forecast-button-secondary--ghost" aria-label="Modifier {{ forecast.name }}">
+                        <i class="bi bi-pencil"></i>
+                    </a>
+                    <a href="{% url 'finance:forecast_export_excel' forecast.pk %}" class="forecast-button-secondary forecast-button-secondary--ghost forecast-button-secondary--excel" aria-label="Exporter {{ forecast.name }} en Excel">
+                        <i class="bi bi-file-earmark-excel"></i>
+                    </a>
+                </div>
+            </article>
+        </div>
+        {% endfor %}
+    </div>
+    {% else %}
+    <div class="forecast-empty">
+        <div class="forecast-empty__icon">
+            <i class="bi bi-graph-up-arrow"></i>
+        </div>
+        <h4 class="mb-3">Aucun prévisionnel disponible</h4>
+        <p class="text-muted mb-4">Créez un scénario structuré pour suivre vos hypothèses annuelles et comparer rapidement le prévu au réalisé.</p>
+        <a href="{% url 'finance:forecast_create' %}" class="forecast-button-primary">
+            <i class="bi bi-plus-lg"></i>
+            Créer un prévisionnel
+        </a>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

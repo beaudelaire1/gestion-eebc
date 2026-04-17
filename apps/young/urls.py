@@ -12,6 +12,7 @@ urlpatterns = [
     path('members/<int:pk>/', views.young_member_detail, name='member_detail'),
     path('members/<int:pk>/edit/', views.young_member_edit, name='member_edit'),
     path('members/<int:pk>/delete/', views.young_member_delete, name='member_delete'),
+    path('members/<int:pk>/print/', views.young_member_print_registration, name='member_print_registration'),
 
     # Groupes
     path('groups/', views.group_list, name='group_list'),

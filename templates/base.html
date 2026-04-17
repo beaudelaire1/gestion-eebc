@@ -27,7 +27,7 @@
     <script src="https://unpkg.com/htmx.org@1.9.10"></script>
 
     <!-- Chart.js -->
-    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.min.js"></script>
+    <script src="{% static 'vendor/chart.umd.min.js' %}"></script>
 
     <!-- Skeleton Loaders -->
     <link rel="stylesheet" href="{% static 'css/skeletons.css' %}">
@@ -180,6 +180,11 @@
                         href="{% url 'finance:budget_dashboard' %}">
                         <i class="bi bi-pie-chart nav-link__icon"></i>
                         <span>Budgets</span>
+                    </a>
+                    <a class="nav-link {% if 'forecasts' in request.path %}nav-link--active{% endif %}"
+                        href="{% url 'finance:forecast_list' %}">
+                        <i class="bi bi-graph-up-arrow nav-link__icon"></i>
+                        <span>Prévisionnel</span>
                     </a>
                     <a class="nav-link {% if 'campaigns' in request.path %}nav-link--active{% endif %}"
                         href="{% url 'campaigns:list' %}">

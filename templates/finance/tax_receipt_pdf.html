@@ -5,10 +5,17 @@
     <title>Reçu fiscal {{ receipt.receipt_number }}</title>
 </head>
 <body>
+    <div class="gold-border-top"></div>
+
     <div class="header">
-        <h1>{{ church_name }}</h1>
-        <h2>REÇU AU TITRE DES DONS</h2>
-        <p>Article 200 du Code Général des Impôts</p>
+        {% if logo_base64 %}
+        <img src="data:image/png;base64,{{ logo_base64 }}" alt="Logo EEBC" class="header-logo">
+        {% endif %}
+        <div class="header-text">
+            <h1>{{ church_name }}</h1>
+            <h2>REÇU AU TITRE DES DONS</h2>
+            <p class="header-legal-ref">Article 200 du Code Général des Impôts</p>
+        </div>
     </div>
     
     <div class="receipt-number">
@@ -112,8 +119,11 @@
     </div>
     
     <div class="footer">
-        {{ church_name }} - {{ church_address }}<br>
-        Ce document est un reçu fiscal officiel - Conservez-le précieusement
+        <div class="footer-line-tax"></div>
+        {{ church_name }} — {{ church_address }}<br>
+        Ce document est un reçu fiscal officiel — Conservez-le précieusement
     </div>
+
+    <div class="gold-border-bottom"></div>
 </body>
 </html>

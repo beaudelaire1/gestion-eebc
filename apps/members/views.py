@@ -104,6 +104,20 @@ def member_detail(request, pk):
 
 
 @login_required
+def member_print_registration(request, pk):
+    """Télécharge la fiche d'inscription du membre en PDF."""
+    from apps.core.pdf_service import PDFService
+    member = get_object_or_404(Member, pk=pk)
+    filename = f"fiche_inscription_{member.last_name}_{member.first_name}.pdf"
+    return PDFService.generate_pdf_download(
+        'members/pdf/registration_form.html',
+        {'member': member},
+        filename=filename,
+        request=request,
+    )
+
+
+@login_required
 @role_required('admin', 'secretariat')
 def member_create(request):
     """Créer un nouveau membre."""

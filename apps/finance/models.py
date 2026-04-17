@@ -9,6 +9,7 @@ Ce module gère :
 """
 
 from django.db import models
+from django.db.models import Sum
 from django.conf import settings
 from django.core.validators import MinValueValidator
 from decimal import Decimal
@@ -1202,3 +1203,165 @@ class BudgetRequest(models.Model):
         if self.needed_by and self.status == self.Status.PENDING:
             return date.today() > self.needed_by
         return False
+
+
+# =============================================================================
+# PRÉVISIONNEL BUDGÉTAIRE
+# =============================================================================
+
+class BudgetForecast(models.Model):
+    """
+    Prévisionnel budgétaire annuel.
+    
+    Permet de planifier les recettes et dépenses mois par mois
+    avec comparaison au réalisé et suivi des écarts.
+    """
+    
+    class Scenario(models.TextChoices):
+        REALISTIC = 'realiste', 'Réaliste'
+        ACTUAL = 'realise', 'Réalisé'
+        OPTIMISTIC = 'optimiste', 'Optimiste'
+        PESSIMISTIC = 'pessimiste', 'Pessimiste'
+    
+    name = models.CharField(max_length=200, verbose_name="Nom du prévisionnel")
+    year = models.PositiveIntegerField(verbose_name="Année")
+    scenario = models.CharField(
+        max_length=15,
+        choices=Scenario.choices,
+        default=Scenario.REALISTIC,
+        verbose_name="Scénario"
+    )
+    description = models.TextField(blank=True, verbose_name="Description / hypothèses")
+    
+    is_active = models.BooleanField(
+        default=True,
+        verbose_name="Actif",
+        help_text="Un seul prévisionnel actif par année et scénario"
+    )
+    
+    created_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        related_name='created_forecasts',
+        verbose_name="Créé par"
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    
+    class Meta:
+        verbose_name = "Prévisionnel budgétaire"
+        verbose_name_plural = "Prévisionnels budgétaires"
+        ordering = ['-year', 'scenario']
+        unique_together = ['year', 'scenario']
+    
+    def __str__(self):
+        return f"Prévisionnel {self.year} — {self.get_scenario_display()}"
+
+    def _get_total_forecast(self, line_type, annotated_attr):
+        annotated_total = getattr(self, annotated_attr, None)
+        if annotated_total is not None:
+            return annotated_total
+
+        total_expression = (
+            Sum('jan') + Sum('feb') + Sum('mar') + Sum('apr') +
+            Sum('may') + Sum('jun') + Sum('jul') + Sum('aug') +
+            Sum('sep') + Sum('oct') + Sum('nov') + Sum('dec')
+        )
+        return self.lines.filter(line_type=line_type).aggregate(
+            total=total_expression
+        )['total'] or Decimal('0.00')
+    
+    @property
+    def total_income_forecast(self):
+        return self._get_total_forecast(
+            ForecastLine.LineType.INCOME,
+            'annotated_total_income',
+        )
+    
+    @property
+    def total_expense_forecast(self):
+        return self._get_total_forecast(
+            ForecastLine.LineType.EXPENSE,
+            'annotated_total_expense',
+        )
+    
+    @property
+    def net_forecast(self):
+        annotated_total = getattr(self, 'annotated_net_forecast', None)
+        if annotated_total is not None:
+            return annotated_total
+        return self.total_income_forecast - self.total_expense_forecast
+
+
+class ForecastLine(models.Model):
+    """
+    Ligne de prévisionnel : une entrée par catégorie/mois.
+    """
+    
+    class LineType(models.TextChoices):
+        INCOME = 'income', 'Recette'
+        EXPENSE = 'expense', 'Dépense'
+    
+    forecast = models.ForeignKey(
+        BudgetForecast,
+        on_delete=models.CASCADE,
+        related_name='lines',
+        verbose_name="Prévisionnel"
+    )
+    
+    label = models.CharField(max_length=200, verbose_name="Libellé")
+    line_type = models.CharField(
+        max_length=10,
+        choices=LineType.choices,
+        verbose_name="Type"
+    )
+    category = models.ForeignKey(
+        FinanceCategory,
+        on_delete=models.SET_NULL,
+        null=True, blank=True,
+        related_name='forecast_lines',
+        verbose_name="Catégorie financière"
+    )
+    
+    # Montants mensuels
+    jan = models.DecimalField(max_digits=12, decimal_places=2, default=0, verbose_name="Janvier")
+    feb = models.DecimalField(max_digits=12, decimal_places=2, default=0, verbose_name="Février")
+    mar = models.DecimalField(max_digits=12, decimal_places=2, default=0, verbose_name="Mars")
+    apr = models.DecimalField(max_digits=12, decimal_places=2, default=0, verbose_name="Avril")
+    may = models.DecimalField(max_digits=12, decimal_places=2, default=0, verbose_name="Mai")
+    jun = models.DecimalField(max_digits=12, decimal_places=2, default=0, verbose_name="Juin")
+    jul = models.DecimalField(max_digits=12, decimal_places=2, default=0, verbose_name="Juillet")
+    aug = models.DecimalField(max_digits=12, decimal_places=2, default=0, verbose_name="Août")
+    sep = models.DecimalField(max_digits=12, decimal_places=2, default=0, verbose_name="Septembre")
+    oct = models.DecimalField(max_digits=12, decimal_places=2, default=0, verbose_name="Octobre")
+    nov = models.DecimalField(max_digits=12, decimal_places=2, default=0, verbose_name="Novembre")
+    dec = models.DecimalField(max_digits=12, decimal_places=2, default=0, verbose_name="Décembre")
+    
+    notes = models.TextField(blank=True, verbose_name="Notes")
+    
+    MONTH_FIELDS = ['jan', 'feb', 'mar', 'apr', 'may', 'jun',
+                    'jul', 'aug', 'sep', 'oct', 'nov', 'dec']
+    
+    class Meta:
+        verbose_name = "Ligne de prévisionnel"
+        verbose_name_plural = "Lignes de prévisionnel"
+        ordering = ['line_type', 'label']
+    
+    def __str__(self):
+        return f"{self.get_line_type_display()} — {self.label}"
+    
+    @property
+    def amount(self):
+        """Total annuel de cette ligne."""
+        return sum(getattr(self, m) for m in self.MONTH_FIELDS)
+    
+    def get_month_value(self, month_number):
+        """Retourne le montant pour un mois donné (1-12)."""
+        if 1 <= month_number <= 12:
+            return getattr(self, self.MONTH_FIELDS[month_number - 1])
+        return Decimal('0.00')
+    
+    def get_monthly_values(self):
+        """Retourne la liste des 12 montants mensuels."""
+        return [getattr(self, m) for m in self.MONTH_FIELDS]

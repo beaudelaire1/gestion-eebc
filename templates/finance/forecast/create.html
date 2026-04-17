@@ -1,0 +1,214 @@
+{% extends 'base.html' %}
+
+{% block title %}Nouveau Prévisionnel - {{ settings.site_name|default:'EEBC' }}{% endblock %}
+
+{% block page_title %}Nouveau Prévisionnel Budgétaire{% endblock %}
+{% block page_subtitle %}Planification financière{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <form method="post" id="forecastForm">
+        {% csrf_token %}
+        
+        <!-- Informations générales -->
+        <div class="card shadow-sm mb-4">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="bi bi-info-circle me-2"></i>Informations générales</h5>
+            </div>
+            <div class="card-body">
+                <div class="row g-3">
+                    <div class="col-md-4">
+                        <label for="name" class="form-label">Nom du prévisionnel <span class="text-danger">*</span></label>
+                        <input type="text" class="form-control" id="name" name="name" required placeholder="Ex: Budget prévisionnel 2025">
+                    </div>
+                    <div class="col-md-3">
+                        <label for="year" class="form-label">Année <span class="text-danger">*</span></label>
+                        <input type="number" class="form-control" id="year" name="year" value="{{ current_year }}" min="2020" max="2040" required>
+                    </div>
+                    <div class="col-md-3">
+                        <label for="scenario" class="form-label">Scénario</label>
+                        <select name="scenario" id="scenario" class="form-select">
+                            {% for val, label in scenarios %}
+                            <option value="{{ val }}" {% if val == 'realiste' %}selected{% endif %}>{{ label }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-12">
+                        <label for="description" class="form-label">Description</label>
+                        <textarea class="form-control" id="description" name="description" rows="2" placeholder="Description optionnelle..."></textarea>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Lignes budgétaires -->
+        <div class="card shadow-sm mb-4">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="mb-0"><i class="bi bi-list-ul me-2"></i>Lignes prévisionnelles</h5>
+                <button type="button" class="btn btn-sm btn-primary" onclick="addLine()">
+                    <i class="bi bi-plus-lg me-1"></i>Ajouter une ligne
+                </button>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-sm table-hover mb-0" id="linesTable">
+                        <thead class="table-dark">
+                            <tr>
+                                <th style="min-width: 180px;">Libellé</th>
+                                <th style="width: 110px;">Type</th>
+                                <th style="width: 140px;">Catégorie</th>
+                                {% for label in month_labels %}
+                                <th class="text-center" style="min-width: 90px;">{{ label|truncatechars:4 }}</th>
+                                {% endfor %}
+                                <th class="text-center" style="width: 110px;">Total</th>
+                                <th style="width: 50px;"></th>
+                            </tr>
+                        </thead>
+                        <tbody id="linesBody">
+                        </tbody>
+                        <tfoot>
+                            <tr class="table-success fw-bold">
+                                <td colspan="3">Total Recettes</td>
+                                {% for mf in month_fields %}
+                                <td class="text-center" id="total_income_{{ mf }}">0</td>
+                                {% endfor %}
+                                <td class="text-center" id="total_income_annual">0</td>
+                                <td></td>
+                            </tr>
+                            <tr class="table-danger fw-bold">
+                                <td colspan="3">Total Dépenses</td>
+                                {% for mf in month_fields %}
+                                <td class="text-center" id="total_expense_{{ mf }}">0</td>
+                                {% endfor %}
+                                <td class="text-center" id="total_expense_annual">0</td>
+                                <td></td>
+                            </tr>
+                            <tr class="table-primary fw-bold">
+                                <td colspan="3">Solde Net</td>
+                                {% for mf in month_fields %}
+                                <td class="text-center" id="total_net_{{ mf }}">0</td>
+                                {% endfor %}
+                                <td class="text-center" id="total_net_annual">0</td>
+                                <td></td>
+                            </tr>
+                        </tfoot>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Actions -->
+        <div class="d-flex gap-2 mb-4">
+            <button type="submit" class="btn btn-primary">
+                <i class="bi bi-check-lg me-1"></i>Créer le prévisionnel
+            </button>
+            <a href="{% url 'finance:forecast_list' %}" class="btn btn-outline-secondary">
+                <i class="bi bi-arrow-left me-1"></i>Annuler
+            </a>
+        </div>
+    </form>
+</div>
+
+<script>
+const monthFields = {{ month_fields|safe }};
+const categories = [
+    {id: '', name: '-- Aucune --'},
+    {% for cat in categories %}
+    {id: '{{ cat.pk }}', name: '{{ cat.name|escapejs }}'},
+    {% endfor %}
+];
+
+let lineCounter = 0;
+
+function addLine(data) {
+    data = data || {};
+    const idx = lineCounter++;
+    const tbody = document.getElementById('linesBody');
+    const tr = document.createElement('tr');
+    tr.id = `line_${idx}`;
+    tr.setAttribute('data-index', idx);
+
+    let catOptions = categories.map(c => 
+        `<option value="${c.id}" ${(data.category_id||'') == c.id ? 'selected' : ''}>${c.name}</option>`
+    ).join('');
+
+    let monthCells = monthFields.map(mf => 
+        `<td><input type="number" step="0.01" min="0" class="form-control form-control-sm text-end month-input" 
+            name="line_${idx}_${mf}" value="${data[mf]||'0'}" onchange="recalcTotals()"></td>`
+    ).join('');
+
+    tr.innerHTML = `
+        <td><input type="text" class="form-control form-control-sm" name="line_${idx}_label" value="${data.label||''}" required placeholder="Libellé"></td>
+        <td>
+            <select class="form-select form-select-sm" name="line_${idx}_type" onchange="recalcTotals()">
+                <option value="income" ${data.line_type=='income'?'selected':''}>Recette</option>
+                <option value="expense" ${data.line_type!='income'?'selected':''}>Dépense</option>
+            </select>
+        </td>
+        <td>
+            <select class="form-select form-select-sm" name="line_${idx}_category">${catOptions}</select>
+        </td>
+        ${monthCells}
+        <td class="text-center fw-bold line-total" id="line_total_${idx}">0</td>
+        <td>
+            <button type="button" class="btn btn-sm btn-outline-danger" onclick="removeLine(${idx})">
+                <i class="bi bi-trash"></i>
+            </button>
+        </td>
+    `;
+    tbody.appendChild(tr);
+    recalcTotals();
+}
+
+function removeLine(idx) {
+    const row = document.getElementById(`line_${idx}`);
+    if (row) { row.remove(); recalcTotals(); }
+}
+
+function recalcTotals() {
+    const rows = document.querySelectorAll('#linesBody tr');
+    const incTotals = {};
+    const expTotals = {};
+    monthFields.forEach(mf => { incTotals[mf] = 0; expTotals[mf] = 0; });
+
+    rows.forEach(row => {
+        const idx = row.getAttribute('data-index');
+        const type = row.querySelector(`select[name="line_${idx}_type"]`).value;
+        let lineTotal = 0;
+
+        monthFields.forEach(mf => {
+            const input = row.querySelector(`input[name="line_${idx}_${mf}"]`);
+            const val = parseFloat(input.value) || 0;
+            lineTotal += val;
+            if (type === 'income') incTotals[mf] += val;
+            else expTotals[mf] += val;
+        });
+
+        document.getElementById(`line_total_${idx}`).textContent = lineTotal.toFixed(0);
+    });
+
+    let incAnnual = 0, expAnnual = 0;
+    monthFields.forEach(mf => {
+        document.getElementById(`total_income_${mf}`).textContent = incTotals[mf].toFixed(0);
+        document.getElementById(`total_expense_${mf}`).textContent = expTotals[mf].toFixed(0);
+        const net = incTotals[mf] - expTotals[mf];
+        const netCell = document.getElementById(`total_net_${mf}`);
+        netCell.textContent = net.toFixed(0);
+        netCell.className = net >= 0 ? 'text-center text-success' : 'text-center text-danger';
+        incAnnual += incTotals[mf];
+        expAnnual += expTotals[mf];
+    });
+
+    document.getElementById('total_income_annual').textContent = incAnnual.toFixed(0);
+    document.getElementById('total_expense_annual').textContent = expAnnual.toFixed(0);
+    const netAnnual = incAnnual - expAnnual;
+    const netCell = document.getElementById('total_net_annual');
+    netCell.textContent = netAnnual.toFixed(0);
+    netCell.className = netAnnual >= 0 ? 'text-center text-success' : 'text-center text-danger';
+}
+
+// Ajouter une ligne vide par défaut
+addLine({line_type: 'income', label: ''});
+addLine({line_type: 'expense', label: ''});
+</script>
+{% endblock %}
