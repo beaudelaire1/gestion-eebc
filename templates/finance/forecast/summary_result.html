@@ -16,7 +16,7 @@
         <div class="col-md-4">
             <div class="card shadow-sm mb-4 border-success">
                 <div class="card-body text-center">
-                    <h5 class="card-title text-success">Total Recettes Prévues</h5>
+                    <h5 class="card-title text-success">Total Recettes</h5>
                     <h3 class="text-success">{{ total_income|floatformat:0|intcomma }} €</h3>
                 </div>
             </div>
@@ -24,7 +24,7 @@
         <div class="col-md-4">
             <div class="card shadow-sm mb-4 border-danger">
                 <div class="card-body text-center">
-                    <h5 class="card-title text-danger">Total Dépenses Prévues</h5>
+                    <h5 class="card-title text-danger">Total Dépenses</h5>
                     <h3 class="text-danger">{{ total_expense|floatformat:0|intcomma }} €</h3>
                 </div>
             </div>
@@ -32,7 +32,7 @@
         <div class="col-md-4">
             <div class="card shadow-sm mb-4 {% if net >= 0 %}border-primary{% else %}border-warning{% endif %}">
                 <div class="card-body text-center">
-                    <h5 class="card-title {% if net >= 0 %}text-primary{% else %}text-warning{% endif %}">Solde Net Prévu</h5>
+                    <h5 class="card-title {% if net >= 0 %}text-primary{% else %}text-warning{% endif %}">Solde Net</h5>
                     <h3 class="{% if net >= 0 %}text-primary{% else %}text-warning{% endif %}">{{ net|floatformat:0|intcomma }} €</h3>
                 </div>
             </div>
@@ -41,7 +41,7 @@
 
     <div class="card shadow-sm mt-3">
         <div class="card-header bg-dark text-white">
-            <h5 class="mb-0">Répartition Mensuelle Nette Prévue</h5>
+            <h5 class="mb-0">Répartition Mensuelle Nette</h5>
         </div>
         <div class="card-body p-0">
             <div class="table-responsive">
