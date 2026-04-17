@@ -12,6 +12,7 @@ from django.views.generic import TemplateView
 from apps.members.admin_views import members_map_view, members_map_data
 # Import des vues de confirmation publiques
 from apps.worship.confirmation_views import confirm_role, decline_role
+from apps.finance import views as views_finance
 # Webhook WhatsApp Meta
 from apps.communication.views import whatsapp_webhook
 # SEO sitemaps
@@ -59,6 +60,7 @@ urlpatterns = [
     path('app/groups/', include('apps.groups.urls')),
     path('app/communication/', include('apps.communication.urls')),
     path('app/finance/', include('apps.finance.urls')),
+    path('app/comparison/', views_finance.yearly_comparison, name='app_yearly_comparison'),
     path('app/worship/', include('apps.worship.urls')),
     path('app/cms/', include('apps.public.urls')),  # CMS Public
     path('app/imports/', include('apps.imports.urls')),  # Import Excel
