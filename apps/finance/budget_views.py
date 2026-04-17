@@ -157,6 +157,20 @@ def budget_create(request):
                 'categories': BudgetCategory.objects.filter(is_active=True),
             })
         
+        # Vérifier l'unicité groupe/année ou département/année
+        dup_filter = Q(year=year)
+        if group_id:
+            dup_filter &= Q(group_id=group_id)
+        else:
+            dup_filter &= Q(department_id=department_id)
+        if Budget.objects.filter(dup_filter).exists():
+            messages.error(request, f'Un budget existe déjà pour cette entité en {year}.')
+            return render(request, 'finance/budget/create.html', {
+                'groups': Group.objects.filter(is_active=True),
+                'departments': Department.objects.filter(is_active=True),
+                'categories': BudgetCategory.objects.filter(is_active=True),
+            })
+        
         # Créer le budget
         budget = Budget.objects.create(
             name=name,
