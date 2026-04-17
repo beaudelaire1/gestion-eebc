@@ -69,16 +69,21 @@
         </div>
     </div>
 
-    <!-- Total -->
-    <div class="synth-total-band">
-        <div class="synth-total-card">
-            <small>Total Annuel Prévu</small>
-            <h3>{{ total_expense|floatformat:0|intcomma }} €</h3>
+    <!-- Total + Toggle -->
+    <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-3">
+        <div class="synth-total-band mb-0" style="flex:1">
+            <div class="synth-total-card">
+                <small>Total Annuel Prévu</small>
+                <h3>{{ total_expense|floatformat:0|intcomma }} €</h3>
+            </div>
         </div>
+        <button id="toggleView" class="btn btn-outline-secondary btn-sm" onclick="toggleDetail()">
+            <i class="bi bi-calendar3 me-1"></i>Détail mensuel
+        </button>
     </div>
 
-    <!-- Tableau synthétique -->
-    <div class="synth-table-wrap">
+    <!-- Vue compacte -->
+    <div id="viewCompact" class="synth-table-wrap">
         <table class="synth-table">
             <thead>
                 <tr>
@@ -102,5 +107,57 @@
             </tfoot>
         </table>
     </div>
+
+    <!-- Vue détaillée (masquée par défaut) -->
+    <div id="viewDetail" class="synth-table-wrap" style="display:none">
+        <table class="synth-table">
+            <thead>
+                <tr>
+                    <th>Libellé</th>
+                    {% for m in month_labels_short %}
+                    <th>{{ m }}</th>
+                    {% endfor %}
+                    <th>Total</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for row in expense_rows %}
+                <tr>
+                    <td class="fw-bold">{{ row.label }}</td>
+                    {% for val in row.months %}
+                    <td class="{% if val == 0 %}zero{% endif %}">{{ val|floatformat:0|intcomma }}</td>
+                    {% endfor %}
+                    <td class="fw-bold">{{ row.total|floatformat:0|intcomma }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+            <tfoot>
+                <tr>
+                    <td>TOTAL</td>
+                    {% for t in expense_month_totals %}
+                    <td>{{ t|floatformat:0|intcomma }}</td>
+                    {% endfor %}
+                    <td>{{ total_expense|floatformat:0|intcomma }}</td>
+                </tr>
+            </tfoot>
+        </table>
+    </div>
 </div>
+
+<script>
+function toggleDetail() {
+    var compact = document.getElementById('viewCompact');
+    var detail = document.getElementById('viewDetail');
+    var btn = document.getElementById('toggleView');
+    if (detail.style.display === 'none') {
+        detail.style.display = '';
+        compact.style.display = 'none';
+        btn.innerHTML = '<i class="bi bi-list-ul me-1"></i>Vue compacte';
+    } else {
+        detail.style.display = 'none';
+        compact.style.display = '';
+        btn.innerHTML = '<i class="bi bi-calendar3 me-1"></i>Détail mensuel';
+    }
+}
+</script>
 {% endblock %}
