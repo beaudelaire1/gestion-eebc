@@ -3,58 +3,113 @@
 
 {% block title %}Synthèse des Recettes - {{ forecast.name }}{% endblock %}
 {% block page_title %}Recettes{% endblock %}
-{% block page_subtitle %}{{ forecast.name }}{% endblock %}
+{% block page_subtitle %}{{ forecast.name }} — {{ forecast.year }}{% endblock %}
+
+{% block extra_css %}
+<style>
+    .synth-page { padding: 1rem; }
+    .synth-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.2rem; flex-wrap: wrap; gap: .5rem; }
+    .synth-header h2 { font-size: 1.6rem; margin: 0; }
+    .synth-total-band {
+        display: flex; gap: 1rem; flex-wrap: wrap; margin-bottom: 1.2rem;
+    }
+    .synth-total-card {
+        flex: 1; min-width: 180px;
+        background: linear-gradient(135deg, #d1fae5, #ecfdf5);
+        border: 1px solid #6ee7b7; border-radius: 12px;
+        padding: 1rem 1.2rem; text-align: center;
+    }
+    .synth-total-card h3 { font-size: 2rem; margin: .2rem 0; color: #065f46; }
+    .synth-total-card small { color: #047857; font-weight: 600; }
+    .synth-table-wrap { overflow-x: auto; border-radius: 10px; border: 1px solid #d1d5db; }
+    .synth-table {
+        width: 100%; border-collapse: collapse; font-size: .85rem; white-space: nowrap;
+    }
+    .synth-table th, .synth-table td { padding: .55rem .6rem; text-align: right; }
+    .synth-table th:first-child, .synth-table td:first-child { text-align: left; position: sticky; left: 0; background: inherit; z-index: 1; min-width: 140px; }
+    .synth-table thead th {
+        background: #065f46; color: #fff; font-weight: 700; font-size: .78rem;
+        text-transform: uppercase; letter-spacing: .03em;
+    }
+    .synth-table tbody tr:nth-child(even) { background: #f0fdf4; }
+    .synth-table tbody tr:nth-child(odd) { background: #fff; }
+    .synth-table tbody tr:hover { background: #d1fae5; }
+    .synth-table tfoot td {
+        background: #065f46; color: #fff; font-weight: 700; font-size: .9rem;
+    }
+    .synth-table .zero { color: #9ca3af; }
+    @media (max-width: 576px) {
+        .synth-page { padding: .5rem; }
+        .synth-header h2 { font-size: 1.2rem; }
+        .synth-total-card h3 { font-size: 1.4rem; }
+        .synth-table { font-size: .75rem; }
+        .synth-table th, .synth-table td { padding: .4rem; }
+    }
+    @media print {
+        .synth-table { font-size: .7rem; }
+        .btn, .synth-nav { display: none !important; }
+    }
+</style>
+{% endblock %}
 
 {% block content %}
-<div class="container py-4">
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <h2 class="text-success"><i class="bi bi-arrow-down-circle me-2"></i>Synthèse des Recettes</h2>
-        <a href="{% url 'finance:forecast_detail' forecast.id %}" class="btn btn-outline-secondary">Retour</a>
-    </div>
-
-    <div class="row">
-        <div class="col-md-6">
-            <div class="card shadow-sm mb-4 border-success">
-                <div class="card-body">
-                    <h5 class="card-title text-success">Total Prévu</h5>
-                    <h2 class="display-4 text-success">{{ total_income|floatformat:0|intcomma }} €</h2>
-                </div>
-            </div>
-        </div>
-        <div class="col-md-6">
-            <div class="card shadow-sm mb-4">
-                <div class="card-body">
-                    <h5 class="card-title text-success">Total Réalisé</h5>
-                    <h2 class="display-4 text-success">{{ actuals_income|floatformat:0|intcomma }} €</h2>
-                </div>
-            </div>
+<div class="synth-page">
+    <div class="synth-header">
+        <h2 class="text-success"><i class="bi bi-arrow-down-circle me-2"></i>Synthèse des Recettes — {{ forecast.year }}</h2>
+        <div class="synth-nav d-flex gap-2 flex-wrap">
+            <a href="{% url 'finance:forecast_detail' forecast.pk %}" class="btn btn-outline-secondary btn-sm">
+                <i class="bi bi-arrow-left me-1"></i>Retour
+            </a>
+            <a href="{% url 'finance:forecast_summary_expense' forecast.pk %}" class="btn btn-outline-danger btn-sm">
+                <i class="bi bi-arrow-up-circle me-1"></i>Dépenses
+            </a>
+            <a href="{% url 'finance:forecast_summary_result' forecast.pk %}" class="btn btn-outline-primary btn-sm">
+                <i class="bi bi-cash-stack me-1"></i>Résultat
+            </a>
         </div>
     </div>
 
-    <div class="card shadow-sm">
-        <div class="card-header bg-success text-white">
-            <h5 class="mb-0">Détail par catégorie</h5>
+    <!-- Total -->
+    <div class="synth-total-band">
+        <div class="synth-total-card">
+            <small>Total Annuel Prévu</small>
+            <h3>{{ total_income|floatformat:0|intcomma }} €</h3>
         </div>
-        <div class="card-body p-0">
-            <div class="table-responsive">
-                <table class="table table-hover mb-0">
-                    <thead class="table-light">
-                        <tr>
-                            <th>Libellé</th>
-                            <th class="text-end">Montant Annuel Prévu</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for row in income_rows %}
-                        <tr>
-                            <td class="fw-bold">{{ row.label }}</td>
-                            <td class="text-end">{{ row.total|floatformat:0|intcomma }} €</td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
-            </div>
-        </div>
+    </div>
+
+    <!-- Tableau synthétique mensuel -->
+    <div class="synth-table-wrap">
+        <table class="synth-table">
+            <thead>
+                <tr>
+                    <th>Libellé</th>
+                    {% for m in month_labels_short %}
+                    <th>{{ m }}</th>
+                    {% endfor %}
+                    <th>Total</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for row in income_rows %}
+                <tr>
+                    <td class="fw-bold">{{ row.label }}</td>
+                    {% for val in row.months %}
+                    <td class="{% if val == 0 %}zero{% endif %}">{{ val|floatformat:0|intcomma }}</td>
+                    {% endfor %}
+                    <td class="fw-bold">{{ row.total|floatformat:0|intcomma }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+            <tfoot>
+                <tr>
+                    <td>TOTAL</td>
+                    {% for t in income_month_totals %}
+                    <td>{{ t|floatformat:0|intcomma }}</td>
+                    {% endfor %}
+                    <td>{{ total_income|floatformat:0|intcomma }}</td>
+                </tr>
+            </tfoot>
+        </table>
     </div>
 </div>
 {% endblock %}

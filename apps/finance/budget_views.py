@@ -1394,12 +1394,16 @@ def _build_forecast_summary(forecast):
     income_lines = list(forecast.lines.filter(line_type='income'))
     expense_lines = list(forecast.lines.filter(line_type='expense'))
 
+    def _row(line):
+        months = [getattr(line, mf) for mf in MONTH_FIELDS]
+        return {'label': line.label, 'total': line.amount, 'months': months}
+
     income_rows = sorted(
-        [{'label': l.label, 'total': l.amount} for l in income_lines],
+        [_row(l) for l in income_lines],
         key=lambda r: r['total'], reverse=True,
     )
     expense_rows = sorted(
-        [{'label': l.label, 'total': l.amount} for l in expense_lines],
+        [_row(l) for l in expense_lines],
         key=lambda r: r['total'], reverse=True,
     )
 
@@ -1440,6 +1444,9 @@ def _build_forecast_summary(forecast):
         'actuals_expense': actuals_expense,
         'actuals_net': actuals_income - actuals_expense,
         'monthly': monthly,
+        'month_labels_short': [l[:3] for l in MONTH_LABELS],
+        'income_month_totals': [m['income'] for m in monthly],
+        'expense_month_totals': [m['expense'] for m in monthly],
     }
 
 
