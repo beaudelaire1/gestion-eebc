@@ -94,6 +94,15 @@
         <a href="{% url 'finance:forecast_export_excel' forecast.pk %}" class="btn btn-outline-success btn-sm">
             <i class="bi bi-file-earmark-excel me-1"></i>Export Excel
         </a>
+        <a href="{% url 'finance:forecast_summary_income' forecast.pk %}" class="btn btn-outline-info btn-sm">
+            <i class="bi bi-arrow-down-circle me-1"></i>Synthèse Recettes
+        </a>
+        <a href="{% url 'finance:forecast_summary_expense' forecast.pk %}" class="btn btn-outline-warning btn-sm">
+            <i class="bi bi-arrow-up-circle me-1"></i>Synthèse Dépenses
+        </a>
+        <a href="{% url 'finance:forecast_summary_result' forecast.pk %}" class="btn btn-outline-primary btn-sm">
+            <i class="bi bi-cash-stack me-1"></i>Synthèse Résultat
+        </a>
         <a href="{% url 'finance:forecast_delete' forecast.pk %}" class="btn btn-outline-danger btn-sm ms-auto">
             <i class="bi bi-trash me-1"></i>Supprimer
         </a>
