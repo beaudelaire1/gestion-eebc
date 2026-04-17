@@ -1,0 +1,297 @@
+{% extends 'base.html' %}
+{% load humanize %}
+
+{% block title %}Comparatif {{ year_n }} / {{ year_n1 }} - EEBC{% endblock %}
+{% block page_title %}Comparatif Annuel{% endblock %}
+{% block page_subtitle %}{{ year_n }} vs {{ year_n1 }}{% endblock %}
+
+{% block extra_css %}
+<style>
+    .comp-page { padding: 1rem; }
+    .comp-header { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: .5rem; margin-bottom: 1.5rem; }
+    .comp-header h2 { font-size: 1.5rem; margin: 0; }
+    .comp-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin-bottom: 1.5rem; }
+    .comp-card {
+        border-radius: 12px; padding: 1rem 1.2rem; text-align: center;
+        border: 1px solid #e5e7eb;
+    }
+    .comp-card h4 { font-size: 1.6rem; margin: .3rem 0 0; }
+    .comp-card small { font-weight: 600; font-size: .8rem; }
+    .comp-card .badge-var { display: inline-block; margin-top: .3rem; padding: .15rem .5rem; border-radius: 20px; font-size: .7rem; font-weight: 700; }
+    .comp-chart-wrap { background: #fff; border-radius: 12px; border: 1px solid #e5e7eb; padding: 1rem; margin-bottom: 1.5rem; }
+    .comp-chart-wrap canvas { max-height: 420px; }
+    .comp-table-wrap { overflow-x: auto; border-radius: 10px; border: 1px solid #d1d5db; }
+    .comp-table { width: 100%; border-collapse: collapse; font-size: .82rem; white-space: nowrap; }
+    .comp-table th, .comp-table td { padding: .5rem .6rem; text-align: right; }
+    .comp-table th:first-child, .comp-table td:first-child { text-align: left; position: sticky; left: 0; background: inherit; z-index: 1; min-width: 130px; }
+    .comp-table thead th { background: #1e293b; color: #fff; font-weight: 700; font-size: .75rem; text-transform: uppercase; letter-spacing: .03em; }
+    .comp-table tbody tr:nth-child(even) { background: #f8fafc; }
+    .comp-table tbody tr:nth-child(odd) { background: #fff; }
+    .comp-table tbody tr:hover { background: #e2e8f0; }
+    .comp-table tfoot td { background: #1e293b; color: #fff; font-weight: 700; }
+    .var-pos { color: #059669; }
+    .var-neg { color: #dc2626; }
+    @media (max-width: 576px) {
+        .comp-page { padding: .5rem; }
+        .comp-header h2 { font-size: 1.15rem; }
+        .comp-card h4 { font-size: 1.2rem; }
+        .comp-table { font-size: .72rem; }
+    }
+    @media print { .btn, .comp-header select { display: none !important; } }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="comp-page">
+    <div class="comp-header">
+        <h2><i class="bi bi-bar-chart-line me-2"></i>Comparatif {{ year_n }} / {{ year_n1 }}</h2>
+        <div class="d-flex gap-2 align-items-center flex-wrap">
+            <form method="get" class="d-flex gap-2 align-items-center">
+                <select name="year" class="form-select form-select-sm" style="width:auto" onchange="this.form.submit()">
+                    {% for y in available_years %}
+                    <option value="{{ y }}" {% if y == selected_year %}selected{% endif %}>{{ y }}</option>
+                    {% endfor %}
+                </select>
+            </form>
+            <a href="{% url 'finance:dashboard' %}" class="btn btn-outline-secondary btn-sm">
+                <i class="bi bi-arrow-left me-1"></i>Trésorerie
+            </a>
+        </div>
+    </div>
+
+    <!-- Cartes résumé -->
+    <div class="comp-cards">
+        <div class="comp-card" style="background: linear-gradient(135deg, #d1fae5, #ecfdf5); border-color: #6ee7b7;">
+            <small class="text-success">Recettes {{ year_n }}</small>
+            <h4 class="text-success">{{ total_income_n|floatformat:0|intcomma }} €</h4>
+            {% with diff=total_income_n|add:total_income_n1|add:0 %}
+            {% endwith %}
+        </div>
+        <div class="comp-card" style="background: linear-gradient(135deg, #f0fdf4, #f8fafc); border-color: #a7f3d0;">
+            <small style="color:#6b7280">Recettes {{ year_n1 }}</small>
+            <h4 style="color:#6b7280">{{ total_income_n1|floatformat:0|intcomma }} €</h4>
+        </div>
+        <div class="comp-card" style="background: linear-gradient(135deg, #fee2e2, #fef2f2); border-color: #fca5a5;">
+            <small class="text-danger">Dépenses {{ year_n }}</small>
+            <h4 class="text-danger">{{ total_expense_n|floatformat:0|intcomma }} €</h4>
+        </div>
+        <div class="comp-card" style="background: linear-gradient(135deg, #fef2f2, #f8fafc); border-color: #fecaca;">
+            <small style="color:#6b7280">Dépenses {{ year_n1 }}</small>
+            <h4 style="color:#6b7280">{{ total_expense_n1|floatformat:0|intcomma }} €</h4>
+        </div>
+    </div>
+
+    <!-- Graphiques -->
+    <div class="row g-3 mb-4">
+        <div class="col-lg-6">
+            <div class="comp-chart-wrap">
+                <h6 class="mb-3 fw-bold"><i class="bi bi-graph-up text-success me-1"></i>Recettes mensuelles</h6>
+                <canvas id="chartIncome"></canvas>
+            </div>
+        </div>
+        <div class="col-lg-6">
+            <div class="comp-chart-wrap">
+                <h6 class="mb-3 fw-bold"><i class="bi bi-graph-down text-danger me-1"></i>Dépenses mensuelles</h6>
+                <canvas id="chartExpense"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <!-- Graphique solde net -->
+    <div class="comp-chart-wrap mb-4">
+        <h6 class="mb-3 fw-bold"><i class="bi bi-cash-stack text-primary me-1"></i>Solde net mensuel (Recettes − Dépenses)</h6>
+        <canvas id="chartNet"></canvas>
+    </div>
+
+    <!-- Tableau détaillé -->
+    <div class="comp-table-wrap">
+        <table class="comp-table">
+            <thead>
+                <tr>
+                    <th></th>
+                    {% for m in months %}
+                    <th>{{ m }}</th>
+                    {% endfor %}
+                    <th>Total</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td class="fw-bold text-success">Recettes {{ year_n }}</td>
+                    {% for v in income_n %}
+                    <td>{{ v|floatformat:0|intcomma }}</td>
+                    {% endfor %}
+                    <td class="fw-bold">{{ total_income_n|floatformat:0|intcomma }}</td>
+                </tr>
+                <tr>
+                    <td class="fw-bold" style="color:#9ca3af">Recettes {{ year_n1 }}</td>
+                    {% for v in income_n1 %}
+                    <td style="color:#9ca3af">{{ v|floatformat:0|intcomma }}</td>
+                    {% endfor %}
+                    <td class="fw-bold" style="color:#9ca3af">{{ total_income_n1|floatformat:0|intcomma }}</td>
+                </tr>
+                <tr>
+                    <td class="fw-bold text-danger">Dépenses {{ year_n }}</td>
+                    {% for v in expense_n %}
+                    <td>{{ v|floatformat:0|intcomma }}</td>
+                    {% endfor %}
+                    <td class="fw-bold">{{ total_expense_n|floatformat:0|intcomma }}</td>
+                </tr>
+                <tr>
+                    <td class="fw-bold" style="color:#9ca3af">Dépenses {{ year_n1 }}</td>
+                    {% for v in expense_n1 %}
+                    <td style="color:#9ca3af">{{ v|floatformat:0|intcomma }}</td>
+                    {% endfor %}
+                    <td class="fw-bold" style="color:#9ca3af">{{ total_expense_n1|floatformat:0|intcomma }}</td>
+                </tr>
+            </tbody>
+            <tfoot>
+                <tr>
+                    <td>Solde net {{ year_n }}</td>
+                    {% for v in income_n %}
+                    <td>—</td>
+                    {% endfor %}
+                    <td>{{ total_income_n|floatformat:0|intcomma }}</td>
+                </tr>
+            </tfoot>
+        </table>
+    </div>
+</div>
+
+{{ income_n|json_script:"income-n" }}
+{{ expense_n|json_script:"expense-n" }}
+{{ income_n1|json_script:"income-n1" }}
+{{ expense_n1|json_script:"expense-n1" }}
+{{ months|json_script:"months-labels" }}
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    var months = JSON.parse(document.getElementById('months-labels').textContent);
+    var incomeN = JSON.parse(document.getElementById('income-n').textContent);
+    var expenseN = JSON.parse(document.getElementById('expense-n').textContent);
+    var incomeN1 = JSON.parse(document.getElementById('income-n1').textContent);
+    var expenseN1 = JSON.parse(document.getElementById('expense-n1').textContent);
+    var yearN = '{{ year_n }}';
+    var yearN1 = '{{ year_n1 }}';
+
+    var commonOpts = {
+        responsive: true,
+        maintainAspectRatio: true,
+        interaction: { intersect: false, mode: 'index' },
+        plugins: {
+            legend: { position: 'bottom', labels: { usePointStyle: true, padding: 14, font: { size: 12 } } },
+            tooltip: {
+                callbacks: {
+                    label: function(ctx) {
+                        return ctx.dataset.label + ' : ' + new Intl.NumberFormat('fr-FR').format(ctx.raw) + ' €';
+                    }
+                }
+            }
+        },
+        scales: {
+            y: {
+                beginAtZero: true,
+                ticks: { callback: function(v) { return new Intl.NumberFormat('fr-FR', {notation: 'compact'}).format(v) + ' €'; } },
+                grid: { color: 'rgba(0,0,0,0.06)' }
+            },
+            x: { grid: { display: false } }
+        }
+    };
+
+    // Recettes
+    new Chart(document.getElementById('chartIncome'), {
+        type: 'bar',
+        data: {
+            labels: months,
+            datasets: [
+                {
+                    label: 'Recettes ' + yearN,
+                    data: incomeN,
+                    backgroundColor: 'rgba(16, 185, 129, 0.75)',
+                    borderColor: '#059669',
+                    borderWidth: 1,
+                    borderRadius: 4,
+                },
+                {
+                    label: 'Recettes ' + yearN1,
+                    data: incomeN1,
+                    backgroundColor: 'rgba(16, 185, 129, 0.2)',
+                    borderColor: '#6ee7b7',
+                    borderWidth: 1,
+                    borderRadius: 4,
+                    borderDash: [4, 4],
+                }
+            ]
+        },
+        options: commonOpts
+    });
+
+    // Dépenses
+    new Chart(document.getElementById('chartExpense'), {
+        type: 'bar',
+        data: {
+            labels: months,
+            datasets: [
+                {
+                    label: 'Dépenses ' + yearN,
+                    data: expenseN,
+                    backgroundColor: 'rgba(239, 68, 68, 0.75)',
+                    borderColor: '#dc2626',
+                    borderWidth: 1,
+                    borderRadius: 4,
+                },
+                {
+                    label: 'Dépenses ' + yearN1,
+                    data: expenseN1,
+                    backgroundColor: 'rgba(239, 68, 68, 0.2)',
+                    borderColor: '#fca5a5',
+                    borderWidth: 1,
+                    borderRadius: 4,
+                }
+            ]
+        },
+        options: commonOpts
+    });
+
+    // Solde net
+    var netN = incomeN.map(function(v, i) { return v - expenseN[i]; });
+    var netN1 = incomeN1.map(function(v, i) { return v - expenseN1[i]; });
+
+    var netOpts = JSON.parse(JSON.stringify(commonOpts));
+    netOpts.scales.y.beginAtZero = false;
+
+    new Chart(document.getElementById('chartNet'), {
+        type: 'line',
+        data: {
+            labels: months,
+            datasets: [
+                {
+                    label: 'Solde net ' + yearN,
+                    data: netN,
+                    borderColor: '#2563eb',
+                    backgroundColor: 'rgba(37, 99, 235, 0.1)',
+                    borderWidth: 2.5,
+                    pointRadius: 4,
+                    pointBackgroundColor: '#2563eb',
+                    fill: true,
+                    tension: 0.3,
+                },
+                {
+                    label: 'Solde net ' + yearN1,
+                    data: netN1,
+                    borderColor: '#93c5fd',
+                    backgroundColor: 'rgba(147, 197, 253, 0.08)',
+                    borderWidth: 2,
+                    pointRadius: 3,
+                    pointBackgroundColor: '#93c5fd',
+                    borderDash: [6, 3],
+                    fill: true,
+                    tension: 0.3,
+                }
+            ]
+        },
+        options: netOpts
+    });
+});
+</script>
+{% endblock %}

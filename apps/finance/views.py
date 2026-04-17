@@ -955,3 +955,73 @@ def finance_category_delete(request, pk):
     }
     
     return render(request, 'finance/finance_category_confirm_delete.html', context)
+
+
+@login_required
+@role_required('admin', 'finance')
+def yearly_comparison(request):
+    """
+    Graphique comparatif Année N vs Année N-1.
+    Recettes et dépenses mensuelles côte à côte.
+    """
+    from django.db.models.functions import TruncMonth, ExtractMonth
+
+    available_years = list(
+        FinancialTransaction.objects.filter(status=FinancialTransaction.Status.VALIDE)
+        .dates('transaction_date', 'year', order='DESC')
+    )
+    available_year_values = [y.year for y in available_years]
+
+    year_param = request.GET.get('year', '').strip()
+    if year_param.isdigit() and int(year_param) in available_year_values:
+        year_n = int(year_param)
+    elif available_year_values:
+        year_n = available_year_values[0]
+    else:
+        year_n = date.today().year
+    year_n1 = year_n - 1
+
+    MOIS_LABELS = ['Jan', 'Fév', 'Mar', 'Avr', 'Mai', 'Juin',
+                   'Juil', 'Août', 'Sep', 'Oct', 'Nov', 'Déc']
+
+    INCOME_TYPES = ['don', 'dime', 'offrande']
+
+    def _monthly_totals(year):
+        base_qs = FinancialTransaction.objects.filter(
+            status='valide',
+            transaction_date__year=year,
+        )
+        income_qs = base_qs.filter(transaction_type__in=INCOME_TYPES).annotate(
+            m=ExtractMonth('transaction_date')
+        ).values('m').annotate(total=Sum('amount')).order_by('m')
+
+        expense_qs = base_qs.filter(transaction_type='depense').annotate(
+            m=ExtractMonth('transaction_date')
+        ).values('m').annotate(total=Sum('amount')).order_by('m')
+
+        income_map = {r['m']: float(r['total']) for r in income_qs}
+        expense_map = {r['m']: float(r['total']) for r in expense_qs}
+
+        income = [income_map.get(i, 0) for i in range(1, 13)]
+        expense = [expense_map.get(i, 0) for i in range(1, 13)]
+        return income, expense
+
+    income_n, expense_n = _monthly_totals(year_n)
+    income_n1, expense_n1 = _monthly_totals(year_n1)
+
+    context = {
+        'year_n': year_n,
+        'year_n1': year_n1,
+        'months': MOIS_LABELS,
+        'income_n': income_n,
+        'expense_n': expense_n,
+        'income_n1': income_n1,
+        'expense_n1': expense_n1,
+        'total_income_n': sum(income_n),
+        'total_expense_n': sum(expense_n),
+        'total_income_n1': sum(income_n1),
+        'total_expense_n1': sum(expense_n1),
+        'available_years': available_year_values,
+        'selected_year': year_n,
+    }
+    return render(request, 'finance/yearly_comparison.html', context)

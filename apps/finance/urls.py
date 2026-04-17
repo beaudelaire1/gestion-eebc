@@ -9,6 +9,7 @@ app_name = 'finance'
 urlpatterns = [
     path('', views.dashboard, name='dashboard'),
     path('dashboard/chart-data/', views.dashboard_chart_data, name='dashboard_chart_data'),
+    path('comparison/', views.yearly_comparison, name='yearly_comparison'),
     path('transactions/', views.transaction_list, name='transaction_list'),
     path('transactions/create/', views.transaction_create, name='transaction_create'),
     path('transactions/<int:pk>/', views.transaction_detail, name='transaction_detail'),
