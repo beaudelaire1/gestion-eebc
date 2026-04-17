@@ -174,12 +174,40 @@ document.addEventListener('DOMContentLoaded', function() {
     var yearN = '{{ year_n }}';
     var yearN1 = '{{ year_n1 }}';
 
+    var palette = {
+        incomeNBar: 'rgba(22, 163, 74, 0.78)',
+        incomeNBorder: '#166534',
+        incomeNLine: '#15803d',
+        incomeN1Bar: 'rgba(245, 158, 11, 0.42)',
+        incomeN1Border: '#b45309',
+        incomeN1Line: '#d97706',
+        expenseNBar: 'rgba(220, 38, 38, 0.78)',
+        expenseNBorder: '#b91c1c',
+        expenseNLine: '#991b1b',
+        expenseN1Bar: 'rgba(124, 58, 237, 0.34)',
+        expenseN1Border: '#6d28d9',
+        expenseN1Line: '#7c3aed',
+        netN: '#0f766e',
+        netNFill: 'rgba(15, 118, 110, 0.12)',
+        netN1: '#d97706',
+        netN1Fill: 'rgba(217, 119, 6, 0.08)'
+    };
+
     var commonOpts = {
         responsive: true,
         maintainAspectRatio: true,
         interaction: { intersect: false, mode: 'index' },
         plugins: {
-            legend: { position: 'bottom', labels: { usePointStyle: true, padding: 14, font: { size: 12 } } },
+            legend: {
+                position: 'bottom',
+                labels: {
+                    usePointStyle: false,
+                    boxWidth: 18,
+                    boxHeight: 10,
+                    padding: 14,
+                    font: { size: 12 }
+                }
+            },
             tooltip: {
                 callbacks: {
                     label: function(ctx) {
@@ -198,71 +226,68 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     };
 
-    // Recettes - barres N (vert) + courbe N-1 (orange)
+    function buildBarDataset(label, data, backgroundColor, borderColor) {
+        return {
+            label: label,
+            type: 'bar',
+            data: data,
+            backgroundColor: backgroundColor,
+            borderColor: borderColor,
+            hoverBackgroundColor: backgroundColor,
+            hoverBorderColor: borderColor,
+            borderWidth: 1,
+            borderRadius: 4,
+            maxBarThickness: 22,
+            order: 2,
+        };
+    }
+
+    function buildLineDataset(label, data, color, dashed) {
+        return {
+            label: label,
+            type: 'line',
+            data: data,
+            borderColor: color,
+            backgroundColor: 'transparent',
+            borderWidth: 3,
+            pointRadius: 4,
+            pointHoverRadius: 6,
+            pointBackgroundColor: color,
+            pointBorderColor: '#ffffff',
+            pointBorderWidth: 2,
+            tension: 0.35,
+            fill: false,
+            spanGaps: true,
+            borderDash: dashed ? [7, 4] : [],
+            order: 1,
+        };
+    }
+
+    // Recettes - deux séries en barres + deux courbes annuelles
     new Chart(document.getElementById('chartIncome'), {
         type: 'bar',
         data: {
             labels: months,
             datasets: [
-                {
-                    label: 'Recettes ' + yearN,
-                    data: incomeN,
-                    backgroundColor: 'rgba(16, 185, 129, 0.75)',
-                    borderColor: '#059669',
-                    borderWidth: 1,
-                    borderRadius: 4,
-                    order: 2,
-                },
-                {
-                    label: 'Recettes ' + yearN1,
-                    type: 'line',
-                    data: incomeN1,
-                    borderColor: '#f59e0b',
-                    backgroundColor: 'rgba(245, 158, 11, 0.08)',
-                    borderWidth: 2.5,
-                    pointRadius: 5,
-                    pointBackgroundColor: '#f59e0b',
-                    pointBorderColor: '#fff',
-                    pointBorderWidth: 2,
-                    tension: 0.35,
-                    fill: true,
-                    order: 1,
-                }
+                buildBarDataset('Recettes ' + yearN + ' (barres)', incomeN, palette.incomeNBar, palette.incomeNBorder),
+                buildBarDataset('Recettes ' + yearN1 + ' (barres)', incomeN1, palette.incomeN1Bar, palette.incomeN1Border),
+                buildLineDataset('Recettes ' + yearN + ' (courbe)', incomeN, palette.incomeNLine, false),
+                buildLineDataset('Recettes ' + yearN1 + ' (courbe)', incomeN1, palette.incomeN1Line, true)
             ]
         },
         options: commonOpts
     });
 
-    // Dépenses - barres N (rouge) + courbe N-1 (violet)
+    // Dépenses - deux séries en barres + deux courbes annuelles
     new Chart(document.getElementById('chartExpense'), {
         type: 'bar',
         data: {
             labels: months,
             datasets: [
-                {
-                    label: 'Dépenses ' + yearN,
-                    data: expenseN,
-                    backgroundColor: 'rgba(239, 68, 68, 0.75)',
-                    borderColor: '#dc2626',
-                    borderWidth: 1,
-                    borderRadius: 4,
-                    order: 2,
-                },
-                {
-                    label: 'Dépenses ' + yearN1,
-                    type: 'line',
-                    data: expenseN1,
-                    borderColor: '#8b5cf6',
-                    backgroundColor: 'rgba(139, 92, 246, 0.08)',
-                    borderWidth: 2.5,
-                    pointRadius: 5,
-                    pointBackgroundColor: '#8b5cf6',
-                    pointBorderColor: '#fff',
-                    pointBorderWidth: 2,
-                    tension: 0.35,
-                    fill: true,
-                    order: 1,
-                }
+                buildBarDataset('Dépenses ' + yearN + ' (barres)', expenseN, palette.expenseNBar, palette.expenseNBorder),
+                buildBarDataset('Dépenses ' + yearN1 + ' (barres)', expenseN1, palette.expenseN1Bar, palette.expenseN1Border),
+                buildLineDataset('Dépenses ' + yearN + ' (courbe)', expenseN, palette.expenseNLine, false),
+                buildLineDataset('Dépenses ' + yearN1 + ' (courbe)', expenseN1, palette.expenseN1Line, true)
             ]
         },
         options: commonOpts
@@ -283,11 +308,11 @@ document.addEventListener('DOMContentLoaded', function() {
                 {
                     label: 'Solde net ' + yearN,
                     data: netN,
-                    borderColor: '#2563eb',
-                    backgroundColor: 'rgba(37, 99, 235, 0.12)',
+                    borderColor: palette.netN,
+                    backgroundColor: palette.netNFill,
                     borderWidth: 3,
                     pointRadius: 5,
-                    pointBackgroundColor: '#2563eb',
+                    pointBackgroundColor: palette.netN,
                     pointBorderColor: '#fff',
                     pointBorderWidth: 2,
                     fill: true,
@@ -296,11 +321,11 @@ document.addEventListener('DOMContentLoaded', function() {
                 {
                     label: 'Solde net ' + yearN1,
                     data: netN1,
-                    borderColor: '#f59e0b',
-                    backgroundColor: 'rgba(245, 158, 11, 0.08)',
+                    borderColor: palette.netN1,
+                    backgroundColor: palette.netN1Fill,
                     borderWidth: 2.5,
                     pointRadius: 4,
-                    pointBackgroundColor: '#f59e0b',
+                    pointBackgroundColor: palette.netN1,
                     pointBorderColor: '#fff',
                     pointBorderWidth: 2,
                     borderDash: [6, 3],
