@@ -77,36 +77,27 @@
         </div>
     </div>
 
-    <!-- Tableau synthétique mensuel -->
+    <!-- Tableau synthétique -->
     <div class="synth-table-wrap">
         <table class="synth-table">
             <thead>
                 <tr>
                     <th>Libellé</th>
-                    {% for m in month_labels_short %}
-                    <th>{{ m }}</th>
-                    {% endfor %}
-                    <th>Total</th>
+                    <th>Montant Annuel</th>
                 </tr>
             </thead>
             <tbody>
                 {% for row in income_rows %}
                 <tr>
                     <td class="fw-bold">{{ row.label }}</td>
-                    {% for val in row.months %}
-                    <td class="{% if val == 0 %}zero{% endif %}">{{ val|floatformat:0|intcomma }}</td>
-                    {% endfor %}
-                    <td class="fw-bold">{{ row.total|floatformat:0|intcomma }}</td>
+                    <td class="fw-bold">{{ row.total|floatformat:0|intcomma }} €</td>
                 </tr>
                 {% endfor %}
             </tbody>
             <tfoot>
                 <tr>
                     <td>TOTAL</td>
-                    {% for t in income_month_totals %}
-                    <td>{{ t|floatformat:0|intcomma }}</td>
-                    {% endfor %}
-                    <td>{{ total_income|floatformat:0|intcomma }}</td>
+                    <td>{{ total_income|floatformat:0|intcomma }} €</td>
                 </tr>
             </tfoot>
         </table>
