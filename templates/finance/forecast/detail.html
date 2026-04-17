@@ -59,6 +59,25 @@
         color: var(--text-secondary, #64748b) !important;
         font-size: 0.92rem;
     }
+
+    /* Conteneur stable pour Chart.js — évite le redimensionnement infini */
+    .forecast-chart-wrapper {
+        position: relative;
+        width: 100%;
+        height: 380px;
+        max-height: 380px;
+        overflow: hidden;
+    }
+    .forecast-chart-wrapper > canvas {
+        position: absolute !important;
+        top: 0;
+        left: 0;
+        width: 100% !important;
+        height: 100% !important;
+    }
+    @media (max-width: 768px) {
+        .forecast-chart-wrapper { height: 300px; max-height: 300px; }
+    }
 </style>
 {% endblock %}
 
@@ -144,7 +163,9 @@
                 <span class="forecast-chart-note__pill forecast-chart-note__pill--forecast">Lignes = prévisionnel</span>
                 <span class="forecast-chart-note__text">Barres = réalisé comptable importé dans la trésorerie.</span>
             </div>
-            <canvas id="forecastChart" height="100"></canvas>
+            <div class="forecast-chart-wrapper">
+                <canvas id="forecastChart"></canvas>
+            </div>
         </div>
     </div>
 

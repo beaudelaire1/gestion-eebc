@@ -75,4 +75,7 @@ urlpatterns = [
     path('forecasts/<int:forecast_id>/edit/', budget_views.forecast_edit, name='forecast_edit'),
     path('forecasts/<int:forecast_id>/delete/', budget_views.forecast_delete, name='forecast_delete'),
     path('forecasts/<int:forecast_id>/export-excel/', budget_views.forecast_export_excel, name='forecast_export_excel'),
+    path('forecasts/<int:forecast_id>/summary/income/', budget_views.forecast_summary_income, name='forecast_summary_income'),
+    path('forecasts/<int:forecast_id>/summary/expense/', budget_views.forecast_summary_expense, name='forecast_summary_expense'),
+    path('forecasts/<int:forecast_id>/summary/result/', budget_views.forecast_summary_result, name='forecast_summary_result'),
 ]

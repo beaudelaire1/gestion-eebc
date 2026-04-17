@@ -1383,3 +1383,88 @@ def forecast_export_excel(request, forecast_id):
     response['Content-Disposition'] = f'attachment; filename="previsionnel_{forecast.year}_{forecast.scenario}.xlsx"'
     wb.save(response)
     return response
+
+
+# ============================================================================
+# VUES DE SYNTHÈSE (présentation AG / petit écran)
+# ============================================================================
+
+def _build_forecast_summary(forecast):
+    """Calcule les données de synthèse pour un prévisionnel donné."""
+    income_lines = list(forecast.lines.filter(line_type='income'))
+    expense_lines = list(forecast.lines.filter(line_type='expense'))
+
+    income_rows = sorted(
+        [{'label': l.label, 'total': l.amount} for l in income_lines],
+        key=lambda r: r['total'], reverse=True,
+    )
+    expense_rows = sorted(
+        [{'label': l.label, 'total': l.amount} for l in expense_lines],
+        key=lambda r: r['total'], reverse=True,
+    )
+
+    total_income = sum(r['total'] for r in income_rows)
+    total_expense = sum(r['total'] for r in expense_rows)
+
+    actuals_income = FinancialTransaction.objects.filter(
+        transaction_date__year=forecast.year,
+        status='valide',
+        transaction_type__in=['don', 'dime', 'offrande'],
+    ).aggregate(total=Sum('amount'))['total'] or Decimal('0.00')
+    actuals_expense = FinancialTransaction.objects.filter(
+        transaction_date__year=forecast.year,
+        status='valide',
+        transaction_type='depense',
+    ).aggregate(total=Sum('amount'))['total'] or Decimal('0.00')
+
+    monthly = []
+    for mf, label in zip(MONTH_FIELDS, MONTH_LABELS):
+        inc = sum(getattr(l, mf) for l in income_lines)
+        exp = sum(getattr(l, mf) for l in expense_lines)
+        monthly.append({
+            'label': label,
+            'short': label[:3],
+            'income': inc,
+            'expense': exp,
+            'net': inc - exp,
+        })
+
+    return {
+        'forecast': forecast,
+        'income_rows': income_rows,
+        'expense_rows': expense_rows,
+        'total_income': total_income,
+        'total_expense': total_expense,
+        'net': total_income - total_expense,
+        'actuals_income': actuals_income,
+        'actuals_expense': actuals_expense,
+        'actuals_net': actuals_income - actuals_expense,
+        'monthly': monthly,
+    }
+
+
+@login_required
+@role_required('admin', 'finance')
+def forecast_summary_income(request, forecast_id):
+    """Page de synthèse des recettes (présentation AG)."""
+    forecast = get_object_or_404(BudgetForecast, pk=forecast_id)
+    context = _build_forecast_summary(forecast)
+    return render(request, 'finance/forecast/summary_income.html', context)
+
+
+@login_required
+@role_required('admin', 'finance')
+def forecast_summary_expense(request, forecast_id):
+    """Page de synthèse des dépenses (présentation AG)."""
+    forecast = get_object_or_404(BudgetForecast, pk=forecast_id)
+    context = _build_forecast_summary(forecast)
+    return render(request, 'finance/forecast/summary_expense.html', context)
+
+
+@login_required
+@role_required('admin', 'finance')
+def forecast_summary_result(request, forecast_id):
+    """Page de synthèse du résultat (présentation AG)."""
+    forecast = get_object_or_404(BudgetForecast, pk=forecast_id)
+    context = _build_forecast_summary(forecast)
+    return render(request, 'finance/forecast/summary_result.html', context)

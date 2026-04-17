@@ -1,0 +1,60 @@
+{% extends 'base.html' %}
+{% load humanize %}
+
+{% block title %}Synthèse des Recettes - {{ forecast.name }}{% endblock %}
+{% block page_title %}Recettes{% endblock %}
+{% block page_subtitle %}{{ forecast.name }}{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2 class="text-success"><i class="bi bi-arrow-down-circle me-2"></i>Synthèse des Recettes</h2>
+        <a href="{% url 'finance:forecast_detail' forecast.id %}" class="btn btn-outline-secondary">Retour</a>
+    </div>
+
+    <div class="row">
+        <div class="col-md-6">
+            <div class="card shadow-sm mb-4 border-success">
+                <div class="card-body">
+                    <h5 class="card-title text-success">Total Prévu</h5>
+                    <h2 class="display-4 text-success">{{ total_income|floatformat:0|intcomma }} €</h2>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="card shadow-sm mb-4">
+                <div class="card-body">
+                    <h5 class="card-title text-success">Total Réalisé</h5>
+                    <h2 class="display-4 text-success">{{ actuals_income|floatformat:0|intcomma }} €</h2>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="card shadow-sm">
+        <div class="card-header bg-success text-white">
+            <h5 class="mb-0">Détail par catégorie</h5>
+        </div>
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Libellé</th>
+                            <th class="text-end">Montant Annuel Prévu</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for row in income_rows %}
+                        <tr>
+                            <td class="fw-bold">{{ row.label }}</td>
+                            <td class="text-end">{{ row.total|floatformat:0|intcomma }} €</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

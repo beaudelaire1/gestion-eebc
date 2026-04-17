@@ -1,0 +1,70 @@
+{% extends 'base.html' %}
+{% load humanize %}
+
+{% block title %}Résultat - {{ forecast.name }}{% endblock %}
+{% block page_title %}Résultat{% endblock %}
+{% block page_subtitle %}{{ forecast.name }}{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2 class="text-primary"><i class="bi bi-cash-stack me-2"></i>Résultat Financier</h2>
+        <a href="{% url 'finance:forecast_detail' forecast.id %}" class="btn btn-outline-secondary">Retour</a>
+    </div>
+
+    <div class="row">
+        <div class="col-md-4">
+            <div class="card shadow-sm mb-4 border-success">
+                <div class="card-body text-center">
+                    <h5 class="card-title text-success">Total Recettes Prévues</h5>
+                    <h3 class="text-success">{{ total_income|floatformat:0|intcomma }} €</h3>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card shadow-sm mb-4 border-danger">
+                <div class="card-body text-center">
+                    <h5 class="card-title text-danger">Total Dépenses Prévues</h5>
+                    <h3 class="text-danger">{{ total_expense|floatformat:0|intcomma }} €</h3>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card shadow-sm mb-4 {% if net >= 0 %}border-primary{% else %}border-warning{% endif %}">
+                <div class="card-body text-center">
+                    <h5 class="card-title {% if net >= 0 %}text-primary{% else %}text-warning{% endif %}">Solde Net Prévu</h5>
+                    <h3 class="{% if net >= 0 %}text-primary{% else %}text-warning{% endif %}">{{ net|floatformat:0|intcomma }} €</h3>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="card shadow-sm mt-3">
+        <div class="card-header bg-dark text-white">
+            <h5 class="mb-0">Répartition Mensuelle Nette Prévue</h5>
+        </div>
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-bordered mb-0 text-center">
+                    <thead class="table-secondary">
+                        <tr>
+                            {% for m in monthly %}
+                            <th>{{ m.short }}</th>
+                            {% endfor %}
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            {% for m in monthly %}
+                            <td class="{% if m.net >= 0 %}text-success{% else %}text-danger{% endif %} fw-bold">
+                                {{ m.net|floatformat:0|intcomma }}
+                            </td>
+                            {% endfor %}
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
