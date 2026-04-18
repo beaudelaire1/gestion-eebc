@@ -86,7 +86,9 @@ def generated_create(request):
             doc.save()
             messages.success(request, f"Brouillon « {doc.title} » enregistré.")
             if request.POST.get('action') == 'finalize':
-                return redirect('documents:generated_finalize', pk=doc.pk)
+                document = _finalize_generated_document(request, doc)
+                messages.success(request, "Document finalisé et ajouté à la bibliothèque.")
+                return redirect('documents:detail', pk=document.pk)
             return redirect('documents:generated_edit', pk=doc.pk)
     else:
         form = GeneratedDocumentForm(initial=initial)
@@ -118,7 +120,9 @@ def generated_edit(request, pk):
             saved.save()
             messages.success(request, "Document mis à jour.")
             if request.POST.get('action') == 'finalize':
-                return redirect('documents:generated_finalize', pk=saved.pk)
+                document = _finalize_generated_document(request, saved)
+                messages.success(request, "Document finalisé et ajouté à la bibliothèque.")
+                return redirect('documents:detail', pk=document.pk)
             return redirect('documents:generated_edit', pk=saved.pk)
     else:
         form = GeneratedDocumentForm(instance=doc)
@@ -150,18 +154,11 @@ def generated_pdf(request, pk):
     return response
 
 
-@login_required
-@require_POST
-def generated_finalize(request, pk):
-    doc = get_object_or_404(GeneratedDocument, pk=pk)
-    if not (request.user == doc.created_by or _user_can_generate(request.user)):
-        raise Http404
-
+def _finalize_generated_document(request, doc):
     pdf_bytes = render_generated_document_pdf(doc)
     safe_name = slugify(doc.title) or f'document-{doc.pk}'
     file_name = f'{safe_name}.pdf'
 
-    # Création/MAJ du Document associé dans la bibliothèque
     if doc.generated_document:
         document = doc.generated_document
         document.file.save(file_name, ContentFile(pdf_bytes), save=False)
@@ -195,8 +192,17 @@ def generated_finalize(request, pk):
 
     doc.status = GeneratedDocument.Status.FINALIZED
     doc.save()
+    return document
 
-    messages.success(request, f"Document finalisé et ajouté à la bibliothèque.")
+
+@login_required
+@require_POST
+def generated_finalize(request, pk):
+    doc = get_object_or_404(GeneratedDocument, pk=pk)
+    if not (request.user == doc.created_by or _user_can_generate(request.user)):
+        raise Http404
+    document = _finalize_generated_document(request, doc)
+    messages.success(request, "Document finalisé et ajouté à la bibliothèque.")
     return redirect('documents:detail', pk=document.pk)
 
 
