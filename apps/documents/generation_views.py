@@ -7,13 +7,14 @@ from django.core.files.base import ContentFile
 from django.core.paginator import Paginator
 from django.http import HttpResponse, Http404, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
+from django.templatetags.static import static
 from django.utils import timezone
 from django.utils.text import slugify
 from django.views.decorators.http import require_POST
 
 from apps.core.permissions import role_required
 from .forms import GeneratedDocumentForm
-from .generation import render_generated_document_pdf
+from .generation import build_generated_document_context, render_generated_document_pdf
 from .models import Document, GeneratedDocument
 
 
@@ -139,7 +140,11 @@ def generated_preview(request, pk):
     doc = get_object_or_404(GeneratedDocument, pk=pk)
     if not doc.can_be_accessed_by(request.user):
         raise Http404
-    return render(request, 'documents/generated/preview.html', {'doc': doc})
+    return render(
+        request,
+        'documents/generated/preview.html',
+        build_generated_document_context(doc, logo_path=static('images/eebc-logo.png')),
+    )
 
 
 @login_required
@@ -221,33 +226,65 @@ def generated_delete(request, pk):
 
 # ----- Modèles de contenu prêt-à-l'emploi -----
 KIND_TEMPLATES = {
-    'compte_rendu': """<p><strong>Date de la réunion :</strong> ___________</p>
+    'compte_rendu': """<h2>Cadre de la séance</h2>
+<p><strong>Date :</strong> ___________</p>
 <p><strong>Lieu :</strong> ___________</p>
+<p><strong>Présidence :</strong> ___________</p>
 <p><strong>Participants :</strong> ___________</p>
 <p><strong>Excusés :</strong> ___________</p>
-<h3>1. Ouverture</h3><p>...</p>
-<h3>2. Ordre du jour</h3><ol><li>...</li></ol>
-<h3>3. Décisions prises</h3><p>...</p>
-<h3>4. Actions à mener</h3><p>...</p>
-<h3>5. Clôture</h3><p>...</p>""",
+<blockquote><strong>Décision d'ouverture :</strong> la séance est ouverte à ___________ après validation de l'ordre du jour.</blockquote>
+<h2>1. Points examinés</h2>
+<ol><li>...</li></ol>
+<h2>2. Décisions actées</h2>
+<ol><li>...</li></ol>
+<h2>3. Actions et responsables</h2>
+<ul><li>Action - Responsable - Échéance</li></ul>
+<h2>4. Clôture</h2>
+<p>La séance est levée à ___________.</p>""",
     'courrier': """<p>Madame, Monsieur,</p>
-<p>...</p>
+<p>Nous avons l'honneur de vous écrire au nom de l'Église Évangélique Baptiste de Cabassou concernant ___________.</p>
+<blockquote><strong>Objet du courrier :</strong> précisez ici la demande, le contexte et l'attente formulée.</blockquote>
+<p>À cet effet, nous sollicitons ___________.</p>
+<p>Nous vous prions de bien vouloir nous faire retour dans les meilleurs délais.</p>
 <p>Veuillez agréer, Madame, Monsieur, l'expression de nos salutations distinguées.</p>""",
-    'convocation': """<p>Cher frère, chère sœur,</p>
-<p>Nous avons l'honneur de vous convoquer à <strong>...</strong> qui se tiendra le <strong>...</strong> à <strong>...</strong>, dans les locaux de notre église.</p>
-<p><strong>Ordre du jour :</strong></p><ol><li>...</li></ol>
-<p>Votre présence est vivement souhaitée.</p>""",
-    'attestation': """<p>Je soussigné(e), <strong>...</strong>, atteste par la présente que <strong>...</strong> est membre régulier de notre église depuis le <strong>...</strong>.</p>
-<p>La présente attestation est délivrée à l'intéressé(e) pour servir et valoir ce que de droit.</p>""",
-    'note_service': """<p><strong>À l'attention de :</strong> ...</p>
-<p><strong>Référence :</strong> ...</p>
-<p>Par la présente note, ...</p>""",
-    'rapport': """<h3>1. Contexte</h3><p>...</p>
-<h3>2. Activités réalisées</h3><p>...</p>
-<h3>3. Résultats</h3><p>...</p>
-<h3>4. Difficultés rencontrées</h3><p>...</p>
-<h3>5. Perspectives</h3><p>...</p>""",
-    'autre': "<p>...</p>",
+    'convocation': """<blockquote><strong>Convocation officielle :</strong> vous êtes prié(e) de prendre part à la séance mentionnée ci-dessous.</blockquote>
+<p><strong>Date :</strong> ___________</p>
+<p><strong>Heure :</strong> ___________</p>
+<p><strong>Lieu :</strong> ___________</p>
+<p><strong>Présidence :</strong> ___________</p>
+<h2>Ordre du jour</h2>
+<ol><li>...</li></ol>
+<p>Votre présence est attendue. En cas d'empêchement, merci d'en informer le secrétariat.</p>""",
+    'attestation': """<p>Je soussigné(e), <strong>___________</strong>, agissant en qualité de <strong>___________</strong> au sein de l'Église Évangélique Baptiste de Cabassou, atteste par la présente que <strong>___________</strong> ___________.</p>
+<p><strong>Période ou référence utile :</strong> ___________</p>
+<blockquote>La présente attestation est délivrée à la demande de l'intéressé(e) pour servir et valoir ce que de droit.</blockquote>
+<p><strong>Observations complémentaires :</strong> ___________</p>""",
+    'note_service': """<p><strong>Destinataires :</strong> ___________</p>
+<p><strong>Émetteur :</strong> ___________</p>
+<p><strong>Application :</strong> ___________</p>
+<blockquote><strong>Instruction :</strong> indiquez clairement la mesure, sa date d'entrée en vigueur et les responsables concernés.</blockquote>
+<h2>Dispositions</h2>
+<ol><li>...</li></ol>
+<h2>Suivi</h2>
+<p>Les responsables concernés veilleront à l'exécution de la présente note.</p>""",
+    'rapport': """<h2>1. Objet du rapport</h2>
+<p>...</p>
+<h2>2. Contexte</h2>
+<p>...</p>
+<h2>3. Activités réalisées</h2>
+<ul><li>...</li></ul>
+<h2>4. Résultats observés</h2>
+<p>...</p>
+<h2>5. Difficultés rencontrées</h2>
+<p>...</p>
+<h2>6. Recommandations</h2>
+<ol><li>...</li></ol>""",
+    'autre': """<h2>Introduction</h2>
+<p>...</p>
+<h2>Développement</h2>
+<p>...</p>
+<h2>Conclusion</h2>
+<p>...</p>""",
 }
 
 

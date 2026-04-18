@@ -1,5 +1,6 @@
 from django import forms
 from .models import Document, DocumentCategory, GeneratedDocument
+from .richtext import sanitize_generated_document_html
 
 
 ROLE_CHOICES = [
@@ -183,6 +184,11 @@ class GeneratedDocumentForm(forms.ModelForm):
         super().__init__(*args, **kwargs)
         if self.instance and self.instance.pk:
             self.fields['allowed_roles_list'].initial = self.instance.allowed_roles_list
+        initial_body_html = self.data.get('body_html') if self.is_bound else (self.initial.get('body_html') or getattr(self.instance, 'body_html', ''))
+        self.fields['body_html'].initial = sanitize_generated_document_html(initial_body_html)
+
+    def clean_body_html(self):
+        return sanitize_generated_document_html(self.cleaned_data.get('body_html') or '')
 
     def clean(self):
         cleaned = super().clean()

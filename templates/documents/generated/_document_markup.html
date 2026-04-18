@@ -1,0 +1,99 @@
+<div class="document-watermark">EEBC</div>
+
+<div class="document-top">
+
+<header class="page-header">
+    <div class="page-header__brand">
+        <div class="page-header__logo">
+            {% if logo_path %}<img src="{{ logo_path }}" alt="Logo EEBC">{% endif %}
+        </div>
+        <div class="page-header__identity">
+            {% if theme.hero_overline %}<div class="brand-overline">{{ theme.hero_overline }}</div>{% endif %}
+            <div class="brand-title">{{ theme.institution_name }}</div>
+            <div class="brand-motto">{{ theme.institution_motto }}</div>
+        </div>
+    </div>
+</header>
+
+<aside class="page-header__side">
+    <div class="page-header__accent">
+        <span class="accent-dark"></span>
+        <span class="accent-main"></span>
+        <span class="accent-soft"></span>
+    </div>
+    <div class="classification-card">
+        <div class="classification-row">
+            <span class="classification-label">Classification</span>
+            <strong class="classification-title">{{ theme.classification }}</strong>
+        </div>
+        <div class="classification-row">
+            <span class="classification-label">Date</span>
+            <strong class="classification-value">{{ doc.document_date|date:"d F Y" }}</strong>
+        </div>
+        <div class="classification-row">
+            <span class="classification-label">Type</span>
+            <strong class="classification-value">{{ doc.get_kind_display }}</strong>
+        </div>
+    </div>
+</aside>
+
+<footer class="page-footer">
+    <span>{{ theme.footer_label }}</span>
+    <span>{{ doc.reference|default:"Référence en cours" }}</span>
+    <span>{{ theme.institution_name }}</span>
+</footer>
+
+{% if doc.kind == 'courrier' %}
+    {% if doc.recipient_name or doc.recipient_address or doc.subject %}
+    <section class="courrier-lead">
+        {% if doc.recipient_name or doc.recipient_address %}
+        <section class="recipient-block">
+            <div class="section-caption">{{ theme.recipient_label }}</div>
+            {% if doc.recipient_name %}<div class="recipient-name">{{ doc.recipient_name }}</div>{% endif %}
+            {% if doc.recipient_address %}<div class="recipient-address">{{ doc.recipient_address|linebreaksbr }}</div>{% endif %}
+        </section>
+        {% endif %}
+        {% if doc.subject %}
+        <div class="subject-banner">
+            <span class="subject-banner__label">{{ theme.subject_label }}</span>
+            <strong class="subject-banner__value">{{ doc.subject }}</strong>
+        </div>
+        {% endif %}
+    </section>
+    {% endif %}
+{% elif doc.recipient_name or doc.recipient_address %}
+<section class="recipient-card">
+    <div class="section-caption">{{ theme.recipient_label }}</div>
+    {% if doc.recipient_name %}<div class="recipient-name">{{ doc.recipient_name }}</div>{% endif %}
+    {% if doc.recipient_address %}<div class="recipient-address">{{ doc.recipient_address|linebreaksbr }}</div>{% endif %}
+</section>
+{% endif %}
+
+{% if doc.kind != 'courrier' %}
+<section class="title-panel">
+    <div class="section-caption">Intitulé du document</div>
+    <div class="document-title">{{ doc.title }}</div>
+    {% if doc.subject %}
+    <div class="document-subject">
+        <span class="document-subject__label">{{ theme.subject_label }}</span>
+        <strong class="document-subject__value">{{ doc.subject }}</strong>
+    </div>
+    {% endif %}
+</section>
+{% endif %}
+
+</div>
+
+<article class="body">
+    {{ body_html_rendered|default:doc.body_html|safe }}
+</article>
+
+{% if doc.signature_name %}
+<section class="signature-block">
+    <div class="signature-card">
+        <div class="signature-place">Fait à {{ theme.document_city }}, le {{ doc.document_date|date:"d F Y" }}</div>
+        <div class="signature-name">{{ doc.signature_name }}</div>
+        {% if doc.signature_title %}<div class="signature-title">{{ doc.signature_title }}</div>{% endif %}
+    </div>
+</section>
+{% endif %}

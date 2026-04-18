@@ -9,11 +9,34 @@
 <link href="https://cdn.jsdelivr.net/npm/quill@2.0.2/dist/quill.snow.css" rel="stylesheet">
 <style>
     #quill-editor { min-height: 380px; background:#fff; }
+    #quill-editor .ql-editor {
+        font-family: 'Aptos', 'Segoe UI', Arial, sans-serif;
+        font-size: 12pt;
+        line-height: 1.55;
+    }
+    #quill-editor .ql-editor p,
+    #quill-editor .ql-editor li {
+        margin-bottom: 0.35em;
+    }
+    #quill-editor .ql-editor > *:last-child {
+        margin-bottom: 0;
+    }
     .ql-toolbar.ql-snow { border-top-left-radius: 8px; border-top-right-radius: 8px; }
     .ql-container.ql-snow { border-bottom-left-radius: 8px; border-bottom-right-radius: 8px; font-size: 11pt; }
+    .ql-snow .ql-picker.ql-font { width: 150px; }
+    .ql-snow .ql-picker.ql-size { width: 96px; }
+    .ql-snow .ql-picker.ql-font .ql-picker-label::before,
+    .ql-snow .ql-picker.ql-font .ql-picker-item::before,
+    .ql-snow .ql-picker.ql-size .ql-picker-label::before,
+    .ql-snow .ql-picker.ql-size .ql-picker-item::before {
+        content: attr(data-label);
+    }
     .editor-card { background:#fff; border-radius:14px; padding:1.25rem; box-shadow:0 4px 15px rgba(11,15,25,.06); }
     .form-section-title { font-weight:700; color:var(--eebc-primary); font-size:.95rem; text-transform:uppercase; letter-spacing:.5px; margin-bottom:.5rem; border-bottom:2px solid var(--eebc-primary); padding-bottom:4px; }
     .help-pill { background:#eef2ff; color:#4338ca; padding:2px 8px; border-radius:8px; font-size:.7rem; font-weight:600; }
+    .editor-tip { color:#667085; font-size:.82rem; margin-top:.5rem; }
+    .roles-block { display:none; }
+    .roles-selector { max-height:140px; overflow-y:auto; background:#fafafa; }
 </style>
 {% endblock %}
 
@@ -74,6 +97,7 @@
         </button>
     </div>
     <div id="quill-editor"></div>
+    <div class="editor-tip">Le rendu final nettoie les styles collés inutiles. Vous pouvez maintenant choisir la police et la taille directement dans la barre d’outils.</div>
     {{ form.body_html }}
     {{ form.body_html.errors }}
 
@@ -86,9 +110,9 @@
     <div class="form-section-title">Visibilité</div>
     <div class="row g-3 mb-4">
         <div class="col-md-6"><label class="form-label">Qui peut voir ce document ?</label>{{ form.visibility }}</div>
-        <div class="col-md-6" id="roles-block" style="display:none;">
+        <div class="col-md-6 roles-block" id="roles-block">
             <label class="form-label">Rôles autorisés</label>
-            <div class="border rounded p-2" style="max-height:140px;overflow-y:auto;background:#fafafa;">{{ form.allowed_roles_list }}</div>
+            <div class="border rounded p-2 roles-selector">{{ form.allowed_roles_list }}</div>
         </div>
     </div>
 
@@ -102,11 +126,148 @@
 <script src="https://cdn.jsdelivr.net/npm/quill@2.0.2/dist/quill.js"></script>
 <script>
 (function(){
+    const FONT_OPTIONS = ['Aptos', 'Cambria', 'Georgia', 'Arial', 'Times New Roman'];
+    const SIZE_OPTIONS = ['10pt', '11pt', '12pt', '14pt', '16pt', '18pt', '24pt'];
+    const ALLOWED_STYLE_NAMES = new Set(['font-family', 'font-size', 'text-align']);
+    const ALLOWED_ALIGNMENTS = new Set(['left', 'center', 'right', 'justify']);
+
+    const FontStyle = Quill.import('attributors/style/font');
+    FontStyle.whitelist = FONT_OPTIONS;
+    Quill.register(FontStyle, true);
+
+    const SizeStyle = Quill.import('attributors/style/size');
+    SizeStyle.whitelist = SIZE_OPTIONS;
+    Quill.register(SizeStyle, true);
+
     const hidden = document.getElementById('id_body_html');
+
+    function normalizeInlineStyles(styleValue) {
+        return styleValue
+            .split(';')
+            .map((rule) => rule.trim())
+            .filter(Boolean)
+            .map((rule) => {
+                const separatorIndex = rule.indexOf(':');
+                if (separatorIndex === -1) {
+                    return null;
+                }
+
+                const name = rule.slice(0, separatorIndex).trim().toLowerCase();
+                const value = rule.slice(separatorIndex + 1).trim();
+                const normalizedValue = value.replace(/["']/g, '').replace(/\s+/g, ' ').trim().toLowerCase();
+
+                if (!ALLOWED_STYLE_NAMES.has(name) || !value) {
+                    return null;
+                }
+                if (name === 'text-align' && !ALLOWED_ALIGNMENTS.has(normalizedValue)) {
+                    return null;
+                }
+                if (name === 'font-size' && ['0', '0px', '0pt', '0rem', '0em', '1px'].includes(normalizedValue)) {
+                    return null;
+                }
+
+                return `${name}: ${value}`;
+            })
+            .filter(Boolean)
+            .join('; ');
+    }
+
+    function unwrap(node) {
+        const parent = node.parentNode;
+        if (!parent) return;
+        while (node.firstChild) {
+            parent.insertBefore(node.firstChild, node);
+        }
+        parent.removeChild(node);
+    }
+
+    function isBlankParagraph(node) {
+        if (!node || node.nodeType !== Node.ELEMENT_NODE || node.tagName !== 'P') {
+            return false;
+        }
+        if (node.textContent.replace(/\u00a0/g, '').trim()) {
+            return false;
+        }
+
+        return Array.from(node.childNodes)
+            .filter((child) => child.nodeType !== Node.TEXT_NODE || child.textContent.trim())
+            .every((child) => child.nodeType === Node.ELEMENT_NODE && child.tagName === 'BR');
+    }
+
+    function normalizeEditorHtml(html) {
+        const parser = new DOMParser();
+        const parsed = parser.parseFromString(`<div id="quill-normalized-root">${html || ''}</div>`, 'text/html');
+        const root = parsed.getElementById('quill-normalized-root');
+
+        root.querySelectorAll('*').forEach((node) => {
+            const keepClasses = Array.from(node.classList).filter(
+                (className) => className.startsWith('ql-align-') || className.startsWith('ql-indent-')
+            );
+            node.className = keepClasses.join(' ');
+
+            Array.from(node.attributes).forEach((attribute) => {
+                if (!['class', 'href', 'target', 'rel', 'style'].includes(attribute.name)) {
+                    node.removeAttribute(attribute.name);
+                }
+            });
+
+            if (node.tagName !== 'A') {
+                node.removeAttribute('href');
+                node.removeAttribute('target');
+                node.removeAttribute('rel');
+            }
+
+            const styleValue = node.getAttribute('style');
+            if (styleValue) {
+                const cleanedStyle = normalizeInlineStyles(styleValue);
+                if (cleanedStyle) {
+                    node.setAttribute('style', cleanedStyle);
+                } else {
+                    node.removeAttribute('style');
+                }
+            }
+        });
+
+        root.querySelectorAll('span').forEach((node) => {
+            if (!node.attributes.length) {
+                unwrap(node);
+            }
+        });
+
+        Array.from(root.childNodes).forEach((node) => {
+            if (node.nodeType === Node.TEXT_NODE && !node.textContent.trim()) {
+                node.remove();
+            }
+        });
+
+        let previousBlank = false;
+        Array.from(root.children).forEach((node) => {
+            if (isBlankParagraph(node)) {
+                if (previousBlank) {
+                    node.remove();
+                    return;
+                }
+                previousBlank = true;
+                return;
+            }
+            previousBlank = false;
+        });
+
+        while (isBlankParagraph(root.firstElementChild)) {
+            root.firstElementChild.remove();
+        }
+        while (isBlankParagraph(root.lastElementChild)) {
+            root.lastElementChild.remove();
+        }
+
+        return root.innerHTML.trim();
+    }
+
     const editor = new Quill('#quill-editor', {
         theme: 'snow',
         modules: {
             toolbar: [
+                [{ font: FONT_OPTIONS }, { size: SIZE_OPTIONS }],
                 [{ header: [1, 2, 3, false] }],
                 ['bold', 'italic', 'underline', 'strike'],
                 [{ list: 'ordered' }, { list: 'bullet' }],
@@ -119,13 +280,50 @@
         placeholder: 'Rédigez le contenu du document ici...',
     });
 
+    function configurePickerLabels(selector, labels, styleCallback) {
+        document.querySelectorAll(selector).forEach((item) => {
+            const value = item.getAttribute('data-value') || '';
+            item.setAttribute('data-label', labels[value] || labels.default || value);
+            if (styleCallback) {
+                styleCallback(item, value || labels.default || '');
+            }
+        });
+    }
+
+    configurePickerLabels(
+        '.ql-font .ql-picker-label, .ql-font .ql-picker-item',
+        {
+            default: 'Aptos',
+            'Aptos': 'Aptos',
+            'Cambria': 'Cambria',
+            'Georgia': 'Georgia',
+            'Arial': 'Arial',
+            'Times New Roman': 'Times',
+        },
+        (item, value) => {
+            item.style.fontFamily = value.includes(' ') ? `"${value}"` : value;
+        }
+    );
+
+    configurePickerLabels('.ql-size .ql-picker-label, .ql-size .ql-picker-item', {
+        default: '12 pt',
+        '10pt': '10 pt',
+        '11pt': '11 pt',
+        '12pt': '12 pt',
+        '14pt': '14 pt',
+        '16pt': '16 pt',
+        '18pt': '18 pt',
+        '24pt': '24 pt',
+    });
+
     if (hidden.value) {
+        hidden.value = normalizeEditorHtml(hidden.value);
         editor.clipboard.dangerouslyPasteHTML(hidden.value);
     }
 
     const form = document.getElementById('editor-form');
     form.addEventListener('submit', function(){
-        hidden.value = editor.root.innerHTML;
+        hidden.value = normalizeEditorHtml(editor.root.innerHTML);
     });
 
     // Visibilité
@@ -145,7 +343,7 @@
         if (data.html) {
             if (editor.getLength() > 1 && !confirm('Le contenu actuel sera remplacé. Continuer ?')) return;
             editor.setContents([]);
-            editor.clipboard.dangerouslyPasteHTML(data.html);
+            editor.clipboard.dangerouslyPasteHTML(normalizeEditorHtml(data.html));
         }
     });
 })();

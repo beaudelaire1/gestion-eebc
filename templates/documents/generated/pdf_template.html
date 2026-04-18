@@ -2,157 +2,413 @@
 <html lang="fr">
 <head>
 <meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>{{ doc.title }}</title>
 <style>
     @page {
         size: A4;
-        margin: 3cm 2cm 2.5cm 2cm;
-        @top-center {
-            content: element(header);
-        }
-        @bottom-center {
-            content: element(footer);
-            font-size: 9pt;
-            color: #6b7280;
+        margin: 2.35cm 2cm 2.7cm 2cm;
+        @bottom-left {
+            content: element(page-footer);
         }
         @bottom-right {
             content: "Page " counter(page) " / " counter(pages);
-            font-size: 9pt;
-            color: #6b7280;
+            font-size: 8pt;
+            color: #667085;
         }
     }
     body {
-        font-family: 'Helvetica', 'Arial', sans-serif;
-        font-size: 11pt;
-        color: #111827;
-        line-height: 1.55;
+        --doc-accent: {{ theme.accent }};
+        --doc-accent-dark: {{ theme.accent_dark }};
+        --doc-accent-soft: {{ theme.accent_soft }};
+        --doc-accent-border: {{ theme.accent_border }};
+        font-family: 'Aptos', 'Segoe UI', Arial, sans-serif;
+        font-size: 10.5pt;
+        line-height: 1.58;
+        color: #1f2937;
+        hyphens: auto;
+        margin: 0;
     }
-    header.letterhead {
-        position: running(header);
+    .document-watermark {
+        display: none;
+    }
+    .document-top::after {
+        content: '';
+        display: block;
+        clear: both;
+    }
+    .page-header {
+        position: relative;
+        display: block;
+        padding: 14px 0 10px;
+        border-bottom: 1px solid #d7deea;
+        break-inside: avoid;
+        page-break-inside: avoid;
+        margin-bottom: 0.4cm;
+    }
+    .page-header::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 7px;
+        background: linear-gradient(90deg, #111827 0%, #111827 62%, var(--doc-accent-dark) 62%, var(--doc-accent) 100%);
+    }
+    .page-header::after {
+        content: '';
+        position: absolute;
+        top: 0;
+        right: 10px;
+        width: 108px;
+        height: 7px;
+        background: var(--doc-accent);
+        transform: skewX(-38deg);
+        transform-origin: right top;
+    }
+    .page-header__brand {
         display: flex;
-        align-items: center;
-        gap: 14px;
-        border-bottom: 2px solid #0a36ff;
-        padding-bottom: 10px;
+        gap: 10px;
+        align-items: flex-start;
+        min-width: 0;
     }
-    header.letterhead img {
-        width: 70px;
-        height: 70px;
+    .page-header__logo {
+        width: 54px;
+        height: 54px;
+        padding: 4px;
+        border: 1px solid var(--doc-accent-border);
+        background: #ffffff;
+        flex-shrink: 0;
+    }
+    .page-header__logo img {
+        width: 100%;
+        height: 100%;
         object-fit: contain;
     }
-    header.letterhead .church {
-        flex: 1;
+    .page-header__identity {
+        min-width: 0;
+        width: 100%;
+        padding-top: 2px;
     }
-    header.letterhead .church h1 {
+    .brand-overline,
+    .section-caption,
+    .meta-row span,
+    .classification-label,
+    .document-subject span,
+    .subject-banner span,
+    .body h3 {
+        font-size: 8pt;
+        letter-spacing: 0.18em;
+        text-transform: uppercase;
+        color: #667085;
+    }
+    .brand-title {
         margin: 0;
-        font-size: 16pt;
-        color: #0a36ff;
-        letter-spacing: 1px;
+        font-family: 'Cambria', 'Times New Roman', serif;
+        width: 100%;
+        font-size: 16.4pt;
+        line-height: 1.02;
+        letter-spacing: 0.02em;
+        color: var(--doc-accent-dark);
     }
-    header.letterhead .church p {
-        margin: 2px 0 0;
-        font-size: 9pt;
-        color: #6b7280;
+    .brand-motto {
+        margin: 3px 0 0;
+        font-size: 7.8pt;
+        line-height: 1.32;
+        color: #667085;
     }
-    footer.letterfoot {
-        position: running(footer);
-        border-top: 1px solid #e5e7eb;
-        padding-top: 6px;
-        text-align: center;
+    .page-header__side {
+        width: 5.55cm;
+        float: right;
+        margin: 0 0 0.4cm 0.8cm;
+        padding-top: 1px;
     }
-    .meta {
-        margin-top: 1.2cm;
-        display: flex;
-        justify-content: space-between;
-        font-size: 10pt;
-        color: #374151;
+    .page-header__accent {
+        display: none;
     }
-    .recipient {
-        margin-top: 1cm;
-        font-size: 11pt;
-        white-space: pre-line;
+    .classification-card {
+        padding: 8px 10px 6px;
+        border: 1px solid var(--doc-accent-border);
+        border-radius: 10px;
+        border-top: 3px solid var(--doc-accent);
+        background: linear-gradient(145deg, var(--doc-accent-soft) 0%, #ffffff 72%);
     }
-    .subject {
-        margin-top: 1cm;
-        font-weight: bold;
-        text-decoration: underline;
+    .classification-row {
+        display: table;
+        width: 100%;
+        padding: 4px 0;
+        border-bottom: 1px solid #eef2f6;
     }
-    .body {
-        margin-top: 0.8cm;
-        text-align: justify;
+    .classification-row:last-child {
+        border-bottom: none;
     }
-    .body p { margin: 0 0 0.5em; }
-    .body table { border-collapse: collapse; width: 100%; margin: 0.5em 0; }
-    .body table, .body th, .body td { border: 1px solid #d1d5db; padding: 4px 8px; }
-    .signature {
-        margin-top: 2cm;
+    .classification-row .classification-label,
+    .classification-row strong {
+        display: table-cell;
+        vertical-align: baseline;
+    }
+    .classification-row .classification-label {
+        width: 46px;
+        font-size: 7.2pt;
+        letter-spacing: 0.14em;
+        text-transform: uppercase;
+        color: var(--doc-accent-dark);
+        opacity: 0.72;
+    }
+    .classification-row strong {
+        font-size: 8.6pt;
+        color: #111827;
         text-align: right;
     }
-    .signature .name { font-weight: bold; }
-    .signature .role { font-size: 10pt; color: #6b7280; }
-    .doc-title {
-        text-align: center;
-        font-size: 14pt;
-        font-weight: bold;
-        text-transform: uppercase;
-        margin: 0.5cm 0 0.8cm;
-        color: #0a36ff;
+    .classification-title {
+        color: var(--doc-accent-dark) !important;
     }
-    .ref-badge {
-        display: inline-block;
-        padding: 2px 10px;
-        background: #eef2ff;
-        color: #0a36ff;
-        border-radius: 12px;
-        font-size: 9pt;
+    .page-footer {
+        position: running(page-footer);
+        display: flex;
+        justify-content: space-between;
+        gap: 12px;
+        align-items: center;
+        padding-top: 6px;
+        padding-bottom: 12px;
+        border-top: 1px solid #d7deea;
+        font-size: 7.8pt;
+        text-transform: uppercase;
+        letter-spacing: 0.12em;
+        color: #667085;
+        background-image: linear-gradient(90deg, transparent 0%, transparent 6%, var(--doc-accent) 6%, var(--doc-accent) 28%, var(--doc-accent-dark) 28%, #101828 100%);
+        background-repeat: no-repeat;
+        background-position: left bottom;
+        background-size: 100% 9px;
+    }
+    .recipient-card,
+    .title-panel {
+        margin-top: 0;
+        padding: 10px 0 11px;
+        border: 1px solid var(--doc-accent-border);
+        border-width: 1px 0 0;
+        background: transparent;
+        break-inside: avoid;
+        page-break-inside: avoid;
+    }
+    .recipient-card {
+        width: 6.8cm;
+        margin: 0 0 0.35cm;
+        padding: 10px 11px 11px;
+        border-width: 1px;
+        border-left: 4px solid var(--doc-accent);
+        border-radius: 0 10px 10px 0;
+        background: linear-gradient(135deg, var(--doc-accent-soft) 0%, #ffffff 78%);
+    }
+    .courrier-lead {
+        margin-top: 0;
+        break-inside: avoid;
+        page-break-inside: avoid;
+    }
+    .recipient-block {
+        float: none;
+        width: 6.8cm;
+        max-width: 6.8cm;
+        margin: 0 0 0.35cm;
+        padding: 9px 10px 10px;
+        border: 1px solid var(--doc-accent-border);
+        border-left: 4px solid var(--doc-accent);
+        border-top: 1px solid var(--doc-accent-border);
+        border-radius: 0 10px 10px 0;
+        background: linear-gradient(135deg, var(--doc-accent-soft) 0%, #ffffff 78%);
+        break-inside: avoid;
+        page-break-inside: avoid;
+    }
+    .recipient-name,
+    .document-title,
+    .signature-name {
+        font-family: 'Cambria', 'Times New Roman', serif;
+        color: #111827;
+    }
+    .recipient-name {
+        margin-top: 4px;
+        font-size: 11pt;
         font-weight: bold;
+        margin-bottom: 3px;
+    }
+    .recipient-address {
+        white-space: pre-line;
+        color: #344054;
+    }
+    .document-title {
+        font-size: 15pt;
+        color: var(--doc-accent-dark);
+        line-height: 1.2;
+    }
+    .document-subject {
+        margin-top: 10px;
+        padding-top: 10px;
+        border-top: 1px solid #eef2f6;
+        display: table;
+        width: 100%;
+    }
+    .document-subject__label,
+    .document-subject__value,
+    .subject-banner__label,
+    .subject-banner__value {
+        display: table-cell;
+        vertical-align: baseline;
+    }
+    .document-subject__label,
+    .subject-banner__label {
+        white-space: nowrap;
+        padding-right: 10px;
+    }
+    .document-subject__value,
+    .subject-banner__value {
+        font-size: 10pt;
+        color: #111827;
+    }
+    .subject-banner {
+        clear: none;
+        margin-top: 0.28cm;
+        padding: 9px 10px;
+        border: 1px solid var(--doc-accent-border);
+        border-left: 4px solid var(--doc-accent);
+        border-radius: 0 10px 10px 0;
+        background: linear-gradient(90deg, var(--doc-accent-soft) 0%, #ffffff 76%);
+        display: table;
+        width: 100%;
+        text-align: left;
+        break-inside: avoid;
+        page-break-inside: avoid;
+    }
+    .subject-banner__value {
+        font-family: 'Cambria', 'Times New Roman', serif;
+        font-size: 11pt;
+        line-height: 1.35;
+    }
+    .body {
+        margin-top: 0.62cm;
+        text-align: justify;
+        overflow-wrap: break-word;
+    }
+    .body p {
+        margin: 0 0 0.45em;
+        text-align: justify;
+        break-inside: avoid;
+        page-break-inside: avoid;
+    }
+    .body h2 {
+        margin: 1.4em 0 0.55em;
+        padding-bottom: 0.28em;
+        font-family: 'Cambria', 'Times New Roman', serif;
+        font-size: 12.5pt;
+        color: var(--doc-accent-dark);
+        border-bottom: 1px solid var(--doc-accent-border);
+        break-after: avoid;
+        page-break-after: avoid;
+    }
+    .body h3 {
+        margin: 1.4em 0 0.55em;
+        color: var(--doc-accent-dark);
+        break-after: avoid;
+        page-break-after: avoid;
+    }
+    .body blockquote {
+        margin: 0.8em 0;
+        padding: 10px 12px;
+        border-left: 4px solid var(--doc-accent);
+        background: var(--doc-accent-soft);
+        color: #334155;
+        break-inside: avoid;
+        page-break-inside: avoid;
+    }
+    .body ul,
+    .body ol {
+        margin: 0 0 0.6em;
+        padding-left: 1.3em;
+    }
+    .body li {
+        margin-bottom: 0.45em;
+        text-align: justify;
+        break-inside: avoid;
+        page-break-inside: avoid;
+    }
+    .body table {
+        width: 100%;
+        border-collapse: collapse;
+        margin: 0.8em 0;
+        break-inside: auto;
+        page-break-inside: auto;
+    }
+    .body th,
+    .body td {
+        padding: 7px 9px;
+        border: 1px solid #d1d9e6;
+        break-inside: avoid;
+        page-break-inside: avoid;
+    }
+    .body tr {
+        break-inside: avoid;
+        page-break-inside: avoid;
+    }
+    .body .ql-align-center {
+        text-align: center;
+    }
+    .body .ql-align-right {
+        text-align: right;
+    }
+    .body .ql-align-justify {
+        text-align: justify;
+    }
+    .body .ql-indent-1 {
+        margin-left: 2em;
+    }
+    .body .ql-indent-2 {
+        margin-left: 4em;
+    }
+    .body .ql-indent-3 {
+        margin-left: 6em;
+    }
+    .body .ql-indent-4 {
+        margin-left: 8em;
+    }
+    .body .ql-indent-5 {
+        margin-left: 10em;
+    }
+    .body .ql-indent-6 {
+        margin-left: 12em;
+    }
+    .body .ql-indent-7 {
+        margin-left: 14em;
+    }
+    .body .ql-indent-8 {
+        margin-left: 16em;
+    }
+    .signature-block {
+        margin-top: 1.15cm;
+        display: flex;
+        justify-content: flex-end;
+        break-inside: avoid;
+        page-break-inside: avoid;
+    }
+    .signature-card {
+        min-width: 240px;
+        padding-top: 10px;
+        border-top: 2px solid var(--doc-accent);
+        text-align: right;
+    }
+    .signature-place {
+        margin-bottom: 16px;
+        color: #475467;
+    }
+    .signature-name {
+        font-size: 12pt;
+    }
+    .signature-title {
+        margin-top: 3px;
+        font-size: 8.5pt;
+        color: #667085;
     }
 </style>
 </head>
 <body>
-<header class="letterhead">
-    {% if logo_path %}<img src="{{ logo_path }}" alt="Logo EEBC">{% endif %}
-    <div class="church">
-        <h1>ÉGLISE ÉVANGÉLIQUE BAPTISTE DE CABASSOU</h1>
-        <p>« La Bible, notre seule source d'autorité »</p>
-    </div>
-</header>
-
-<footer class="letterfoot">
-    EEBC &mdash; {{ doc.reference }} &mdash; Document généré le {{ generated_on|date:"d/m/Y" }}
-</footer>
-
-<div class="meta">
-    <div><span class="ref-badge">{{ doc.reference }}</span></div>
-    <div>{{ doc.document_date|date:"d F Y" }}</div>
-</div>
-
-{% if doc.recipient_name or doc.recipient_address %}
-<div class="recipient">
-    <strong>{{ doc.recipient_name }}</strong>{% if doc.recipient_address %}<br>{{ doc.recipient_address }}{% endif %}
-</div>
-{% endif %}
-
-{% if doc.kind != 'courrier' %}
-<div class="doc-title">{{ doc.title }}</div>
-{% endif %}
-
-{% if doc.subject %}
-<div class="subject">Objet : {{ doc.subject }}</div>
-{% endif %}
-
-<div class="body">
-    {{ doc.body_html|safe }}
-</div>
-
-{% if doc.signature_name %}
-<div class="signature">
-    <div>Fait à Cayenne, le {{ doc.document_date|date:"d F Y" }}</div>
-    <br>
-    <div class="name">{{ doc.signature_name }}</div>
-    <div class="role">{{ doc.signature_title }}</div>
-</div>
-{% endif %}
-
+{% include 'documents/generated/_document_markup.html' %}
 </body>
 </html>
