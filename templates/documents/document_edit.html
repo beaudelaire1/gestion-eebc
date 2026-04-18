@@ -1,0 +1,60 @@
+{% extends 'base.html' %}
+
+{% block title %}Modifier — {{ document.title }}{% endblock %}
+{% block page_title %}Modifier le document{% endblock %}
+{% block page_subtitle %}{{ document.title }}{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <a href="{% url 'documents:detail' document.pk %}" class="btn btn-outline-secondary btn-sm">
+        <i class="bi bi-arrow-left me-1"></i>Retour
+    </a>
+</div>
+
+<div class="card shadow-sm">
+    <div class="card-body">
+        <div class="mb-3 p-3 rounded" style="background: var(--eebc-gray-50, #f9fafb);">
+            <small class="text-muted d-block">Fichier actuel</small>
+            <strong>{{ document.file_name }}</strong> — {{ document.file_size_display }} — {{ document.get_media_type_display }}
+        </div>
+
+        <form method="post">
+            {% csrf_token %}
+            <div class="row g-3">
+                <div class="col-md-6">
+                    <label class="form-label fw-semibold">Titre</label>
+                    {{ form.title }}
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label fw-semibold">Catégorie</label>
+                    {{ form.category }}
+                </div>
+                <div class="col-12">
+                    <label class="form-label fw-semibold">Description</label>
+                    {{ form.description }}
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label fw-semibold">Source</label>
+                    {{ form.source }}
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label fw-semibold">Tags</label>
+                    {{ form.tags }}
+                </div>
+                <div class="col-md-4 d-flex align-items-end">
+                    <div class="form-check">
+                        {{ form.is_confidential }}
+                        <label class="form-check-label" for="id_is_confidential">
+                            <i class="bi bi-lock me-1"></i>Confidentiel
+                        </label>
+                    </div>
+                </div>
+            </div>
+            <div class="mt-4">
+                <button type="submit" class="btn btn-primary"><i class="bi bi-check-lg me-1"></i>Enregistrer</button>
+                <a href="{% url 'documents:detail' document.pk %}" class="btn btn-outline-secondary ms-2">Annuler</a>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

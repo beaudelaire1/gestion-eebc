@@ -65,6 +65,7 @@ urlpatterns = [
     path('app/cms/', include('apps.public.urls')),  # CMS Public
     path('app/imports/', include('apps.imports.urls')),  # Import Excel
     path('app/young/', include('apps.young.urls')),  # Module Jeunesse
+    path('app/documents/', include('apps.documents.urls')),  # Documents & Médias
     path('app/sites/', include('apps.core.site_urls')),  # CRUD Sites
     
     # Exports et impressions

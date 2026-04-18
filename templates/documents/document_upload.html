@@ -1,0 +1,182 @@
+{% extends 'base.html' %}
+
+{% block title %}Importer des documents - EEBC{% endblock %}
+{% block page_title %}Importer des documents{% endblock %}
+{% block page_subtitle %}Glissez-déposez vos fichiers{% endblock %}
+
+{% block extra_css %}
+<style>
+    .upload-zone {
+        background: var(--eebc-white);
+        border: 3px dashed var(--eebc-gray-300);
+        border-radius: 16px;
+        padding: 3rem 2rem;
+        text-align: center;
+        transition: all 0.3s ease;
+        cursor: pointer;
+        margin-bottom: 2rem;
+    }
+    .upload-zone:hover,
+    .upload-zone.dragover {
+        border-color: var(--eebc-primary);
+        background: rgba(10, 54, 255, 0.03);
+    }
+    .upload-zone.dragover {
+        transform: scale(1.01);
+        box-shadow: 0 0 30px rgba(10, 54, 255, 0.15);
+    }
+    .upload-zone i {
+        font-size: 3rem;
+        color: var(--eebc-primary);
+        margin-bottom: 1rem;
+        display: block;
+    }
+    .upload-form-card {
+        background: var(--eebc-white);
+        border-radius: 16px;
+        padding: 2rem;
+        box-shadow: 0 4px 15px rgba(11, 15, 25, 0.06);
+    }
+    .file-list {
+        margin-top: 1rem;
+    }
+    .file-list-item {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 0.5rem 0.75rem;
+        background: var(--eebc-gray-50, #f9fafb);
+        border-radius: 8px;
+        margin-bottom: 0.5rem;
+        font-size: 0.85rem;
+    }
+    .file-list-item .file-name {
+        font-weight: 600;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        max-width: 300px;
+    }
+    .file-list-item .file-size {
+        color: var(--eebc-gray-500);
+        white-space: nowrap;
+    }
+    .file-list-item .remove-file {
+        color: #dc3545;
+        cursor: pointer;
+        border: none;
+        background: none;
+        font-size: 1rem;
+    }
+    .size-limits {
+        font-size: 0.8rem;
+        color: var(--eebc-gray-500);
+        margin-top: 1rem;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <a href="{% url 'documents:list' %}" class="btn btn-outline-secondary btn-sm">
+        <i class="bi bi-arrow-left me-1"></i>Retour
+    </a>
+</div>
+
+<form method="post" enctype="multipart/form-data" id="uploadForm">
+    {% csrf_token %}
+
+    <!-- Zone drag & drop -->
+    <div class="upload-zone" id="dropZone" onclick="document.getElementById('fileInput').click();">
+        <i class="bi bi-cloud-arrow-up"></i>
+        <h5>Glissez vos fichiers ici</h5>
+        <p class="text-muted mb-2">ou cliquez pour sélectionner</p>
+        <p class="text-muted mb-0" style="font-size: 0.8rem;">
+            PDF, images, audio, vidéo, Word, Excel... — Upload multiple supporté
+        </p>
+        <input type="file" name="file" id="fileInput" multiple class="d-none" onchange="updateFileList()">
+    </div>
+
+    <!-- Liste des fichiers sélectionnés -->
+    <div class="file-list" id="fileList" style="display: none;">
+        <h6 class="mb-2"><i class="bi bi-paperclip me-1"></i>Fichiers sélectionnés</h6>
+        <div id="fileListItems"></div>
+    </div>
+
+    <!-- Métadonnées -->
+    <div class="upload-form-card">
+        <h5 class="mb-3"><i class="bi bi-tag me-2"></i>Métadonnées</h5>
+        <div class="row g-3">
+            <div class="col-md-6">
+                <label class="form-label fw-semibold">Titre</label>
+                {{ form.title }}
+                <small class="text-muted">Laissez vide pour upload multiple : le nom du fichier sera utilisé.</small>
+            </div>
+            <div class="col-md-6">
+                <label class="form-label fw-semibold">Catégorie</label>
+                {{ form.category }}
+            </div>
+            <div class="col-md-12">
+                <label class="form-label fw-semibold">Description</label>
+                {{ form.description }}
+            </div>
+            <div class="col-md-4">
+                <label class="form-label fw-semibold">Source</label>
+                {{ form.source }}
+            </div>
+            <div class="col-md-4">
+                <label class="form-label fw-semibold">Tags</label>
+                {{ form.tags }}
+            </div>
+            <div class="col-md-4 d-flex align-items-end">
+                <div class="form-check">
+                    {{ form.is_confidential }}
+                    <label class="form-check-label fw-semibold" for="id_is_confidential">
+                        <i class="bi bi-lock me-1"></i>Document confidentiel
+                    </label>
+                </div>
+            </div>
+        </div>
+
+        <div class="size-limits">
+            <strong>Limites :</strong> Documents 20 Mo — Images 10 Mo — Audio 100 Mo — Vidéo 500 Mo<br>
+            <strong>Formats bloqués :</strong> .exe, .bat, .sh, .py, .js, .cmd, .msi, .dll
+        </div>
+
+        <div class="mt-3">
+            <button type="submit" class="btn btn-primary" id="submitBtn">
+                <i class="bi bi-cloud-arrow-up me-1"></i>Importer
+            </button>
+        </div>
+    </div>
+</form>
+
+<script>
+const dropZone = document.getElementById('dropZone');
+const fileInput = document.getElementById('fileInput');
+
+['dragenter', 'dragover'].forEach(e => {
+    dropZone.addEventListener(e, (ev) => { ev.preventDefault(); dropZone.classList.add('dragover'); });
+});
+['dragleave', 'drop'].forEach(e => {
+    dropZone.addEventListener(e, (ev) => { ev.preventDefault(); dropZone.classList.remove('dragover'); });
+});
+dropZone.addEventListener('drop', (ev) => {
+    fileInput.files = ev.dataTransfer.files;
+    updateFileList();
+});
+
+function updateFileList() {
+    const list = document.getElementById('fileList');
+    const items = document.getElementById('fileListItems');
+    const files = fileInput.files;
+    if (files.length === 0) { list.style.display = 'none'; return; }
+    list.style.display = 'block';
+    items.innerHTML = '';
+    for (let f of files) {
+        const size = f.size < 1024*1024 ? (f.size/1024).toFixed(1)+' Ko' : (f.size/(1024*1024)).toFixed(1)+' Mo';
+        items.innerHTML += `<div class="file-list-item"><span class="file-name">${f.name}</span><span class="file-size">${size}</span></div>`;
+    }
+}
+</script>
+{% endblock %}

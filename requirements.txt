@@ -44,6 +44,7 @@ hostinger_api==0.0.19
 idna==3.11
 jmespath==1.0.1
 kombu==5.6.2
+Markdown==3.10.2
 multidict==6.7.0
 numpy==2.4.1
 openpyxl==3.1.5
@@ -61,7 +62,9 @@ PyJWT==2.10.1
 pyphen==0.17.2
 pytesseract==0.3.13
 python-dateutil==2.9.0.post0
+python-docx==1.2.0
 python-dotenv==1.2.1
+python-pptx==1.0.2
 pytz==2025.2
 qrcode==8.2
 redis==7.1.0

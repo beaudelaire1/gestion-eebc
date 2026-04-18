@@ -269,6 +269,32 @@
             </div>
 
             <div class="nav-section">
+                <div class="nav-section__title">Documents</div>
+                <nav class="nav flex-column">
+                    <a class="nav-link {% if 'documents' in request.path and 'upload' not in request.path and 'categories' not in request.path and 'stats' not in request.path %}nav-link--active{% endif %}"
+                        href="{% url 'documents:list' %}">
+                        <i class="bi bi-archive nav-link__icon"></i>
+                        <span>Documents</span>
+                    </a>
+                    <a class="nav-link {% if 'documents/upload' in request.path %}nav-link--active{% endif %}"
+                        href="{% url 'documents:upload' %}">
+                        <i class="bi bi-cloud-arrow-up nav-link__icon"></i>
+                        <span>Importer</span>
+                    </a>
+                    <a class="nav-link {% if 'documents/categories' in request.path %}nav-link--active{% endif %}"
+                        href="{% url 'documents:categories' %}">
+                        <i class="bi bi-tags nav-link__icon"></i>
+                        <span>Catégories</span>
+                    </a>
+                    <a class="nav-link {% if 'documents/stats' in request.path %}nav-link--active{% endif %}"
+                        href="{% url 'documents:stats' %}">
+                        <i class="bi bi-bar-chart nav-link__icon"></i>
+                        <span>Statistiques</span>
+                    </a>
+                </nav>
+            </div>
+
+            <div class="nav-section">
                 <div class="nav-section__title">Communication</div>
                 <nav class="nav flex-column">
                     <a class="nav-link {% if 'notifications' in request.path %}nav-link--active{% endif %}"

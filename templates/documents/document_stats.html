@@ -1,0 +1,178 @@
+{% extends 'base.html' %}
+
+{% block title %}Statistiques — Documents EEBC{% endblock %}
+{% block page_title %}Statistiques documentaires{% endblock %}
+{% block page_subtitle %}Vue d'ensemble de votre bibliothèque{% endblock %}
+
+{% block extra_css %}
+<style>
+    .stat-cards {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 1.25rem;
+        margin-bottom: 2rem;
+    }
+    .stat-card {
+        background: var(--eebc-white);
+        border-radius: 16px;
+        padding: 1.5rem;
+        box-shadow: 0 4px 15px rgba(11, 15, 25, 0.06);
+        text-align: center;
+    }
+    .stat-card-icon {
+        width: 48px;
+        height: 48px;
+        border-radius: 12px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.25rem;
+        color: white;
+        margin-bottom: 0.75rem;
+    }
+    .stat-card-value {
+        font-size: 2rem;
+        font-weight: 800;
+        font-family: 'JetBrains Mono', monospace;
+        color: var(--eebc-black);
+    }
+    .stat-card-label {
+        font-size: 0.8rem;
+        color: var(--eebc-gray-500);
+        font-weight: 500;
+    }
+    .chart-card {
+        background: var(--eebc-white);
+        border-radius: 16px;
+        padding: 1.5rem;
+        box-shadow: 0 4px 15px rgba(11, 15, 25, 0.06);
+        margin-bottom: 1.5rem;
+    }
+    .chart-card h6 {
+        font-weight: 700;
+        margin-bottom: 1rem;
+    }
+    .bar-row {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        margin-bottom: 0.75rem;
+    }
+    .bar-label {
+        width: 140px;
+        font-size: 0.85rem;
+        font-weight: 600;
+        text-align: right;
+        flex-shrink: 0;
+    }
+    .bar-track {
+        flex: 1;
+        height: 24px;
+        background: var(--eebc-gray-100);
+        border-radius: 6px;
+        overflow: hidden;
+    }
+    .bar-fill {
+        height: 100%;
+        border-radius: 6px;
+        display: flex;
+        align-items: center;
+        justify-content: flex-end;
+        padding-right: 8px;
+        font-size: 0.7rem;
+        font-weight: 700;
+        color: white;
+        min-width: 30px;
+        transition: width 0.6s ease;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <a href="{% url 'documents:list' %}" class="btn btn-outline-secondary btn-sm">
+        <i class="bi bi-arrow-left me-1"></i>Retour
+    </a>
+</div>
+
+<!-- KPIs -->
+<div class="stat-cards">
+    <div class="stat-card">
+        <div class="stat-card-icon" style="background: linear-gradient(135deg, #3b82f6, #2563eb);">
+            <i class="bi bi-archive"></i>
+        </div>
+        <div class="stat-card-value">{{ stats.total }}</div>
+        <div class="stat-card-label">Documents total</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-card-icon" style="background: linear-gradient(135deg, #22c55e, #16a34a);">
+            <i class="bi bi-hdd"></i>
+        </div>
+        <div class="stat-card-value">{{ stats.total_size_display }}</div>
+        <div class="stat-card-label">Espace utilisé</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-card-icon" style="background: linear-gradient(135deg, #f59e0b, #d97706);">
+            <i class="bi bi-lock"></i>
+        </div>
+        <div class="stat-card-value">{{ stats.confidential }}</div>
+        <div class="stat-card-label">Confidentiels</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-card-icon" style="background: linear-gradient(135deg, #7c3aed, #5b21b6);">
+            <i class="bi bi-clock-history"></i>
+        </div>
+        <div class="stat-card-value">{{ stats.recent }}</div>
+        <div class="stat-card-label">Derniers 30 jours</div>
+    </div>
+</div>
+
+<div class="row g-4">
+    <!-- Par type de média -->
+    <div class="col-md-6">
+        <div class="chart-card">
+            <h6><i class="bi bi-pie-chart me-2"></i>Par type de média</h6>
+            {% for media_key, count in stats.by_media.items %}
+            <div class="bar-row">
+                <div class="bar-label">
+                    {% if media_key == 'document' %}Documents
+                    {% elif media_key == 'image' %}Images
+                    {% elif media_key == 'audio' %}Audio
+                    {% elif media_key == 'video' %}Vidéo
+                    {% else %}{{ media_key }}{% endif %}
+                </div>
+                <div class="bar-track">
+                    <div class="bar-fill" style="width: {% widthratio count stats.total 100 %}%;
+                        {% if media_key == 'document' %}background: #3b82f6;
+                        {% elif media_key == 'image' %}background: #e83e8c;
+                        {% elif media_key == 'audio' %}background: #7c3aed;
+                        {% elif media_key == 'video' %}background: #ef4444;
+                        {% else %}background: #6b7280;{% endif %}">
+                        {{ count }}
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+
+    <!-- Par catégorie -->
+    <div class="col-md-6">
+        <div class="chart-card">
+            <h6><i class="bi bi-tags me-2"></i>Par catégorie</h6>
+            {% for cat_name, count in stats.by_category.items %}
+            <div class="bar-row">
+                <div class="bar-label">{{ cat_name }}</div>
+                <div class="bar-track">
+                    <div class="bar-fill" style="width: {% widthratio count stats.total 100 %}%; background: var(--eebc-primary);">
+                        {{ count }}
+                    </div>
+                </div>
+            </div>
+            {% empty %}
+            <p class="text-muted text-center">Aucune donnée</p>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+{% endblock %}

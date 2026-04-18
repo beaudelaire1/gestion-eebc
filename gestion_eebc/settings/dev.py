@@ -41,9 +41,13 @@ except ImportError:
 
 
 # =============================================================================
-# EMAIL - Console en développement
+# EMAIL - Console en développement (sauf si EMAIL_BACKEND est défini en env)
 # =============================================================================
-EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
+import os
+_email_backend = os.environ.get('EMAIL_BACKEND', '')
+if not _email_backend or _email_backend == 'console':
+    EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
+# Sinon, on garde la valeur définie dans base.py (smtp, hostinger, etc.)
 
 
 # =============================================================================

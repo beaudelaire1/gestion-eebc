@@ -81,6 +81,7 @@ INSTALLED_APPS = [
     'apps.imports',  # Import Excel pour membres et enfants
     'apps.api',  # API REST pour application mobile
     'apps.young',  # Module Jeunesse
+    'apps.documents',  # Documents & Médias
 ]
 
 
@@ -312,6 +313,10 @@ STATIC_ROOT = BASE_DIR / 'staticfiles'
 
 MEDIA_URL = 'media/'
 MEDIA_ROOT = BASE_DIR / 'media'
+
+# Upload : taille max pour fichiers audio/vidéo (500 Mo)
+FILE_UPLOAD_MAX_MEMORY_SIZE = 500 * 1024 * 1024
+DATA_UPLOAD_MAX_MEMORY_SIZE = 500 * 1024 * 1024
 
 
 # =============================================================================

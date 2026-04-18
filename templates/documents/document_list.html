@@ -1,0 +1,276 @@
+{% extends 'base.html' %}
+
+{% block title %}Documents - EEBC{% endblock %}
+{% block page_title %}Documents & Médias{% endblock %}
+{% block page_subtitle %}Bibliothèque centralisée de l'église{% endblock %}
+
+{% block extra_css %}
+<style>
+    .doc-stats-bar {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+        gap: 1rem;
+        margin-bottom: 2rem;
+    }
+    .doc-stat {
+        background: var(--eebc-white);
+        border-radius: 12px;
+        padding: 1rem;
+        text-align: center;
+        box-shadow: 0 4px 15px rgba(11, 15, 25, 0.06);
+    }
+    .doc-stat-value {
+        font-size: 1.75rem;
+        font-weight: 800;
+        font-family: 'JetBrains Mono', monospace;
+        color: var(--eebc-primary);
+    }
+    .doc-stat-label {
+        font-size: 0.8rem;
+        color: var(--eebc-gray-500);
+        font-weight: 500;
+    }
+    .doc-filters {
+        background: var(--eebc-white);
+        border-radius: 12px;
+        padding: 1.25rem;
+        box-shadow: 0 4px 15px rgba(11, 15, 25, 0.06);
+        margin-bottom: 1.5rem;
+    }
+    .doc-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+        gap: 1.25rem;
+    }
+    .doc-card {
+        background: var(--eebc-white);
+        border-radius: 14px;
+        padding: 1.25rem;
+        box-shadow: 0 4px 15px rgba(11, 15, 25, 0.06);
+        border: 2px solid transparent;
+        transition: all 0.3s ease;
+        position: relative;
+    }
+    .doc-card:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 12px 35px rgba(10, 54, 255, 0.12);
+        border-color: var(--eebc-primary);
+    }
+    .doc-card.confidential::after {
+        content: '\F47B';
+        font-family: 'bootstrap-icons';
+        position: absolute;
+        top: 10px;
+        right: 12px;
+        color: #f59e0b;
+        font-size: 1rem;
+    }
+    .doc-icon {
+        width: 44px;
+        height: 44px;
+        border-radius: 10px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.25rem;
+        color: white;
+        margin-bottom: 0.75rem;
+    }
+    .doc-icon.document { background: linear-gradient(135deg, #3b82f6, #2563eb); }
+    .doc-icon.image { background: linear-gradient(135deg, #e83e8c, #c2185b); }
+    .doc-icon.audio { background: linear-gradient(135deg, #7c3aed, #5b21b6); }
+    .doc-icon.video { background: linear-gradient(135deg, #ef4444, #dc2626); }
+    .doc-title {
+        font-weight: 700;
+        color: var(--eebc-black);
+        margin-bottom: 0.25rem;
+        font-size: 0.95rem;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+    .doc-meta {
+        font-size: 0.8rem;
+        color: var(--eebc-gray-500);
+    }
+    .doc-tags {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.25rem;
+        margin-top: 0.5rem;
+    }
+    .doc-tag {
+        background: var(--eebc-gray-100);
+        color: var(--eebc-gray-600);
+        padding: 0.15rem 0.5rem;
+        border-radius: 20px;
+        font-size: 0.7rem;
+        font-weight: 500;
+    }
+    .media-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.25rem;
+        padding: 0.2rem 0.5rem;
+        border-radius: 6px;
+        font-size: 0.7rem;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.03em;
+    }
+    .media-badge.document { background: rgba(59, 130, 246, 0.1); color: #2563eb; }
+    .media-badge.image { background: rgba(232, 62, 140, 0.1); color: #c2185b; }
+    .media-badge.audio { background: rgba(124, 58, 237, 0.1); color: #5b21b6; }
+    .media-badge.video { background: rgba(239, 68, 68, 0.1); color: #dc2626; }
+    .empty-state {
+        text-align: center;
+        padding: 4rem 2rem;
+        color: var(--eebc-gray-500);
+    }
+    .empty-state i { font-size: 3rem; margin-bottom: 1rem; display: block; }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Stats rapides -->
+<div class="doc-stats-bar">
+    <div class="doc-stat">
+        <div class="doc-stat-value">{{ stats.total }}</div>
+        <div class="doc-stat-label">Documents</div>
+    </div>
+    <div class="doc-stat">
+        <div class="doc-stat-value">{{ stats.total_size_display }}</div>
+        <div class="doc-stat-label">Espace utilisé</div>
+    </div>
+    <div class="doc-stat">
+        <div class="doc-stat-value">{{ stats.by_media.audio|default:0 }}</div>
+        <div class="doc-stat-label">Audio</div>
+    </div>
+    <div class="doc-stat">
+        <div class="doc-stat-value">{{ stats.by_media.video|default:0 }}</div>
+        <div class="doc-stat-label">Vidéo</div>
+    </div>
+</div>
+
+<!-- Actions + filtres -->
+<div class="doc-filters">
+    <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
+        <h5 class="mb-0"><i class="bi bi-funnel me-2"></i>Filtrer</h5>
+        <div class="d-flex gap-2">
+            {% if request.user.is_superuser or request.user.is_admin or request.user.role == 'admin' or request.user.role == 'secretariat' or request.user.role == 'finance' %}
+            <a href="{% url 'documents:upload' %}" class="btn btn-primary btn-sm">
+                <i class="bi bi-cloud-arrow-up me-1"></i>Importer
+            </a>
+            {% endif %}
+            {% if request.user.is_superuser or request.user.is_admin or request.user.role == 'admin' or request.user.role == 'secretariat' %}
+            <a href="{% url 'documents:stats' %}" class="btn btn-outline-secondary btn-sm">
+                <i class="bi bi-bar-chart me-1"></i>Statistiques
+            </a>
+            <a href="{% url 'documents:categories' %}" class="btn btn-outline-secondary btn-sm">
+                <i class="bi bi-tags me-1"></i>Catégories
+            </a>
+            {% endif %}
+        </div>
+    </div>
+    <form method="get" class="row g-2">
+        <div class="col-md-4">
+            <input type="text" name="q" class="form-control form-control-sm" placeholder="Rechercher..." value="{{ search }}">
+        </div>
+        <div class="col-md-2">
+            <select name="category" class="form-select form-select-sm">
+                <option value="">Catégorie</option>
+                {% for cat in categories %}
+                <option value="{{ cat.slug }}" {% if current_category == cat.slug %}selected{% endif %}>{{ cat.name }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="col-md-2">
+            <select name="media_type" class="form-select form-select-sm">
+                <option value="">Type</option>
+                {% for val, label in media_types %}
+                <option value="{{ val }}" {% if current_media_type == val %}selected{% endif %}>{{ label }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="col-md-2">
+            <select name="source" class="form-select form-select-sm">
+                <option value="">Source</option>
+                {% for val, label in sources %}
+                <option value="{{ val }}" {% if current_source == val %}selected{% endif %}>{{ label }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="col-md-2 d-flex gap-1">
+            <button type="submit" class="btn btn-dark btn-sm flex-grow-1">Filtrer</button>
+            <a href="{% url 'documents:list' %}" class="btn btn-outline-secondary btn-sm">
+                <i class="bi bi-x-lg"></i>
+            </a>
+        </div>
+    </form>
+</div>
+
+<!-- Grille de documents -->
+{% if page_obj %}
+<div class="doc-grid">
+    {% for doc in page_obj %}
+    <a href="{% url 'documents:detail' doc.pk %}" class="text-decoration-none">
+        <div class="doc-card {% if doc.is_confidential %}confidential{% endif %}">
+            <div class="d-flex align-items-start justify-content-between">
+                <div class="doc-icon {{ doc.media_type }}">
+                    {% if doc.media_type == 'audio' %}
+                        <i class="bi bi-music-note-beamed"></i>
+                    {% elif doc.media_type == 'video' %}
+                        <i class="bi bi-camera-video"></i>
+                    {% elif doc.media_type == 'image' %}
+                        <i class="bi bi-image"></i>
+                    {% else %}
+                        <i class="bi bi-file-earmark-text"></i>
+                    {% endif %}
+                </div>
+                <span class="media-badge {{ doc.media_type }}">{{ doc.get_media_type_display }}</span>
+            </div>
+            <div class="doc-title" title="{{ doc.title }}">{{ doc.title }}</div>
+            <div class="doc-meta">
+                {{ doc.file_size_display }} &middot; {{ doc.extension|upper }}
+                {% if doc.category %}&middot; {{ doc.category.name }}{% endif %}
+            </div>
+            <div class="doc-meta mt-1">
+                <i class="bi bi-clock me-1"></i>{{ doc.created_at|date:"d/m/Y" }}
+                {% if doc.uploaded_by %}&middot; {{ doc.uploaded_by.get_full_name|default:doc.uploaded_by.username }}{% endif %}
+            </div>
+            {% if doc.tags_list %}
+            <div class="doc-tags">
+                {% for tag in doc.tags_list|slice:":3" %}
+                <span class="doc-tag">{{ tag }}</span>
+                {% endfor %}
+            </div>
+            {% endif %}
+        </div>
+    </a>
+    {% endfor %}
+</div>
+
+<!-- Pagination -->
+{% if page_obj.has_other_pages %}
+<nav class="mt-4">
+    <ul class="pagination justify-content-center">
+        {% if page_obj.has_previous %}
+        <li class="page-item"><a class="page-link" href="?page={{ page_obj.previous_page_number }}&q={{ search }}&category={{ current_category|default:'' }}&media_type={{ current_media_type|default:'' }}&source={{ current_source|default:'' }}">Précédent</a></li>
+        {% endif %}
+        <li class="page-item disabled"><span class="page-link">Page {{ page_obj.number }} / {{ page_obj.paginator.num_pages }}</span></li>
+        {% if page_obj.has_next %}
+        <li class="page-item"><a class="page-link" href="?page={{ page_obj.next_page_number }}&q={{ search }}&category={{ current_category|default:'' }}&media_type={{ current_media_type|default:'' }}&source={{ current_source|default:'' }}">Suivant</a></li>
+        {% endif %}
+    </ul>
+</nav>
+{% endif %}
+
+{% else %}
+<div class="empty-state">
+    <i class="bi bi-archive"></i>
+    <h5>Aucun document</h5>
+    <p>Commencez par importer vos premiers fichiers.</p>
+    <a href="{% url 'documents:upload' %}" class="btn btn-primary"><i class="bi bi-cloud-arrow-up me-2"></i>Importer un document</a>
+</div>
+{% endif %}
+{% endblock %}

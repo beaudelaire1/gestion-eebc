@@ -1,0 +1,302 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ document.title }} - Documents EEBC{% endblock %}
+{% block page_title %}{{ document.title }}{% endblock %}
+{% block page_subtitle %}Détail du document{% endblock %}
+
+{% block extra_css %}
+<style>
+    .doc-detail-card {
+        background: var(--eebc-white);
+        border-radius: 16px;
+        padding: 2rem;
+        box-shadow: 0 4px 15px rgba(11, 15, 25, 0.06);
+        margin-bottom: 1.5rem;
+    }
+    .doc-preview {
+        background: #f8f9fa;
+        border-radius: 12px;
+        padding: 1.5rem;
+        text-align: center;
+        margin-bottom: 1.5rem;
+        min-height: 200px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+    .doc-preview img {
+        max-width: 100%;
+        max-height: 500px;
+        border-radius: 8px;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+    }
+    .doc-preview audio {
+        width: 100%;
+        max-width: 600px;
+    }
+    .doc-preview video {
+        width: 100%;
+        max-width: 800px;
+        border-radius: 8px;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+    }
+    .doc-preview iframe {
+        width: 100%;
+        height: 600px;
+        border: none;
+        border-radius: 8px;
+    }
+    .doc-preview iframe.preview-doc {
+        width: 100%;
+        height: 500px;
+        border: 1px solid var(--eebc-gray-200, #e5e7eb);
+        border-radius: 8px;
+    }
+    .doc-meta-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+        gap: 1rem;
+    }
+    .doc-meta-item {
+        padding: 0.75rem;
+        background: var(--eebc-gray-50, #f9fafb);
+        border-radius: 8px;
+    }
+    .doc-meta-label {
+        font-size: 0.75rem;
+        color: var(--eebc-gray-500);
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+    }
+    .doc-meta-value {
+        font-size: 0.95rem;
+        font-weight: 600;
+        color: var(--eebc-black);
+    }
+    .doc-actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.5rem;
+        margin-bottom: 1.5rem;
+    }
+    .access-log-item {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        padding: 0.5rem 0;
+        border-bottom: 1px solid var(--eebc-gray-100);
+        font-size: 0.85rem;
+    }
+    .access-log-item:last-child { border-bottom: none; }
+    .access-icon {
+        width: 30px;
+        height: 30px;
+        border-radius: 8px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 0.8rem;
+        color: white;
+    }
+    .access-icon.view { background: #3b82f6; }
+    .access-icon.download { background: #22c55e; }
+    .access-icon.share { background: #f59e0b; }
+    .doc-tags-display {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.35rem;
+    }
+    .doc-tag-badge {
+        background: var(--eebc-gray-100);
+        color: var(--eebc-gray-700);
+        padding: 0.25rem 0.75rem;
+        border-radius: 20px;
+        font-size: 0.8rem;
+        font-weight: 500;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <a href="{% url 'documents:list' %}" class="btn btn-outline-secondary btn-sm">
+        <i class="bi bi-arrow-left me-1"></i>Retour
+    </a>
+</div>
+
+<!-- Actions -->
+<div class="doc-actions">
+    <a href="{% url 'documents:download' document.pk %}" class="btn btn-primary">
+        <i class="bi bi-download me-1"></i>Télécharger
+    </a>
+    {% if not document.is_confidential %}
+        {% if request.user.is_superuser or request.user.is_admin or request.user.role == 'admin' or request.user.role == 'secretariat' or request.user.role == 'finance' %}
+        <a href="{% url 'documents:share' document.pk %}" class="btn btn-outline-primary">
+            <i class="bi bi-share me-1"></i>Partager par email
+        </a>
+        {% endif %}
+    {% endif %}
+    {% if request.user.is_superuser or request.user.is_admin or request.user.role == 'admin' or request.user.role == 'secretariat' or request.user.role == 'finance' %}
+    <a href="{% url 'documents:edit' document.pk %}" class="btn btn-outline-secondary">
+        <i class="bi bi-pencil me-1"></i>Modifier
+    </a>
+    {% endif %}
+    {% if request.user.is_superuser or request.user.is_admin or request.user.role == 'admin' %}
+    <a href="{% url 'documents:delete' document.pk %}" class="btn btn-outline-danger">
+        <i class="bi bi-trash me-1"></i>Supprimer
+    </a>
+    {% endif %}
+</div>
+
+<!-- Prévisualisation -->
+{% if document.is_previewable %}
+<div class="doc-preview">
+    {% if document.media_type == 'image' %}
+        <img src="{% url 'documents:stream' document.pk %}" alt="{{ document.title }}">
+
+    {% elif document.media_type == 'audio' %}
+        <div class="w-100">
+            <div class="mb-3">
+                <i class="bi bi-music-note-beamed" style="font-size: 2.5rem; color: #7c3aed;"></i>
+            </div>
+            <audio controls preload="metadata" style="width: 100%; max-width: 600px;">
+                <source src="{% url 'documents:stream' document.pk %}" type="{{ document.file_type }}">
+                Votre navigateur ne supporte pas la lecture audio.
+            </audio>
+        </div>
+
+    {% elif document.media_type == 'video' %}
+        <video controls preload="metadata" style="width: 100%; max-width: 800px;">
+            <source src="{% url 'documents:stream' document.pk %}" type="{{ document.file_type }}">
+            Votre navigateur ne supporte pas la lecture vidéo.
+        </video>
+
+    {% elif document.file_type == 'application/pdf' %}
+        <iframe src="{% url 'documents:stream' document.pk %}" title="{{ document.title }}"></iframe>
+
+    {% else %}
+        {# Formats texte, Word, Excel, PowerPoint — prévisualisation via iframe #}
+        <iframe src="{% url 'documents:preview' document.pk %}" title="Aperçu — {{ document.title }}" class="preview-doc"></iframe>
+    {% endif %}
+</div>
+{% endif %}
+
+<!-- Métadonnées -->
+<div class="doc-detail-card">
+    <h5 class="mb-3"><i class="bi bi-info-circle me-2"></i>Informations</h5>
+
+    {% if document.description %}
+    <p class="mb-3">{{ document.description }}</p>
+    {% endif %}
+
+    <div class="doc-meta-grid">
+        <div class="doc-meta-item">
+            <div class="doc-meta-label">Fichier</div>
+            <div class="doc-meta-value">{{ document.file_name }}</div>
+        </div>
+        <div class="doc-meta-item">
+            <div class="doc-meta-label">Taille</div>
+            <div class="doc-meta-value">{{ document.file_size_display }}</div>
+        </div>
+        <div class="doc-meta-item">
+            <div class="doc-meta-label">Type</div>
+            <div class="doc-meta-value">{{ document.get_media_type_display }} ({{ document.extension|upper }})</div>
+        </div>
+        <div class="doc-meta-item">
+            <div class="doc-meta-label">MIME</div>
+            <div class="doc-meta-value" style="font-size: 0.8rem;">{{ document.file_type }}</div>
+        </div>
+        <div class="doc-meta-item">
+            <div class="doc-meta-label">Catégorie</div>
+            <div class="doc-meta-value">
+                {% if document.category %}
+                    <i class="{{ document.category.icon }} me-1" style="color: {{ document.category.color }};"></i>
+                    {{ document.category.name }}
+                {% else %}
+                    <span class="text-muted">Non classé</span>
+                {% endif %}
+            </div>
+        </div>
+        <div class="doc-meta-item">
+            <div class="doc-meta-label">Source</div>
+            <div class="doc-meta-value">{{ document.get_source_display }}</div>
+        </div>
+        <div class="doc-meta-item">
+            <div class="doc-meta-label">Importé par</div>
+            <div class="doc-meta-value">{{ document.uploaded_by.get_full_name|default:document.uploaded_by.username }}</div>
+        </div>
+        <div class="doc-meta-item">
+            <div class="doc-meta-label">Date</div>
+            <div class="doc-meta-value">{{ document.created_at|date:"d/m/Y H:i" }}</div>
+        </div>
+        {% if document.is_confidential %}
+        <div class="doc-meta-item" style="background: rgba(245, 158, 11, 0.1);">
+            <div class="doc-meta-label">Accès</div>
+            <div class="doc-meta-value" style="color: #f59e0b;"><i class="bi bi-lock me-1"></i>Confidentiel</div>
+        </div>
+        {% endif %}
+        {% if document.linked_member %}
+        <div class="doc-meta-item">
+            <div class="doc-meta-label">Membre lié</div>
+            <div class="doc-meta-value">{{ document.linked_member }}</div>
+        </div>
+        {% endif %}
+    </div>
+
+    {% if document.tags_list %}
+    <div class="mt-3">
+        <div class="doc-meta-label mb-2">Tags</div>
+        <div class="doc-tags-display">
+            {% for tag in document.tags_list %}
+            <span class="doc-tag-badge">{{ tag }}</span>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+<!-- Partages récents -->
+{% if shares %}
+<div class="doc-detail-card">
+    <h5 class="mb-3"><i class="bi bi-share me-2"></i>Partages récents</h5>
+    {% for share in shares %}
+    <div class="access-log-item">
+        <div class="access-icon share"><i class="bi bi-envelope"></i></div>
+        <div>
+            <strong>{{ share.recipient_email }}</strong>
+            {% if share.recipient_name %}({{ share.recipient_name }}){% endif %}
+            <br>
+            <small class="text-muted">
+                Par {{ share.shared_by.get_full_name|default:share.shared_by.username }} le {{ share.shared_at|date:"d/m/Y H:i" }}
+                {% if share.is_expired %}<span class="badge bg-secondary ms-1">Expiré</span>{% endif %}
+                {% if share.accessed_at %}<span class="badge bg-success ms-1">Consulté</span>{% endif %}
+            </small>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+{% endif %}
+
+<!-- Historique d'accès -->
+{% if access_logs %}
+<div class="doc-detail-card">
+    <h5 class="mb-3"><i class="bi bi-clock-history me-2"></i>Historique d'accès</h5>
+    {% for log in access_logs %}
+    <div class="access-log-item">
+        <div class="access-icon {{ log.action }}">
+            {% if log.action == 'view' %}<i class="bi bi-eye"></i>
+            {% elif log.action == 'download' %}<i class="bi bi-download"></i>
+            {% else %}<i class="bi bi-share"></i>{% endif %}
+        </div>
+        <div>
+            <strong>{{ log.get_action_display }}</strong>
+            {% if log.user %}par {{ log.user.get_full_name|default:log.user.username }}{% endif %}
+            <br>
+            <small class="text-muted">{{ log.accessed_at|date:"d/m/Y H:i" }}</small>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+{% endif %}
+{% endblock %}
