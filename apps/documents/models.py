@@ -1,6 +1,7 @@
 import uuid
 from django.conf import settings
 from django.db import models
+from django.db.models import Q
 from django.utils.text import slugify
 
 
@@ -41,6 +42,15 @@ class Document(models.Model):
         SCAN = 'scan', 'Numérisation'
         RECORDING = 'recording', 'Enregistrement'
 
+    class Visibility(models.TextChoices):
+        PRIVATE = 'private', 'Personnel (seulement moi et les admins)'
+        STAFF = 'staff', 'Équipe (pasteurs, anciens, diacres, secrétariat, finance, encadrants)'
+        ROLES = 'roles', 'Rôles spécifiques (à choisir ci-dessous)'
+        PUBLIC = 'public', 'Tout le monde (tous les utilisateurs connectés)'
+
+    # Rôles considérés comme faisant partie de « l'équipe »
+    STAFF_ROLES = ('admin', 'secretariat', 'pasteur', 'ancien', 'diacre', 'finance', 'encadrant')
+
     title = models.CharField(max_length=255, verbose_name="Titre")
     description = models.TextField(blank=True, verbose_name="Description")
     file = models.FileField(upload_to='documents/%Y/%m/', verbose_name="Fichier")
@@ -69,6 +79,19 @@ class Document(models.Model):
     )
     tags = models.CharField(max_length=500, blank=True, verbose_name="Tags (séparés par des virgules)")
     is_confidential = models.BooleanField(default=False, verbose_name="Confidentiel")
+    visibility = models.CharField(
+        max_length=10,
+        choices=Visibility.choices,
+        default=Visibility.STAFF,
+        verbose_name="Visibilité",
+        help_text="Qui peut voir et télécharger ce document.",
+    )
+    allowed_roles = models.CharField(
+        max_length=255,
+        blank=True,
+        verbose_name="Rôles autorisés",
+        help_text="Liste de rôles (séparés par des virgules) si la visibilité est « Rôles spécifiques ».",
+    )
     linked_member = models.ForeignKey(
         'members.Member',
         on_delete=models.SET_NULL,
@@ -126,6 +149,80 @@ class Document(models.Model):
         if self.tags:
             return [t.strip() for t in self.tags.split(',') if t.strip()]
         return []
+
+    @property
+    def allowed_roles_list(self):
+        if self.allowed_roles:
+            return [r.strip() for r in self.allowed_roles.split(',') if r.strip()]
+        return []
+
+    def can_be_accessed_by(self, user) -> bool:
+        """Vérifie si `user` peut accéder à ce document d'après la visibilité."""
+        if not user or not user.is_authenticated:
+            return False
+
+        # Super admins / admins : accès total
+        if user.is_superuser or getattr(user, 'is_admin', False):
+            return True
+        if hasattr(user, 'has_any_role') and user.has_any_role('admin', 'secretariat'):
+            return True
+
+        # Propriétaire : toujours accès
+        if self.uploaded_by_id and self.uploaded_by_id == user.id:
+            return True
+
+        # Document confidentiel : réservé aux admins/secrétariat (déjà filtrés plus haut)
+        if self.is_confidential:
+            return False
+
+        vis = self.visibility or self.Visibility.STAFF
+        if vis == self.Visibility.PUBLIC:
+            return True
+        if vis == self.Visibility.PRIVATE:
+            return False  # seul l'uploader + admins, déjà traités
+        if vis == self.Visibility.STAFF:
+            return hasattr(user, 'has_any_role') and user.has_any_role(*self.STAFF_ROLES)
+        if vis == self.Visibility.ROLES:
+            roles = self.allowed_roles_list
+            if not roles:
+                return False
+            return hasattr(user, 'has_any_role') and user.has_any_role(*roles)
+        return False
+
+    @classmethod
+    def accessible_queryset(cls, user):
+        """Retourne un queryset filtré selon la visibilité pour `user`."""
+        qs = cls.objects.all()
+        if not user or not user.is_authenticated:
+            return qs.none()
+
+        # Accès total pour admins
+        if user.is_superuser or getattr(user, 'is_admin', False):
+            return qs
+        if hasattr(user, 'has_any_role') and user.has_any_role('admin', 'secretariat'):
+            return qs
+
+        # Masquer les confidentiels aux non-admins
+        qs = qs.filter(is_confidential=False)
+
+        # Filtrer par visibilité
+        conditions = Q(uploaded_by=user) | Q(visibility=cls.Visibility.PUBLIC)
+
+        is_staff_role = hasattr(user, 'has_any_role') and user.has_any_role(*cls.STAFF_ROLES)
+        if is_staff_role:
+            conditions |= Q(visibility=cls.Visibility.STAFF)
+
+        # Rôles spécifiques : match si un des rôles de l'utilisateur figure dans allowed_roles
+        if hasattr(user, 'get_roles_list'):
+            user_roles = user.get_roles_list()
+            role_q = Q()
+            for r in user_roles:
+                if r:
+                    role_q |= Q(allowed_roles__iregex=r'(^|,)\s*' + r + r'\s*($|,)')
+            if role_q:
+                conditions |= Q(visibility=cls.Visibility.ROLES) & role_q
+
+        return qs.filter(conditions).distinct()
 
 
 class DocumentShare(models.Model):

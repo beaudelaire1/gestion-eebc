@@ -49,7 +49,31 @@
                         </label>
                     </div>
                 </div>
+
+                <div class="col-md-6">
+                    <label class="form-label fw-semibold">
+                        <i class="bi bi-shield-lock me-1"></i>Visibilité
+                    </label>
+                    {{ form.visibility }}
+                </div>
+                <div class="col-md-6" id="allowed-roles-block" style="display:none;">
+                    <label class="form-label fw-semibold">Rôles autorisés</label>
+                    <div class="border rounded p-2" style="max-height:160px;overflow-y:auto;background:#fff;">
+                        {{ form.allowed_roles_list }}
+                    </div>
+                </div>
             </div>
+            <script>
+            (function(){
+                const visSel = document.getElementById('id_visibility');
+                const rolesBlock = document.getElementById('allowed-roles-block');
+                function toggle(){
+                    if(!visSel || !rolesBlock) return;
+                    rolesBlock.style.display = (visSel.value === 'roles') ? '' : 'none';
+                }
+                if(visSel){ visSel.addEventListener('change', toggle); toggle(); }
+            })();
+            </script>
             <div class="mt-4">
                 <button type="submit" class="btn btn-primary"><i class="bi bi-check-lg me-1"></i>Enregistrer</button>
                 <a href="{% url 'documents:detail' document.pk %}" class="btn btn-outline-secondary ms-2">Annuler</a>

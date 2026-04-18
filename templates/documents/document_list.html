@@ -200,6 +200,14 @@
                 {% endfor %}
             </select>
         </div>
+        <div class="col-md-2">
+            <select name="visibility" class="form-select form-select-sm">
+                <option value="">Visibilité</option>
+                {% for val, label in visibilities %}
+                <option value="{{ val }}" {% if current_visibility == val %}selected{% endif %}>{{ label }}</option>
+                {% endfor %}
+            </select>
+        </div>
         <div class="col-md-2 d-flex gap-1">
             <button type="submit" class="btn btn-dark btn-sm flex-grow-1">Filtrer</button>
             <a href="{% url 'documents:list' %}" class="btn btn-outline-secondary btn-sm">
@@ -237,6 +245,17 @@
             <div class="doc-meta mt-1">
                 <i class="bi bi-clock me-1"></i>{{ doc.created_at|date:"d/m/Y" }}
                 {% if doc.uploaded_by %}&middot; {{ doc.uploaded_by.get_full_name|default:doc.uploaded_by.username }}{% endif %}
+            </div>
+            <div class="doc-meta mt-1">
+                {% if doc.visibility == 'private' %}
+                    <span class="badge bg-danger-subtle text-danger"><i class="bi bi-lock-fill me-1"></i>Personnel</span>
+                {% elif doc.visibility == 'staff' %}
+                    <span class="badge bg-primary-subtle text-primary"><i class="bi bi-people-fill me-1"></i>Équipe</span>
+                {% elif doc.visibility == 'roles' %}
+                    <span class="badge bg-warning-subtle text-warning"><i class="bi bi-shield-fill me-1"></i>Rôles</span>
+                {% elif doc.visibility == 'public' %}
+                    <span class="badge bg-success-subtle text-success"><i class="bi bi-globe me-1"></i>Public</span>
+                {% endif %}
             </div>
             {% if doc.tags_list %}
             <div class="doc-tags">

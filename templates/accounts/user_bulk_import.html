@@ -1,0 +1,143 @@
+{% extends 'base.html' %}
+{% load form_tags %}
+
+{% block title %}Importer des utilisateurs - {{ settings.site_name|default:'EEBC' }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h1 class="h3 mb-1">Importer des utilisateurs depuis Excel</h1>
+            <p class="text-muted">Création en masse de comptes à partir d'un fichier .xlsx, .xls ou .csv</p>
+        </div>
+        <div class="d-flex gap-2">
+            <a href="{% url 'accounts:user_bulk_import_template' %}" class="btn btn-outline-secondary">
+                <i class="bi bi-file-earmark-excel me-2"></i>Télécharger le modèle
+            </a>
+            <a href="{% url 'accounts:user_list' %}" class="btn btn-outline-primary">
+                <i class="bi bi-people me-2"></i>Liste des utilisateurs
+            </a>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-lg-7">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="bi bi-upload me-2"></i>Fichier à importer
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="alert alert-info">
+                        <strong>Colonnes attendues</strong> (la 1<sup>re</sup> ligne doit contenir les en-têtes) :
+                        <ul class="mb-0 mt-2">
+                            <li><code>first_name</code> ou <code>prenom</code> &mdash; <em>obligatoire</em></li>
+                            <li><code>last_name</code> ou <code>nom</code> &mdash; <em>obligatoire</em></li>
+                            <li><code>email</code> &mdash; <em>obligatoire</em></li>
+                            <li><code>phone</code> ou <code>telephone</code> &mdash; optionnel</li>
+                            <li><code>roles</code> ou <code>role</code> (séparés par <code>,</code> ou <code>;</code>) &mdash; optionnel</li>
+                        </ul>
+                    </div>
+
+                    <form method="post" enctype="multipart/form-data" novalidate>
+                        {% csrf_token %}
+                        {% render_form_errors form %}
+
+                        {% include 'components/form_field.html' with field=form.file %}
+                        {% include 'components/form_field.html' with field=form.default_roles %}
+
+                        <div class="form-check mb-3">
+                            {{ form.send_email }}
+                            <label class="form-check-label" for="{{ form.send_email.id_for_label }}">
+                                {{ form.send_email.label }}
+                            </label>
+                        </div>
+
+                        <div class="d-flex gap-2">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="bi bi-cloud-upload me-2"></i>Importer
+                            </button>
+                            <a href="{% url 'accounts:user_list' %}" class="btn btn-outline-secondary">Annuler</a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-5">
+            {% if summary %}
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="card-title mb-0">Résumé de l'import</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row text-center mb-3">
+                            <div class="col-4">
+                                <div class="fs-3 fw-bold text-success">{{ summary.created|length }}</div>
+                                <div class="text-muted small">Créés</div>
+                            </div>
+                            <div class="col-4">
+                                <div class="fs-3 fw-bold text-warning">{{ summary.skipped|length }}</div>
+                                <div class="text-muted small">Ignorés</div>
+                            </div>
+                            <div class="col-4">
+                                <div class="fs-3 fw-bold text-danger">{{ summary.errors|length }}</div>
+                                <div class="text-muted small">Erreurs</div>
+                            </div>
+                        </div>
+
+                        {% if summary.created %}
+                            <h6 class="text-success">Utilisateurs créés</h6>
+                            <div class="table-responsive mb-3">
+                                <table class="table table-sm">
+                                    <thead><tr><th>Ligne</th><th>Email</th><th>Identifiant</th></tr></thead>
+                                    <tbody>
+                                        {% for row in summary.created %}
+                                            <tr>
+                                                <td>{{ row.line }}</td>
+                                                <td>{{ row.email }}</td>
+                                                <td><code>{{ row.username }}</code></td>
+                                            </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                        {% endif %}
+
+                        {% if summary.skipped %}
+                            <h6 class="text-warning">Lignes ignorées</h6>
+                            <ul class="small">
+                                {% for row in summary.skipped %}
+                                    <li>Ligne {{ row.line }} &mdash; {{ row.email }} &mdash; {{ row.reason }}</li>
+                                {% endfor %}
+                            </ul>
+                        {% endif %}
+
+                        {% if summary.errors %}
+                            <h6 class="text-danger">Erreurs</h6>
+                            <ul class="small">
+                                {% for row in summary.errors %}
+                                    <li>Ligne {{ row.line }} &mdash; {{ row.email }} &mdash; {{ row.reason }}</li>
+                                {% endfor %}
+                            </ul>
+                        {% endif %}
+                    </div>
+                </div>
+            {% else %}
+                <div class="card border-0 bg-light">
+                    <div class="card-body">
+                        <h6 class="card-title">Comment ça marche ?</h6>
+                        <ol class="small mb-0">
+                            <li>Téléchargez le modèle Excel.</li>
+                            <li>Remplissez une ligne par utilisateur (prénom, nom, email).</li>
+                            <li>Importez le fichier ici.</li>
+                            <li>Chaque utilisateur reçoit un email avec ses identifiants et devra changer son mot de passe à la 1<sup>re</sup> connexion.</li>
+                        </ol>
+                    </div>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

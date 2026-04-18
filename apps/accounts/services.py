@@ -602,3 +602,217 @@ class AccountsService:
             return ServiceResult.ok({'password': new_password})
         else:
             return ServiceResult.fail("Erreur lors de l'envoi de l'email")
+
+    # =========================================================================
+    # IMPORT EN MASSE D'UTILISATEURS DEPUIS UN FICHIER EXCEL/CSV
+    # =========================================================================
+    EXPECTED_COLUMNS = {
+        'first_name': ['first_name', 'prenom', 'prénom', 'firstname', 'first name'],
+        'last_name': ['last_name', 'nom', 'lastname', 'last name', 'nom de famille'],
+        'email': ['email', 'mail', 'e-mail', 'adresse email', 'adresse mail'],
+        'phone': ['phone', 'telephone', 'téléphone', 'tel', 'tél', 'mobile'],
+        'roles': ['role', 'roles', 'rôle', 'rôles', 'fonction'],
+    }
+
+    @classmethod
+    def _normalize_header(cls, value) -> str:
+        if value is None:
+            return ''
+        text = unicodedata.normalize('NFD', str(value).strip().lower())
+        text = ''.join(c for c in text if unicodedata.category(c) != 'Mn')
+        return text
+
+    @classmethod
+    def _map_columns(cls, headers: list) -> dict:
+        """Associe les en-têtes du fichier aux champs internes."""
+        normalized = [cls._normalize_header(h) for h in headers]
+        mapping = {}
+        for field, aliases in cls.EXPECTED_COLUMNS.items():
+            for alias in aliases:
+                if alias in normalized:
+                    mapping[field] = normalized.index(alias)
+                    break
+        return mapping
+
+    @classmethod
+    def parse_users_file(cls, uploaded_file) -> ServiceResult:
+        """
+        Lit un fichier Excel/CSV et retourne une liste de lignes normalisées.
+        Colonnes acceptées : first_name/prenom, last_name/nom, email, phone (optionnel), roles (optionnel).
+        """
+        import os
+
+        name = getattr(uploaded_file, 'name', '') or ''
+        ext = os.path.splitext(name)[1].lower()
+
+        rows = []
+        try:
+            if ext in ('.xlsx', '.xls', '.xlsm'):
+                from openpyxl import load_workbook
+                uploaded_file.seek(0)
+                wb = load_workbook(uploaded_file, data_only=True, read_only=True)
+                ws = wb.active
+                iterator = ws.iter_rows(values_only=True)
+                try:
+                    headers = list(next(iterator))
+                except StopIteration:
+                    return ServiceResult.fail("Fichier vide.")
+                for row in iterator:
+                    if row is None:
+                        continue
+                    if all((c is None or str(c).strip() == '') for c in row):
+                        continue
+                    rows.append(list(row))
+            elif ext == '.csv':
+                import csv, io
+                uploaded_file.seek(0)
+                raw = uploaded_file.read()
+                if isinstance(raw, bytes):
+                    try:
+                        text = raw.decode('utf-8-sig')
+                    except UnicodeDecodeError:
+                        text = raw.decode('latin-1')
+                else:
+                    text = raw
+                # Détection simple du séparateur
+                sample = text.splitlines()[0] if text else ''
+                delimiter = ';' if sample.count(';') > sample.count(',') else ','
+                reader = csv.reader(io.StringIO(text), delimiter=delimiter)
+                try:
+                    headers = next(reader)
+                except StopIteration:
+                    return ServiceResult.fail("Fichier vide.")
+                for row in reader:
+                    if not any((c or '').strip() for c in row):
+                        continue
+                    rows.append(row)
+            else:
+                return ServiceResult.fail(
+                    "Format non supporté. Utilisez un fichier .xlsx, .xls ou .csv."
+                )
+        except Exception as e:
+            return ServiceResult.fail(f"Impossible de lire le fichier : {e}")
+
+        mapping = cls._map_columns(headers)
+
+        missing = [k for k in ('first_name', 'last_name', 'email') if k not in mapping]
+        if missing:
+            return ServiceResult.fail(
+                "Colonnes obligatoires manquantes : "
+                + ", ".join(missing)
+                + ". Colonnes détectées : "
+                + ", ".join(str(h) for h in headers)
+            )
+
+        parsed = []
+        for idx, row in enumerate(rows, start=2):  # ligne 1 = entêtes
+            def _get(field):
+                col = mapping.get(field)
+                if col is None or col >= len(row):
+                    return ''
+                value = row[col]
+                return '' if value is None else str(value).strip()
+
+            entry = {
+                'line': idx,
+                'first_name': _get('first_name'),
+                'last_name': _get('last_name'),
+                'email': _get('email').lower(),
+                'phone': _get('phone'),
+                'roles_raw': _get('roles'),
+            }
+            parsed.append(entry)
+
+        return ServiceResult.ok({'rows': parsed, 'headers': headers})
+
+    @classmethod
+    def bulk_create_users_from_file(
+        cls,
+        uploaded_file,
+        created_by: User,
+        default_roles: list = None,
+        send_email: bool = True,
+    ) -> ServiceResult:
+        """
+        Importe en masse des utilisateurs depuis un fichier Excel/CSV.
+        Retourne un résumé : created, skipped, errors.
+        """
+        parse_result = cls.parse_users_file(uploaded_file)
+        if not parse_result.success:
+            return parse_result
+
+        rows = parse_result.data['rows']
+        if not rows:
+            return ServiceResult.fail("Aucune ligne de données trouvée dans le fichier.")
+
+        valid_role_codes = {choice[0] for choice in User.Role.choices}
+        default_roles = [r for r in (default_roles or []) if r in valid_role_codes] or [User.Role.MEMBRE]
+
+        created = []
+        skipped = []
+        errors = []
+        seen_emails = set()
+
+        for entry in rows:
+            line = entry['line']
+            first_name = entry['first_name']
+            last_name = entry['last_name']
+            email = entry['email']
+
+            if not first_name or not last_name or not email:
+                errors.append({
+                    'line': line,
+                    'email': email,
+                    'reason': "Prénom, nom et email sont obligatoires.",
+                })
+                continue
+
+            if '@' not in email or '.' not in email.split('@')[-1]:
+                errors.append({'line': line, 'email': email, 'reason': "Email invalide."})
+                continue
+
+            if email in seen_emails:
+                skipped.append({'line': line, 'email': email, 'reason': "Email dupliqué dans le fichier."})
+                continue
+            seen_emails.add(email)
+
+            if User.objects.filter(email__iexact=email).exists():
+                skipped.append({'line': line, 'email': email, 'reason': "Email déjà utilisé."})
+                continue
+
+            # Rôles : depuis la ligne (séparateur , ou ;) sinon défaut
+            row_roles_raw = entry.get('roles_raw') or ''
+            row_roles = [
+                r.strip().lower()
+                for r in row_roles_raw.replace(';', ',').split(',')
+                if r.strip()
+            ]
+            row_roles = [r for r in row_roles if r in valid_role_codes]
+            roles = row_roles or list(default_roles)
+
+            result = cls.create_user_by_team(
+                first_name=first_name.title(),
+                last_name=last_name.upper(),
+                email=email,
+                roles=roles,
+                created_by=created_by,
+                phone=entry.get('phone', ''),
+                send_email=send_email,
+            )
+
+            if result.success:
+                created.append({
+                    'line': line,
+                    'email': email,
+                    'username': result.data['username'],
+                    'password': result.data['password'],
+                })
+            else:
+                errors.append({'line': line, 'email': email, 'reason': result.error})
+
+        return ServiceResult.ok({
+            'created': created,
+            'skipped': skipped,
+            'errors': errors,
+            'total': len(rows),
+        })

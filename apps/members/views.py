@@ -73,6 +73,11 @@ def member_list(request):
         'femmes_count': femmes_count,
         'current_sort': request.GET.get('sort', 'last_name'),
         'current_order': request.GET.get('order', 'asc'),
+        'can_view_member_details': (
+            request.user.is_superuser
+            or getattr(request.user, 'is_admin', False)
+            or request.user.has_any_role('admin', 'secretariat', 'encadrant')
+        ),
     }
     
     if request.htmx:
@@ -82,24 +87,25 @@ def member_list(request):
 
 @login_required
 def member_detail(request, pk):
-    """Détail d'un membre."""
+    """Détail d'un membre. Réservé aux rôles admin/secretariat/encadrant."""
+    from apps.core.permissions import has_role
+
+    if not (request.user.is_superuser or has_role(request.user, 'admin', 'secretariat', 'encadrant')):
+        messages.error(request, "Vous n'avez pas les permissions pour consulter le détail d'un membre.")
+        return redirect('members:list')
+
     member = get_object_or_404(Member, pk=pk)
-    
+
+    life_events = member.life_events.all().order_by('-event_date')[:5]
+    visits = member.visits_received.all().order_by('-visit_date')[:5]
+
     context = {
         'member': member,
+        'life_events': life_events,
+        'visits': visits,
+        'can_view_pastoral_data': True,
     }
-    
-    # Récupérer les événements de vie et visites seulement pour les rôles autorisés
-    from apps.core.permissions import has_role
-    if has_role(request.user, 'admin', 'secretariat', 'encadrant'):
-        life_events = member.life_events.all().order_by('-event_date')[:5]
-        visits = member.visits_received.all().order_by('-visit_date')[:5]
-        context.update({
-            'life_events': life_events,
-            'visits': visits,
-            'can_view_pastoral_data': True,
-        })
-    
+
     return render(request, 'members/member_detail.html', context)
 
 

@@ -9,7 +9,7 @@ from django.contrib.auth.password_validation import validate_password
 from django.db.models import Q
 from django.urls import reverse
 from urllib.parse import urlencode
-from .forms import UserCreationByTeamForm, FirstLoginPasswordChangeForm, ProfileForm
+from .forms import UserCreationByTeamForm, FirstLoginPasswordChangeForm, ProfileForm, UserBulkImportForm
 from .services import AuthenticationService, AccountsService
 
 User = get_user_model()
@@ -462,3 +462,78 @@ def user_activate_view(request, user_id):
             return redirect('accounts:user_detail', user_id=user_id)
     
     return JsonResponse({'success': False, 'error': 'Méthode non autorisée'})
+
+
+# =============================================================================
+# IMPORT EN MASSE D'UTILISATEURS DEPUIS EXCEL/CSV
+# =============================================================================
+
+@login_required
+def user_bulk_import_view(request):
+    """Import en masse d'utilisateurs depuis un fichier Excel/CSV."""
+    if not (request.user.is_admin or request.user.has_any_role('admin', 'secretariat')):
+        messages.error(request, "Vous n'avez pas les permissions pour importer des utilisateurs.")
+        return redirect('dashboard:home')
+
+    summary = None
+    if request.method == 'POST':
+        form = UserBulkImportForm(request.POST, request.FILES)
+        if form.is_valid():
+            result = AccountsService.bulk_create_users_from_file(
+                uploaded_file=form.cleaned_data['file'],
+                created_by=request.user,
+                default_roles=form.cleaned_data.get('default_roles') or ['membre'],
+                send_email=form.cleaned_data.get('send_email', True),
+            )
+            if result.success:
+                summary = result.data
+                created = len(summary['created'])
+                skipped = len(summary['skipped'])
+                errors = len(summary['errors'])
+                messages.success(
+                    request,
+                    f"Import terminé : {created} créé(s), {skipped} ignoré(s), {errors} erreur(s)."
+                )
+            else:
+                messages.error(request, result.error or "Erreur lors de l'import.")
+    else:
+        form = UserBulkImportForm()
+
+    return render(request, 'accounts/user_bulk_import.html', {
+        'form': form,
+        'summary': summary,
+    })
+
+
+@login_required
+def user_bulk_import_template(request):
+    """Télécharge un modèle Excel pour l'import d'utilisateurs."""
+    if not (request.user.is_admin or request.user.has_any_role('admin', 'secretariat')):
+        messages.error(request, "Vous n'avez pas les permissions.")
+        return redirect('dashboard:home')
+
+    from io import BytesIO
+    from openpyxl import Workbook
+    from django.http import HttpResponse
+
+    wb = Workbook()
+    ws = wb.active
+    ws.title = "Utilisateurs"
+    headers = ['first_name', 'last_name', 'email', 'phone', 'roles']
+    ws.append(headers)
+    ws.append(['Jean', 'Dupont', 'jean.dupont@example.com', '0694000000', 'membre'])
+    ws.append(['Marie', 'Martin', 'marie.martin@example.com', '', 'membre,encadrant'])
+
+    for col_idx, _ in enumerate(headers, start=1):
+        ws.column_dimensions[chr(64 + col_idx)].width = 24
+
+    output = BytesIO()
+    wb.save(output)
+    output.seek(0)
+
+    response = HttpResponse(
+        output.getvalue(),
+        content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    )
+    response['Content-Disposition'] = 'attachment; filename="modele_import_utilisateurs.xlsx"'
+    return response

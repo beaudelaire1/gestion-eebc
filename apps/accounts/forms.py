@@ -83,6 +83,43 @@ class UserCreationByTeamForm(EnhancedForm):
         return roles
 
 
+class UserBulkImportForm(EnhancedForm):
+    """Formulaire d'import en masse d'utilisateurs depuis Excel/CSV."""
+
+    file = forms.FileField(
+        label="Fichier Excel ou CSV",
+        help_text="Formats acceptés : .xlsx, .xls, .csv. Colonnes requises : prénom, nom, email.",
+        widget=forms.ClearableFileInput(attrs={
+            'accept': '.xlsx,.xls,.csv',
+        }),
+    )
+
+    default_roles = MultipleRoleField(
+        label="Rôle(s) par défaut",
+        help_text="Appliqué uniquement aux lignes sans colonne « rôle ».",
+        required=False,
+    )
+
+    send_email = forms.BooleanField(
+        label="Envoyer l'email d'invitation à chaque utilisateur",
+        required=False,
+        initial=True,
+    )
+
+    def clean_file(self):
+        f = self.cleaned_data['file']
+        name = (f.name or '').lower()
+        if not name.endswith(('.xlsx', '.xls', '.csv', '.xlsm')):
+            raise ValidationError("Format non supporté. Utilisez .xlsx, .xls ou .csv.")
+        # Limite 5 Mo
+        if f.size > 5 * 1024 * 1024:
+            raise ValidationError("Fichier trop volumineux (max 5 Mo).")
+        return f
+
+    def clean_default_roles(self):
+        return self.cleaned_data.get('default_roles') or ['membre']
+
+
 class FirstLoginPasswordChangeForm(EnhancedForm):
     """Formulaire de changement de mot de passe à la première connexion."""
     

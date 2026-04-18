@@ -2,10 +2,35 @@ from django import forms
 from .models import Document, DocumentCategory
 
 
+ROLE_CHOICES = [
+    ('admin', 'Administrateur'),
+    ('secretariat', 'Secrétariat'),
+    ('pasteur', 'Pasteur'),
+    ('ancien', 'Ancien'),
+    ('diacre', 'Diacre'),
+    ('finance', 'Finance'),
+    ('encadrant', 'Encadrant'),
+    ('responsable_club', 'Responsable Club Biblique'),
+    ('moniteur', 'Moniteur'),
+    ('chauffeur', 'Chauffeur'),
+    ('responsable_groupe', 'Responsable de Groupe'),
+    ('membre', 'Membre'),
+]
+
+
 class DocumentUploadForm(forms.ModelForm):
+    allowed_roles_list = forms.MultipleChoiceField(
+        label="Rôles autorisés",
+        choices=ROLE_CHOICES,
+        required=False,
+        help_text="Utilisé uniquement si la visibilité est « Rôles spécifiques ».",
+        widget=forms.CheckboxSelectMultiple,
+    )
+
     class Meta:
         model = Document
-        fields = ['title', 'description', 'file', 'category', 'source', 'tags', 'is_confidential']
+        fields = ['title', 'description', 'file', 'category', 'source', 'tags',
+                  'visibility', 'is_confidential']
         widgets = {
             'title': forms.TextInput(attrs={
                 'class': 'form-control',
@@ -26,22 +51,61 @@ class DocumentUploadForm(forms.ModelForm):
                 'class': 'form-control',
                 'placeholder': 'tag1, tag2, tag3...',
             }),
+            'visibility': forms.Select(attrs={'class': 'form-select'}),
             'is_confidential': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
         }
 
+    def clean(self):
+        cleaned = super().clean()
+        if cleaned.get('visibility') == Document.Visibility.ROLES and not cleaned.get('allowed_roles_list'):
+            raise forms.ValidationError(
+                "Sélectionnez au moins un rôle lorsque la visibilité est « Rôles spécifiques »."
+            )
+        return cleaned
+
 
 class DocumentEditForm(forms.ModelForm):
+    allowed_roles_list = forms.MultipleChoiceField(
+        label="Rôles autorisés",
+        choices=ROLE_CHOICES,
+        required=False,
+        help_text="Utilisé uniquement si la visibilité est « Rôles spécifiques ».",
+        widget=forms.CheckboxSelectMultiple,
+    )
+
     class Meta:
         model = Document
-        fields = ['title', 'description', 'category', 'source', 'tags', 'is_confidential']
+        fields = ['title', 'description', 'category', 'source', 'tags',
+                  'visibility', 'is_confidential']
         widgets = {
             'title': forms.TextInput(attrs={'class': 'form-control'}),
             'description': forms.Textarea(attrs={'class': 'form-control', 'rows': 3}),
             'category': forms.Select(attrs={'class': 'form-select'}),
             'source': forms.Select(attrs={'class': 'form-select'}),
             'tags': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'tag1, tag2, tag3...'}),
+            'visibility': forms.Select(attrs={'class': 'form-select'}),
             'is_confidential': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
         }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        if self.instance and self.instance.pk:
+            self.fields['allowed_roles_list'].initial = self.instance.allowed_roles_list
+
+    def clean(self):
+        cleaned = super().clean()
+        if cleaned.get('visibility') == Document.Visibility.ROLES and not cleaned.get('allowed_roles_list'):
+            raise forms.ValidationError(
+                "Sélectionnez au moins un rôle lorsque la visibilité est « Rôles spécifiques »."
+            )
+        return cleaned
+
+    def save(self, commit=True):
+        instance = super().save(commit=False)
+        instance.allowed_roles = ','.join(self.cleaned_data.get('allowed_roles_list') or [])
+        if commit:
+            instance.save()
+        return instance
 
 
 class DocumentShareForm(forms.Form):

@@ -6,6 +6,7 @@ from django.http import FileResponse, Http404
 from django.shortcuts import render, redirect, get_object_or_404
 from django.core.paginator import Paginator
 from django.utils import timezone
+from django.views.decorators.clickjacking import xframe_options_sameorigin
 
 from apps.core.permissions import role_required
 from .models import Document, DocumentCategory, DocumentShare
@@ -15,12 +16,8 @@ from .services import validate_file, detect_media_type, get_mime_type, get_docum
 
 @login_required
 def document_list(request):
-    qs = Document.objects.select_related('category', 'uploaded_by')
-
-    # Masquer les confidentiels pour les non-admin
     user = request.user
-    if not (user.is_superuser or getattr(user, 'is_admin', False) or user.has_any_role('admin', 'secretariat')):
-        qs = qs.filter(is_confidential=False)
+    qs = Document.accessible_queryset(user).select_related('category', 'uploaded_by')
 
     # Filtres
     category_slug = request.GET.get('category')
@@ -28,6 +25,7 @@ def document_list(request):
     source = request.GET.get('source')
     search = request.GET.get('q')
     confidential = request.GET.get('confidential')
+    visibility = request.GET.get('visibility')
 
     if category_slug:
         qs = qs.filter(category__slug=category_slug)
@@ -37,6 +35,8 @@ def document_list(request):
         qs = qs.filter(source=source)
     if confidential == '1':
         qs = qs.filter(is_confidential=True)
+    if visibility:
+        qs = qs.filter(visibility=visibility)
     if search:
         qs = qs.filter(
             Q(title__icontains=search) |
@@ -56,9 +56,11 @@ def document_list(request):
         'categories': categories,
         'media_types': Document.MediaType.choices,
         'sources': Document.Source.choices,
+        'visibilities': Document.Visibility.choices,
         'current_category': category_slug,
         'current_media_type': media_type,
         'current_source': source,
+        'current_visibility': visibility,
         'search': search or '',
         'stats': stats,
     }
@@ -100,6 +102,8 @@ def document_upload(request):
                 source=form.cleaned_data.get('source', 'manual') if form.is_valid() else 'manual',
                 tags=form.cleaned_data.get('tags', '') if form.is_valid() else '',
                 is_confidential=form.cleaned_data.get('is_confidential', False) if form.is_valid() else False,
+                visibility=form.cleaned_data.get('visibility', Document.Visibility.STAFF) if form.is_valid() else Document.Visibility.STAFF,
+                allowed_roles=','.join(form.cleaned_data.get('allowed_roles_list') or []) if form.is_valid() else '',
                 uploaded_by=request.user,
             )
             doc.save()
@@ -120,11 +124,10 @@ def document_upload(request):
 def document_detail(request, pk):
     doc = get_object_or_404(Document.objects.select_related('category', 'uploaded_by', 'linked_member'), pk=pk)
 
-    user = request.user
-    if doc.is_confidential and not (user.is_superuser or getattr(user, 'is_admin', False) or user.has_any_role('admin', 'secretariat')):
+    if not doc.can_be_accessed_by(request.user):
         raise Http404
 
-    log_access(doc, user, 'view', request)
+    log_access(doc, request.user, 'view', request)
 
     access_logs = doc.access_logs.select_related('user').order_by('-accessed_at')[:20]
     shares = doc.shares.select_related('shared_by').order_by('-shared_at')[:10]
@@ -141,11 +144,10 @@ def document_detail(request, pk):
 def document_download(request, pk):
     doc = get_object_or_404(Document, pk=pk)
 
-    user = request.user
-    if doc.is_confidential and not (user.is_superuser or getattr(user, 'is_admin', False) or user.has_any_role('admin', 'secretariat')):
+    if not doc.can_be_accessed_by(request.user):
         raise Http404
 
-    log_access(doc, user, 'download', request)
+    log_access(doc, request.user, 'download', request)
 
     response = FileResponse(doc.file.open('rb'), content_type=doc.file_type or 'application/octet-stream')
 
@@ -158,12 +160,12 @@ def document_download(request, pk):
 
 
 @login_required
+@xframe_options_sameorigin
 def document_stream(request, pk):
     """Sert le fichier en inline (pour lecteur audio/vidéo et aperçu PDF)."""
     doc = get_object_or_404(Document, pk=pk)
 
-    user = request.user
-    if doc.is_confidential and not (user.is_superuser or getattr(user, 'is_admin', False) or user.has_any_role('admin', 'secretariat')):
+    if not doc.can_be_accessed_by(request.user):
         raise Http404
 
     content_type = doc.file_type or get_mime_type(doc.file_name)
@@ -177,12 +179,12 @@ def document_stream(request, pk):
 
 
 @login_required
+@xframe_options_sameorigin
 def document_preview(request, pk):
     """Génère un aperçu HTML pour les fichiers texte, Word, Excel, PowerPoint."""
     doc = get_object_or_404(Document, pk=pk)
 
-    user = request.user
-    if doc.is_confidential and not (user.is_superuser or getattr(user, 'is_admin', False) or user.has_any_role('admin', 'secretariat')):
+    if not doc.can_be_accessed_by(request.user):
         raise Http404
 
     html_content, error = generate_preview_html(doc)

@@ -236,6 +236,20 @@
             <div class="doc-meta-value" style="color: #f59e0b;"><i class="bi bi-lock me-1"></i>Confidentiel</div>
         </div>
         {% endif %}
+        <div class="doc-meta-item">
+            <div class="doc-meta-label">Visibilité</div>
+            <div class="doc-meta-value">
+                {% if document.visibility == 'private' %}
+                    <i class="bi bi-lock-fill text-danger me-1"></i>Personnel
+                {% elif document.visibility == 'staff' %}
+                    <i class="bi bi-people-fill text-primary me-1"></i>Équipe
+                {% elif document.visibility == 'roles' %}
+                    <i class="bi bi-shield-fill text-warning me-1"></i>Rôles : {{ document.allowed_roles|default:"—" }}
+                {% elif document.visibility == 'public' %}
+                    <i class="bi bi-globe text-success me-1"></i>Tout le monde
+                {% endif %}
+            </div>
+        </div>
         {% if document.linked_member %}
         <div class="doc-meta-item">
             <div class="doc-meta-label">Membre lié</div>
