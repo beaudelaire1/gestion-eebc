@@ -198,6 +198,8 @@ document.addEventListener('DOMContentLoaded', function() {
         maintainAspectRatio: true,
         interaction: { intersect: false, mode: 'index' },
         plugins: {
+            colors: { enabled: false },
+            themeManager: { preserveDatasetColors: true },
             legend: {
                 position: 'bottom',
                 labels: {
@@ -321,27 +323,27 @@ document.addEventListener('DOMContentLoaded', function() {
                     label: 'Solde net ' + yearN,
                     data: netN,
                     borderColor: palette.netN,
-                    backgroundColor: palette.netNFill,
+                    backgroundColor: 'transparent',
                     borderWidth: 3,
                     pointRadius: 5,
                     pointBackgroundColor: palette.netN,
                     pointBorderColor: '#fff',
                     pointBorderWidth: 2,
-                    fill: true,
+                    fill: false,
                     tension: 0.3,
                 },
                 {
                     label: 'Solde net ' + yearN1,
                     data: netN1,
                     borderColor: palette.netN1,
-                    backgroundColor: palette.netN1Fill,
+                    backgroundColor: 'transparent',
                     borderWidth: 2.5,
                     pointRadius: 4,
                     pointBackgroundColor: palette.netN1,
                     pointBorderColor: '#fff',
                     pointBorderWidth: 2,
                     borderDash: [6, 3],
-                    fill: true,
+                    fill: false,
                     tension: 0.3,
                 }
             ]

@@ -244,19 +244,28 @@ class ThemeManager {
 
             Object.values(window.Chart.instances).forEach(chart => {
                 if (chart && chart.data) {
+                    const preserveDatasetColors = !!(
+                        chart.options &&
+                        chart.options.plugins &&
+                        chart.options.plugins.themeManager &&
+                        chart.options.plugins.themeManager.preserveDatasetColors
+                    );
+
                     // Mettre à jour les couleurs des datasets
-                    chart.data.datasets.forEach(dataset => {
-                        if (dataset.backgroundColor) {
-                            if (Array.isArray(dataset.backgroundColor)) {
-                                dataset.backgroundColor = [primaryColor, successColor, warningColor, dangerColor];
-                            } else {
-                                dataset.backgroundColor = primaryColor;
+                    if (!preserveDatasetColors) {
+                        chart.data.datasets.forEach(dataset => {
+                            if (dataset.backgroundColor) {
+                                if (Array.isArray(dataset.backgroundColor)) {
+                                    dataset.backgroundColor = [primaryColor, successColor, warningColor, dangerColor];
+                                } else {
+                                    dataset.backgroundColor = primaryColor;
+                                }
                             }
-                        }
-                        if (dataset.borderColor) {
-                            dataset.borderColor = primaryColor;
-                        }
-                    });
+                            if (dataset.borderColor) {
+                                dataset.borderColor = primaryColor;
+                            }
+                        });
+                    }
 
                     // Mettre à jour les couleurs des axes
                     if (chart.options.scales) {
