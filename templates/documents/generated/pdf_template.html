@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>{{ doc.title }}</title>
+<style>
+    @page {
+        size: A4;
+        margin: 3cm 2cm 2.5cm 2cm;
+        @top-center {
+            content: element(header);
+        }
+        @bottom-center {
+            content: element(footer);
+            font-size: 9pt;
+            color: #6b7280;
+        }
+        @bottom-right {
+            content: "Page " counter(page) " / " counter(pages);
+            font-size: 9pt;
+            color: #6b7280;
+        }
+    }
+    body {
+        font-family: 'Helvetica', 'Arial', sans-serif;
+        font-size: 11pt;
+        color: #111827;
+        line-height: 1.55;
+    }
+    header.letterhead {
+        position: running(header);
+        display: flex;
+        align-items: center;
+        gap: 14px;
+        border-bottom: 2px solid #0a36ff;
+        padding-bottom: 10px;
+    }
+    header.letterhead img {
+        width: 70px;
+        height: 70px;
+        object-fit: contain;
+    }
+    header.letterhead .church {
+        flex: 1;
+    }
+    header.letterhead .church h1 {
+        margin: 0;
+        font-size: 16pt;
+        color: #0a36ff;
+        letter-spacing: 1px;
+    }
+    header.letterhead .church p {
+        margin: 2px 0 0;
+        font-size: 9pt;
+        color: #6b7280;
+    }
+    footer.letterfoot {
+        position: running(footer);
+        border-top: 1px solid #e5e7eb;
+        padding-top: 6px;
+        text-align: center;
+    }
+    .meta {
+        margin-top: 1.2cm;
+        display: flex;
+        justify-content: space-between;
+        font-size: 10pt;
+        color: #374151;
+    }
+    .recipient {
+        margin-top: 1cm;
+        font-size: 11pt;
+        white-space: pre-line;
+    }
+    .subject {
+        margin-top: 1cm;
+        font-weight: bold;
+        text-decoration: underline;
+    }
+    .body {
+        margin-top: 0.8cm;
+        text-align: justify;
+    }
+    .body p { margin: 0 0 0.5em; }
+    .body table { border-collapse: collapse; width: 100%; margin: 0.5em 0; }
+    .body table, .body th, .body td { border: 1px solid #d1d5db; padding: 4px 8px; }
+    .signature {
+        margin-top: 2cm;
+        text-align: right;
+    }
+    .signature .name { font-weight: bold; }
+    .signature .role { font-size: 10pt; color: #6b7280; }
+    .doc-title {
+        text-align: center;
+        font-size: 14pt;
+        font-weight: bold;
+        text-transform: uppercase;
+        margin: 0.5cm 0 0.8cm;
+        color: #0a36ff;
+    }
+    .ref-badge {
+        display: inline-block;
+        padding: 2px 10px;
+        background: #eef2ff;
+        color: #0a36ff;
+        border-radius: 12px;
+        font-size: 9pt;
+        font-weight: bold;
+    }
+</style>
+</head>
+<body>
+<header class="letterhead">
+    {% if logo_path %}<img src="{{ logo_path }}" alt="Logo EEBC">{% endif %}
+    <div class="church">
+        <h1>ÉGLISE ÉVANGÉLIQUE BAPTISTE CONSERVATRICE</h1>
+        <p>« La Bible, notre seule source d'autorité »</p>
+    </div>
+</header>
+
+<footer class="letterfoot">
+    EEBC &mdash; {{ doc.reference }} &mdash; Document généré le {{ generated_on|date:"d/m/Y" }}
+</footer>
+
+<div class="meta">
+    <div><span class="ref-badge">{{ doc.reference }}</span></div>
+    <div>{{ doc.document_date|date:"d F Y" }}</div>
+</div>
+
+{% if doc.recipient_name or doc.recipient_address %}
+<div class="recipient">
+    <strong>{{ doc.recipient_name }}</strong>{% if doc.recipient_address %}<br>{{ doc.recipient_address }}{% endif %}
+</div>
+{% endif %}
+
+{% if doc.kind != 'courrier' %}
+<div class="doc-title">{{ doc.title }}</div>
+{% endif %}
+
+{% if doc.subject %}
+<div class="subject">Objet : {{ doc.subject }}</div>
+{% endif %}
+
+<div class="body">
+    {{ doc.body_html|safe }}
+</div>
+
+{% if doc.signature_name %}
+<div class="signature">
+    <div>Fait à Cayenne, le {{ doc.document_date|date:"d F Y" }}</div>
+    <br>
+    <div class="name">{{ doc.signature_name }}</div>
+    <div class="role">{{ doc.signature_title }}</div>
+</div>
+{% endif %}
+
+</body>
+</html>

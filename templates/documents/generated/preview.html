@@ -1,0 +1,84 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Aperçu - {{ doc.title }}{% endblock %}
+{% block page_title %}Aperçu du document{% endblock %}
+{% block page_subtitle %}{{ doc.get_kind_display }} · {{ doc.reference }}{% endblock %}
+
+{% block extra_css %}
+<style>
+    .preview-page { background:#fff; max-width:780px; margin:0 auto; padding:3rem 2.5rem; box-shadow:0 10px 40px rgba(0,0,0,.1); border-radius:8px; min-height:1100px; font-family:'Helvetica',Arial,sans-serif; color:#111; }
+    .preview-header { display:flex; gap:14px; align-items:center; border-bottom:2px solid var(--eebc-primary); padding-bottom:10px; }
+    .preview-header img { width:70px; height:70px; object-fit:contain; }
+    .preview-header h2 { color:var(--eebc-primary); margin:0; font-size:1.25rem; letter-spacing:1px; }
+    .preview-header small { color:#6b7280; }
+    .meta { display:flex; justify-content:space-between; margin-top:1.5rem; font-size:.95rem; }
+    .ref-badge { background:#eef2ff; color:var(--eebc-primary); padding:3px 12px; border-radius:12px; font-weight:600; font-size:.8rem; }
+    .recipient { margin-top:1rem; white-space:pre-line; }
+    .doc-title { text-align:center; font-size:1.25rem; font-weight:700; text-transform:uppercase; color:var(--eebc-primary); margin:1.2rem 0; }
+    .subject { font-weight:bold; text-decoration:underline; margin-top:1rem; }
+    .body { margin-top:1rem; text-align:justify; }
+    .body table { border-collapse:collapse; width:100%; margin:.5em 0; }
+    .body table, .body th, .body td { border:1px solid #d1d5db; padding:6px 10px; }
+    .signature { margin-top:2.5rem; text-align:right; }
+    .signature .name { font-weight:bold; }
+    .signature .role { font-size:.85rem; color:#6b7280; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <a href="{% url 'documents:generated_list' %}" class="text-muted text-decoration-none small"><i class="bi bi-arrow-left"></i> Retour</a>
+    <div class="d-flex gap-2">
+        {% if doc.status != 'finalized' or request.user.is_superuser or request.user.is_admin %}
+        <a href="{% url 'documents:generated_edit' doc.pk %}" class="btn btn-outline-secondary btn-sm"><i class="bi bi-pencil"></i> Modifier</a>
+        {% endif %}
+        <a href="{% url 'documents:generated_pdf' doc.pk %}" class="btn btn-outline-danger btn-sm" target="_blank"><i class="bi bi-file-pdf"></i> Voir le PDF</a>
+        {% if doc.status != 'finalized' %}
+        <form method="post" action="{% url 'documents:generated_finalize' doc.pk %}" class="d-inline">
+            {% csrf_token %}
+            <button class="btn btn-success btn-sm"><i class="bi bi-check2-circle"></i> Finaliser</button>
+        </form>
+        {% else %}
+        <span class="badge bg-success-subtle text-success align-self-center"><i class="bi bi-check2-all me-1"></i>Finalisé</span>
+        {% if doc.generated_document %}<a href="{% url 'documents:detail' doc.generated_document.pk %}" class="btn btn-outline-primary btn-sm"><i class="bi bi-folder me-1"></i>Voir dans la bibliothèque</a>{% endif %}
+        {% endif %}
+    </div>
+</div>
+
+<div class="preview-page">
+    <div class="preview-header">
+        <img src="{% static 'images/eebc-logo.png' %}" alt="Logo EEBC">
+        <div>
+            <h2>ÉGLISE ÉVANGÉLIQUE BAPTISTE CONSERVATRICE</h2>
+            <small>« La Bible, notre seule source d'autorité »</small>
+        </div>
+    </div>
+
+    <div class="meta">
+        <span class="ref-badge">{{ doc.reference }}</span>
+        <span>{{ doc.document_date|date:"d F Y" }}</span>
+    </div>
+
+    {% if doc.recipient_name or doc.recipient_address %}
+    <div class="recipient"><strong>{{ doc.recipient_name }}</strong>{% if doc.recipient_address %}<br>{{ doc.recipient_address }}{% endif %}</div>
+    {% endif %}
+
+    {% if doc.kind != 'courrier' %}
+    <div class="doc-title">{{ doc.title }}</div>
+    {% endif %}
+
+    {% if doc.subject %}<div class="subject">Objet : {{ doc.subject }}</div>{% endif %}
+
+    <div class="body">{{ doc.body_html|safe }}</div>
+
+    {% if doc.signature_name %}
+    <div class="signature">
+        <div>Fait à Cayenne, le {{ doc.document_date|date:"d F Y" }}</div>
+        <br>
+        <div class="name">{{ doc.signature_name }}</div>
+        <div class="role">{{ doc.signature_title }}</div>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

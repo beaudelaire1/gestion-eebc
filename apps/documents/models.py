@@ -225,6 +225,130 @@ class Document(models.Model):
         return qs.filter(conditions).distinct()
 
 
+class GeneratedDocument(models.Model):
+    """Document type généré via l'éditeur (compte-rendu, courrier, convocation, etc.)."""
+
+    class Kind(models.TextChoices):
+        COMPTE_RENDU = 'compte_rendu', 'Compte-rendu de réunion'
+        COURRIER = 'courrier', 'Courrier officiel'
+        CONVOCATION = 'convocation', 'Convocation'
+        ATTESTATION = 'attestation', 'Attestation'
+        NOTE_SERVICE = 'note_service', 'Note de service'
+        RAPPORT = 'rapport', 'Rapport'
+        AUTRE = 'autre', 'Autre document'
+
+    class Status(models.TextChoices):
+        DRAFT = 'draft', 'Brouillon'
+        FINALIZED = 'finalized', 'Finalisé'
+
+    title = models.CharField(max_length=255, verbose_name="Titre")
+    kind = models.CharField(
+        max_length=20,
+        choices=Kind.choices,
+        default=Kind.COURRIER,
+        verbose_name="Type de document",
+    )
+    reference = models.CharField(
+        max_length=80, blank=True,
+        verbose_name="Référence",
+        help_text="Ex. : EEBC/CR/2026/04 (généré automatiquement si vide).",
+    )
+    document_date = models.DateField(verbose_name="Date du document")
+    recipient_name = models.CharField(max_length=200, blank=True, verbose_name="Destinataire")
+    recipient_address = models.TextField(blank=True, verbose_name="Adresse du destinataire")
+    subject = models.CharField(max_length=255, blank=True, verbose_name="Objet")
+    body_html = models.TextField(verbose_name="Contenu", blank=True)
+    signature_name = models.CharField(max_length=120, blank=True, verbose_name="Signataire")
+    signature_title = models.CharField(max_length=160, blank=True, verbose_name="Fonction du signataire")
+    status = models.CharField(
+        max_length=10,
+        choices=Status.choices,
+        default=Status.DRAFT,
+        verbose_name="Statut",
+    )
+    visibility = models.CharField(
+        max_length=10,
+        choices=Document.Visibility.choices,
+        default=Document.Visibility.STAFF,
+        verbose_name="Visibilité",
+    )
+    allowed_roles = models.CharField(max_length=255, blank=True, verbose_name="Rôles autorisés")
+    generated_document = models.ForeignKey(
+        Document,
+        on_delete=models.SET_NULL,
+        null=True, blank=True,
+        related_name='generated_from',
+        verbose_name="Document PDF généré",
+    )
+    created_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        related_name='generated_documents',
+        verbose_name="Créé par",
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        verbose_name = "Document généré"
+        verbose_name_plural = "Documents générés"
+        ordering = ['-updated_at']
+
+    def __str__(self):
+        return f"[{self.get_kind_display()}] {self.title}"
+
+    @property
+    def allowed_roles_list(self):
+        if self.allowed_roles:
+            return [r.strip() for r in self.allowed_roles.split(',') if r.strip()]
+        return []
+
+    def can_be_accessed_by(self, user):
+        if not user or not user.is_authenticated:
+            return False
+        if user.is_superuser or getattr(user, 'is_admin', False):
+            return True
+        if hasattr(user, 'has_any_role') and user.has_any_role('admin', 'secretariat'):
+            return True
+        if self.created_by_id and self.created_by_id == user.id:
+            return True
+        vis = self.visibility
+        if vis == Document.Visibility.PUBLIC:
+            return True
+        if vis == Document.Visibility.PRIVATE:
+            return False
+        if vis == Document.Visibility.STAFF:
+            return hasattr(user, 'has_any_role') and user.has_any_role(*Document.STAFF_ROLES)
+        if vis == Document.Visibility.ROLES:
+            roles = self.allowed_roles_list
+            return bool(roles) and hasattr(user, 'has_any_role') and user.has_any_role(*roles)
+        return False
+
+    def generate_reference(self):
+        if self.reference:
+            return self.reference
+        prefix_map = {
+            self.Kind.COMPTE_RENDU: 'CR',
+            self.Kind.COURRIER: 'COU',
+            self.Kind.CONVOCATION: 'CONV',
+            self.Kind.ATTESTATION: 'ATT',
+            self.Kind.NOTE_SERVICE: 'NS',
+            self.Kind.RAPPORT: 'RAP',
+            self.Kind.AUTRE: 'DOC',
+        }
+        prefix = prefix_map.get(self.kind, 'DOC')
+        year = (self.document_date or self.created_at or models.functions.Now()).year if hasattr(self.document_date or self.created_at, 'year') else 2026
+        # Numéro séquentiel : nombre de docs du même type cette année + 1
+        from django.utils import timezone
+        year = (self.document_date or timezone.now().date()).year
+        count = GeneratedDocument.objects.filter(
+            kind=self.kind,
+            document_date__year=year,
+        ).exclude(pk=self.pk).count() + 1
+        return f"EEBC/{prefix}/{year}/{count:03d}"
+
+
 class DocumentShare(models.Model):
     document = models.ForeignKey(
         Document,

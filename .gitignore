@@ -100,3 +100,4 @@ celerybeat.pid
 
 # mypy
 .mypy_cache/
+test_generated.pdf

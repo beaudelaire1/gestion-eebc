@@ -1,0 +1,101 @@
+{% extends 'base.html' %}
+
+{% block title %}Documents générés - EEBC{% endblock %}
+{% block page_title %}Éditeur de documents{% endblock %}
+{% block page_subtitle %}Compte-rendus, courriers, convocations… avec entête EEBC{% endblock %}
+
+{% block extra_css %}
+<style>
+    .gen-card { background:#fff; border-radius:14px; padding:1rem 1.25rem; box-shadow:0 4px 15px rgba(11,15,25,.06); border:2px solid transparent; transition:all .25s; }
+    .gen-card:hover { transform:translateY(-2px); box-shadow:0 12px 35px rgba(10,54,255,.10); border-color:var(--eebc-primary); }
+    .gen-kind { display:inline-block; padding:2px 10px; border-radius:12px; font-size:.75rem; font-weight:600; }
+    .kind-compte_rendu{background:#dbeafe;color:#1d4ed8} .kind-courrier{background:#dcfce7;color:#15803d}
+    .kind-convocation{background:#fef3c7;color:#a16207} .kind-attestation{background:#fce7f3;color:#be185d}
+    .kind-note_service{background:#e0e7ff;color:#4338ca} .kind-rapport{background:#fee2e2;color:#b91c1c}
+    .kind-autre{background:#f3f4f6;color:#374151}
+    .status-draft{background:#fff7ed;color:#c2410c;border:1px solid #fed7aa;padding:1px 8px;border-radius:8px;font-size:.7rem}
+    .status-finalized{background:#dcfce7;color:#166534;border:1px solid #bbf7d0;padding:1px 8px;border-radius:8px;font-size:.7rem}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-start mb-3 flex-wrap gap-2">
+    <div>
+        <a href="{% url 'documents:list' %}" class="text-decoration-none small text-muted">
+            <i class="bi bi-arrow-left"></i> Retour à la bibliothèque
+        </a>
+    </div>
+    {% if can_generate %}
+    <div class="dropdown">
+        <button class="btn btn-primary dropdown-toggle" data-bs-toggle="dropdown">
+            <i class="bi bi-file-earmark-plus me-1"></i>Nouveau document
+        </button>
+        <ul class="dropdown-menu">
+            {% for val, label in kinds %}
+            <li><a class="dropdown-item" href="{% url 'documents:generated_create' %}?kind={{ val }}">
+                <i class="bi bi-file-text me-1"></i>{{ label }}
+            </a></li>
+            {% endfor %}
+        </ul>
+    </div>
+    {% endif %}
+</div>
+
+<form method="get" class="card border-0 shadow-sm mb-3">
+    <div class="card-body row g-2">
+        <div class="col-md-5"><input type="text" name="q" class="form-control form-control-sm" value="{{ search }}" placeholder="Rechercher (titre, référence, objet)..."></div>
+        <div class="col-md-3"><select name="kind" class="form-select form-select-sm"><option value="">Type</option>{% for v,l in kinds %}<option value="{{ v }}" {% if current_kind == v %}selected{% endif %}>{{ l }}</option>{% endfor %}</select></div>
+        <div class="col-md-2"><select name="status" class="form-select form-select-sm"><option value="">Statut</option>{% for v,l in statuses %}<option value="{{ v }}" {% if current_status == v %}selected{% endif %}>{{ l }}</option>{% endfor %}</select></div>
+        <div class="col-md-2 d-flex gap-1">
+            <button class="btn btn-dark btn-sm flex-grow-1">Filtrer</button>
+            <a href="{% url 'documents:generated_list' %}" class="btn btn-outline-secondary btn-sm"><i class="bi bi-x-lg"></i></a>
+        </div>
+    </div>
+</form>
+
+{% if page_obj.object_list %}
+<div class="row g-3">
+    {% for d in page_obj %}
+    <div class="col-md-6 col-lg-4">
+        <div class="gen-card h-100">
+            <div class="d-flex justify-content-between align-items-start mb-2">
+                <span class="gen-kind kind-{{ d.kind }}">{{ d.get_kind_display }}</span>
+                <span class="status-{{ d.status }}">{{ d.get_status_display }}</span>
+            </div>
+            <h6 class="mb-1">{{ d.title }}</h6>
+            <div class="text-muted small mb-2">
+                <i class="bi bi-bookmark me-1"></i>{{ d.reference|default:"—" }}
+                <span class="mx-1">·</span>
+                <i class="bi bi-calendar me-1"></i>{{ d.document_date|date:"d/m/Y" }}
+            </div>
+            {% if d.subject %}<div class="small text-muted mb-2"><strong>Objet :</strong> {{ d.subject|truncatechars:60 }}</div>{% endif %}
+            <div class="d-flex gap-1 flex-wrap">
+                <a href="{% url 'documents:generated_preview' d.pk %}" class="btn btn-outline-primary btn-sm"><i class="bi bi-eye"></i> Aperçu</a>
+                <a href="{% url 'documents:generated_pdf' d.pk %}" class="btn btn-outline-danger btn-sm" target="_blank"><i class="bi bi-file-pdf"></i> PDF</a>
+                {% if d.status != 'finalized' or request.user.is_superuser or request.user.is_admin %}
+                <a href="{% url 'documents:generated_edit' d.pk %}" class="btn btn-outline-secondary btn-sm"><i class="bi bi-pencil"></i></a>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+
+{% if page_obj.has_other_pages %}
+<nav class="mt-3">
+    <ul class="pagination pagination-sm">
+        {% if page_obj.has_previous %}<li class="page-item"><a class="page-link" href="?page={{ page_obj.previous_page_number }}">«</a></li>{% endif %}
+        <li class="page-item active"><span class="page-link">{{ page_obj.number }} / {{ page_obj.paginator.num_pages }}</span></li>
+        {% if page_obj.has_next %}<li class="page-item"><a class="page-link" href="?page={{ page_obj.next_page_number }}">»</a></li>{% endif %}
+    </ul>
+</nav>
+{% endif %}
+
+{% else %}
+<div class="text-center py-5 text-muted">
+    <i class="bi bi-file-earmark-text" style="font-size:3rem;"></i>
+    <p class="mt-2">Aucun document généré pour le moment.</p>
+    {% if can_generate %}<a href="{% url 'documents:generated_create' %}" class="btn btn-primary"><i class="bi bi-file-earmark-plus me-1"></i>Créer mon premier document</a>{% endif %}
+</div>
+{% endif %}
+{% endblock %}

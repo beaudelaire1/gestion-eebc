@@ -1,0 +1,153 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{% if doc %}Modifier{% else %}Nouveau document{% endif %} - EEBC{% endblock %}
+{% block page_title %}{% if doc %}Modifier le document{% else %}Nouveau document{% endif %}{% endblock %}
+{% block page_subtitle %}Éditeur enrichi avec entête EEBC{% endblock %}
+
+{% block extra_css %}
+<link href="https://cdn.jsdelivr.net/npm/quill@2.0.2/dist/quill.snow.css" rel="stylesheet">
+<style>
+    #quill-editor { min-height: 380px; background:#fff; }
+    .ql-toolbar.ql-snow { border-top-left-radius: 8px; border-top-right-radius: 8px; }
+    .ql-container.ql-snow { border-bottom-left-radius: 8px; border-bottom-right-radius: 8px; font-size: 11pt; }
+    .editor-card { background:#fff; border-radius:14px; padding:1.25rem; box-shadow:0 4px 15px rgba(11,15,25,.06); }
+    .form-section-title { font-weight:700; color:var(--eebc-primary); font-size:.95rem; text-transform:uppercase; letter-spacing:.5px; margin-bottom:.5rem; border-bottom:2px solid var(--eebc-primary); padding-bottom:4px; }
+    .help-pill { background:#eef2ff; color:#4338ca; padding:2px 8px; border-radius:8px; font-size:.7rem; font-weight:600; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <a href="{% url 'documents:generated_list' %}" class="text-muted text-decoration-none small">
+        <i class="bi bi-arrow-left"></i> Retour à la liste
+    </a>
+    {% if doc %}
+    <div class="d-flex gap-2">
+        <a href="{% url 'documents:generated_preview' doc.pk %}" class="btn btn-outline-primary btn-sm" target="_blank"><i class="bi bi-eye"></i> Aperçu</a>
+        <a href="{% url 'documents:generated_pdf' doc.pk %}" class="btn btn-outline-danger btn-sm" target="_blank"><i class="bi bi-file-pdf"></i> PDF</a>
+    </div>
+    {% endif %}
+</div>
+
+<form method="post" id="editor-form" class="editor-card">
+    {% csrf_token %}
+    {% if form.non_field_errors %}<div class="alert alert-danger">{{ form.non_field_errors }}</div>{% endif %}
+
+    <div class="form-section-title">Informations</div>
+    <div class="row g-3 mb-4">
+        <div class="col-md-4">
+            <label class="form-label">Type de document</label>
+            {{ form.kind }}
+            {{ form.kind.errors }}
+        </div>
+        <div class="col-md-5">
+            <label class="form-label">Titre <span class="text-danger">*</span></label>
+            {{ form.title }}
+            {{ form.title.errors }}
+        </div>
+        <div class="col-md-3">
+            <label class="form-label">Date <span class="text-danger">*</span></label>
+            {{ form.document_date }}
+            {{ form.document_date.errors }}
+        </div>
+        <div class="col-md-4">
+            <label class="form-label">Référence <span class="help-pill">auto</span></label>
+            {{ form.reference }}
+        </div>
+        <div class="col-md-8">
+            <label class="form-label">Objet</label>
+            {{ form.subject }}
+        </div>
+    </div>
+
+    <div class="form-section-title">Destinataire (facultatif)</div>
+    <div class="row g-3 mb-4">
+        <div class="col-md-5"><label class="form-label">Nom</label>{{ form.recipient_name }}</div>
+        <div class="col-md-7"><label class="form-label">Adresse</label>{{ form.recipient_address }}</div>
+    </div>
+
+    <div class="form-section-title">Contenu</div>
+    <div class="d-flex justify-content-end mb-2">
+        <button type="button" id="load-template" class="btn btn-outline-secondary btn-sm">
+            <i class="bi bi-file-earmark-richtext me-1"></i>Insérer le modèle pour ce type
+        </button>
+    </div>
+    <div id="quill-editor"></div>
+    {{ form.body_html }}
+    {{ form.body_html.errors }}
+
+    <div class="form-section-title mt-4">Signature</div>
+    <div class="row g-3 mb-4">
+        <div class="col-md-6"><label class="form-label">Nom du signataire</label>{{ form.signature_name }}</div>
+        <div class="col-md-6"><label class="form-label">Fonction</label>{{ form.signature_title }}</div>
+    </div>
+
+    <div class="form-section-title">Visibilité</div>
+    <div class="row g-3 mb-4">
+        <div class="col-md-6"><label class="form-label">Qui peut voir ce document ?</label>{{ form.visibility }}</div>
+        <div class="col-md-6" id="roles-block" style="display:none;">
+            <label class="form-label">Rôles autorisés</label>
+            <div class="border rounded p-2" style="max-height:140px;overflow-y:auto;background:#fafafa;">{{ form.allowed_roles_list }}</div>
+        </div>
+    </div>
+
+    <div class="d-flex gap-2 justify-content-end pt-3 border-top">
+        <a href="{% url 'documents:generated_list' %}" class="btn btn-outline-secondary">Annuler</a>
+        <button type="submit" name="action" value="save" class="btn btn-primary"><i class="bi bi-save me-1"></i>Enregistrer brouillon</button>
+        <button type="submit" name="action" value="finalize" class="btn btn-success"><i class="bi bi-check2-circle me-1"></i>Finaliser & ajouter à la bibliothèque</button>
+    </div>
+</form>
+
+<script src="https://cdn.jsdelivr.net/npm/quill@2.0.2/dist/quill.js"></script>
+<script>
+(function(){
+    const hidden = document.getElementById('id_body_html');
+    const editor = new Quill('#quill-editor', {
+        theme: 'snow',
+        modules: {
+            toolbar: [
+                [{ header: [1, 2, 3, false] }],
+                ['bold', 'italic', 'underline', 'strike'],
+                [{ list: 'ordered' }, { list: 'bullet' }],
+                [{ align: [] }],
+                ['link', 'blockquote'],
+                [{ indent: '-1' }, { indent: '+1' }],
+                ['clean'],
+            ],
+        },
+        placeholder: 'Rédigez le contenu du document ici...',
+    });
+
+    if (hidden.value) {
+        editor.clipboard.dangerouslyPasteHTML(hidden.value);
+    }
+
+    const form = document.getElementById('editor-form');
+    form.addEventListener('submit', function(){
+        hidden.value = editor.root.innerHTML;
+    });
+
+    // Visibilité
+    const visSel = document.getElementById('id_visibility');
+    const rolesBlock = document.getElementById('roles-block');
+    function toggleRoles(){
+        if (!visSel || !rolesBlock) return;
+        rolesBlock.style.display = (visSel.value === 'roles') ? '' : 'none';
+    }
+    if (visSel){ visSel.addEventListener('change', toggleRoles); toggleRoles(); }
+
+    // Insertion modèle prédéfini
+    document.getElementById('load-template').addEventListener('click', async function(){
+        const kind = document.getElementById('id_kind').value;
+        const res = await fetch("{% url 'documents:generated_template' %}?kind=" + encodeURIComponent(kind));
+        const data = await res.json();
+        if (data.html) {
+            if (editor.getLength() > 1 && !confirm('Le contenu actuel sera remplacé. Continuer ?')) return;
+            editor.setContents([]);
+            editor.clipboard.dangerouslyPasteHTML(data.html);
+        }
+    });
+})();
+</script>
+{% endblock %}

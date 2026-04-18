@@ -1,5 +1,5 @@
 from django import forms
-from .models import Document, DocumentCategory
+from .models import Document, DocumentCategory, GeneratedDocument
 
 
 ROLE_CHOICES = [
@@ -146,3 +146,55 @@ class CategoryForm(forms.ModelForm):
             'description': forms.Textarea(attrs={'class': 'form-control', 'rows': 2}),
             'order': forms.NumberInput(attrs={'class': 'form-control'}),
         }
+
+
+class GeneratedDocumentForm(forms.ModelForm):
+    allowed_roles_list = forms.MultipleChoiceField(
+        label="Rôles autorisés",
+        choices=ROLE_CHOICES,
+        required=False,
+        widget=forms.CheckboxSelectMultiple,
+    )
+
+    class Meta:
+        model = GeneratedDocument
+        fields = [
+            'title', 'kind', 'reference', 'document_date',
+            'recipient_name', 'recipient_address', 'subject',
+            'body_html',
+            'signature_name', 'signature_title',
+            'visibility',
+        ]
+        widgets = {
+            'title': forms.TextInput(attrs={'class': 'form-control', 'placeholder': "Titre du document"}),
+            'kind': forms.Select(attrs={'class': 'form-select'}),
+            'reference': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Auto si vide (ex. EEBC/CR/2026/01)'}),
+            'document_date': forms.DateInput(attrs={'class': 'form-control', 'type': 'date'}),
+            'recipient_name': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Nom du destinataire (optionnel)'}),
+            'recipient_address': forms.Textarea(attrs={'class': 'form-control', 'rows': 2, 'placeholder': 'Adresse complète (optionnel)'}),
+            'subject': forms.TextInput(attrs={'class': 'form-control', 'placeholder': "Objet du document"}),
+            'body_html': forms.HiddenInput(),  # alimenté par Quill
+            'signature_name': forms.TextInput(attrs={'class': 'form-control'}),
+            'signature_title': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Ex. Pasteur principal, Secrétaire général'}),
+            'visibility': forms.Select(attrs={'class': 'form-select'}),
+        }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        if self.instance and self.instance.pk:
+            self.fields['allowed_roles_list'].initial = self.instance.allowed_roles_list
+
+    def clean(self):
+        cleaned = super().clean()
+        if cleaned.get('visibility') == Document.Visibility.ROLES and not cleaned.get('allowed_roles_list'):
+            raise forms.ValidationError("Sélectionnez au moins un rôle pour la visibilité « Rôles ».")
+        if not (cleaned.get('body_html') or '').strip():
+            raise forms.ValidationError("Le contenu du document ne peut pas être vide.")
+        return cleaned
+
+    def save(self, commit=True):
+        instance = super().save(commit=False)
+        instance.allowed_roles = ','.join(self.cleaned_data.get('allowed_roles_list') or [])
+        if commit:
+            instance.save()
+        return instance

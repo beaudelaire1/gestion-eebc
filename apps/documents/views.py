@@ -9,8 +9,8 @@ from django.utils import timezone
 from django.views.decorators.clickjacking import xframe_options_sameorigin
 
 from apps.core.permissions import role_required
-from .models import Document, DocumentCategory, DocumentShare
-from .forms import DocumentUploadForm, DocumentEditForm, DocumentShareForm, CategoryForm
+from .models import Document, DocumentCategory, DocumentShare, GeneratedDocument
+from .forms import DocumentUploadForm, DocumentEditForm, DocumentShareForm, CategoryForm, GeneratedDocumentForm
 from .services import validate_file, detect_media_type, get_mime_type, get_documents_stats, log_access, share_document_by_email, create_default_categories, generate_preview_html
 
 
