@@ -12,7 +12,7 @@ from decimal import Decimal
 
 from .models import FinancialTransaction, FinanceCategory, ReceiptProof, BudgetLine, BudgetCategory, Budget, BudgetItem, BudgetRequest
 from .forms import TransactionForm, ProofUploadForm, FinanceCategoryForm
-from .services import TransactionService, BudgetService
+from .services import TransactionService, BudgetService, DEDICATED_FUNDS_PARENT
 from apps.core.permissions import role_required
 
 
@@ -991,7 +991,11 @@ def yearly_comparison(request):
             status='valide',
             transaction_date__year=year,
         )
-        income_qs = base_qs.filter(transaction_type__in=INCOME_TYPES).annotate(
+        income_qs = base_qs.filter(
+            transaction_type__in=INCOME_TYPES,
+        ).exclude(
+            category__parent__name=DEDICATED_FUNDS_PARENT,
+        ).annotate(
             m=ExtractMonth('transaction_date')
         ).values('m').annotate(total=Sum('amount')).order_by('m')
 
