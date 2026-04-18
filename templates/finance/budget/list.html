@@ -146,6 +146,12 @@
                                                class="btn btn-outline-primary" title="Voir le détail">
                                                 <i class="bi bi-eye"></i>
                                             </a>
+                                            {% if budget.status == 'draft' %}
+                                            <a href="{% url 'finance:budget_delete' budget_id=budget.id %}"
+                                               class="btn btn-outline-danger" title="Supprimer">
+                                                <i class="bi bi-trash"></i>
+                                            </a>
+                                            {% endif %}
                                             {% if budget.status == 'submitted' and user.is_admin or user.role == 'finance' %}
                                                           <a href="{% url 'finance:budget_approve_detailed' budget_id=budget.id %}" 
                                                class="btn btn-outline-success" title="Approuver">

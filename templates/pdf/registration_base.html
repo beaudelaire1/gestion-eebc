@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Fiche d'inscription{% endblock %}</title>
+    <style>
+        body {
+            margin: 0;
+            font-family: "Helvetica", "Arial", sans-serif;
+            font-size: 10pt;
+            line-height: 1.45;
+            color: #142033;
+            background: #ffffff;
+        }
+
+        img {
+            max-width: 100%;
+        }
+
+        .document {
+            border: 1px solid #dbe3ef;
+            border-radius: 24px;
+            padding: 24px;
+            background: #ffffff;
+        }
+
+        .document-eyebrow {
+            margin: 0;
+            font-size: 8pt;
+            font-weight: 700;
+            letter-spacing: 0.14em;
+            text-transform: uppercase;
+            color: #74819a;
+        }
+
+        .document-title {
+            margin: 10px 0 8px;
+            font-size: 24pt;
+            line-height: 1.05;
+            font-weight: 700;
+            color: #0f172a;
+        }
+
+        .document-subtitle {
+            margin: 0;
+            font-size: 11pt;
+            color: #5b677a;
+        }
+
+        .chip-row {
+            margin-top: 12px;
+        }
+
+        .chip {
+            display: inline-block;
+            margin-right: 6px;
+            margin-bottom: 6px;
+            padding: 4px 10px;
+            border-radius: 999px;
+            border: 1px solid #d7e4ff;
+            background: #eef4ff;
+            color: #0a36ff;
+            font-size: 8pt;
+            font-weight: 700;
+            letter-spacing: 0.06em;
+            text-transform: uppercase;
+        }
+
+        .chip-muted {
+            border-color: #dbe3ef;
+            background: #f8fafc;
+            color: #64748b;
+        }
+
+        .hero {
+            display: table;
+            width: 100%;
+            margin: 18px 0 6px;
+            table-layout: fixed;
+        }
+
+        .hero-main,
+        .hero-side {
+            display: table-cell;
+            vertical-align: top;
+        }
+
+        .hero-main {
+            padding-right: 18px;
+        }
+
+        .hero-side {
+            width: 140px;
+        }
+
+        .summary-card {
+            border: 1px solid #dbe3ef;
+            border-radius: 18px;
+            background: #f8fbff;
+            padding: 14px 16px;
+            min-height: 110px;
+        }
+
+        .summary-grid {
+            margin: 0 -6px;
+            font-size: 0;
+        }
+
+        .summary-item {
+            display: inline-block;
+            width: 33.3333%;
+            padding: 0 6px;
+            vertical-align: top;
+            font-size: 10pt;
+            box-sizing: border-box;
+        }
+
+        .summary-label {
+            font-size: 8pt;
+            font-weight: 700;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            color: #74819a;
+        }
+
+        .summary-value {
+            margin-top: 8px;
+            font-size: 13pt;
+            font-weight: 700;
+            color: #0f172a;
+        }
+
+        .photo-box {
+            display: table;
+            width: 120px;
+            height: 140px;
+            border: 2px dashed #cbd5e1;
+            border-radius: 18px;
+            background: #f8fafc;
+            overflow: hidden;
+        }
+
+        .photo-box img {
+            display: block;
+            width: 120px;
+            height: 140px;
+            object-fit: cover;
+        }
+
+        .photo-placeholder {
+            display: table-cell;
+            vertical-align: middle;
+            text-align: center;
+            padding: 0 12px;
+            font-size: 9pt;
+            font-weight: 700;
+            color: #7b8798;
+        }
+
+        .section {
+            margin-top: 18px;
+            padding-top: 18px;
+            border-top: 1px solid #e8edf4;
+            page-break-inside: avoid;
+        }
+
+        .section-heading {
+            margin: 0 0 12px;
+            font-size: 13pt;
+            font-weight: 700;
+            color: #0f172a;
+        }
+
+        .field-grid {
+            margin: 0 -6px;
+            font-size: 0;
+        }
+
+        .field {
+            display: inline-block;
+            padding: 0 6px 12px;
+            vertical-align: top;
+            box-sizing: border-box;
+            font-size: 10pt;
+        }
+
+        .half {
+            width: 50%;
+        }
+
+        .third {
+            width: 33.3333%;
+        }
+
+        .two-thirds {
+            width: 66.6667%;
+        }
+
+        .full {
+            width: 100%;
+        }
+
+        .field-box {
+            min-height: 64px;
+            padding: 10px 12px;
+            border: 1px solid #dbe3ef;
+            border-radius: 16px;
+            background: #ffffff;
+            box-sizing: border-box;
+        }
+
+        .field-box.tall {
+            min-height: 88px;
+        }
+
+        .field-label {
+            font-size: 7.8pt;
+            font-weight: 700;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            color: #74819a;
+        }
+
+        .field-value {
+            margin-top: 8px;
+            font-size: 10.8pt;
+            font-weight: 600;
+            color: #142033;
+            word-wrap: break-word;
+        }
+
+        .field-value.small {
+            font-size: 9.6pt;
+            font-weight: 500;
+        }
+
+        .footer-signature {
+            margin-top: 20px;
+            padding-top: 14px;
+            border-top: 1px solid #dbe3ef;
+            font-size: 9pt;
+            color: #4b5563;
+            text-align: right;
+        }
+    </style>
+    {% block extra_styles %}{% endblock %}
+</head>
+<body>
+    <div class="document">
+        <p class="document-eyebrow">{% block document_eyebrow %}EEBC{% endblock %}</p>
+        <h1 class="document-title">{% block document_title %}Fiche d'inscription{% endblock %}</h1>
+        <p class="document-subtitle">{% block document_subtitle %}{% endblock %}</p>
+        <div class="chip-row">
+            {% block document_chips %}{% endblock %}
+            <span class="chip chip-muted">Edite le {{ print_date|date:"d/m/Y H:i" }}</span>
+        </div>
+
+        <div class="hero">
+            <div class="hero-main">
+                {% block hero %}{% endblock %}
+            </div>
+            <div class="hero-side">
+                {% block hero_photo %}
+                <div class="photo-box">
+                    <div class="photo-placeholder">Photo</div>
+                </div>
+                {% endblock %}
+            </div>
+        </div>
+
+        {% block content %}{% endblock %}
+
+        <div class="footer-signature">
+            {% block footer_signature %}Signature : ___________________________{% endblock %}
+        </div>
+    </div>
+</body>
+</html>

@@ -820,6 +820,10 @@ class TestImportsViews:
     def test_hub(self, authenticated_client):
         r = authenticated_client.get(reverse('imports:hub'))
         assert r.status_code == 200
+        content = r.content.decode()
+        assert reverse('finance:import_excel') in content
+        assert 'Import Finance Excel' in content
+        assert 'Acces disponibles' in content
 
     def test_list(self, authenticated_client):
         r = authenticated_client.get(reverse('imports:list'))

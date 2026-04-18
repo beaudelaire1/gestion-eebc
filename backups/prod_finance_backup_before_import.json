@@ -1,0 +1,30 @@
+{
+  "meta": {
+    "exported_at": "2026-04-17T19:32:17.258752+00:00",
+    "source_database": "local",
+    "sections": [
+      "categories",
+      "budget_lines",
+      "budgets",
+      "forecasts",
+      "transactions"
+    ],
+    "schema_version": 1,
+    "counts": {
+      "finance_categories": 0,
+      "budget_categories": 0,
+      "budget_lines": 0,
+      "budgets": 0,
+      "budget_requests": 0,
+      "forecasts": 0,
+      "transactions": 0
+    }
+  },
+  "finance_categories": [],
+  "budget_categories": [],
+  "budget_lines": [],
+  "budgets": [],
+  "budget_requests": [],
+  "forecasts": [],
+  "transactions": []
+}

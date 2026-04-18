@@ -17,6 +17,8 @@ urlpatterns = [
     path('proofs/<int:pk>/upload/', views.proof_upload, name='proof_upload'),
     path('budget/', views.budget_overview, name='budget_overview'),
     path('reports/', views.reports, name='reports'),
+    path('import/excel/', views.finance_import_excel, name='import_excel'),
+    path('import/excel/template/', views.finance_import_excel_template, name='import_excel_template'),
     
     # Reçus fiscaux
     path('tax-receipts/', views.tax_receipt_list, name='tax_receipt_list'),
@@ -33,6 +35,7 @@ urlpatterns = [
     path('budgets/<int:budget_id>/approve-detailed/', budget_views.budget_approve_detailed, name='budget_approve_detailed'),
     path('budgets/<int:budget_id>/submit/', budget_views.budget_submit, name='budget_submit'),
     path('budgets/<int:budget_id>/edit/', budget_views.budget_edit, name='budget_edit'),
+    path('budgets/<int:budget_id>/delete/', budget_views.budget_delete, name='budget_delete'),
     
     # Catégories de budget
     path('budget-categories/', views.budget_category_list, name='budget_category_list'),

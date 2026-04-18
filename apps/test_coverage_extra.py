@@ -2,11 +2,14 @@
 Tests supplémentaires pour atteindre 60% de couverture.
 Cible les vues worship, finance, events, communication, imports restantes.
 """
+import io
 import pytest
 from datetime import date, time
 from decimal import Decimal
 from django.urls import reverse
 from django.contrib.auth import get_user_model
+from django.core.files.uploadedfile import SimpleUploadedFile
+from openpyxl import Workbook
 
 User = get_user_model()
 
@@ -183,6 +186,75 @@ class TestWorshipDetailedViews:
 @pytest.mark.django_db
 class TestFinanceDetailedViews:
 
+    def test_budget_delete_get(self, authenticated_client, admin_user):
+        from apps.finance.models import Budget
+
+        budget = Budget.objects.create(
+            name='Budget suppression',
+            year=2026,
+            total_requested=Decimal('2500.00'),
+            created_by=admin_user,
+            status='draft',
+        )
+
+        r = authenticated_client.get(reverse('finance:budget_delete', args=[budget.pk]))
+        assert r.status_code == 200
+
+    def test_budget_delete_post(self, authenticated_client, admin_user):
+        from apps.finance.models import Budget
+
+        budget = Budget.objects.create(
+            name='Budget suppression POST',
+            year=2026,
+            total_requested=Decimal('3000.00'),
+            created_by=admin_user,
+            status='draft',
+        )
+
+        r = authenticated_client.post(reverse('finance:budget_delete', args=[budget.pk]))
+        assert r.status_code == 302
+        assert not Budget.objects.filter(pk=budget.pk).exists()
+
+    def test_budget_delete_blocked_when_transactions_exist(
+        self,
+        authenticated_client,
+        admin_user,
+        site_cayenne,
+        finance_category,
+        budget_category_f,
+    ):
+        from apps.finance.models import Budget, BudgetItem, FinancialTransaction
+
+        budget = Budget.objects.create(
+            name='Budget verrouillé',
+            year=2026,
+            total_requested=Decimal('1500.00'),
+            created_by=admin_user,
+            status='draft',
+        )
+        item = BudgetItem.objects.create(
+            budget=budget,
+            category=budget_category_f,
+            requested_amount=Decimal('1500.00'),
+            description='Ligne test',
+            justification='Test suppression',
+        )
+        FinancialTransaction.objects.create(
+            site=site_cayenne,
+            amount=Decimal('150.00'),
+            transaction_type='depense',
+            payment_method='especes',
+            status='valide',
+            transaction_date=date(2026, 4, 1),
+            category=finance_category,
+            budget_item=item,
+            recorded_by=admin_user,
+        )
+
+        r = authenticated_client.post(reverse('finance:budget_delete', args=[budget.pk]))
+        assert r.status_code == 302
+        assert Budget.objects.filter(pk=budget.pk).exists()
+
     def test_transaction_list(self, authenticated_client, financial_transaction):
         r = authenticated_client.get(reverse('finance:transaction_list'))
         assert r.status_code == 200
@@ -252,6 +324,54 @@ class TestFinanceDetailedViews:
     def test_receipt_proof_list(self, authenticated_client):
         r = authenticated_client.get(reverse('finance:receipt_proof_list'))
         assert r.status_code == 200
+
+    def test_finance_import_excel_get(self, authenticated_client):
+        r = authenticated_client.get(reverse('finance:import_excel'))
+        assert r.status_code == 200
+
+    def test_finance_import_excel_template(self, authenticated_client):
+        r = authenticated_client.get(reverse('finance:import_excel_template'))
+        assert r.status_code == 200
+        assert 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' in r['Content-Type']
+
+    def test_finance_import_excel_post(self, authenticated_client, site_cayenne):
+        from apps.finance.models import FinanceCategory, FinancialTransaction
+
+        workbook = Workbook()
+        workbook.remove(workbook.active)
+
+        categories = workbook.create_sheet('finance_categories')
+        categories.append(['name', 'is_income', 'description'])
+        categories.append(['Offrandes importées', True, 'Import test'])
+
+        transactions = workbook.create_sheet('transactions')
+        transactions.append([
+            'reference', 'site_name', 'amount', 'transaction_type', 'payment_method', 'status', 'transaction_date',
+            'description', 'category_name',
+        ])
+        transactions.append([
+            'IMP-TRX-001', site_cayenne.name, 275.50, 'offrande', 'especes', 'valide', date(2026, 4, 17),
+            'Import unitaire', 'Offrandes importées',
+        ])
+
+        payload = io.BytesIO()
+        workbook.save(payload)
+        payload.seek(0)
+
+        uploaded_file = SimpleUploadedFile(
+            'finance_import_test.xlsx',
+            payload.getvalue(),
+            content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        )
+
+        r = authenticated_client.post(
+            reverse('finance:import_excel'),
+            {'file': uploaded_file},
+        )
+
+        assert r.status_code == 302
+        assert FinanceCategory.objects.filter(name='Offrandes importées').exists()
+        assert FinancialTransaction.objects.filter(reference='IMP-TRX-001').exists()
 
 
 # =============================================================================

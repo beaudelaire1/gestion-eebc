@@ -1,6 +1,9 @@
 """Formulaires pour le module Finance."""
 
+from pathlib import Path
+
 from django import forms
+
 from apps.core.forms import EnhancedModelForm
 from .models import FinancialTransaction, ReceiptProof, BudgetLine, FinanceCategory
 
@@ -77,3 +80,31 @@ class FinanceCategoryForm(EnhancedModelForm):
         labels = {
             'is_income': 'Catégorie de recettes (cocher si c\'est une entrée d\'argent)',
         }
+
+
+class FinanceExcelImportForm(forms.Form):
+    """Import Excel structure pour le module finance."""
+
+    file = forms.FileField(
+        label='Classeur Excel',
+        help_text='Formats acceptés : .xlsx, .xlsm',
+        widget=forms.FileInput(attrs={
+            'class': 'form-control',
+            'accept': '.xlsx,.xlsm',
+        }),
+    )
+    dry_run = forms.BooleanField(
+        label='Simulation uniquement',
+        required=False,
+        help_text='Vérifie le classeur sans enregistrer les données.',
+        widget=forms.CheckboxInput(attrs={'class': 'form-check-input'}),
+    )
+
+    def clean_file(self):
+        uploaded_file = self.cleaned_data['file']
+        extension = Path(uploaded_file.name).suffix.lower()
+        if extension not in {'.xlsx', '.xlsm'}:
+            raise forms.ValidationError('Utilisez un fichier Excel au format .xlsx ou .xlsm.')
+        if uploaded_file.size > 10 * 1024 * 1024:
+            raise forms.ValidationError('Le fichier ne doit pas dépasser 10 Mo.')
+        return uploaded_file

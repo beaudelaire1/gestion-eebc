@@ -1,54 +1,95 @@
-<!DOCTYPE html>
-<html lang="fr">
-<head>
-    <meta charset="UTF-8">
-    <title>Fiche d'Inscription - Enfant (Club Biblique)</title>
-    <style>
-        body { font-family: sans-serif; font-size: 11pt; color: #333; }
-        .header { text-align: center; border-bottom: 2px solid #0d6efd; padding-bottom: 10px; margin-bottom: 20px; }
-        .title { font-size: 18pt; color: #0d6efd; font-weight: bold; margin-bottom: 5px; }
-        .subtitle { font-size: 12pt; color: #555; }
-        .section { margin-bottom: 20px; }
-        .section-title { font-size: 14pt; color: #0d6efd; border-bottom: 1px solid #ccc; padding-bottom: 5px; margin-bottom: 10px; }
-        .row { display: flex; margin-bottom: 8px; }
-        .label { font-weight: bold; width: 180px; display: inline-block; }
-        .value { border-bottom: 1px dotted #999; flex-grow: 1; padding-left: 10px; }
-    </style>
-</head>
-<body>
-    <div class="header">
-        <div class="title">Club Biblique EEBC</div>
-        <div class="subtitle">Fiche d'Inscription</div>
-    </div>
-    
-    <div class="section">
-        <div class="section-title">Informations de l'Enfant</div>
-        <div class="row"><span class="label">Nom:</span> <span class="value">{{ child.last_name|upper }}</span></div>
-        <div class="row"><span class="label">Prénoms:</span> <span class="value">{{ child.first_name }}</span></div>
-        <div class="row"><span class="label">Sexe:</span> <span class="value">{{ child.get_gender_display|default:"" }}</span></div>
-        <div class="row"><span class="label">Date de naissance:</span> <span class="value">{{ child.date_of_birth|date:"d/m/Y"|default:"" }}</span></div>
-        <div class="row"><span class="label">Classe/Niveau scolaire:</span> <span class="value">{{ child.school_level|default:"" }}</span></div>
-        <div class="row"><span class="label">Tranche d'âge:</span> <span class="value">{{ child.age_group.name|default:"" }}</span></div>
-    </div>
+{% extends 'pdf/registration_base.html' %}
 
-    <div class="section">
-        <div class="section-title">Santé & Précautions</div>
-        <div class="row"><span class="label">Allergies/Maladies:</span> <span class="value">{{ child.health_issues|default:"Aucune" }}</span></div>
-        <div class="row"><span class="label">Instructions spéciales:</span> <span class="value">{{ child.special_instructions|default:"N/A" }}</span></div>
-    </div>
+{% block title %}Fiche d'inscription - Enfant{% endblock %}
+{% block document_eyebrow %}EEBC | Club Biblique{% endblock %}
+{% block document_title %}Fiche d'inscription enfant{% endblock %}
+{% block document_subtitle %}Version PDF calquee sur le formulaire de saisie du Club Biblique.{% endblock %}
 
-    <div class="section">
-        <div class="section-title">Parents / Tuteurs</div>
-        <div class="row"><span class="label">Père/Tuteur:</span> <span class="value">{{ child.father_name|default:"" }}</span></div>
-        <div class="row"><span class="label">Téléphone (Père):</span> <span class="value">{{ child.father_phone|default:"" }}</span></div>
-        <div class="row"><span class="label">Mère/Tutrice:</span> <span class="value">{{ child.mother_name|default:"" }}</span></div>
-        <div class="row"><span class="label">Téléphone (Mère):</span> <span class="value">{{ child.mother_phone|default:"" }}</span></div>
-        <div class="row"><span class="label">Email contact:</span> <span class="value">{{ child.contact_email|default:"" }}</span></div>
-        <div class="row"><span class="label">Adresse:</span> <span class="value">{{ child.address|default:"" }}</span></div>
-    </div>
+{% block document_chips %}
+<span class="chip">Club biblique</span>
+<span class="chip chip-muted">Inscription du {{ child.registration_date|date:"d/m/Y" }}</span>
+{% if child.bible_class %}<span class="chip chip-muted">{{ child.bible_class }}</span>{% endif %}
+{% endblock %}
 
-    <div style="margin-top: 50px; text-align: right;">
-        <p>Signature des parents: ___________________________</p>
+{% block hero %}
+<div class="summary-card">
+    <div class="summary-grid">
+        <div class="summary-item">
+            <div class="summary-label">Enfant</div>
+            <div class="summary-value">{{ child.full_name }}</div>
+        </div>
+        <div class="summary-item">
+            <div class="summary-label">Age</div>
+            <div class="summary-value">{{ child.age }} ans</div>
+        </div>
+        <div class="summary-item">
+            <div class="summary-label">Statut</div>
+            <div class="summary-value">{{ child.is_active|yesno:"Actif,Inactif" }}</div>
+        </div>
     </div>
-</body>
-</html>
+</div>
+{% endblock %}
+
+{% block hero_photo %}
+<div class="photo-box">
+    {% if child.photo %}
+    <img src="{{ child.photo.url }}" alt="{{ child.full_name }}">
+    {% else %}
+    <div class="photo-placeholder">Photo enfant</div>
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block content %}
+<div class="section">
+    <h2 class="section-heading">Informations personnelles</h2>
+    <div class="field-grid">
+        <div class="field half"><div class="field-box"><div class="field-label">Prenom</div><div class="field-value">{{ child.first_name }}</div></div></div>
+        <div class="field half"><div class="field-box"><div class="field-label">Nom</div><div class="field-value">{{ child.last_name|upper }}</div></div></div>
+        <div class="field third"><div class="field-box"><div class="field-label">Date de naissance</div><div class="field-value">{{ child.date_of_birth|date:"d/m/Y" }}</div></div></div>
+        <div class="field third"><div class="field-box"><div class="field-label">Genre</div><div class="field-value">{{ child.get_gender_display }}</div></div></div>
+        <div class="field third"><div class="field-box"><div class="field-label">Classe</div><div class="field-value">{{ child.bible_class|default:"Non attribuee" }}</div></div></div>
+    </div>
+</div>
+
+<div class="section">
+    <h2 class="section-heading">Informations des parents</h2>
+    <div class="field-grid">
+        <div class="field half"><div class="field-box"><div class="field-label">Nom du pere</div><div class="field-value">{{ child.father_name|default:"Non renseigne" }}</div></div></div>
+        <div class="field half"><div class="field-box"><div class="field-label">Telephone du pere</div><div class="field-value">{{ child.father_phone|default:"Non renseigne" }}</div></div></div>
+        <div class="field half"><div class="field-box"><div class="field-label">Email du pere</div><div class="field-value">{{ child.father_email|default:"Non renseigne" }}</div></div></div>
+        <div class="field half"><div class="field-box"><div class="field-label">Nom de la mere</div><div class="field-value">{{ child.mother_name|default:"Non renseigne" }}</div></div></div>
+        <div class="field half"><div class="field-box"><div class="field-label">Telephone de la mere</div><div class="field-value">{{ child.mother_phone|default:"Non renseigne" }}</div></div></div>
+        <div class="field half"><div class="field-box"><div class="field-label">Email de la mere</div><div class="field-value">{{ child.mother_email|default:"Non renseigne" }}</div></div></div>
+    </div>
+</div>
+
+<div class="section">
+    <h2 class="section-heading">Contact d'urgence</h2>
+    <div class="field-grid">
+        <div class="field half"><div class="field-box"><div class="field-label">Contact d'urgence</div><div class="field-value">{{ child.emergency_contact|default:"Non renseigne" }}</div></div></div>
+        <div class="field half"><div class="field-box"><div class="field-label">Telephone d'urgence</div><div class="field-value">{{ child.emergency_phone|default:"Non renseigne" }}</div></div></div>
+    </div>
+</div>
+
+<div class="section">
+    <h2 class="section-heading">Informations medicales</h2>
+    <div class="field-grid">
+        <div class="field half"><div class="field-box tall"><div class="field-label">Allergies</div><div class="field-value small">{{ child.allergies|default:"Aucune allergie signalee"|linebreaksbr }}</div></div></div>
+        <div class="field half"><div class="field-box tall"><div class="field-label">Notes medicales</div><div class="field-value small">{{ child.medical_notes|default:"Aucune note medicale"|linebreaksbr }}</div></div></div>
+    </div>
+</div>
+
+<div class="section">
+    <h2 class="section-heading">Transport</h2>
+    <div class="field-grid">
+        <div class="field third"><div class="field-box"><div class="field-label">Besoin de transport</div><div class="field-value">{{ child.needs_transport|yesno:"Oui,Non" }}</div></div></div>
+        <div class="field third"><div class="field-box"><div class="field-label">Chauffeur assigne</div><div class="field-value">{{ child.assigned_driver|default:"Aucun" }}</div></div></div>
+        <div class="field third"><div class="field-box"><div class="field-label">Statut du dossier</div><div class="field-value">{{ child.is_active|yesno:"Actif,Inactif" }}</div></div></div>
+        <div class="field full"><div class="field-box tall"><div class="field-label">Adresse de ramassage</div><div class="field-value small">{{ child.pickup_address|default:"Aucune adresse de ramassage"|linebreaksbr }}</div></div></div>
+        <div class="field full"><div class="field-box tall"><div class="field-label">Notes</div><div class="field-value small">{{ child.notes|default:"Aucune note"|linebreaksbr }}</div></div></div>
+    </div>
+</div>
+{% endblock %}
+
+{% block footer_signature %}Signature des parents : ___________________________{% endblock %}

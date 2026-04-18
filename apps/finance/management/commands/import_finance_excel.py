@@ -1,25 +1,15 @@
-import json
 from pathlib import Path
 
 from django.core.management.base import BaseCommand, CommandError
 
-from apps.finance.import_services import FinanceBundleImporter, SECTION_CHOICES
+from apps.finance.import_services import FinanceBundleImporter, FinanceExcelWorkbookParser
 
 
 class Command(BaseCommand):
-    help = 'Importe un bundle JSON de donnees coeur du module finance.'
-
-    SECTION_CHOICES = SECTION_CHOICES
+    help = 'Importe un classeur Excel structure pour le module finance.'
 
     def add_arguments(self, parser):
-        parser.add_argument('input', help='Chemin du bundle JSON a importer.')
-        parser.add_argument(
-            '--sections',
-            nargs='+',
-            choices=self.SECTION_CHOICES,
-            default=self.SECTION_CHOICES,
-            help='Sections du bundle a importer.',
-        )
+        parser.add_argument('input', help='Chemin du fichier Excel a importer (.xlsx ou .xlsm).')
         parser.add_argument(
             '--dry-run',
             action='store_true',
@@ -28,23 +18,22 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options):
         input_path = Path(options['input'])
-        sections = options['sections']
-        dry_run = options['dry_run']
-
         if not input_path.exists():
-            raise CommandError(f'Bundle introuvable: {input_path}')
+            raise CommandError(f'Fichier introuvable: {input_path}')
 
-        bundle = json.loads(input_path.read_text(encoding='utf-8'))
+        parser = FinanceExcelWorkbookParser()
         importer = FinanceBundleImporter()
 
         try:
-            result = importer.import_bundle(bundle, sections=sections, dry_run=dry_run)
+            bundle, sections = parser.parse(input_path)
+            result = importer.import_bundle(bundle, sections=sections, dry_run=options['dry_run'])
         except Exception as exc:
             raise CommandError(str(exc)) from exc
 
-        if dry_run:
+        if options['dry_run']:
             self.stdout.write(self.style.WARNING('Dry-run: aucune modification n a ete conservee.'))
 
+        self.stdout.write(self.style.SUCCESS(f'Import Excel termine. Sections traitees: {", ".join(sections)}'))
         for model_name in sorted(result['stats']):
             counters = result['stats'][model_name]
             self.stdout.write(

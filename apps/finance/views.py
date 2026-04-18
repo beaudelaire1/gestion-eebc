@@ -1,17 +1,26 @@
 """Vues pour le module Finance."""
 
+from pathlib import Path
+
 from django.shortcuts import render, get_object_or_404, redirect
 from django.contrib.auth.decorators import login_required, permission_required
 from django.contrib import messages
 from django.core.paginator import Paginator
 from django.db.models import Sum, Count, Q
 from django.utils import timezone
-from django.http import JsonResponse
+from django.http import JsonResponse, HttpResponse
 from datetime import date, timedelta
 from decimal import Decimal
 
 from .models import FinancialTransaction, FinanceCategory, ReceiptProof, BudgetLine, BudgetCategory, Budget, BudgetItem, BudgetRequest
-from .forms import TransactionForm, ProofUploadForm, FinanceCategoryForm
+from .forms import TransactionForm, ProofUploadForm, FinanceCategoryForm, FinanceExcelImportForm
+from .import_services import (
+    FINANCE_IMPORT_SHEET_SPECS,
+    FinanceBundleImporter,
+    FinanceExcelWorkbookParser,
+    FinanceImportError,
+    build_finance_import_template_workbook,
+)
 from .services import TransactionService, BudgetService, DEDICATED_FUNDS_PARENT
 from apps.core.permissions import role_required
 
@@ -272,6 +281,76 @@ def reports(request):
     """Rapports financiers."""
     # Placeholder pour les rapports avancés
     return render(request, 'finance/reports.html')
+
+
+@login_required
+@role_required('admin', 'finance')
+def finance_import_excel(request):
+    """Import d'un classeur Excel structure pour la finance."""
+    if request.method == 'POST':
+        form = FinanceExcelImportForm(request.POST, request.FILES)
+        if form.is_valid():
+            importer = FinanceBundleImporter()
+            parser = FinanceExcelWorkbookParser()
+            uploaded_file = form.cleaned_data['file']
+            dry_run = form.cleaned_data['dry_run']
+
+            try:
+                bundle, sections = parser.parse(uploaded_file)
+                result = importer.import_bundle(bundle, sections=sections, dry_run=dry_run)
+            except FinanceImportError as exc:
+                form.add_error(None, str(exc))
+            except Exception as exc:
+                form.add_error(None, f"Import impossible : {exc}")
+            else:
+                counts = []
+                for model_name in sorted(result['stats']):
+                    counters = result['stats'][model_name]
+                    counts.append(
+                        f"{model_name}: {counters.get('created', 0)} créé(s), {counters.get('updated', 0)} mis à jour"
+                    )
+
+                if dry_run:
+                    messages.info(
+                        request,
+                        f"Simulation terminée. Sections lues : {', '.join(sections)}.",
+                    )
+                else:
+                    messages.success(
+                        request,
+                        f"Import terminé. Sections importées : {', '.join(sections)}.",
+                    )
+
+                for line in counts:
+                    messages.info(request, line)
+                for warning in result['warnings'][:5]:
+                    messages.warning(request, warning)
+                if len(result['warnings']) > 5:
+                    messages.warning(request, 'Des avertissements supplémentaires ont été masqués.')
+
+                return redirect('finance:import_excel')
+    else:
+        form = FinanceExcelImportForm()
+
+    context = {
+        'form': form,
+        'sheet_specs': FINANCE_IMPORT_SHEET_SPECS,
+    }
+    return render(request, 'finance/import_excel.html', context)
+
+
+@login_required
+@role_required('admin', 'finance')
+def finance_import_excel_template(request):
+    """Télécharge un modèle de classeur pour l'import finance."""
+    workbook = build_finance_import_template_workbook()
+    response = HttpResponse(
+        content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+    )
+    filename = f"modele_import_finance_{timezone.now().strftime('%Y%m%d')}.xlsx"
+    response['Content-Disposition'] = f'attachment; filename="{filename}"'
+    workbook.save(response)
+    return response
 
 
 # =============================================================================

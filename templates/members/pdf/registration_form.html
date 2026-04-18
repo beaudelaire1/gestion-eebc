@@ -1,57 +1,109 @@
-<!DOCTYPE html>
-<html lang="fr">
-<head>
-    <meta charset="UTF-8">
-    <title>Fiche d'Inscription - Membre</title>
-    <style>
-        body { font-family: sans-serif; font-size: 11pt; color: #333; }
-        .header { text-align: center; border-bottom: 2px solid #366092; padding-bottom: 10px; margin-bottom: 20px; }
-        .title { font-size: 18pt; color: #366092; font-weight: bold; margin-bottom: 5px; }
-        .subtitle { font-size: 12pt; color: #555; }
-        .section { margin-bottom: 20px; }
-        .section-title { font-size: 14pt; color: #366092; border-bottom: 1px solid #ccc; padding-bottom: 5px; margin-bottom: 10px; }
-        .row { display: flex; margin-bottom: 8px; }
-        .label { font-weight: bold; width: 150px; display: inline-block; }
-        .value { border-bottom: 1px dotted #999; flex-grow: 1; padding-left: 10px; }
-    </style>
-</head>
-<body>
-    <div class="header">
-        <div class="title">Église Évangélique Baptiste du Christ</div>
-        <div class="subtitle">Fiche d'Inscription - Membre</div>
-    </div>
-    
-    <div class="section">
-        <div class="section-title">Informations Personnelles</div>
-        <div class="row"><span class="label">Identifiant:</span> <span class="value">{{ member.member_id }}</span></div>
-        <div class="row"><span class="label">Nom:</span> <span class="value">{{ member.last_name|upper }}</span></div>
-        <div class="row"><span class="label">Prénoms:</span> <span class="value">{{ member.first_name }}</span></div>
-        <div class="row"><span class="label">Sexe:</span> <span class="value">{{ member.get_gender_display }}</span></div>
-        <div class="row"><span class="label">Date de naissance:</span> <span class="value">{{ member.date_of_birth|date:"d/m/Y"|default:"" }}</span></div>
-        <div class="row"><span class="label">Statut matrimonial:</span> <span class="value">{{ member.get_marital_status_display }}</span></div>
-        <div class="row"><span class="label">Profession:</span> <span class="value">{{ member.profession|default:"" }}</span></div>
-    </div>
+{% extends 'pdf/registration_base.html' %}
 
-    <div class="section">
-        <div class="section-title">Coordonnées</div>
-        <div class="row"><span class="label">Téléphone:</span> <span class="value">{{ member.phone|default:"" }}</span></div>
-        <div class="row"><span class="label">Email:</span> <span class="value">{{ member.email|default:"" }}</span></div>
-        <div class="row"><span class="label">Adresse:</span> <span class="value">{{ member.address|default:"" }}, {{ member.postal_code|default:"" }} {{ member.city|default:"" }}</span></div>
-    </div>
+{% block title %}Fiche d'inscription - Membre{% endblock %}
+{% block document_eyebrow %}EEBC | Module Membres{% endblock %}
+{% block document_title %}Fiche d'inscription membre{% endblock %}
+{% block document_subtitle %}Version PDF alignee sur la structure du formulaire de saisie des membres.{% endblock %}
 
-    <div class="section">
-        <div class="section-title">Informations Spirituelles</div>
-        <div class="row"><span class="label">Site:</span> <span class="value">{{ member.site.name|default:"" }}</span></div>
-        <div class="row"><span class="label">Statut:</span> <span class="value">{{ member.get_status_display }}</span></div>
-        <div class="row"><span class="label">Baptisé(e):</span> <span class="value">{% if member.is_baptized %}Oui{% else %}Non{% endif %}</span></div>
-        {% if member.is_baptized %}
-        <div class="row"><span class="label">Date de baptême:</span> <span class="value">{{ member.baptism_date|date:"d/m/Y"|default:"" }}</span></div>
-        {% endif %}
-        <div class="row"><span class="label">Date d'arrivée:</span> <span class="value">{{ member.date_joined|date:"d/m/Y"|default:"" }}</span></div>
-    </div>
+{% block document_chips %}
+<span class="chip">Membre</span>
+{% if member.site %}<span class="chip chip-muted">{{ member.site.name }}</span>{% endif %}
+{% if member.member_id %}<span class="chip chip-muted">{{ member.member_id }}</span>{% endif %}
+{% endblock %}
 
-    <div style="margin-top: 50px; text-align: right;">
-        <p>Date et Signature : ___________________________</p>
+{% block hero %}
+<div class="summary-card">
+    <div class="summary-grid">
+        <div class="summary-item">
+            <div class="summary-label">Nom complet</div>
+            <div class="summary-value">{{ member.full_name }}</div>
+        </div>
+        <div class="summary-item">
+            <div class="summary-label">Age</div>
+            <div class="summary-value">{% if member.age %}{{ member.age }} ans{% else %}Non renseigne{% endif %}</div>
+        </div>
+        <div class="summary-item">
+            <div class="summary-label">Statut</div>
+            <div class="summary-value">{{ member.get_status_display }}</div>
+        </div>
     </div>
-</body>
-</html>
+</div>
+{% endblock %}
+
+{% block hero_photo %}
+<div class="photo-box">
+    {% if member.photo %}
+    <img src="{{ member.photo.url }}" alt="{{ member.full_name }}">
+    {% else %}
+    <div class="photo-placeholder">Photo membre</div>
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block content %}
+<div class="section">
+    <h2 class="section-heading">Informations personnelles</h2>
+    <div class="field-grid">
+        <div class="field half"><div class="field-box"><div class="field-label">Prenom</div><div class="field-value">{{ member.first_name|default:"Non renseigne" }}</div></div></div>
+        <div class="field half"><div class="field-box"><div class="field-label">Nom de famille</div><div class="field-value">{{ member.last_name|upper|default:"Non renseigne" }}</div></div></div>
+        <div class="field third"><div class="field-box"><div class="field-label">Date de naissance</div><div class="field-value">{{ member.date_of_birth|date:"d/m/Y"|default:"Non renseignee" }}</div></div></div>
+        <div class="field third"><div class="field-box"><div class="field-label">Genre</div><div class="field-value">{{ member.get_gender_display|default:"Non renseigne" }}</div></div></div>
+        <div class="field third"><div class="field-box"><div class="field-label">Situation familiale</div><div class="field-value">{{ member.get_marital_status_display|default:"Non renseignee" }}</div></div></div>
+        <div class="field full"><div class="field-box"><div class="field-label">Profession</div><div class="field-value">{{ member.profession|default:"Non renseignee" }}</div></div></div>
+    </div>
+</div>
+
+<div class="section">
+    <h2 class="section-heading">Contact</h2>
+    <div class="field-grid">
+        <div class="field half"><div class="field-box"><div class="field-label">Email</div><div class="field-value">{{ member.email|default:"Non renseigne" }}</div></div></div>
+        <div class="field half"><div class="field-box"><div class="field-label">Telephone</div><div class="field-value">{{ member.phone|default:"Non renseigne" }}</div></div></div>
+        <div class="field two-thirds"><div class="field-box"><div class="field-label">Adresse</div><div class="field-value small">{{ member.address|default:"Non renseignee" }}</div></div></div>
+        <div class="field third"><div class="field-box"><div class="field-label">Code postal</div><div class="field-value">{{ member.postal_code|default:"Non renseigne" }}</div></div></div>
+        <div class="field full"><div class="field-box"><div class="field-label">Ville</div><div class="field-value">{{ member.city|default:"Non renseignee" }}</div></div></div>
+    </div>
+</div>
+
+<div class="section">
+    <h2 class="section-heading">Famille et eglise</h2>
+    <div class="field-grid">
+        <div class="field half"><div class="field-box"><div class="field-label">Famille</div><div class="field-value">{{ member.family|default:"Aucune famille" }}</div></div></div>
+        <div class="field half"><div class="field-box"><div class="field-label">Role dans la famille</div><div class="field-value">{{ member.get_family_role_display|default:"Non renseigne" }}</div></div></div>
+        <div class="field half"><div class="field-box"><div class="field-label">Site</div><div class="field-value">{{ member.site.name|default:"Non renseigne" }}</div></div></div>
+        <div class="field half"><div class="field-box"><div class="field-label">Statut</div><div class="field-value">{{ member.get_status_display }}</div></div></div>
+    </div>
+</div>
+
+<div class="section">
+    <h2 class="section-heading">Bapteme et dates importantes</h2>
+    <div class="field-grid">
+        <div class="field third"><div class="field-box"><div class="field-label">Baptise(e)</div><div class="field-value">{{ member.is_baptized|yesno:"Oui,Non" }}</div></div></div>
+        <div class="field third"><div class="field-box"><div class="field-label">Date de bapteme</div><div class="field-value">{{ member.baptism_date|date:"d/m/Y"|default:"Non renseignee" }}</div></div></div>
+        <div class="field third"><div class="field-box"><div class="field-label">Date de mariage</div><div class="field-value">{{ member.wedding_date|date:"d/m/Y"|default:"Non renseignee" }}</div></div></div>
+    </div>
+</div>
+
+<div class="section">
+    <h2 class="section-heading">Preferences de notification</h2>
+    <div class="field-grid">
+        <div class="field third"><div class="field-box"><div class="field-label">Notifications email</div><div class="field-value">{{ member.notify_by_email|yesno:"Activees,Desactivees" }}</div></div></div>
+        <div class="field third"><div class="field-box"><div class="field-label">Notifications SMS</div><div class="field-value">{{ member.notify_by_sms|yesno:"Activees,Desactivees" }}</div></div></div>
+        <div class="field third"><div class="field-box"><div class="field-label">Notifications WhatsApp</div><div class="field-value">{{ member.notify_by_whatsapp|yesno:"Activees,Desactivees" }}</div></div></div>
+        <div class="field full"><div class="field-box"><div class="field-label">Numero WhatsApp</div><div class="field-value">{{ member.whatsapp_number|default:"Non renseigne" }}</div></div></div>
+    </div>
+</div>
+
+<div class="section">
+    <h2 class="section-heading">Notes</h2>
+    <div class="field-grid">
+        <div class="field full">
+            <div class="field-box tall">
+                <div class="field-label">Notes internes</div>
+                <div class="field-value small">{{ member.notes|default:"Aucune note"|linebreaksbr }}</div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block footer_signature %}Date et signature : ___________________________{% endblock %}

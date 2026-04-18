@@ -576,6 +576,42 @@ def budget_edit(request, budget_id):
     
     return render(request, 'finance/budget/edit.html', context)
 
+
+@login_required
+@role_required('admin', 'finance')
+def budget_delete(request, budget_id):
+    """Supprimer un budget en brouillon sans transactions liées."""
+    budget = get_object_or_404(Budget, id=budget_id)
+
+    if not (request.user == budget.created_by or request.user.is_admin or request.user.has_any_role('admin', 'finance')):
+        messages.error(request, 'Vous n\'avez pas les permissions pour supprimer ce budget.')
+        return redirect('finance:budget_detail', budget_id=budget_id)
+
+    linked_transactions_count = FinancialTransaction.objects.filter(budget_item__budget=budget).count()
+
+    if request.method == 'POST':
+        if budget.status != Budget.Status.DRAFT:
+            messages.error(request, 'Seuls les budgets en brouillon peuvent être supprimés.')
+            return redirect('finance:budget_detail', budget_id=budget_id)
+
+        if linked_transactions_count:
+            messages.error(
+                request,
+                'Ce budget ne peut pas être supprimé car des transactions sont encore rattachées à ses lignes.',
+            )
+            return redirect('finance:budget_detail', budget_id=budget_id)
+
+        budget_name = budget.name
+        budget.delete()
+        messages.success(request, f'Budget "{budget_name}" supprimé.')
+        return redirect('finance:budget_list')
+
+    context = {
+        'budget': budget,
+        'linked_transactions_count': linked_transactions_count,
+    }
+    return render(request, 'finance/budget/delete_confirm.html', context)
+
 # =============================================================================
 # FONCTIONNALITÉS D'EXPORT ET D'IMPRESSION
 # =============================================================================

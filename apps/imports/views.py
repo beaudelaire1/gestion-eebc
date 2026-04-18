@@ -419,10 +419,10 @@ def export_young_members(request):
 @login_required
 def export_hub(request):
     """
-    Hub central de tous les exports disponibles.
+    Hub central de tous les exports et imports disponibles.
     """
     try:
-        from .export_config import get_user_exports, get_export_stats
+        from .export_config import ExportConfig, get_user_exports, get_export_stats
         from .services import ExportHistoryService
         
         # Exports disponibles pour l'utilisateur
@@ -430,6 +430,28 @@ def export_hub(request):
         
         # Statistiques des exports
         export_stats = get_export_stats()
+
+        can_access_finance_import = (
+            request.user.is_superuser or
+            request.user.is_admin or
+            request.user.has_any_role('admin', 'finance')
+        )
+
+        if can_access_finance_import:
+            finance_import_config = ExportConfig(
+                name='Import Finance Excel',
+                description='Importer categories, budgets, previsionnels et transactions depuis un classeur Excel avec modele et simulation.',
+                icon='bi-file-earmark-arrow-up',
+                url_name='finance:import_excel',
+                category='Finances',
+                format_type='import',
+                sensitive=True,
+            )
+            user_exports.setdefault('Finances', []).append(('finance_import_excel', finance_import_config))
+            export_stats['total'] += 1
+            export_stats['sensitive_count'] += 1
+            export_stats['by_format']['import'] = export_stats['by_format'].get('import', 0) + 1
+            export_stats['by_category']['Finances'] = export_stats['by_category'].get('Finances', 0) + 1
         
         # Historique récent des exports
         recent_exports = ExportHistoryService.get_export_history(
