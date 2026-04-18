@@ -37,6 +37,7 @@ django-csp>=3.7
 
 # Sanitisation HTML (XSS)
 nh3>=0.2.14
+beautifulsoup4>=4.12.0
 
 # API et HTTP (pour Hostinger)
 requests>=2.31.0
