@@ -276,6 +276,36 @@ class TestBudgetForecastEdit:
         response = authenticated_client.get(reverse('finance:forecast_detail', args=[forecast.pk]))
 
         assert response.status_code == 200
+        assert response.context['actual_account_balance'] == Decimal('98765.43')
         content = response.content.decode()
         assert 'En compte' in content
-        assert '98765' in content
+
+    def test_forecast_summary_result_shows_account_balance_in_addition_to_net(
+        self,
+        authenticated_client,
+        admin_user,
+        monkeypatch,
+    ):
+        forecast = BudgetForecast.objects.create(
+            name="Budget previsionnel 2025",
+            year=2025,
+            scenario=BudgetForecast.Scenario.REALISTIC,
+            created_by=admin_user,
+        )
+
+        def fake_dashboard_stats(*args, **kwargs):
+            return {'closing_balance': Decimal('39595.95')}
+
+        monkeypatch.setattr(
+            budget_views.TransactionService,
+            'get_dashboard_stats',
+            fake_dashboard_stats,
+        )
+
+        response = authenticated_client.get(reverse('finance:forecast_summary_result', args=[forecast.pk]))
+
+        assert response.status_code == 200
+        assert response.context['actual_account_balance'] == Decimal('39595.95')
+        content = response.content.decode()
+        assert 'Solde Net' in content
+        assert 'Sur le compte:' in content

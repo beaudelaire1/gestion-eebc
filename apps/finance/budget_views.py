@@ -1469,6 +1469,7 @@ def forecast_export_excel(request, forecast_id):
 
 def _build_forecast_summary(forecast):
     """Calcule les données de synthèse pour un prévisionnel donné."""
+    actual_account_balance = TransactionService.get_dashboard_stats(year=forecast.year)['closing_balance']
     income_lines = list(forecast.lines.filter(line_type='income'))
     expense_lines = list(forecast.lines.filter(line_type='expense'))
 
@@ -1521,6 +1522,7 @@ def _build_forecast_summary(forecast):
         'actuals_income': actuals_income,
         'actuals_expense': actuals_expense,
         'actuals_net': actuals_income - actuals_expense,
+        'actual_account_balance': actual_account_balance,
         'monthly': monthly,
         'month_labels_short': [l[:3] for l in MONTH_LABELS],
         'income_month_totals': [m['income'] for m in monthly],

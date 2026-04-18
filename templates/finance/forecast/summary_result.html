@@ -34,6 +34,10 @@
                 <div class="card-body text-center">
                     <h5 class="card-title {% if net >= 0 %}text-primary{% else %}text-warning{% endif %}">Solde Net</h5>
                     <h3 class="{% if net >= 0 %}text-primary{% else %}text-warning{% endif %}">{{ net|floatformat:0|intcomma }} €</h3>
+                    <p class="mb-0 text-muted">
+                        Sur le compte:
+                        <strong class="{% if actual_account_balance >= 0 %}text-success{% else %}text-danger{% endif %}">{{ actual_account_balance|floatformat:2|intcomma }} €</strong>
+                    </p>
                 </div>
             </div>
         </div>
