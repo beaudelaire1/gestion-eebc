@@ -14,6 +14,15 @@ from .forms import DocumentUploadForm, DocumentEditForm, DocumentShareForm, Cate
 from .services import validate_file, detect_media_type, get_mime_type, get_documents_stats, log_access, share_document_by_email, create_default_categories, generate_preview_html
 
 
+def _apply_document_frame_policy(response, *, allow_inline_pdf=False):
+    if allow_inline_pdf:
+        response.xframe_options_exempt = True
+        response.headers.pop('X-Frame-Options', None)
+    else:
+        response['X-Frame-Options'] = 'SAMEORIGIN'
+    return response
+
+
 @login_required
 def document_list(request):
     user = request.user
@@ -160,7 +169,6 @@ def document_download(request, pk):
 
 
 @login_required
-@xframe_options_sameorigin
 def document_stream(request, pk):
     """Sert le fichier en inline (pour lecteur audio/vidéo et aperçu PDF)."""
     doc = get_object_or_404(Document, pk=pk)
@@ -175,7 +183,10 @@ def document_stream(request, pk):
     if doc.media_type in ('audio', 'video'):
         response['Accept-Ranges'] = 'bytes'
 
-    return response
+    return _apply_document_frame_policy(
+        response,
+        allow_inline_pdf=content_type == 'application/pdf',
+    )
 
 
 @login_required
@@ -286,7 +297,10 @@ def shared_access(request, token):
         response['Content-Disposition'] = f'inline; filename="{doc.file_name}"'
         if doc.media_type in ('audio', 'video'):
             response['Accept-Ranges'] = 'bytes'
-        return response
+        return _apply_document_frame_policy(
+            response,
+            allow_inline_pdf=content_type == 'application/pdf',
+        )
 
     return render(request, 'documents/document_shared_access.html', {'share': share, 'document': doc})
 

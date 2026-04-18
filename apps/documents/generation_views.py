@@ -156,6 +156,7 @@ def generated_pdf(request, pk):
     safe_name = slugify(doc.title) or f'document-{doc.pk}'
     response = HttpResponse(pdf_bytes, content_type='application/pdf')
     response['Content-Disposition'] = f'inline; filename="{safe_name}.pdf"'
+    response.xframe_options_exempt = True
     return response
 
 
