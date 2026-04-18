@@ -271,10 +271,15 @@
             <div class="nav-section">
                 <div class="nav-section__title">Documents</div>
                 <nav class="nav flex-column">
-                    <a class="nav-link {% if 'documents' in request.path and 'upload' not in request.path and 'categories' not in request.path and 'stats' not in request.path %}nav-link--active{% endif %}"
+                    <a class="nav-link {% if 'documents' in request.path and 'upload' not in request.path and 'categories' not in request.path and 'stats' not in request.path and 'generated' not in request.path %}nav-link--active{% endif %}"
                         href="{% url 'documents:list' %}">
                         <i class="bi bi-archive nav-link__icon"></i>
                         <span>Documents</span>
+                    </a>
+                    <a class="nav-link {% if 'documents/generated' in request.path %}nav-link--active{% endif %}"
+                        href="{% url 'documents:generated_list' %}">
+                        <i class="bi bi-pencil-square nav-link__icon"></i>
+                        <span>Éditeur de documents</span>
                     </a>
                     <a class="nav-link {% if 'documents/upload' in request.path %}nav-link--active{% endif %}"
                         href="{% url 'documents:upload' %}">
