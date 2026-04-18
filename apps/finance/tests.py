@@ -10,6 +10,7 @@ from datetime import date, timedelta
 from django.urls import reverse
 from django.utils import timezone
 
+from apps.finance import budget_views
 from apps.finance.models import (
     FinancialTransaction,
     FinanceCategory,
@@ -249,3 +250,32 @@ class TestBudgetForecastEdit:
         assert forecast.year == 2026
         assert forecast.name == 'Budget previsionnel 2026'
         assert forecast.description == 'Version revue'
+
+    def test_forecast_detail_shows_account_balance_in_net_summary(
+        self,
+        authenticated_client,
+        admin_user,
+        monkeypatch,
+    ):
+        forecast = BudgetForecast.objects.create(
+            name="Budget previsionnel 2025",
+            year=2025,
+            scenario=BudgetForecast.Scenario.REALISTIC,
+            created_by=admin_user,
+        )
+
+        def fake_dashboard_stats(*args, **kwargs):
+            return {'closing_balance': Decimal('98765.43')}
+
+        monkeypatch.setattr(
+            budget_views.TransactionService,
+            'get_dashboard_stats',
+            fake_dashboard_stats,
+        )
+
+        response = authenticated_client.get(reverse('finance:forecast_detail', args=[forecast.pk]))
+
+        assert response.status_code == 200
+        content = response.content.decode()
+        assert 'En compte' in content
+        assert '98765' in content

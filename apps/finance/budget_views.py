@@ -12,7 +12,7 @@ from datetime import date, datetime
 from decimal import Decimal
 
 from .models import Budget, BudgetItem, BudgetCategory, BudgetRequest, FinancialTransaction, BudgetForecast, ForecastLine
-from .services import BudgetService
+from .services import BudgetService, TransactionService
 from apps.groups.models import Group
 from apps.departments.models import Department
 from apps.core.permissions import role_required
@@ -1135,6 +1135,7 @@ def forecast_create(request):
 def forecast_detail(request, forecast_id):
     """Détail d'un prévisionnel avec comparaison au réalisé."""
     forecast = get_object_or_404(BudgetForecast, pk=forecast_id)
+    actual_account_balance = TransactionService.get_dashboard_stats(year=forecast.year)['closing_balance']
     
     income_lines = forecast.lines.filter(line_type='income')
     expense_lines = forecast.lines.filter(line_type='expense')
@@ -1213,6 +1214,7 @@ def forecast_detail(request, forecast_id):
         'total_expense_actual': total_expense_actual,
         'net_forecast': total_income_forecast - total_expense_forecast,
         'net_actual': total_income_actual - total_expense_actual,
+        'actual_account_balance': actual_account_balance,
         'chart_data': chart_data,
     }
     return render(request, 'finance/forecast/detail.html', context)

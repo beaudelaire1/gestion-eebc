@@ -208,8 +208,8 @@
                             <div class="forecast-summary-card__value {% if net_forecast >= 0 %}text-success{% else %}text-danger{% endif %}">{{ net_forecast|floatformat:2 }} €</div>
                         </div>
                         <div class="forecast-summary-card__value-block forecast-summary-card__value-block--actual">
-                            <span class="forecast-summary-card__eyebrow">Réalisé</span>
-                            <div class="forecast-summary-card__value {% if net_actual >= 0 %}text-success{% else %}text-danger{% endif %}">{{ net_actual|floatformat:2 }} €</div>
+                            <span class="forecast-summary-card__eyebrow">En compte</span>
+                            <div class="forecast-summary-card__value {% if actual_account_balance >= 0 %}text-success{% else %}text-danger{% endif %}">{{ actual_account_balance|floatformat:2 }} €</div>
                         </div>
                     </div>
                 </div>
