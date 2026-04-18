@@ -103,7 +103,8 @@
 
     <!-- Graphique courbes annuelles -->
     <div class="comp-chart-wrap mb-4">
-        <h6 class="mb-3 fw-bold"><i class="bi bi-activity text-primary me-1"></i>Évolution annuelle du solde net</h6>
+        <h6 class="mb-2 fw-bold"><i class="bi bi-activity text-primary me-1"></i>Solde net cumulé sur l'année</h6>
+        <p class="text-muted small mb-3">Le graphique montre le cumul année en cours. Cela évite une chute artificielle quand des charges historiques ont été importées en une seule écriture en décembre.</p>
         <canvas id="chartNet"></canvas>
     </div>
 
@@ -155,7 +156,14 @@
                     {% for v in income_n %}
                     <td>—</td>
                     {% endfor %}
-                    <td>{{ total_income_n|floatformat:0|intcomma }}</td>
+                    <td>{{ net_total_n|floatformat:0|intcomma }}</td>
+                </tr>
+                <tr>
+                    <td>Solde net {{ year_n1 }}</td>
+                    {% for v in income_n1 %}
+                    <td>—</td>
+                    {% endfor %}
+                    <td>{{ net_total_n1|floatformat:0|intcomma }}</td>
                 </tr>
             </tfoot>
         </table>
@@ -311,9 +319,17 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
 
-    // Courbes annuelles - une courbe par année
-    var netN = incomeN.map(function(v, i) { return v - expenseN[i]; });
-    var netN1 = incomeN1.map(function(v, i) { return v - expenseN1[i]; });
+    // Courbes annuelles - cumul du solde net mois après mois
+    function buildCumulativeNet(income, expense) {
+        var running = 0;
+        return income.map(function(v, i) {
+            running += v - expense[i];
+            return running;
+        });
+    }
+
+    var netN = buildCumulativeNet(incomeN, expenseN);
+    var netN1 = buildCumulativeNet(incomeN1, expenseN1);
 
     var netOpts = JSON.parse(JSON.stringify(commonOpts));
     netOpts.scales.y.beginAtZero = false;
@@ -324,7 +340,7 @@ document.addEventListener('DOMContentLoaded', function() {
             labels: months,
             datasets: [
                 {
-                    label: 'Solde net ' + yearN,
+                    label: 'Solde net cumulé ' + yearN,
                     data: netN,
                     borderColor: palette.netN,
                     backgroundColor: 'transparent',
@@ -337,7 +353,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     tension: 0.3,
                 },
                 {
-                    label: 'Solde net ' + yearN1,
+                    label: 'Solde net cumulé ' + yearN1,
                     data: netN1,
                     borderColor: palette.netN1,
                     backgroundColor: 'transparent',

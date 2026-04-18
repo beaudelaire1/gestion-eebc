@@ -8,56 +8,107 @@
 
 {% block extra_css %}
 <style>
-    .forecast-chart-note {
+    .forecast-summary-card {
+        height: 100%;
+    }
+
+    .forecast-summary-card__values {
+        display: grid;
+        gap: 0.75rem;
+        margin-top: 1rem;
+        text-align: left;
+    }
+
+    .forecast-summary-card__value-block {
+        padding: 0.8rem 0.9rem;
+        border: 1px solid rgba(148, 163, 184, 0.22);
+        border-radius: 16px;
+        background: rgba(248, 250, 252, 0.86);
+    }
+
+    .forecast-summary-card__value-block--planned {
+        border-style: dashed;
+    }
+
+    .forecast-summary-card__value-block--actual {
+        background: rgba(255, 255, 255, 0.94);
+    }
+
+    .forecast-summary-card__eyebrow {
+        display: block;
+        margin-bottom: 0.3rem;
+        color: #64748b;
+        font-size: 0.72rem;
+        font-weight: 700;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+    }
+
+    .forecast-summary-card__value {
+        font-size: 1.05rem;
+        font-weight: 800;
+        line-height: 1.2;
+    }
+
+    .forecast-chart-guide {
         display: flex;
         flex-wrap: wrap;
-        gap: 0.75rem;
+        gap: 0.7rem 1.2rem;
         align-items: center;
-        margin-bottom: 1rem;
-        padding: 0.9rem 1rem;
-        border: 1px solid rgba(148, 163, 184, 0.24);
+        margin-bottom: 0.85rem;
+        padding: 0.95rem 1rem;
+        border: 1px solid rgba(148, 163, 184, 0.22);
         border-radius: 18px;
-        background: linear-gradient(180deg, rgba(255, 255, 255, 0.96), rgba(248, 250, 252, 0.92));
+        background: linear-gradient(180deg, rgba(255, 255, 255, 0.97), rgba(248, 250, 252, 0.92));
     }
 
-    .forecast-chart-note__pill {
+    .forecast-chart-guide__item {
         display: inline-flex;
+        gap: 0.7rem;
         align-items: center;
-        gap: 0.5rem;
-        padding: 0.45rem 0.8rem;
-        border-radius: 999px;
-        font-size: 0.82rem;
-        font-weight: 600;
-        letter-spacing: 0.01em;
+        color: #0f172a;
+        font-size: 0.9rem;
+        font-weight: 700;
+        white-space: nowrap;
     }
 
-    .forecast-chart-note__pill::before {
-        content: "";
-        width: 0.8rem;
-        height: 0.8rem;
-        border-radius: 999px;
-        background: currentColor;
-        box-shadow: 0 0 0 4px rgba(255, 255, 255, 0.78);
+    .forecast-chart-guide__swatch {
+        flex: 0 0 auto;
+        display: inline-block;
+        margin-top: 0;
     }
 
-    .forecast-chart-note__pill--income {
-        color: #15803d !important;
-        background: rgba(22, 163, 74, 0.10);
+    .forecast-chart-guide__swatch--income-forecast {
+        width: 2.6rem;
+        border-top: 3px dashed #16A34A;
     }
 
-    .forecast-chart-note__pill--expense {
-        color: #dc2626 !important;
-        background: rgba(220, 38, 38, 0.10);
+    .forecast-chart-guide__swatch--expense-forecast {
+        width: 2.6rem;
+        border-top: 3px dashed #DC2626;
     }
 
-    .forecast-chart-note__pill--forecast::before {
-        border-radius: 0;
-        height: 2px;
+    .forecast-chart-guide__swatch--income-actual {
+        width: 0.9rem;
+        height: 1.2rem;
+        border-radius: 6px;
+        background: rgba(22, 163, 74, 0.72);
+        border: 1px solid #15803D;
     }
 
-    .forecast-chart-note__text {
-        color: var(--text-secondary, #64748b) !important;
+    .forecast-chart-guide__swatch--expense-actual {
+        width: 0.9rem;
+        height: 1.2rem;
+        border-radius: 6px;
+        background: rgba(220, 38, 38, 0.72);
+        border: 1px solid #B91C1C;
+    }
+
+    .forecast-chart-guide__note {
+        margin-bottom: 1rem;
+        color: #475569;
         font-size: 0.92rem;
+        font-weight: 500;
     }
 
     /* Conteneur stable pour Chart.js — évite le redimensionnement infini */
@@ -111,50 +162,75 @@
     <!-- Résumé -->
     <div class="row mb-4">
         <div class="col-md-3">
-            <div class="card border-0 shadow-sm text-center">
+            <div class="card border-0 shadow-sm text-center forecast-summary-card">
                 <div class="card-body">
                     <i class="bi bi-arrow-up-circle text-success display-6"></i>
-                    <h6 class="text-muted mt-2 mb-1">Recettes prévisionnelles</h6>
-                    <h4 class="text-success mb-0">{{ total_income_forecast|floatformat:2 }} €</h4>
-                    <small class="text-muted">Réalisé : {{ total_income_actual|floatformat:2 }} €</small>
+                    <h6 class="text-muted mt-2 mb-0">Recettes</h6>
+                    <div class="forecast-summary-card__values">
+                        <div class="forecast-summary-card__value-block forecast-summary-card__value-block--planned">
+                            <span class="forecast-summary-card__eyebrow">Prévu</span>
+                            <div class="forecast-summary-card__value text-success">{{ total_income_forecast|floatformat:2 }} €</div>
+                        </div>
+                        <div class="forecast-summary-card__value-block forecast-summary-card__value-block--actual">
+                            <span class="forecast-summary-card__eyebrow">Réalisé</span>
+                            <div class="forecast-summary-card__value text-success">{{ total_income_actual|floatformat:2 }} €</div>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
         <div class="col-md-3">
-            <div class="card border-0 shadow-sm text-center">
+            <div class="card border-0 shadow-sm text-center forecast-summary-card">
                 <div class="card-body">
                     <i class="bi bi-arrow-down-circle text-danger display-6"></i>
-                    <h6 class="text-muted mt-2 mb-1">Dépenses prévisionnelles</h6>
-                    <h4 class="text-danger mb-0">{{ total_expense_forecast|floatformat:2 }} €</h4>
-                    <small class="text-muted">Réalisé : {{ total_expense_actual|floatformat:2 }} €</small>
+                    <h6 class="text-muted mt-2 mb-0">Dépenses</h6>
+                    <div class="forecast-summary-card__values">
+                        <div class="forecast-summary-card__value-block forecast-summary-card__value-block--planned">
+                            <span class="forecast-summary-card__eyebrow">Prévu</span>
+                            <div class="forecast-summary-card__value text-danger">{{ total_expense_forecast|floatformat:2 }} €</div>
+                        </div>
+                        <div class="forecast-summary-card__value-block forecast-summary-card__value-block--actual">
+                            <span class="forecast-summary-card__eyebrow">Réalisé</span>
+                            <div class="forecast-summary-card__value text-danger">{{ total_expense_actual|floatformat:2 }} €</div>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
         <div class="col-md-3">
-            <div class="card border-0 shadow-sm text-center">
+            <div class="card border-0 shadow-sm text-center forecast-summary-card">
                 <div class="card-body">
                     <i class="bi bi-wallet2 text-primary display-6"></i>
-                    <h6 class="text-muted mt-2 mb-1">Solde net prévu</h6>
-                    <h4 class="{% if net_forecast >= 0 %}text-success{% else %}text-danger{% endif %} mb-0">{{ net_forecast|floatformat:2 }} €</h4>
-                    <small class="text-muted">Réalisé : {{ net_actual|floatformat:2 }} €</small>
+                    <h6 class="text-muted mt-2 mb-0">Solde net</h6>
+                    <div class="forecast-summary-card__values">
+                        <div class="forecast-summary-card__value-block forecast-summary-card__value-block--planned">
+                            <span class="forecast-summary-card__eyebrow">Prévu</span>
+                            <div class="forecast-summary-card__value {% if net_forecast >= 0 %}text-success{% else %}text-danger{% endif %}">{{ net_forecast|floatformat:2 }} €</div>
+                        </div>
+                        <div class="forecast-summary-card__value-block forecast-summary-card__value-block--actual">
+                            <span class="forecast-summary-card__eyebrow">Réalisé</span>
+                            <div class="forecast-summary-card__value {% if net_actual >= 0 %}text-success{% else %}text-danger{% endif %}">{{ net_actual|floatformat:2 }} €</div>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
         <div class="col-md-3">
-            <div class="card border-0 shadow-sm text-center">
+            <div class="card border-0 shadow-sm text-center forecast-summary-card">
                 <div class="card-body">
-                    <i class="bi bi-speedometer2 text-warning display-6"></i>
-                    <h6 class="text-muted mt-2 mb-1">Écart recettes</h6>
-                    {% with variance=total_income_actual|add:total_income_forecast|default:0 %}
-                    <h4 class="{% if total_income_actual >= total_income_forecast %}text-success{% else %}text-warning{% endif %} mb-0">
-                        {% if total_income_forecast > 0 %}
-                            {{ total_income_actual|floatformat:0 }} / {{ total_income_forecast|floatformat:0 }}
-                        {% else %}
-                            N/A
-                        {% endif %}
-                    </h4>
-                    {% endwith %}
-                    <small class="text-muted">Réalisé vs Prévu</small>
+                    <i class="bi bi-info-circle text-info display-6"></i>
+                    <h6 class="text-muted mt-2 mb-0">Repères</h6>
+                    <div class="forecast-summary-card__values">
+                        <div class="forecast-summary-card__value-block forecast-summary-card__value-block--planned">
+                            <span class="forecast-summary-card__eyebrow">Prévu</span>
+                            <div class="forecast-summary-card__value">Lignes pointillées</div>
+                        </div>
+                        <div class="forecast-summary-card__value-block forecast-summary-card__value-block--actual">
+                            <span class="forecast-summary-card__eyebrow">Réalisé</span>
+                            <div class="forecast-summary-card__value">Barres pleines</div>
+                        </div>
+                    </div>
+                    <small class="text-muted d-block mt-2">Vert = recettes, rouge = dépenses.</small>
                 </div>
             </div>
         </div>
@@ -163,15 +239,28 @@
     <!-- Graphique -->
     <div class="card shadow-sm mb-4">
         <div class="card-header">
-            <h5 class="mb-0"><i class="bi bi-bar-chart me-2"></i>Prévisionnel vs Réalisé</h5>
+            <h5 class="mb-0"><i class="bi bi-bar-chart me-2"></i>Prévisionnel saisi vs réalisé comptable</h5>
         </div>
         <div class="card-body">
-            <div class="forecast-chart-note">
-                <span class="forecast-chart-note__pill forecast-chart-note__pill--income">Vert = recettes</span>
-                <span class="forecast-chart-note__pill forecast-chart-note__pill--expense">Rouge = dépenses</span>
-                <span class="forecast-chart-note__pill forecast-chart-note__pill--forecast">Lignes = prévisionnel</span>
-                <span class="forecast-chart-note__text">Barres = réalisé comptable importé dans la trésorerie.</span>
+            <div class="forecast-chart-guide" aria-label="Légende du graphique">
+                <div class="forecast-chart-guide__item">
+                    <span class="forecast-chart-guide__swatch forecast-chart-guide__swatch--income-forecast"></span>
+                    <span>Prévu - Recettes</span>
+                </div>
+                <div class="forecast-chart-guide__item">
+                    <span class="forecast-chart-guide__swatch forecast-chart-guide__swatch--income-actual"></span>
+                    <span>Réalisé - Recettes</span>
+                </div>
+                <div class="forecast-chart-guide__item">
+                    <span class="forecast-chart-guide__swatch forecast-chart-guide__swatch--expense-forecast"></span>
+                    <span>Prévu - Dépenses</span>
+                </div>
+                <div class="forecast-chart-guide__item">
+                    <span class="forecast-chart-guide__swatch forecast-chart-guide__swatch--expense-actual"></span>
+                    <span>Réalisé - Dépenses</span>
+                </div>
             </div>
+            <p class="forecast-chart-guide__note">Pointillé = montants saisis dans le prévisionnel. Barre pleine = écritures comptables validées.</p>
             <div class="forecast-chart-wrapper">
                 <canvas id="forecastChart"></canvas>
             </div>
@@ -188,15 +277,20 @@
                 <table class="table table-sm table-hover table-striped mb-0">
                     <thead class="table-dark">
                         <tr>
-                            <th>Mois</th>
-                            <th class="text-end">Recettes prévues</th>
-                            <th class="text-end">Recettes réalisées</th>
+                            <th rowspan="2" class="align-middle">Mois</th>
+                            <th colspan="3" class="text-center">Recettes</th>
+                            <th colspan="3" class="text-center">Dépenses</th>
+                            <th colspan="2" class="text-center">Solde net</th>
+                        </tr>
+                        <tr>
+                            <th class="text-end">Prévu</th>
+                            <th class="text-end">Réalisé</th>
                             <th class="text-end">Écart</th>
-                            <th class="text-end">Dépenses prévues</th>
-                            <th class="text-end">Dépenses réalisées</th>
+                            <th class="text-end">Prévu</th>
+                            <th class="text-end">Réalisé</th>
                             <th class="text-end">Écart</th>
-                            <th class="text-end">Net prévu</th>
-                            <th class="text-end">Net réalisé</th>
+                            <th class="text-end">Prévu</th>
+                            <th class="text-end">Réalisé</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -334,7 +428,7 @@ document.addEventListener('DOMContentLoaded', function() {
             labels: chartData.labels,
             datasets: [
                 {
-                    label: 'Recettes prévues',
+                    label: 'Prévu - Recettes',
                     data: chartData.income_forecast,
                     type: 'line',
                     borderColor: '#16A34A',
@@ -351,7 +445,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     order: 1,
                 },
                 {
-                    label: 'Recettes réalisées',
+                    label: 'Réalisé - Recettes',
                     data: chartData.income_actual,
                     backgroundColor: 'rgba(22, 163, 74, 0.72)',
                     borderColor: '#15803D',
@@ -362,7 +456,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     order: 3,
                 },
                 {
-                    label: 'Dépenses prévues',
+                    label: 'Prévu - Dépenses',
                     data: chartData.expense_forecast,
                     type: 'line',
                     borderColor: '#DC2626',
@@ -379,7 +473,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     order: 2,
                 },
                 {
-                    label: 'Dépenses réalisées',
+                    label: 'Réalisé - Dépenses',
                     data: chartData.expense_actual,
                     backgroundColor: 'rgba(220, 38, 38, 0.72)',
                     borderColor: '#B91C1C',
@@ -397,13 +491,24 @@ document.addEventListener('DOMContentLoaded', function() {
             plugins: {
                 colors: { enabled: false },
                 themeManager: { preserveDatasetColors: true },
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            const value = Number(context.parsed.y ?? context.parsed ?? 0);
+                            return context.dataset.label + ' : ' + value.toLocaleString('fr-FR', {
+                                minimumFractionDigits: 2,
+                                maximumFractionDigits: 2,
+                            }) + ' €';
+                        },
+                        afterLabel: function(context) {
+                            return context.dataset.type === 'line'
+                                ? 'Source : montants saisis dans le prévisionnel'
+                                : 'Source : écritures validées de trésorerie';
+                        }
+                    }
+                },
                 legend: {
-                    position: 'top',
-                    labels: {
-                        color: textPrimary,
-                        usePointStyle: true,
-                        boxWidth: 10,
-                    },
+                    display: false,
                 },
                 title: { display: false }
             },

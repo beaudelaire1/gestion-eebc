@@ -1025,6 +1025,8 @@ def yearly_comparison(request):
         'total_expense_n': sum(expense_n),
         'total_income_n1': sum(income_n1),
         'total_expense_n1': sum(expense_n1),
+        'net_total_n': sum(income_n) - sum(expense_n),
+        'net_total_n1': sum(income_n1) - sum(expense_n1),
         'available_years': available_year_values,
         'selected_year': year_n,
     }
