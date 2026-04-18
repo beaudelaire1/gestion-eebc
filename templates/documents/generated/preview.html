@@ -9,13 +9,34 @@
     .preview-stage {
         padding: 2rem;
         border-radius: 18px;
+    }
+    .preview-stage--classic-letter,
+    .preview-stage--standard-brief {
         background: linear-gradient(180deg, #e3ebf7 0%, #f7f9fc 44%, #e7eef9 100%);
+    }
+    .preview-stage--meeting-minutes {
+        background: linear-gradient(180deg, #e5f3ef 0%, #f8fbfa 44%, #deeee8 100%);
+    }
+    .preview-stage--ceremonial-call {
+        background: linear-gradient(180deg, #f8dce5 0%, #fff7fa 44%, #fde8ef 100%);
+    }
+    .preview-stage--certificate {
+        background: linear-gradient(180deg, #def3ea 0%, #f8fcfa 44%, #e4f7ef 100%);
+    }
+    .preview-stage--internal-memo {
+        background: linear-gradient(180deg, #e4e8ff 0%, #f7f8fe 44%, #e9edff 100%);
+    }
+    .preview-stage--editorial-report {
+        background: linear-gradient(180deg, #f7edd1 0%, #fffaf0 44%, #f9eed7 100%);
     }
     .preview-page {
         --doc-accent: {{ theme.accent }};
         --doc-accent-dark: {{ theme.accent_dark }};
         --doc-accent-soft: {{ theme.accent_soft }};
         --doc-accent-border: {{ theme.accent_border }};
+        --doc-display-font: {{ theme.display_font }};
+        --doc-body-font: {{ theme.body_font }};
+        --doc-meta-font: {{ theme.meta_font }};
         position: relative;
         max-width: 880px;
         min-height: 1180px;
@@ -25,6 +46,7 @@
         border-radius: 6px;
         box-shadow: 0 28px 70px rgba(15, 23, 42, 0.18);
         color: #1f2937;
+        font-family: var(--doc-body-font);
         overflow: visible;
     }
     .document-watermark {
@@ -34,6 +56,13 @@
         content: '';
         display: block;
         clear: both;
+    }
+    .document-top,
+    .body,
+    .signature-block,
+    .page-footer {
+        position: relative;
+        z-index: 1;
     }
     .page-header {
         position: relative;
@@ -97,6 +126,7 @@
     .document-subject span,
     .subject-banner span,
     .body h3 {
+        font-family: var(--doc-meta-font);
         font-size: 0.72rem;
         letter-spacing: 0.22em;
         text-transform: uppercase;
@@ -104,7 +134,7 @@
     }
     .brand-title {
         margin: 0;
-        font-family: 'Cambria', 'Times New Roman', serif;
+        font-family: var(--doc-display-font);
         width: 100%;
         font-size: clamp(1.82rem, 2.55vw, 2.2rem);
         line-height: 1.02;
@@ -199,10 +229,16 @@
     .title-panel {
         padding-bottom: 1rem;
     }
+    .title-panel__intro {
+        margin-top: 0.68rem;
+        color: #475467;
+        line-height: 1.55;
+        max-width: 38rem;
+    }
     .recipient-name,
     .document-title,
     .signature-name {
-        font-family: 'Cambria', 'Times New Roman', serif;
+        font-family: var(--doc-display-font);
         color: #111827;
     }
     .recipient-name {
@@ -385,6 +421,7 @@
         padding-bottom: 1.15rem;
         border-top: 1px solid #d7deea;
         font-size: 0.74rem;
+        font-family: var(--doc-meta-font);
         text-transform: uppercase;
         letter-spacing: 0.12em;
         color: #667085;
@@ -392,6 +429,512 @@
         background-repeat: no-repeat;
         background-position: left bottom;
         background-size: 100% 0.75rem;
+    }
+    .document-page--meeting-minutes {
+        background: linear-gradient(180deg, rgba(19, 133, 125, 0.045) 0%, #ffffff 19%);
+    }
+    .document-page--meeting-minutes .page-header {
+        padding-top: 1.25rem;
+        padding-bottom: 1rem;
+        border-bottom: 2px solid var(--doc-accent-dark);
+    }
+    .document-page--meeting-minutes .page-header::before {
+        height: 0.42rem;
+        background: repeating-linear-gradient(90deg, var(--doc-accent-dark) 0 2rem, var(--doc-accent) 2rem 4rem);
+    }
+    .document-page--meeting-minutes .page-header::after {
+        display: none;
+    }
+    .document-page--meeting-minutes .page-header__side {
+        width: auto;
+        float: none;
+        margin: 0.95rem 0 1.15rem;
+        padding-top: 0;
+    }
+    .document-page--meeting-minutes .classification-card {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        column-gap: 1rem;
+        row-gap: 0.75rem;
+        padding: 1rem 1.15rem;
+        border-radius: 18px;
+        box-shadow: 0 14px 30px rgba(12, 89, 84, 0.08);
+    }
+    .document-page--meeting-minutes .classification-row {
+        display: block;
+        padding: 0;
+        border-bottom: none;
+    }
+    .document-page--meeting-minutes .classification-row .classification-label {
+        display: block;
+        margin-bottom: 0.25rem;
+    }
+    .document-page--meeting-minutes .classification-row strong {
+        display: block;
+        text-align: left;
+        font-size: 1rem;
+    }
+    .document-page--meeting-minutes .title-panel {
+        margin-top: 0.35rem;
+        padding: 1.15rem 1.2rem 1.05rem;
+        border: 1px solid var(--doc-accent-border);
+        border-left: 6px solid var(--doc-accent-dark);
+        border-radius: 16px;
+        background: linear-gradient(135deg, var(--doc-accent-soft) 0%, #ffffff 82%);
+        box-shadow: 0 14px 30px rgba(12, 89, 84, 0.08);
+    }
+    .document-page--meeting-minutes .body {
+        margin-top: 1.9rem;
+        padding-left: 1.35rem;
+    }
+    .document-page--meeting-minutes .body::before {
+        content: '';
+        position: absolute;
+        left: 0;
+        top: 0;
+        bottom: 0;
+        width: 3px;
+        border-radius: 999px;
+        background: linear-gradient(180deg, var(--doc-accent) 0%, rgba(19, 133, 125, 0.12) 100%);
+    }
+    .document-page--meeting-minutes .signature-block {
+        justify-content: flex-start;
+    }
+    .document-page--meeting-minutes .signature-card {
+        text-align: left;
+        padding-top: 0;
+        padding-left: 1rem;
+        border-top: none;
+        border-left: 3px solid var(--doc-accent);
+    }
+    .document-page--ceremonial-call {
+        background: radial-gradient(circle at top center, rgba(217, 75, 113, 0.09) 0%, transparent 28%), #ffffff;
+    }
+    .document-page--ceremonial-call .page-header {
+        text-align: center;
+        padding-top: 1.9rem;
+        padding-bottom: 1.45rem;
+        border-bottom: none;
+    }
+    .document-page--ceremonial-call .page-header::before {
+        height: 0.92rem;
+        background: linear-gradient(90deg, var(--doc-accent-dark) 0%, var(--doc-accent) 14%, var(--doc-accent) 86%, var(--doc-accent-dark) 100%);
+    }
+    .document-page--ceremonial-call .page-header::after {
+        display: none;
+    }
+    .document-page--ceremonial-call .page-header__brand {
+        display: block;
+    }
+    .document-page--ceremonial-call .page-header__logo {
+        margin: 0 auto 1rem;
+        width: 86px;
+        height: 86px;
+        border-radius: 50%;
+    }
+    .document-page--ceremonial-call .page-header__identity {
+        max-width: 32rem;
+        margin: 0 auto;
+    }
+    .document-page--ceremonial-call .page-header__side {
+        width: auto;
+        max-width: 34rem;
+        float: none;
+        margin: 0 auto 1.25rem;
+    }
+    .document-page--ceremonial-call .classification-card {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: center;
+        gap: 0.85rem;
+        padding: 1rem 1.2rem;
+        border-top-width: 1px;
+        border-radius: 999px;
+        background: linear-gradient(90deg, #ffffff 0%, var(--doc-accent-soft) 50%, #ffffff 100%);
+    }
+    .document-page--ceremonial-call .classification-row {
+        width: calc(33.333% - 0.6rem);
+        min-width: 145px;
+        padding: 0;
+        border-bottom: none;
+    }
+    .document-page--ceremonial-call .classification-row .classification-label,
+    .document-page--ceremonial-call .classification-row strong {
+        display: block;
+        text-align: center;
+    }
+    .document-page--ceremonial-call .recipient-card {
+        max-width: none;
+        margin: 0 auto 1.35rem;
+        text-align: center;
+        border-left-width: 1px;
+        border-top: 3px solid var(--doc-accent);
+        border-radius: 16px;
+        box-shadow: 0 12px 26px rgba(125, 30, 58, 0.08);
+    }
+    .document-page--ceremonial-call .title-panel {
+        position: relative;
+        text-align: center;
+        padding: 1.35rem 1.4rem;
+        border: 2px solid var(--doc-accent-border);
+        border-radius: 20px;
+        background: linear-gradient(180deg, rgba(255, 240, 245, 0.55) 0%, #ffffff 76%);
+    }
+    .document-page--ceremonial-call .title-panel::before,
+    .document-page--ceremonial-call .title-panel::after {
+        content: '';
+        position: absolute;
+        top: 1.1rem;
+        width: 24%;
+        height: 1px;
+        background: linear-gradient(90deg, transparent 0%, var(--doc-accent-border) 100%);
+    }
+    .document-page--ceremonial-call .title-panel::before {
+        left: 1.2rem;
+    }
+    .document-page--ceremonial-call .title-panel::after {
+        right: 1.2rem;
+        transform: scaleX(-1);
+    }
+    .document-page--ceremonial-call .title-panel__intro,
+    .document-page--ceremonial-call .document-subject,
+    .document-page--ceremonial-call .recipient-address,
+    .document-page--ceremonial-call .recipient-name {
+        text-align: center;
+    }
+    .document-page--ceremonial-call .document-subject {
+        display: block;
+        border-top: none;
+        margin-top: 0.8rem;
+        padding-top: 0;
+    }
+    .document-page--ceremonial-call .document-subject__label,
+    .document-page--ceremonial-call .document-subject__value {
+        display: block;
+    }
+    .document-page--ceremonial-call .document-subject__label {
+        margin-bottom: 0.3rem;
+    }
+    .document-page--ceremonial-call .document-subject__value {
+        font-family: var(--doc-display-font);
+        font-size: 1.12rem;
+    }
+    .document-page--ceremonial-call .body,
+    .document-page--ceremonial-call .body p,
+    .document-page--ceremonial-call .body li {
+        text-align: left;
+        hyphens: manual;
+    }
+    .document-page--ceremonial-call .signature-block {
+        justify-content: center;
+    }
+    .document-page--ceremonial-call .signature-card {
+        min-width: 320px;
+        text-align: center;
+    }
+    .document-page--certificate {
+        background: linear-gradient(135deg, rgba(31, 166, 109, 0.05) 0%, transparent 25%), linear-gradient(315deg, rgba(31, 166, 109, 0.08) 0%, transparent 18%), #ffffff;
+        border: 1px solid #d8e8df;
+    }
+    .document-page--certificate::before {
+        content: '';
+        position: absolute;
+        inset: 1rem;
+        border: 1px solid rgba(31, 166, 109, 0.18);
+        pointer-events: none;
+    }
+    .document-page--certificate .document-watermark {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        position: absolute;
+        left: 50%;
+        top: 52%;
+        transform: translate(-50%, -50%);
+        width: 13rem;
+        height: 13rem;
+        border: 6px double rgba(31, 166, 109, 0.16);
+        border-radius: 50%;
+        color: rgba(31, 166, 109, 0.12);
+        font-family: var(--doc-display-font);
+        font-size: 1.38rem;
+        letter-spacing: 0.28em;
+        text-transform: uppercase;
+        z-index: 0;
+    }
+    .document-page--certificate .page-header {
+        text-align: center;
+        padding-top: 1.55rem;
+        padding-bottom: 1rem;
+        border-bottom: none;
+    }
+    .document-page--certificate .page-header::before {
+        left: 12%;
+        right: 12%;
+        height: 0.24rem;
+        background: linear-gradient(90deg, transparent 0%, var(--doc-accent-dark) 20%, var(--doc-accent) 50%, var(--doc-accent-dark) 80%, transparent 100%);
+    }
+    .document-page--certificate .page-header::after {
+        display: none;
+    }
+    .document-page--certificate .page-header__brand {
+        display: block;
+    }
+    .document-page--certificate .page-header__logo {
+        margin: 0 auto 0.95rem;
+        width: 88px;
+        height: 88px;
+        border-radius: 50%;
+    }
+    .document-page--certificate .page-header__identity {
+        max-width: 32rem;
+        margin: 0 auto;
+    }
+    .document-page--certificate .brand-motto {
+        max-width: 28rem;
+        margin: 0.45rem auto 0;
+    }
+    .document-page--certificate .page-header__side {
+        width: auto;
+        max-width: 32rem;
+        float: none;
+        margin: 0 auto 1rem;
+    }
+    .document-page--certificate .classification-card {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: center;
+        gap: 0.8rem;
+        padding: 0.92rem 1.1rem;
+        border-radius: 0;
+        border-top-width: 1px;
+        background: rgba(255, 255, 255, 0.82);
+    }
+    .document-page--certificate .classification-row {
+        width: calc(33.333% - 0.55rem);
+        min-width: 140px;
+        padding: 0;
+        border-bottom: none;
+    }
+    .document-page--certificate .classification-row .classification-label,
+    .document-page--certificate .classification-row strong {
+        display: block;
+        text-align: center;
+    }
+    .document-page--certificate .recipient-card {
+        margin: 0.65rem auto 1.25rem;
+        max-width: 30rem;
+        text-align: center;
+        border-left-width: 1px;
+        border-radius: 16px;
+        background: rgba(255, 255, 255, 0.86);
+    }
+    .document-page--certificate .title-panel {
+        text-align: center;
+        border: none;
+        padding: 0.55rem 0 1rem;
+        background: transparent;
+    }
+    .document-page--certificate .title-panel__intro,
+    .document-page--certificate .document-subject,
+    .document-page--certificate .recipient-address,
+    .document-page--certificate .recipient-name {
+        text-align: center;
+    }
+    .document-page--certificate .document-title {
+        font-size: 1.78rem;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+    }
+    .document-page--certificate .document-subject {
+        display: block;
+        margin-top: 0.55rem;
+        padding-top: 0;
+        border-top: none;
+    }
+    .document-page--certificate .document-subject__label,
+    .document-page--certificate .document-subject__value {
+        display: block;
+    }
+    .document-page--certificate .document-subject__value {
+        font-family: var(--doc-display-font);
+        font-size: 1.08rem;
+    }
+    .document-page--certificate .body,
+    .document-page--certificate .body p,
+    .document-page--certificate .body li {
+        text-align: left;
+    }
+    .document-page--certificate .body {
+        margin-top: 1.5rem;
+        padding: 1.35rem 1.4rem 0.1rem;
+        background: rgba(255, 255, 255, 0.72);
+        border: 1px solid rgba(190, 233, 213, 0.66);
+        border-radius: 18px;
+    }
+    .document-page--certificate .signature-block {
+        justify-content: center;
+    }
+    .document-page--certificate .signature-card {
+        min-width: 320px;
+        text-align: center;
+        border-top: 1px solid var(--doc-accent-dark);
+    }
+    .document-page--internal-memo {
+        background: linear-gradient(180deg, rgba(88, 103, 232, 0.045) 0%, #ffffff 18%);
+    }
+    .document-page--internal-memo .page-header {
+        padding: 1.2rem 1.25rem 1.05rem;
+        border: none;
+        border-radius: 18px;
+        background: linear-gradient(120deg, #111827 0%, var(--doc-accent-dark) 58%, var(--doc-accent) 100%);
+        margin-bottom: 1.2rem;
+    }
+    .document-page--internal-memo .page-header::before,
+    .document-page--internal-memo .page-header::after {
+        display: none;
+    }
+    .document-page--internal-memo .brand-overline,
+    .document-page--internal-memo .brand-motto,
+    .document-page--internal-memo .brand-title {
+        color: #ffffff;
+    }
+    .document-page--internal-memo .brand-overline,
+    .document-page--internal-memo .brand-motto {
+        opacity: 0.8;
+    }
+    .document-page--internal-memo .page-header__logo {
+        background: rgba(255, 255, 255, 0.12);
+        border-color: rgba(255, 255, 255, 0.22);
+        box-shadow: none;
+    }
+    .document-page--internal-memo .page-header__side {
+        width: auto;
+        float: none;
+        margin: 0 0 1.05rem;
+    }
+    .document-page--internal-memo .classification-card {
+        border-top-width: 1px;
+        border-left: 5px solid var(--doc-accent);
+        border-radius: 14px;
+        background: #ffffff;
+        box-shadow: none;
+    }
+    .document-page--internal-memo .title-panel,
+    .document-page--internal-memo .recipient-card {
+        border-width: 1px;
+        border-radius: 14px;
+        padding: 1rem 1.1rem 1.05rem;
+        background: linear-gradient(135deg, var(--doc-accent-soft) 0%, #ffffff 84%);
+    }
+    .document-page--internal-memo .recipient-card {
+        max-width: none;
+        border-left: 5px solid var(--doc-accent-dark);
+    }
+    .document-page--internal-memo .body h2 {
+        font-family: var(--doc-meta-font);
+        font-size: 0.95rem;
+        letter-spacing: 0.18em;
+        text-transform: uppercase;
+        border-bottom: none;
+        padding: 0.7rem 0.85rem;
+        background: var(--doc-accent-soft);
+        border-radius: 12px;
+    }
+    .document-page--internal-memo .signature-block {
+        justify-content: flex-start;
+    }
+    .document-page--internal-memo .signature-card {
+        text-align: left;
+        padding-top: 0;
+        padding-left: 0.95rem;
+        border-top: none;
+        border-left: 4px solid var(--doc-accent);
+    }
+    .document-page--internal-memo .page-footer {
+        background-image: linear-gradient(90deg, var(--doc-accent-dark) 0%, var(--doc-accent) 45%, #111827 100%);
+    }
+    .document-page--editorial-report {
+        background: linear-gradient(145deg, rgba(210, 154, 31, 0.07) 0%, transparent 20%), #ffffff;
+    }
+    .document-page--editorial-report .page-header {
+        padding-top: 1.4rem;
+        padding-bottom: 1rem;
+        border-bottom: none;
+    }
+    .document-page--editorial-report .page-header::before {
+        height: 0.35rem;
+        background: linear-gradient(90deg, #111827 0%, #111827 42%, var(--doc-accent-dark) 42%, var(--doc-accent-dark) 68%, var(--doc-accent) 68%, var(--doc-accent) 100%);
+    }
+    .document-page--editorial-report .page-header::after {
+        top: auto;
+        left: 0;
+        right: auto;
+        bottom: 0;
+        width: 4.4rem;
+        height: 0.22rem;
+        transform: none;
+        background: var(--doc-accent-dark);
+    }
+    .document-page--editorial-report .page-header__side {
+        width: 15rem;
+        margin: 0 0 1.2rem auto;
+    }
+    .document-page--editorial-report .classification-card {
+        border-radius: 0 18px 18px 18px;
+        box-shadow: 0 16px 34px rgba(122, 82, 8, 0.09);
+    }
+    .document-page--editorial-report .title-panel {
+        border: none;
+        padding: 0.55rem 0 1rem;
+        background: transparent;
+    }
+    .document-page--editorial-report .title-panel__intro {
+        max-width: 33rem;
+    }
+    .document-page--editorial-report .document-title {
+        font-size: 1.82rem;
+        line-height: 1.08;
+        max-width: 33rem;
+    }
+    .document-page--editorial-report .document-subject {
+        border-top: none;
+        margin-top: 0.55rem;
+        padding-top: 0;
+        max-width: 31rem;
+    }
+    .document-page--editorial-report .body h2 {
+        border-bottom: none;
+        padding-left: 1rem;
+        position: relative;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+    }
+    .document-page--editorial-report .body h2::before {
+        content: '';
+        position: absolute;
+        left: 0;
+        top: 0.25em;
+        bottom: 0.25em;
+        width: 4px;
+        border-radius: 999px;
+        background: var(--doc-accent);
+    }
+    .document-page--editorial-report .body blockquote {
+        border-left: none;
+        border-top: 4px solid var(--doc-accent);
+        border-radius: 10px;
+        background: linear-gradient(180deg, var(--doc-accent-soft) 0%, #ffffff 100%);
+    }
+    .document-page--editorial-report .signature-block {
+        justify-content: flex-start;
+    }
+    .document-page--editorial-report .signature-card {
+        text-align: left;
+        padding-top: 0;
+        padding-left: 1rem;
+        border-top: none;
+        border-left: 3px solid var(--doc-accent-dark);
     }
     @media (max-width: 768px) {
         .preview-stage {
@@ -416,12 +959,53 @@
         .classification-row strong {
             text-align: left;
         }
+        .document-page--meeting-minutes .classification-card,
+        .document-page--ceremonial-call .classification-card,
+        .document-page--certificate .classification-card {
+            display: block;
+        }
+        .document-page--meeting-minutes .classification-row,
+        .document-page--ceremonial-call .classification-row,
+        .document-page--certificate .classification-row {
+            width: auto;
+            display: block;
+            padding: 0.45rem 0;
+            border-bottom: 1px solid #eef2f6;
+        }
+        .document-page--meeting-minutes .classification-row:last-child,
+        .document-page--ceremonial-call .classification-row:last-child,
+        .document-page--certificate .classification-row:last-child {
+            border-bottom: none;
+        }
+        .document-page--ceremonial-call .classification-row .classification-label,
+        .document-page--ceremonial-call .classification-row strong,
+        .document-page--certificate .classification-row .classification-label,
+        .document-page--certificate .classification-row strong {
+            text-align: left;
+        }
         .recipient-card,
         .recipient-block {
             max-width: none;
             width: auto;
             float: none;
             margin-left: 0;
+        }
+        .document-page--meeting-minutes .body,
+        .document-page--certificate .body {
+            padding-left: 0;
+            padding-right: 0;
+        }
+        .document-page--meeting-minutes .body::before {
+            display: none;
+        }
+        .document-page--ceremonial-call .title-panel::before,
+        .document-page--ceremonial-call .title-panel::after {
+            display: none;
+        }
+        .document-page--certificate .document-watermark {
+            width: 9.5rem;
+            height: 9.5rem;
+            font-size: 1rem;
         }
         .subject-banner {
             grid-template-columns: 1fr;
@@ -460,8 +1044,8 @@
     </div>
 </div>
 
-<div class="preview-stage">
-    <div class="preview-page">
+<div class="preview-stage preview-stage--{{ theme.paper_style }}">
+    <div class="preview-page document-page document-page--{{ theme.paper_style }}">
         {% include 'documents/generated/_document_markup.html' %}
     </div>
 </div>

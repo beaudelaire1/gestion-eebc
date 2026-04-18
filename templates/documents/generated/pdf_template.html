@@ -22,12 +22,16 @@
         --doc-accent-dark: {{ theme.accent_dark }};
         --doc-accent-soft: {{ theme.accent_soft }};
         --doc-accent-border: {{ theme.accent_border }};
-        font-family: 'Aptos', 'Segoe UI', Arial, sans-serif;
+        --doc-display-font: {{ theme.display_font }};
+        --doc-body-font: {{ theme.body_font }};
+        --doc-meta-font: {{ theme.meta_font }};
+        font-family: var(--doc-body-font);
         font-size: 10.5pt;
         line-height: 1.58;
         color: #1f2937;
         hyphens: auto;
         margin: 0;
+        position: relative;
     }
     .document-watermark {
         display: none;
@@ -36,6 +40,13 @@
         content: '';
         display: block;
         clear: both;
+    }
+    .document-top,
+    .body,
+    .signature-block,
+    .page-footer {
+        position: relative;
+        z-index: 1;
     }
     .page-header {
         position: relative;
@@ -97,6 +108,7 @@
     .document-subject span,
     .subject-banner span,
     .body h3 {
+        font-family: var(--doc-meta-font);
         font-size: 8pt;
         letter-spacing: 0.18em;
         text-transform: uppercase;
@@ -104,7 +116,7 @@
     }
     .brand-title {
         margin: 0;
-        font-family: 'Cambria', 'Times New Roman', serif;
+        font-family: var(--doc-display-font);
         width: 100%;
         font-size: 16.4pt;
         line-height: 1.02;
@@ -173,6 +185,7 @@
         padding-bottom: 12px;
         border-top: 1px solid #d7deea;
         font-size: 7.8pt;
+        font-family: var(--doc-meta-font);
         text-transform: uppercase;
         letter-spacing: 0.12em;
         color: #667085;
@@ -219,10 +232,16 @@
         break-inside: avoid;
         page-break-inside: avoid;
     }
+    .title-panel__intro {
+        margin-top: 7px;
+        max-width: 31rem;
+        color: #475467;
+        line-height: 1.5;
+    }
     .recipient-name,
     .document-title,
     .signature-name {
-        font-family: 'Cambria', 'Times New Roman', serif;
+        font-family: var(--doc-display-font);
         color: #111827;
     }
     .recipient-name {
@@ -279,7 +298,7 @@
         page-break-inside: avoid;
     }
     .subject-banner__value {
-        font-family: 'Cambria', 'Times New Roman', serif;
+        font-family: var(--doc-display-font);
         font-size: 11pt;
         line-height: 1.35;
     }
@@ -297,7 +316,7 @@
     .body h2 {
         margin: 1.4em 0 0.55em;
         padding-bottom: 0.28em;
-        font-family: 'Cambria', 'Times New Roman', serif;
+        font-family: var(--doc-display-font);
         font-size: 12.5pt;
         color: var(--doc-accent-dark);
         border-bottom: 1px solid var(--doc-accent-border);
@@ -406,9 +425,498 @@
         font-size: 8.5pt;
         color: #667085;
     }
+    body.document-page--meeting-minutes {
+        background: linear-gradient(180deg, rgba(19, 133, 125, 0.04) 0%, #ffffff 18%);
+    }
+    body.document-page--meeting-minutes .page-header {
+        padding-top: 11px;
+        padding-bottom: 9px;
+        border-bottom: 2px solid var(--doc-accent-dark);
+    }
+    body.document-page--meeting-minutes .page-header::before {
+        height: 4px;
+        background: repeating-linear-gradient(90deg, var(--doc-accent-dark) 0 34px, var(--doc-accent) 34px 68px);
+    }
+    body.document-page--meeting-minutes .page-header::after {
+        display: none;
+    }
+    body.document-page--meeting-minutes .page-header__side {
+        width: auto;
+        float: none;
+        margin: 10px 0 12px;
+        padding-top: 0;
+    }
+    body.document-page--meeting-minutes .classification-card {
+        display: table;
+        width: 100%;
+        table-layout: fixed;
+        border-collapse: separate;
+        border-spacing: 12px 0;
+        padding: 10px 12px;
+        border-radius: 14px;
+    }
+    body.document-page--meeting-minutes .classification-row {
+        display: table-cell;
+        width: 33.333%;
+        padding: 0;
+        border-bottom: none;
+        vertical-align: top;
+    }
+    body.document-page--meeting-minutes .classification-row .classification-label,
+    body.document-page--meeting-minutes .classification-row strong {
+        display: block;
+        text-align: left;
+    }
+    body.document-page--meeting-minutes .classification-row strong {
+        margin-top: 3px;
+        font-size: 9pt;
+    }
+    body.document-page--meeting-minutes .title-panel {
+        margin-top: 4px;
+        padding: 11px 12px 10px;
+        border: 1px solid var(--doc-accent-border);
+        border-left: 5px solid var(--doc-accent-dark);
+        border-radius: 12px;
+        background: linear-gradient(135deg, var(--doc-accent-soft) 0%, #ffffff 82%);
+    }
+    body.document-page--meeting-minutes .body {
+        margin-top: 0.52cm;
+        padding-left: 14px;
+    }
+    body.document-page--meeting-minutes .body::before {
+        content: '';
+        position: absolute;
+        left: 0;
+        top: 0;
+        bottom: 0;
+        width: 3px;
+        border-radius: 999px;
+        background: linear-gradient(180deg, var(--doc-accent) 0%, rgba(19, 133, 125, 0.12) 100%);
+    }
+    body.document-page--meeting-minutes .signature-block {
+        justify-content: flex-start;
+    }
+    body.document-page--meeting-minutes .signature-card {
+        text-align: left;
+        padding-top: 0;
+        padding-left: 10px;
+        border-top: none;
+        border-left: 3px solid var(--doc-accent);
+    }
+    body.document-page--ceremonial-call {
+        background: radial-gradient(circle at top center, rgba(217, 75, 113, 0.08) 0%, transparent 28%), #ffffff;
+    }
+    body.document-page--ceremonial-call .page-header {
+        text-align: center;
+        padding-top: 16px;
+        padding-bottom: 13px;
+        border-bottom: none;
+    }
+    body.document-page--ceremonial-call .page-header::before {
+        height: 8px;
+        background: linear-gradient(90deg, var(--doc-accent-dark) 0%, var(--doc-accent) 14%, var(--doc-accent) 86%, var(--doc-accent-dark) 100%);
+    }
+    body.document-page--ceremonial-call .page-header::after {
+        display: none;
+    }
+    body.document-page--ceremonial-call .page-header__brand {
+        display: block;
+    }
+    body.document-page--ceremonial-call .page-header__logo {
+        margin: 0 auto 10px;
+        width: 66px;
+        height: 66px;
+        border-radius: 50%;
+    }
+    body.document-page--ceremonial-call .page-header__identity {
+        max-width: 12.8cm;
+        margin: 0 auto;
+    }
+    body.document-page--ceremonial-call .page-header__side {
+        width: auto;
+        max-width: 13.5cm;
+        float: none;
+        margin: 0 auto 11px;
+    }
+    body.document-page--ceremonial-call .classification-card {
+        display: table;
+        width: 100%;
+        table-layout: fixed;
+        padding: 10px 12px;
+        border-top-width: 1px;
+        border-radius: 999px;
+        background: linear-gradient(90deg, #ffffff 0%, var(--doc-accent-soft) 50%, #ffffff 100%);
+    }
+    body.document-page--ceremonial-call .classification-row {
+        display: table-cell;
+        width: 33.333%;
+        padding: 0;
+        border-bottom: none;
+        vertical-align: top;
+    }
+    body.document-page--ceremonial-call .classification-row .classification-label,
+    body.document-page--ceremonial-call .classification-row strong {
+        display: block;
+        text-align: center;
+    }
+    body.document-page--ceremonial-call .recipient-card {
+        width: auto;
+        margin: 0 auto 0.4cm;
+        text-align: center;
+        border-left-width: 1px;
+        border-top: 3px solid var(--doc-accent);
+        border-radius: 14px;
+    }
+    body.document-page--ceremonial-call .title-panel {
+        text-align: center;
+        padding: 12px 14px;
+        border: 2px solid var(--doc-accent-border);
+        border-radius: 16px;
+        background: linear-gradient(180deg, rgba(255, 240, 245, 0.55) 0%, #ffffff 76%);
+    }
+    body.document-page--ceremonial-call .title-panel__intro,
+    body.document-page--ceremonial-call .document-subject,
+    body.document-page--ceremonial-call .recipient-address,
+    body.document-page--ceremonial-call .recipient-name {
+        text-align: center;
+    }
+    body.document-page--ceremonial-call .document-subject {
+        display: block;
+        margin-top: 8px;
+        padding-top: 0;
+        border-top: none;
+    }
+    body.document-page--ceremonial-call .document-subject__label,
+    body.document-page--ceremonial-call .document-subject__value {
+        display: block;
+    }
+    body.document-page--ceremonial-call .document-subject__label {
+        margin-bottom: 2px;
+    }
+    body.document-page--ceremonial-call .document-subject__value {
+        font-family: var(--doc-display-font);
+        font-size: 10.5pt;
+    }
+    body.document-page--ceremonial-call .body,
+    body.document-page--ceremonial-call .body p,
+    body.document-page--ceremonial-call .body li {
+        text-align: left;
+        hyphens: manual;
+    }
+    body.document-page--ceremonial-call .signature-block {
+        justify-content: center;
+    }
+    body.document-page--ceremonial-call .signature-card {
+        min-width: 240px;
+        text-align: center;
+    }
+    body.document-page--certificate {
+        background: linear-gradient(135deg, rgba(31, 166, 109, 0.05) 0%, transparent 25%), linear-gradient(315deg, rgba(31, 166, 109, 0.08) 0%, transparent 18%), #ffffff;
+        border: 1px solid #d8e8df;
+    }
+    body.document-page--certificate::before {
+        content: '';
+        position: absolute;
+        top: 12px;
+        right: 12px;
+        bottom: 12px;
+        left: 12px;
+        border: 1px solid rgba(31, 166, 109, 0.18);
+    }
+    body.document-page--certificate .document-watermark {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        position: absolute;
+        left: 50%;
+        top: 52%;
+        transform: translate(-50%, -50%);
+        width: 160px;
+        height: 160px;
+        border: 5px double rgba(31, 166, 109, 0.16);
+        border-radius: 50%;
+        color: rgba(31, 166, 109, 0.12);
+        font-family: var(--doc-display-font);
+        font-size: 16pt;
+        letter-spacing: 0.22em;
+        text-transform: uppercase;
+        z-index: 0;
+    }
+    body.document-page--certificate .page-header {
+        text-align: center;
+        padding-top: 14px;
+        padding-bottom: 10px;
+        border-bottom: none;
+    }
+    body.document-page--certificate .page-header::before {
+        left: 12%;
+        right: 12%;
+        height: 3px;
+        background: linear-gradient(90deg, transparent 0%, var(--doc-accent-dark) 20%, var(--doc-accent) 50%, var(--doc-accent-dark) 80%, transparent 100%);
+    }
+    body.document-page--certificate .page-header::after {
+        display: none;
+    }
+    body.document-page--certificate .page-header__brand {
+        display: block;
+    }
+    body.document-page--certificate .page-header__logo {
+        margin: 0 auto 9px;
+        width: 68px;
+        height: 68px;
+        border-radius: 50%;
+    }
+    body.document-page--certificate .page-header__identity {
+        max-width: 12.4cm;
+        margin: 0 auto;
+    }
+    body.document-page--certificate .brand-motto {
+        max-width: 10.8cm;
+        margin: 4px auto 0;
+    }
+    body.document-page--certificate .page-header__side {
+        width: auto;
+        max-width: 12.8cm;
+        float: none;
+        margin: 0 auto 11px;
+    }
+    body.document-page--certificate .classification-card {
+        display: table;
+        width: 100%;
+        table-layout: fixed;
+        padding: 9px 12px;
+        border-radius: 0;
+        border-top-width: 1px;
+        background: rgba(255, 255, 255, 0.82);
+    }
+    body.document-page--certificate .classification-row {
+        display: table-cell;
+        width: 33.333%;
+        padding: 0;
+        border-bottom: none;
+        vertical-align: top;
+    }
+    body.document-page--certificate .classification-row .classification-label,
+    body.document-page--certificate .classification-row strong {
+        display: block;
+        text-align: center;
+    }
+    body.document-page--certificate .recipient-card {
+        width: auto;
+        margin: 0.25cm auto 0.45cm;
+        max-width: 11cm;
+        text-align: center;
+        border-left-width: 1px;
+        border-radius: 14px;
+        background: rgba(255, 255, 255, 0.86);
+    }
+    body.document-page--certificate .title-panel {
+        text-align: center;
+        border: none;
+        padding: 6px 0 10px;
+        background: transparent;
+    }
+    body.document-page--certificate .title-panel__intro,
+    body.document-page--certificate .document-subject,
+    body.document-page--certificate .recipient-address,
+    body.document-page--certificate .recipient-name {
+        text-align: center;
+    }
+    body.document-page--certificate .document-title {
+        font-size: 17pt;
+        text-transform: uppercase;
+        letter-spacing: 0.07em;
+    }
+    body.document-page--certificate .document-subject {
+        display: block;
+        margin-top: 6px;
+        padding-top: 0;
+        border-top: none;
+    }
+    body.document-page--certificate .document-subject__label,
+    body.document-page--certificate .document-subject__value {
+        display: block;
+    }
+    body.document-page--certificate .document-subject__value {
+        font-family: var(--doc-display-font);
+        font-size: 10.2pt;
+    }
+    body.document-page--certificate .body,
+    body.document-page--certificate .body p,
+    body.document-page--certificate .body li {
+        text-align: left;
+    }
+    body.document-page--certificate .body {
+        margin-top: 0.48cm;
+        padding: 12px 14px 2px;
+        background: rgba(255, 255, 255, 0.72);
+        border: 1px solid rgba(190, 233, 213, 0.66);
+        border-radius: 14px;
+    }
+    body.document-page--certificate .signature-block {
+        justify-content: center;
+    }
+    body.document-page--certificate .signature-card {
+        min-width: 240px;
+        text-align: center;
+        border-top: 1px solid var(--doc-accent-dark);
+    }
+    body.document-page--internal-memo {
+        background: linear-gradient(180deg, rgba(88, 103, 232, 0.045) 0%, #ffffff 18%);
+    }
+    body.document-page--internal-memo .page-header {
+        padding: 12px 13px 11px;
+        border: none;
+        border-radius: 14px;
+        background: linear-gradient(120deg, #111827 0%, var(--doc-accent-dark) 58%, var(--doc-accent) 100%);
+        margin-bottom: 12px;
+    }
+    body.document-page--internal-memo .page-header::before,
+    body.document-page--internal-memo .page-header::after {
+        display: none;
+    }
+    body.document-page--internal-memo .brand-overline,
+    body.document-page--internal-memo .brand-motto,
+    body.document-page--internal-memo .brand-title {
+        color: #ffffff;
+    }
+    body.document-page--internal-memo .brand-overline,
+    body.document-page--internal-memo .brand-motto {
+        opacity: 0.82;
+    }
+    body.document-page--internal-memo .page-header__logo {
+        background: rgba(255, 255, 255, 0.12);
+        border-color: rgba(255, 255, 255, 0.22);
+    }
+    body.document-page--internal-memo .page-header__side {
+        width: auto;
+        float: none;
+        margin: 0 0 10px;
+    }
+    body.document-page--internal-memo .classification-card {
+        border-top-width: 1px;
+        border-left: 5px solid var(--doc-accent);
+        border-radius: 12px;
+        background: #ffffff;
+    }
+    body.document-page--internal-memo .title-panel,
+    body.document-page--internal-memo .recipient-card {
+        border-width: 1px;
+        border-radius: 12px;
+        padding: 10px 11px;
+        background: linear-gradient(135deg, var(--doc-accent-soft) 0%, #ffffff 84%);
+    }
+    body.document-page--internal-memo .recipient-card {
+        width: auto;
+        border-left: 5px solid var(--doc-accent-dark);
+    }
+    body.document-page--internal-memo .body h2 {
+        font-family: var(--doc-meta-font);
+        font-size: 8.9pt;
+        letter-spacing: 0.18em;
+        text-transform: uppercase;
+        border-bottom: none;
+        padding: 7px 9px;
+        background: var(--doc-accent-soft);
+        border-radius: 10px;
+    }
+    body.document-page--internal-memo .signature-block {
+        justify-content: flex-start;
+    }
+    body.document-page--internal-memo .signature-card {
+        text-align: left;
+        padding-top: 0;
+        padding-left: 10px;
+        border-top: none;
+        border-left: 4px solid var(--doc-accent);
+    }
+    body.document-page--internal-memo .page-footer {
+        background-image: linear-gradient(90deg, var(--doc-accent-dark) 0%, var(--doc-accent) 45%, #111827 100%);
+    }
+    body.document-page--editorial-report {
+        background: linear-gradient(145deg, rgba(210, 154, 31, 0.07) 0%, transparent 20%), #ffffff;
+    }
+    body.document-page--editorial-report .page-header {
+        padding-top: 13px;
+        padding-bottom: 10px;
+        border-bottom: none;
+    }
+    body.document-page--editorial-report .page-header::before {
+        height: 3px;
+        background: linear-gradient(90deg, #111827 0%, #111827 42%, var(--doc-accent-dark) 42%, var(--doc-accent-dark) 68%, var(--doc-accent) 68%, var(--doc-accent) 100%);
+    }
+    body.document-page--editorial-report .page-header::after {
+        top: auto;
+        left: 0;
+        right: auto;
+        bottom: 0;
+        width: 46px;
+        height: 2px;
+        transform: none;
+        background: var(--doc-accent-dark);
+    }
+    body.document-page--editorial-report .page-header__side {
+        width: 4.4cm;
+        margin: 0 0 0.4cm auto;
+    }
+    body.document-page--editorial-report .classification-card {
+        border-radius: 0 14px 14px 14px;
+    }
+    body.document-page--editorial-report .title-panel {
+        border: none;
+        padding: 6px 0 10px;
+        background: transparent;
+    }
+    body.document-page--editorial-report .document-title {
+        font-size: 16.6pt;
+        line-height: 1.08;
+        max-width: 10.8cm;
+    }
+    body.document-page--editorial-report .title-panel__intro,
+    body.document-page--editorial-report .document-subject {
+        max-width: 10.2cm;
+    }
+    body.document-page--editorial-report .document-subject {
+        border-top: none;
+        margin-top: 6px;
+        padding-top: 0;
+    }
+    body.document-page--editorial-report .body h2 {
+        border-bottom: none;
+        padding-left: 10px;
+        position: relative;
+        text-transform: uppercase;
+        letter-spacing: 0.07em;
+    }
+    body.document-page--editorial-report .body h2::before {
+        content: '';
+        position: absolute;
+        left: 0;
+        top: 0.25em;
+        bottom: 0.25em;
+        width: 3px;
+        border-radius: 999px;
+        background: var(--doc-accent);
+    }
+    body.document-page--editorial-report .body blockquote {
+        border-left: none;
+        border-top: 4px solid var(--doc-accent);
+        border-radius: 10px;
+        background: linear-gradient(180deg, var(--doc-accent-soft) 0%, #ffffff 100%);
+    }
+    body.document-page--editorial-report .signature-block {
+        justify-content: flex-start;
+    }
+    body.document-page--editorial-report .signature-card {
+        text-align: left;
+        padding-top: 0;
+        padding-left: 10px;
+        border-top: none;
+        border-left: 3px solid var(--doc-accent-dark);
+    }
 </style>
 </head>
-<body>
+<body class="document-page document-page--{{ theme.paper_style }}">
 {% include 'documents/generated/_document_markup.html' %}
 </body>
 </html>

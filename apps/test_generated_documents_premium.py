@@ -28,9 +28,64 @@ class TestGeneratedDocumentsPremium:
         assert response.status_code == 200
         content = response.content.decode()
         assert 'Compte rendu' in content
-        assert 'Intitulé du document' in content
+        assert 'Séance concernée' in content
+        assert 'Mémoire de séance' in content
+        assert 'document-page--meeting-minutes' in content
         assert 'premium' not in content.lower()
         assert 'institutionnel' not in content.lower()
+
+    def test_document_kinds_expose_distinct_visual_variants(self, authenticated_client, admin_user):
+        from apps.documents.generation import build_generated_document_context
+        from apps.documents.models import GeneratedDocument
+
+        convocation = GeneratedDocument.objects.create(
+            title='Réunion stratégique',
+            kind=GeneratedDocument.Kind.CONVOCATION,
+            reference='EEBC/CNV/2026/004',
+            document_date=date(2026, 4, 18),
+            subject='Validation du calendrier',
+            body_html='<p>Présence requise.</p>',
+            created_by=admin_user,
+        )
+        attestation = GeneratedDocument.objects.create(
+            title='Attestation de présence',
+            kind=GeneratedDocument.Kind.ATTESTATION,
+            reference='EEBC/AT/2026/005',
+            document_date=date(2026, 4, 18),
+            subject='Session de formation',
+            body_html='<p>Document établi pour servir et valoir ce que de droit.</p>',
+            created_by=admin_user,
+        )
+
+        convocation_response = authenticated_client.get(reverse('documents:generated_preview', args=[convocation.pk]))
+        attestation_response = authenticated_client.get(reverse('documents:generated_preview', args=[attestation.pk]))
+
+        assert convocation_response.status_code == 200
+        assert attestation_response.status_code == 200
+
+        convocation_content = convocation_response.content.decode()
+        attestation_content = attestation_response.content.decode()
+
+        assert 'document-page--ceremonial-call' in convocation_content
+        assert 'Avis de réunion' in convocation_content
+        assert 'Séance convoquée' in convocation_content
+        assert 'document-page--certificate' in attestation_content
+        assert 'Document certifié' in attestation_content
+        assert 'Nature de l' in attestation_content
+
+        convocation_pdf_html = render_to_string(
+            'documents/generated/pdf_template.html',
+            build_generated_document_context(convocation),
+        )
+        attestation_pdf_html = render_to_string(
+            'documents/generated/pdf_template.html',
+            build_generated_document_context(attestation),
+        )
+
+        assert 'document-page--ceremonial-call' in convocation_pdf_html
+        assert 'document-page--certificate' in attestation_pdf_html
+        assert 'CONVOC' in convocation_pdf_html
+        assert 'ATTESTE' in attestation_pdf_html
 
     def test_courrier_preview_avoids_marketing_labels_and_keeps_subject_inline(self, authenticated_client, admin_user):
         from apps.documents.models import GeneratedDocument

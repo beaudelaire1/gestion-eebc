@@ -1,6 +1,6 @@
-<div class="document-watermark">EEBC</div>
+<div class="document-watermark">{{ theme.watermark_text }}</div>
 
-<div class="document-top">
+<div class="document-top document-top--{{ theme.paper_style }}">
 
 <header class="page-header">
     <div class="page-header__brand">
@@ -71,8 +71,11 @@
 
 {% if doc.kind != 'courrier' %}
 <section class="title-panel">
-    <div class="section-caption">Intitulé du document</div>
+    <div class="section-caption">{{ theme.title_label }}</div>
     <div class="document-title">{{ doc.title }}</div>
+    {% if theme.hero_subtitle %}
+    <div class="title-panel__intro">{{ theme.hero_subtitle }}</div>
+    {% endif %}
     {% if doc.subject %}
     <div class="document-subject">
         <span class="document-subject__label">{{ theme.subject_label }}</span>
