@@ -7,6 +7,7 @@ import pytest
 from decimal import Decimal
 from datetime import date, timedelta
 
+from django.urls import reverse
 from django.utils import timezone
 
 from apps.finance.models import (
@@ -16,6 +17,8 @@ from apps.finance.models import (
     Budget,
     BudgetCategory,
     BudgetItem,
+    BudgetForecast,
+    ForecastLine,
 )
 from test_factories import (
     SiteFactory,
@@ -187,3 +190,62 @@ class TestBudget:
         assert budget.status == Budget.Status.APPROVED
         assert item.requested_amount == Decimal('2000.00')
         assert item.approved_amount == Decimal('1500.00')
+
+
+@pytest.mark.django_db
+class TestBudgetForecastEdit:
+    """Tests de l'edition des previsionnels budgetaires."""
+
+    def test_forecast_edit_form_exposes_editable_year(self, authenticated_client, admin_user):
+        forecast = BudgetForecast.objects.create(
+            name="Budget previsionnel 2025",
+            year=2025,
+            scenario=BudgetForecast.Scenario.REALISTIC,
+            created_by=admin_user,
+        )
+
+        response = authenticated_client.get(reverse('finance:forecast_edit', args=[forecast.pk]))
+
+        assert response.status_code == 200
+        content = response.content.decode()
+        assert 'name="year"' in content
+        assert 'id="year"' in content
+        assert 'type="number"' in content
+
+    def test_forecast_edit_updates_year(self, authenticated_client, admin_user):
+        category = FinanceCategoryFactory()
+        forecast = BudgetForecast.objects.create(
+            name="Budget previsionnel 2025",
+            year=2025,
+            scenario=BudgetForecast.Scenario.REALISTIC,
+            description="Version initiale",
+            created_by=admin_user,
+        )
+        ForecastLine.objects.create(
+            forecast=forecast,
+            label="Dime",
+            line_type=ForecastLine.LineType.INCOME,
+            category=category,
+            jan=Decimal('10.00'),
+        )
+
+        response = authenticated_client.post(
+            reverse('finance:forecast_edit', args=[forecast.pk]),
+            {
+                'name': 'Budget previsionnel 2026',
+                'year': '2026',
+                'description': 'Version revue',
+                'line_0_label': 'Dime',
+                'line_0_type': ForecastLine.LineType.INCOME,
+                'line_0_category': str(category.pk),
+                'line_0_jan': '10.00',
+            },
+            follow=True,
+        )
+
+        forecast.refresh_from_db()
+
+        assert response.status_code == 200
+        assert forecast.year == 2026
+        assert forecast.name == 'Budget previsionnel 2026'
+        assert forecast.description == 'Version revue'

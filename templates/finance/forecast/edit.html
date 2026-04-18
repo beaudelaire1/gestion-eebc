@@ -22,12 +22,12 @@
                         <input type="text" class="form-control" id="name" name="name" value="{{ forecast.name }}" required>
                     </div>
                     <div class="col-md-3">
-                        <label class="form-label">Année</label>
-                        <input type="text" class="form-control" value="{{ forecast.year }}" disabled>
+                        <label for="year" class="form-label">Année <span class="text-danger">*</span></label>
+                        <input type="number" class="form-control" id="year" name="year" value="{{ forecast.year }}" min="2020" max="2040" required>
                     </div>
                     <div class="col-md-3">
-                        <label class="form-label">Scénario</label>
-                        <input type="text" class="form-control" value="{{ forecast.get_scenario_display }}" disabled>
+                        <label for="scenario_display" class="form-label">Scénario</label>
+                        <input type="text" class="form-control" id="scenario_display" value="{{ forecast.get_scenario_display }}" disabled>
                     </div>
                     <div class="col-md-12">
                         <label for="description" class="form-label">Description</label>

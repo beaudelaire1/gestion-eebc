@@ -1227,8 +1227,34 @@ def forecast_edit(request, forecast_id):
     forecast = get_object_or_404(BudgetForecast, pk=forecast_id)
     
     if request.method == 'POST':
-        forecast.name = request.POST.get('name', forecast.name).strip()
-        forecast.description = request.POST.get('description', '').strip()
+        name = request.POST.get('name', forecast.name).strip()
+        year_raw = request.POST.get('year', '').strip()
+        description = request.POST.get('description', '').strip()
+
+        if not name or not year_raw:
+            messages.error(request, "Le nom et l'année sont obligatoires.")
+            return redirect('finance:forecast_edit', forecast_id=forecast.pk)
+
+        try:
+            year = int(year_raw)
+        except (TypeError, ValueError):
+            messages.error(request, "L'année doit etre un nombre valide.")
+            return redirect('finance:forecast_edit', forecast_id=forecast.pk)
+
+        duplicate_exists = BudgetForecast.objects.filter(
+            year=year,
+            scenario=forecast.scenario,
+        ).exclude(pk=forecast.pk).exists()
+        if duplicate_exists:
+            messages.error(
+                request,
+                f"Un prévisionnel {forecast.get_scenario_display()} existe déjà pour {year}.",
+            )
+            return redirect('finance:forecast_edit', forecast_id=forecast.pk)
+
+        forecast.name = name
+        forecast.year = year
+        forecast.description = description
         forecast.save()
         
         # Supprimer les anciennes lignes et recréer
