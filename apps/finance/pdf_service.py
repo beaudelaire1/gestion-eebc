@@ -8,6 +8,8 @@ import io
 import os
 import logging
 import base64
+from decimal import Decimal
+from functools import lru_cache
 from pathlib import Path
 from django.template.loader import render_to_string
 from django.core.files.base import ContentFile
@@ -26,6 +28,12 @@ CHURCH_INFO = {
     'siret': os.environ.get('CHURCH_SIRET', ""),
     'rna': os.environ.get('CHURCH_RNA', ""),
 }
+
+DONATION_RECEIPT_TEMPLATE_DIR = Path(settings.BASE_DIR) / 'apps' / 'finance' / 'pdf_templates'
+FRENCH_MONTHS = (
+    'janvier', 'fevrier', 'mars', 'avril', 'mai', 'juin',
+    'juillet', 'aout', 'septembre', 'octobre', 'novembre', 'decembre',
+)
 
 
 def generate_tax_receipt_pdf(tax_receipt):
@@ -252,7 +260,7 @@ def save_tax_receipt_pdf(tax_receipt):
 # =============================================================================
 
 def _get_logo_base64():
-    """Récupère le logo de l'église en base64 (SiteSettings ou fallback EEBC/logo1.png)."""
+    """Récupère le logo de l'église en base64 (SiteSettings ou fallback EEBC/logo.png)."""
     # 1. Essayer le logo depuis SiteSettings
     try:
         from apps.core.models import SiteSettings
@@ -265,12 +273,12 @@ def _get_logo_base64():
         pass
     
     # 2. Fallback sur le logo EEBC du projet
-    eebc_logo = Path(settings.BASE_DIR) / 'EEBC' / 'logo1.png'
+    eebc_logo = Path(settings.BASE_DIR) / 'EEBC' / 'logo.png'
     if eebc_logo.exists():
         return base64.b64encode(eebc_logo.read_bytes()).decode('utf-8')
     
-    # 3. Fallback sur l'icône PWA
-    fallback = Path(settings.BASE_DIR) / 'static' / 'icons' / 'icon-192x192.png'
+    # 3. Fallback sur le logo statique
+    fallback = Path(settings.BASE_DIR) / 'static' / 'images' / 'eebc-logo.png'
     if fallback.exists():
         return base64.b64encode(fallback.read_bytes()).decode('utf-8')
     
@@ -339,6 +347,109 @@ def _amount_to_words(amount):
     return result.capitalize()
 
 
+def _format_amount_fr(amount):
+    """Formate un montant au format francais 1 234,56."""
+    normalized = Decimal(str(amount)).quantize(Decimal('0.01'))
+    return f"{normalized:,.2f}".replace(',', ' ').replace('.', ',')
+
+
+def _format_long_date_fr(value):
+    """Formate une date francaise longue sans dependre des locales systeme."""
+    dt_value = timezone.localtime(value) if timezone.is_aware(value) else value
+    return f"{dt_value.day} {FRENCH_MONTHS[dt_value.month - 1]} {dt_value.year}"
+
+
+def _format_datetime_fr(value):
+    """Formate une date/heure francaise courte."""
+    dt_value = timezone.localtime(value) if timezone.is_aware(value) else value
+    return dt_value.strftime('%d/%m/%Y a %H:%M')
+
+
+@lru_cache(maxsize=1)
+def _get_donation_receipt_jinja_env():
+    """Construit l'environnement Jinja2 dedie aux PDF corporate finance."""
+    try:
+        from jinja2 import Environment, FileSystemLoader, StrictUndefined, select_autoescape
+    except ImportError as exc:
+        raise ImportError("Jinja2 n'est pas installe. pip install Jinja2") from exc
+
+    return Environment(
+        loader=FileSystemLoader(str(DONATION_RECEIPT_TEMPLATE_DIR)),
+        autoescape=select_autoescape(['html', 'xml']),
+        trim_blocks=True,
+        lstrip_blocks=True,
+        keep_trailing_newline=True,
+        undefined=StrictUndefined,
+    )
+
+
+def _render_donation_receipt_template(template_name, context):
+    """Rend un gabarit Jinja2 pour les recus de don."""
+    return _get_donation_receipt_jinja_env().get_template(template_name).render(**context)
+
+
+def _build_donation_receipt_context(online_donation, receipt_number):
+    """Prepare le contexte du recu de don pour Jinja2."""
+    issue_date = timezone.now()
+    donation_date = online_donation.created_at
+    member_name = online_donation.member.get_full_name() if online_donation.member else ''
+    donor_name = online_donation.donor_name or member_name or online_donation.donor_email or 'Donateur'
+    donor_secondary_line = (
+        online_donation.donor_email
+        if online_donation.donor_email and online_donation.donor_email != donor_name
+        else ''
+    )
+    reference = online_donation.transaction.reference if online_donation.transaction else ''
+    logo_base64 = _get_logo_base64()
+    recurring_note = ''
+
+    if online_donation.is_recurring:
+        recurring_note = (
+            'Don recurrent mensuel - renouvellement automatique chaque mois.'
+            if online_donation.recurring_interval == 'month'
+            else 'Don recurrent annuel - renouvellement automatique chaque annee.'
+        )
+
+    type_labels = {
+        'don': 'Don',
+        'dime': 'Dime',
+        'offrande': 'Offrande',
+    }
+
+    church_contact_line = ' • '.join(
+        part for part in [CHURCH_INFO['phone'], CHURCH_INFO['email']] if part
+    )
+    church_registration_line = ' • '.join(
+        part
+        for part in [
+            f"SIRET {CHURCH_INFO['siret']}" if CHURCH_INFO['siret'] else '',
+            f"RNA {CHURCH_INFO['rna']}" if CHURCH_INFO['rna'] else '',
+        ]
+        if part
+    )
+
+    return {
+        'receipt_number': receipt_number,
+        'logo_data_uri': f"data:image/png;base64,{logo_base64}" if logo_base64 else '',
+        'church_name': CHURCH_INFO['name'],
+        'church_address': CHURCH_INFO['address'],
+        'church_contact_line': church_contact_line,
+        'church_registration_line': church_registration_line,
+        'issue_city': os.environ.get('CHURCH_CITY', 'Cayenne'),
+        'issue_date_long': _format_long_date_fr(issue_date),
+        'donor_display_name': donor_name,
+        'donor_secondary_line': donor_secondary_line,
+        'member_name': member_name,
+        'donation_date_display': _format_datetime_fr(donation_date),
+        'donation_type_display': type_labels.get(online_donation.donation_type, 'Don'),
+        'reference': reference,
+        'amount_display': _format_amount_fr(online_donation.amount),
+        'amount_words': _amount_to_words(online_donation.amount),
+        'recurring_note': recurring_note,
+        'generation_date_display': _format_datetime_fr(issue_date),
+    }
+
+
 def generate_donation_receipt_pdf(online_donation):
     """
     Génère un PDF de reçu professionnel pour un don en ligne.
@@ -354,458 +465,13 @@ def generate_donation_receipt_pdf(online_donation):
     except ImportError:
         raise ImportError("WeasyPrint n'est pas installé. pip install weasyprint")
 
-    # Numéro de reçu basé sur l'ID et la date
     receipt_number = f"DON-{online_donation.created_at.strftime('%Y%m')}-{online_donation.id:05d}"
+    context = _build_donation_receipt_context(online_donation, receipt_number)
+    html_content = _render_donation_receipt_template('donation_receipt.html.j2', context)
+    css_path = DONATION_RECEIPT_TEMPLATE_DIR / 'donation_receipt.css'
 
-    # Nom du donateur
-    donor_name = online_donation.donor_name or ''
-    if not donor_name and online_donation.member:
-        donor_name = online_donation.member.get_full_name()
-    
-    # Référence transaction
-    reference = ''
-    if online_donation.transaction:
-        reference = online_donation.transaction.reference
-
-    # Type de don lisible
-    type_labels = {
-        'don': 'Don',
-        'dime': 'Dîme',
-        'offrande': 'Offrande',
-    }
-
-    # Charger le logo en base64
-    logo_base64 = _get_logo_base64()
-
-    context = {
-        'receipt_number': receipt_number,
-        'logo_base64': logo_base64,
-        'church_name': CHURCH_INFO['name'],
-        'church_address': CHURCH_INFO['address'],
-        'church_phone': CHURCH_INFO['phone'],
-        'church_email': CHURCH_INFO['email'],
-        'donor_name': donor_name,
-        'donor_email': online_donation.donor_email,
-        'member_name': online_donation.member.get_full_name() if online_donation.member else '',
-        'amount': online_donation.amount,
-        'amount_words': _amount_to_words(online_donation.amount),
-        'donation_type_display': type_labels.get(online_donation.donation_type, 'Don'),
-        'donation_date': online_donation.created_at,
-        'reference': reference,
-        'is_recurring': online_donation.is_recurring,
-        'recurring_interval': online_donation.recurring_interval,
-        'issue_date': timezone.now(),
-        'generation_date': timezone.now(),
-    }
-
-    html_content = render_to_string('finance/donation_receipt_pdf.html', context)
-
-    css = CSS(string='''
-        @page {
-            size: A4;
-            margin: 1.8cm 2cm;
-
-            @bottom-center {
-                content: "";
-            }
-        }
-
-        body {
-            font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
-            font-size: 10.5pt;
-            line-height: 1.6;
-            color: #1e293b;
-            position: relative;
-        }
-
-        /* ── Filigrane ───────────────────────── */
-        .watermark {
-            position: fixed;
-            top: 35%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            font-size: 160pt;
-            font-weight: 900;
-            color: rgba(26, 58, 107, 0.03);
-            letter-spacing: 20px;
-            z-index: -1;
-            pointer-events: none;
-        }
-
-        /* ── Bordures dorées ─────────────────── */
-        .gold-border-top {
-            height: 4px;
-            background: linear-gradient(90deg, #b8860b, #daa520, #f0c850, #daa520, #b8860b);
-            margin-bottom: 25px;
-            border-radius: 2px;
-        }
-
-        .gold-border-bottom {
-            height: 4px;
-            background: linear-gradient(90deg, #b8860b, #daa520, #f0c850, #daa520, #b8860b);
-            margin-top: 20px;
-            border-radius: 2px;
-        }
-
-        /* ── En-tête ─────────────────────────── */
-        .header {
-            display: flex;
-            justify-content: space-between;
-            align-items: flex-start;
-            margin-bottom: 8px;
-        }
-
-        .logo-area {
-            display: flex;
-            align-items: flex-start;
-            gap: 16px;
-        }
-
-        .church-logo {
-            width: 70px;
-            height: 70px;
-            border-radius: 6px;
-            object-fit: contain;
-        }
-
-        .church-name {
-            font-size: 14pt;
-            font-weight: 800;
-            color: #0f2557;
-            letter-spacing: 0.3px;
-            margin-bottom: 2px;
-        }
-
-        .church-subtitle {
-            font-size: 8pt;
-            color: #b8860b;
-            text-transform: uppercase;
-            letter-spacing: 2.5px;
-            font-weight: 600;
-            margin-bottom: 6px;
-        }
-
-        .church-address-line {
-            font-size: 8.5pt;
-            color: #64748b;
-            line-height: 1.4;
-        }
-
-        .church-contact {
-            font-size: 8pt;
-            color: #94a3b8;
-        }
-
-        .header-right {
-            text-align: right;
-            padding-top: 4px;
-        }
-
-        .receipt-badge {
-            background: linear-gradient(135deg, #0f2557, #1a3a6b);
-            color: #ffffff;
-            padding: 8px 20px;
-            border-radius: 4px;
-            display: inline-block;
-            margin-bottom: 8px;
-        }
-
-        .receipt-label {
-            font-size: 11pt;
-            font-weight: 700;
-            text-transform: uppercase;
-            letter-spacing: 2px;
-        }
-
-        .receipt-number {
-            font-size: 10pt;
-            color: #0f2557;
-            font-weight: 700;
-            font-family: "Courier New", monospace;
-        }
-
-        .receipt-date {
-            font-size: 9pt;
-            color: #64748b;
-            margin-top: 4px;
-            font-style: italic;
-        }
-
-        .header-line {
-            height: 2px;
-            background: linear-gradient(90deg, #0f2557 0%, #1a3a6b 40%, #daa520 60%, #f0c850 100%);
-            margin-bottom: 25px;
-            border-radius: 1px;
-        }
-
-        /* ── Colonnes ────────────────────────── */
-        .columns {
-            display: flex;
-            gap: 30px;
-            margin-bottom: 25px;
-        }
-
-        .col-left, .col-right {
-            flex: 1;
-        }
-
-        .section-title {
-            font-size: 8pt;
-            font-weight: 700;
-            color: #0f2557;
-            text-transform: uppercase;
-            letter-spacing: 2px;
-            border-bottom: 2px solid #0f2557;
-            padding-bottom: 6px;
-            margin-bottom: 14px;
-        }
-
-        .section-icon {
-            color: #daa520;
-            font-size: 6pt;
-            margin-right: 4px;
-        }
-
-        .donor-card {
-            background: #f8fafc;
-            border-left: 3px solid #0f2557;
-            padding: 12px 16px;
-            border-radius: 0 4px 4px 0;
-        }
-
-        .donor-name {
-            font-size: 12pt;
-            font-weight: 700;
-            color: #0f2557;
-            margin-bottom: 4px;
-        }
-
-        .donor-email {
-            font-size: 9.5pt;
-            color: #64748b;
-        }
-
-        .detail-card {
-            background: #f8fafc;
-            border-left: 3px solid #daa520;
-            padding: 8px 16px;
-            border-radius: 0 4px 4px 0;
-        }
-
-        .detail-row {
-            display: flex;
-            justify-content: space-between;
-            padding: 6px 0;
-            border-bottom: 1px solid #e2e8f0;
-        }
-
-        .detail-row:last-child {
-            border-bottom: none;
-        }
-
-        .detail-label {
-            font-size: 9pt;
-            color: #64748b;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-        }
-
-        .detail-value {
-            font-weight: 600;
-            font-size: 10pt;
-            color: #1e293b;
-        }
-
-        .detail-mono {
-            font-family: "Courier New", monospace;
-            font-size: 9pt;
-        }
-
-        /* ── Montant ─────────────────────────── */
-        .amount-section {
-            margin: 25px 0;
-        }
-
-        .amount-box {
-            background: linear-gradient(135deg, #0f2557 0%, #1a3a6b 100%);
-            border-radius: 8px;
-            padding: 28px 30px;
-            text-align: center;
-            color: #ffffff;
-            position: relative;
-        }
-
-        .amount-label {
-            font-size: 8pt;
-            text-transform: uppercase;
-            letter-spacing: 3px;
-            color: #daa520;
-            margin-bottom: 10px;
-            font-weight: 600;
-        }
-
-        .amount-value {
-            font-size: 34pt;
-            font-weight: 900;
-            color: #ffffff;
-            letter-spacing: 2px;
-        }
-
-        .currency {
-            font-size: 22pt;
-            font-weight: 400;
-        }
-
-        .amount-divider {
-            width: 60px;
-            height: 2px;
-            background: #daa520;
-            margin: 12px auto;
-            border-radius: 1px;
-        }
-
-        .amount-words {
-            font-size: 10pt;
-            color: #cbd5e1;
-            font-style: italic;
-            letter-spacing: 0.5px;
-        }
-
-        /* ── Statut ──────────────────────────── */
-        .status-box {
-            background: #f0fdf4;
-            border: 1px solid #86efac;
-            border-radius: 6px;
-            padding: 14px 20px;
-            display: flex;
-            align-items: center;
-            gap: 14px;
-            margin-bottom: 18px;
-        }
-
-        .status-check {
-            width: 32px;
-            height: 32px;
-            background: #16a34a;
-            border-radius: 50%;
-            color: #ffffff;
-            font-size: 16pt;
-            font-weight: bold;
-            text-align: center;
-            line-height: 32px;
-            flex-shrink: 0;
-        }
-
-        .status-title {
-            font-size: 10.5pt;
-            color: #16a34a;
-            font-weight: 700;
-        }
-
-        .status-detail {
-            font-size: 8.5pt;
-            color: #4ade80;
-            margin-top: 2px;
-        }
-
-        /* ── Récurrent ───────────────────────── */
-        .recurring-info {
-            background: #fffbeb;
-            border: 1px solid #fbbf24;
-            border-radius: 6px;
-            padding: 12px 20px;
-            font-size: 9.5pt;
-            color: #92400e;
-            margin-bottom: 18px;
-        }
-
-        /* ── Citation ────────────────────────── */
-        .spiritual-box {
-            text-align: center;
-            margin: 28px 30px;
-            padding: 20px 25px;
-            position: relative;
-        }
-
-        .verse-decoration {
-            font-size: 36pt;
-            color: #daa520;
-            font-family: Georgia, serif;
-            line-height: 1;
-            margin-bottom: 4px;
-            opacity: 0.7;
-        }
-
-        .verse {
-            font-family: Georgia, "Times New Roman", serif;
-            font-style: italic;
-            font-size: 10.5pt;
-            color: #334155;
-            line-height: 2;
-        }
-
-        .verse-ref {
-            font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
-            font-size: 8.5pt;
-            color: #daa520;
-            margin-top: 10px;
-            font-weight: 600;
-            letter-spacing: 1px;
-            text-transform: uppercase;
-        }
-
-        /* ── Mentions légales ────────────────── */
-        .legal-text {
-            font-size: 8pt;
-            color: #64748b;
-            background: #f8fafc;
-            border: 1px solid #e2e8f0;
-            border-radius: 4px;
-            padding: 14px 18px;
-            margin-top: 20px;
-            line-height: 1.5;
-        }
-
-        /* ── Pied de page ────────────────────── */
-        .footer {
-            margin-top: 30px;
-            text-align: center;
-        }
-
-        .footer-line {
-            height: 1px;
-            background: linear-gradient(90deg, transparent, #cbd5e1, transparent);
-            margin-bottom: 15px;
-        }
-
-        .footer-org {
-            font-size: 9pt;
-            font-weight: 700;
-            color: #0f2557;
-            letter-spacing: 1px;
-            text-transform: uppercase;
-        }
-
-        .footer-address {
-            font-size: 8.5pt;
-            color: #64748b;
-            margin: 2px 0;
-        }
-
-        .footer-contacts {
-            font-size: 8pt;
-            color: #94a3b8;
-        }
-
-        .footer-generated {
-            font-size: 7pt;
-            color: #cbd5e1;
-            margin-top: 10px;
-            letter-spacing: 0.5px;
-        }
-    ''')
-
-    html = HTML(string=html_content)
+    html = HTML(string=html_content, base_url=str(settings.BASE_DIR))
+    css = CSS(filename=str(css_path))
     pdf_bytes = html.write_pdf(stylesheets=[css])
 
     logger.info(f"Donation receipt PDF generated: {receipt_number}")

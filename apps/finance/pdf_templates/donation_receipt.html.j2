@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Reçu de don {{ receipt_number }}</title>
+</head>
+<body>
+    <div class="sheet">
+        <div class="sheet-watermark">EEBC</div>
+
+        <section class="top-zone">
+            <div class="header-row">
+                <div class="brand-cluster">
+                    {% if logo_data_uri %}
+                    <div class="brand-logo-shell">
+                        <img src="{{ logo_data_uri }}" alt="Logo {{ church_name }}">
+                    </div>
+                    {% endif %}
+
+                    <div class="brand-copy">
+                        <div class="brand-kicker">Association cultuelle</div>
+                        <h1>{{ church_name }}</h1>
+                        <div class="brand-address">{{ church_address }}</div>
+                        {% if church_contact_line %}<div class="brand-contact">{{ church_contact_line }}</div>{% endif %}
+                        {% if church_registration_line %}<div class="brand-registration">{{ church_registration_line }}</div>{% endif %}
+                    </div>
+                </div>
+
+                <aside class="receipt-panel">
+                    <div class="panel-label">Reçu de don</div>
+                    <div class="panel-number">N° {{ receipt_number }}</div>
+                    <div class="panel-date">{{ issue_city }}, le {{ issue_date_long }}</div>
+                </aside>
+            </div>
+
+            <div class="meta-grid">
+                <article class="meta-card">
+                    <div class="meta-card-label">Donateur</div>
+                    <div class="meta-card-name">{{ donor_display_name }}</div>
+                    {% if donor_secondary_line %}<div class="meta-card-sub">{{ donor_secondary_line }}</div>{% endif %}
+                    {% if member_name and member_name != donor_display_name %}<div class="meta-card-foot">Membre : {{ member_name }}</div>{% endif %}
+                </article>
+
+                <article class="meta-card meta-card--accent">
+                    <div class="meta-card-label">Détails du don</div>
+                    <div class="details-grid">
+                        <div class="detail-label">Date</div>
+                        <div class="detail-value">{{ donation_date_display }}</div>
+
+                        <div class="detail-label">Type</div>
+                        <div class="detail-value">{{ donation_type_display }}</div>
+
+                        <div class="detail-label">Paiement</div>
+                        <div class="detail-value">Carte bancaire (Stripe)</div>
+
+                        <div class="detail-label">Référence</div>
+                        <div class="detail-value">{{ reference or receipt_number }}</div>
+                    </div>
+                </article>
+            </div>
+        </section>
+
+        <section class="hero-zone">
+            <div class="amount-hero">
+                <div class="amount-eyebrow">Montant du don</div>
+                <div class="amount-value">{{ amount_display }} <span>€</span></div>
+                <div class="amount-rule"></div>
+                <div class="amount-words">{{ amount_words }}</div>
+            </div>
+        </section>
+
+        <section class="bottom-zone">
+            <div class="status-strip">
+                <div class="status-badge">✓</div>
+                <div class="status-body">
+                    <div class="status-title">Paiement confirmé</div>
+                    <div class="status-text">Transaction sécurisée via Stripe le {{ donation_date_display }}</div>
+                </div>
+            </div>
+
+            {% if recurring_note %}
+            <div class="recurring-chip">{{ recurring_note }}</div>
+            {% endif %}
+
+            <div class="insight-grid">
+                <div class="quote-card">
+                    <div class="quote-mark">«</div>
+                    <div class="quote-text">
+                        Chacun donne comme il l'a résolu en son cœur, sans tristesse ni contrainte ;
+                        car Dieu aime celui qui donne avec joie.
+                    </div>
+                    <div class="quote-ref">2 Corinthiens 9:7</div>
+                </div>
+
+                <div class="legal-card">
+                    <strong>Avis important</strong>
+                    Ce document est un reçu de don et non un reçu fiscal. Un reçu fiscal conforme à l'article 200 du Code Général des Impôts pourra vous être délivré sur demande en fin d'année civile pour l'ensemble de vos dons.
+                </div>
+            </div>
+
+            <footer class="sheet-footer">
+                <div class="footer-primary">
+                    <div class="footer-org">{{ church_name }}</div>
+                    <div class="footer-meta">{{ church_address }}</div>
+                    {% if church_contact_line %}<div class="footer-meta">{{ church_contact_line }}</div>{% endif %}
+                </div>
+
+                <div class="footer-secondary">
+                    <div>Document généré le {{ generation_date_display }}</div>
+                    <div>Réf. {{ receipt_number }}</div>
+                </div>
+            </footer>
+        </section>
+    </div>
+</body>
+</html>
