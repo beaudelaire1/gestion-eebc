@@ -114,7 +114,11 @@ class CreateDonationSessionView(View):
                     member_id = request.user.member_profile.id
             
             # URLs de retour
-            success_url = request.build_absolute_uri('/don/succes/?session_id={CHECKOUT_SESSION_ID}')
+            # Important : on construit la base via build_absolute_uri puis on concatène
+            # le placeholder {CHECKOUT_SESSION_ID} tel quel. Passer le placeholder
+            # directement à build_absolute_uri encoderait les accolades en %7B/%7D,
+            # ce qui empêche Stripe de substituer la valeur de la session.
+            success_url = request.build_absolute_uri('/don/succes/') + '?session_id={CHECKOUT_SESSION_ID}'
             cancel_url = request.build_absolute_uri('/don/annule/')
             
             if is_recurring:
