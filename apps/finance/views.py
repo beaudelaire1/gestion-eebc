@@ -482,8 +482,17 @@ def tax_receipt_create(request):
             transaction_date__year=fiscal_year
         )
         
+        # Inclure les dons de campagne (liés par nom du donateur)
+        from apps.campaigns.models import Donation as CampaignDonation
+        campaign_donations = CampaignDonation.objects.filter(
+            donor_name=member.full_name,
+            is_cancelled=False,
+            donation_date__year=fiscal_year
+        )
+        
         total = (donations.aggregate(Sum('amount'))['amount__sum'] or 0) + \
-                (transactions.aggregate(Sum('amount'))['amount__sum'] or 0)
+                (transactions.aggregate(Sum('amount'))['amount__sum'] or 0) + \
+                (campaign_donations.aggregate(Sum('amount'))['amount__sum'] or 0)
         
         if total <= 0:
             messages.error(request, f"Aucun don trouvé pour {member.full_name} en {fiscal_year}")
@@ -513,6 +522,10 @@ def tax_receipt_create(request):
             issued_by=request.user,
             status='draft'
         )
+        
+        # Rattacher les transactions financières au reçu
+        if transactions.exists():
+            receipt.transactions.set(transactions)
         
         messages.success(request, f"Reçu fiscal créé pour {member.full_name}")
         return redirect('finance:tax_receipt_detail', pk=receipt.pk)

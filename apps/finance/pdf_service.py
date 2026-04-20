@@ -265,7 +265,8 @@ def generate_tax_receipt_pdf(tax_receipt):
             font-size: 9pt;
         }
         .amount-label {
-            width: 130px;
+            min-width: 140px;
+            margin-right: 8px;
             color: #5b6b7d;
         }
         .amount-value {

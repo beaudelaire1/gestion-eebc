@@ -137,13 +137,29 @@ def campaign_donate(request, pk=None):
     else:
         form = DonationForm(campaign_id=pk)
     
+    from apps.members.models import Member
+    members = Member.objects.filter(status='actif').order_by('last_name', 'first_name')
+
     context = {
         'form': form,
         'campaign': campaign,
+        'members': members,
         'title': f'Nouveau don{" pour " + campaign.name if campaign else ""}',
         'submit_text': 'Enregistrer le don'
     }
     return render(request, 'campaigns/donation_form.html', context)
+
+
+@login_required
+@role_required('admin', 'finance', 'secretariat')
+@require_http_methods(["GET"])
+def member_info_api(request, pk):
+    """API JSON pour pré-remplir le nom du donateur depuis un membre."""
+    from apps.members.models import Member
+    member = get_object_or_404(Member, pk=pk)
+    return JsonResponse({
+        'name': member.full_name,
+    })
 
 
 @login_required
