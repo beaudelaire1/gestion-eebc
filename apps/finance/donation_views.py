@@ -162,6 +162,11 @@ class DonationSuccessView(TemplateView):
     
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
+        context['settings'] = SiteSettings.get_settings()
+        context['menu_pages'] = PageContent.objects.filter(
+            is_published=True,
+            show_in_menu=True
+        ).order_by('menu_order')
         
         session_id = self.request.GET.get('session_id')
         if session_id:
@@ -177,6 +182,15 @@ class DonationSuccessView(TemplateView):
 class DonationCancelView(TemplateView):
     """Page d'annulation de don."""
     template_name = 'finance/donation_cancel.html'
+    
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['settings'] = SiteSettings.get_settings()
+        context['menu_pages'] = PageContent.objects.filter(
+            is_published=True,
+            show_in_menu=True
+        ).order_by('menu_order')
+        return context
 
 
 class DonationReceiptPDFView(View):

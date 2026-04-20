@@ -27,6 +27,8 @@ urlpatterns = [
     path('tax-receipts/<int:pk>/', views.tax_receipt_detail, name='tax_receipt_detail'),
     path('tax-receipts/<int:pk>/pdf/', views.tax_receipt_pdf, name='tax_receipt_pdf'),
     path('tax-receipts/<int:pk>/send/', views.tax_receipt_send, name='tax_receipt_send'),
+    path('tax-receipts/bulk-generate/', views.tax_receipt_bulk_generate, name='tax_receipt_bulk_generate'),
+    path('tax-receipts/bulk-send/', views.tax_receipt_bulk_send, name='tax_receipt_bulk_send'),
 
     # Reçus de don (formulaire libre)
     path('donation-receipts/create/', views.donation_receipt_create, name='donation_receipt_create'),

@@ -139,54 +139,114 @@ def generate_annual_tax_receipts(year=None):
     Génère les reçus fiscaux annuels.
     
     Exécuté en janvier pour générer les reçus
-    de l'année précédente.
+    de l'année précédente. Inclut les 3 sources de dons :
+    - FinancialTransaction (dons/dîmes/offrandes)
+    - OnlineDonation (Stripe)
+    - CampaignDonation (campagnes)
     """
-    from apps.finance.models import FinancialTransaction, TaxReceipt
+    from apps.finance.models import FinancialTransaction, OnlineDonation, TaxReceipt
     from apps.members.models import Member
-    from django.db.models import Sum
+    from apps.campaigns.models import Donation as CampaignDonation
+    from django.db.models import Sum, Q
     
     if year is None:
         year = date.today().year - 1
     
-    # Trouver tous les membres avec des dons validés cette année
-    members_with_donations = Member.objects.filter(
-        transactions__transaction_date__year=year,
-        transactions__status='valide',
-        transactions__transaction_type__in=['don', 'dime', 'offrande'],
+    # Trouver tous les membres potentiellement donateurs via les 3 sources
+    members_with_transactions = set(
+        FinancialTransaction.objects.filter(
+            member__isnull=False,
+            transaction_date__year=year,
+            status='valide',
+            transaction_type__in=['don', 'dime', 'offrande'],
+        ).values_list('member_id', flat=True)
+    )
+    
+    members_with_online = set(
+        OnlineDonation.objects.filter(
+            member__isnull=False,
+            status='completed',
+            created_at__year=year,
+        ).values_list('member_id', flat=True)
+    )
+    
+    all_member_ids = members_with_transactions | members_with_online
+    
+    # Ajouter les membres identifiés par nom via les dons de campagne
+    members = Member.objects.filter(
+        Q(pk__in=all_member_ids) | Q(status='actif')
     ).distinct()
     
     created_count = 0
+    skipped_count = 0
     
-    for member in members_with_donations:
-        # Calculer le total des dons
+    for member in members:
+        # Vérifier qu'il n'y a pas déjà un reçu pour ce membre cette année
+        if TaxReceipt.objects.filter(member=member, fiscal_year=year).exists():
+            skipped_count += 1
+            continue
+        
+        # 1. Transactions financières
         transactions = FinancialTransaction.objects.filter(
             member=member,
             transaction_date__year=year,
             status='valide',
             transaction_type__in=['don', 'dime', 'offrande'],
         )
+        total_transactions = transactions.aggregate(total=Sum('amount'))['total'] or 0
         
-        total = transactions.aggregate(total=Sum('amount'))['total']
+        # 2. Dons en ligne
+        online = OnlineDonation.objects.filter(
+            member=member,
+            status='completed',
+            created_at__year=year,
+        )
+        total_online = online.aggregate(total=Sum('amount'))['total'] or 0
         
-        if total and total > 0:
-            # Créer le reçu fiscal
-            receipt = TaxReceipt.objects.create(
-                fiscal_year=year,
-                donor_name=member.full_name,
-                donor_address=f"{member.address}\n{member.postal_code} {member.city}",
-                donor_email=member.email,
-                member=member,
-                total_amount=total,
-                status='draft',
-            )
-            
-            # Associer les transactions
+        # 3. Dons de campagne (par nom)
+        campaign_total = CampaignDonation.objects.filter(
+            donor_name=member.full_name,
+            is_cancelled=False,
+            donation_date__year=year,
+        ).aggregate(total=Sum('amount'))['total'] or 0
+        
+        total = total_transactions + total_online + campaign_total
+        
+        if total <= 0:
+            continue
+        
+        # Générer le numéro de reçu
+        last_receipt = TaxReceipt.objects.filter(fiscal_year=year).order_by('-receipt_number').first()
+        if last_receipt:
+            try:
+                last_num = int(last_receipt.receipt_number.split('-')[-1])
+                new_num = last_num + 1
+            except (ValueError, IndexError):
+                new_num = 1
+        else:
+            new_num = 1
+        receipt_number = f"RF-{year}-{new_num:04d}"
+        
+        # Créer le reçu fiscal
+        receipt = TaxReceipt.objects.create(
+            receipt_number=receipt_number,
+            fiscal_year=year,
+            donor_name=member.full_name,
+            donor_address=f"{member.address or ''}, {member.postal_code or ''} {member.city or ''}".strip(', '),
+            donor_email=member.email or '',
+            member=member,
+            total_amount=total,
+            status='draft',
+        )
+        
+        # Associer les transactions financières
+        if transactions.exists():
             receipt.transactions.set(transactions)
-            
-            created_count += 1
-            logger.info(f"Tax receipt created for {member.full_name}: {total}€")
+        
+        created_count += 1
+        logger.info(f"Tax receipt {receipt_number} created for {member.full_name}: {total}€")
     
-    return f"Created {created_count} tax receipts for year {year}"
+    return f"Created {created_count} tax receipts for year {year} (skipped {skipped_count} existing)"
 
 
 @shared_task

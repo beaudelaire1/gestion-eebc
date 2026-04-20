@@ -46,7 +46,7 @@ services:
       - key: HOSTINGER_EMAIL_HOST_PASSWORD
         sync: false
       - key: DEFAULT_FROM_EMAIL
-        value: "EEBC <communication@eglise-ebc.org>"
+        value: "EEBC <contact@eglise-ebc.org>"
       # Stripe (configuré manuellement dans Render)
       - key: STRIPE_PUBLIC_KEY
         sync: false

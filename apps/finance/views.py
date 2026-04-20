@@ -1,5 +1,6 @@
 """Vues pour le module Finance."""
 
+import logging
 from pathlib import Path
 
 from django.shortcuts import render, get_object_or_404, redirect
@@ -23,6 +24,8 @@ from .import_services import (
 )
 from .services import TransactionService, BudgetService, DEDICATED_FUNDS_PARENT
 from apps.core.permissions import role_required
+
+logger = logging.getLogger(__name__)
 
 
 @login_required
@@ -449,6 +452,7 @@ def tax_receipt_list(request):
         'receipts': page_obj,
         'page_obj': page_obj,
         'total_amount': total_amount,
+        'current_year': date.today().year,
         'years': TaxReceipt.objects.values_list('fiscal_year', flat=True).distinct().order_by('-fiscal_year'),
         'statuses': TaxReceipt.Status.choices if hasattr(TaxReceipt, 'Status') else [],
     }
@@ -632,6 +636,156 @@ L'équipe EEBC""",
         messages.error(request, f"Erreur d'envoi : {e}")
     
     return redirect('finance:tax_receipt_detail', pk=pk)
+
+
+@login_required
+@role_required('admin', 'finance')
+def tax_receipt_bulk_generate(request):
+    """Générer les relevés fiscaux en masse pour une année donnée."""
+    from apps.members.models import Member
+    from apps.campaigns.models import Donation as CampaignDonation
+
+    if request.method == 'POST':
+        fiscal_year = int(request.POST.get('fiscal_year', date.today().year))
+
+        members = Member.objects.filter(status='actif').order_by('last_name', 'first_name')
+        created_count = 0
+        skipped_count = 0
+
+        for member in members:
+            # Vérifier qu'il n'y a pas déjà un reçu
+            if TaxReceipt.objects.filter(member=member, fiscal_year=fiscal_year).exists():
+                skipped_count += 1
+                continue
+
+            # 1. Transactions financières
+            transactions = FinancialTransaction.objects.filter(
+                member=member,
+                transaction_date__year=fiscal_year,
+                status='valide',
+                transaction_type__in=['don', 'dime', 'offrande'],
+            )
+            total_tx = transactions.aggregate(Sum('amount'))['amount__sum'] or 0
+
+            # 2. Dons en ligne
+            from .models import OnlineDonation
+            total_online = OnlineDonation.objects.filter(
+                member=member, status='completed', created_at__year=fiscal_year,
+            ).aggregate(Sum('amount'))['amount__sum'] or 0
+
+            # 3. Dons de campagne
+            total_campaign = CampaignDonation.objects.filter(
+                donor_name=member.full_name, is_cancelled=False, donation_date__year=fiscal_year,
+            ).aggregate(Sum('amount'))['amount__sum'] or 0
+
+            total = total_tx + total_online + total_campaign
+            if total <= 0:
+                continue
+
+            # Numéro de reçu
+            last = TaxReceipt.objects.filter(fiscal_year=fiscal_year).order_by('-receipt_number').first()
+            if last:
+                try:
+                    new_num = int(last.receipt_number.split('-')[-1]) + 1
+                except (ValueError, IndexError):
+                    new_num = 1
+            else:
+                new_num = 1
+            receipt_number = f"RF-{fiscal_year}-{new_num:04d}"
+
+            receipt = TaxReceipt.objects.create(
+                receipt_number=receipt_number,
+                member=member,
+                fiscal_year=fiscal_year,
+                total_amount=total,
+                donor_name=member.full_name,
+                donor_address=f"{member.address or ''}, {member.postal_code or ''} {member.city or ''}".strip(', '),
+                donor_email=member.email or '',
+                issued_by=request.user,
+                status='draft',
+            )
+            if transactions.exists():
+                receipt.transactions.set(transactions)
+            created_count += 1
+
+        if created_count:
+            messages.success(request, f"{created_count} relevé(s) fiscal/fiscaux créé(s) pour {fiscal_year}.")
+        else:
+            messages.info(request, f"Aucun nouveau relevé à créer pour {fiscal_year}.")
+        if skipped_count:
+            messages.info(request, f"{skipped_count} membre(s) avai(en)t déjà un relevé.")
+
+        return redirect('finance:tax_receipt_list')
+
+    return redirect('finance:tax_receipt_list')
+
+
+@login_required
+@role_required('admin', 'finance')
+def tax_receipt_bulk_send(request):
+    """Envoyer par email tous les relevés fiscaux émis (issued) qui ont un email."""
+    from .pdf_service import generate_tax_receipt_pdf
+    from django.core.mail import EmailMessage as DjangoEmail
+
+    if request.method == 'POST':
+        fiscal_year = request.POST.get('fiscal_year')
+        qs = TaxReceipt.objects.filter(status='issued')
+        if fiscal_year:
+            qs = qs.filter(fiscal_year=int(fiscal_year))
+
+        # Filtrer ceux qui ont un email
+        receipts = [r for r in qs if (r.donor_email or (r.member and r.member.email))]
+
+        sent_count = 0
+        error_count = 0
+
+        for receipt in receipts:
+            recipient_email = receipt.donor_email or receipt.member.email
+            recipient_name = receipt.donor_name.split()[0] if receipt.donor_name else 'Cher donateur'
+
+            try:
+                pdf_content = generate_tax_receipt_pdf(receipt)
+                email = DjangoEmail(
+                    subject=f"Reçu fiscal {receipt.fiscal_year} - {receipt.receipt_number}",
+                    body=f"""Bonjour {recipient_name},
+
+Veuillez trouver ci-joint votre reçu fiscal pour l'année {receipt.fiscal_year}.
+
+Montant total des dons : {receipt.total_amount} €
+
+Ce document est à conserver pour votre déclaration d'impôts.
+
+Merci pour votre générosité !
+
+Fraternellement,
+L'équipe EEBC""",
+                    from_email=None,
+                    to=[recipient_email],
+                )
+                email.attach(
+                    f"recu_fiscal_{receipt.receipt_number}.pdf",
+                    pdf_content,
+                    'application/pdf',
+                )
+                email.send()
+                receipt.status = 'sent'
+                receipt.sent_date = date.today()
+                receipt.save()
+                sent_count += 1
+            except Exception as e:
+                error_count += 1
+                logger.error(f"Failed to send receipt {receipt.receipt_number}: {e}")
+
+        if sent_count:
+            messages.success(request, f"{sent_count} reçu(s) envoyé(s) par email.")
+        if error_count:
+            messages.warning(request, f"{error_count} erreur(s) lors de l'envoi.")
+        if not receipts:
+            messages.info(request, "Aucun reçu émis avec email à envoyer.")
+
+        return redirect('finance:tax_receipt_list')
+
+    return redirect('finance:tax_receipt_list')
 
 
 @login_required
