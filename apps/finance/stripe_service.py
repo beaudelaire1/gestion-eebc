@@ -293,6 +293,22 @@ class StripeService:
             'dime': FinancialTransaction.TransactionType.DIME,
             'offrande': FinancialTransaction.TransactionType.OFFRANDE,
         }
+
+        # Protection idempotence: Stripe peut envoyer plusieurs événements.
+        existing_donation = OnlineDonation.objects.filter(stripe_session_id=session['id']).select_related('transaction').first()
+        if existing_donation:
+            if existing_donation.status != OnlineDonation.Status.COMPLETED:
+                existing_donation.status = OnlineDonation.Status.COMPLETED
+                if not existing_donation.completed_at:
+                    existing_donation.completed_at = timezone.now()
+                existing_donation.save(update_fields=['status', 'completed_at'])
+
+            if existing_donation.transaction:
+                return {
+                    'status': 'success',
+                    'transaction_id': existing_donation.transaction.id,
+                    'reference': existing_donation.transaction.reference,
+                }
         
         # Créer l'enregistrement du don en ligne
         online_donation = OnlineDonation.objects.create(
@@ -301,7 +317,9 @@ class StripeService:
             amount=amount,
             donation_type=donation_type,
             donor_email=session.get('customer_email', ''),
+            donor_name=(session.get('customer_details') or {}).get('name', ''),
             status='completed',
+            completed_at=timezone.now(),
             site_id=metadata.get('site_id') or None,
             member_id=metadata.get('member_id') or None,
         )
@@ -349,6 +367,18 @@ class StripeService:
             'transaction_id': transaction.id,
             'reference': transaction.reference,
         }
+
+    def finalize_checkout_session(self, session_id):
+        """Finalise une session Stripe côté serveur (fallback si webhook retardé/absent)."""
+        if not self.is_configured:
+            raise ValueError("Stripe n'est pas configuré")
+
+        session = stripe.checkout.Session.retrieve(session_id)
+
+        if session.get('payment_status') != 'paid':
+            return {'status': 'pending', 'session_id': session_id}
+
+        return self._handle_checkout_completed(session)
     
     def _handle_payment_succeeded(self, payment_intent):
         """Traite un paiement réussi."""

@@ -174,7 +174,18 @@ class DonationSuccessView(TemplateView):
                 donation = OnlineDonation.objects.get(stripe_session_id=session_id)
                 context['donation'] = donation
             except OnlineDonation.DoesNotExist:
-                pass
+                # Fallback: finaliser côté serveur si le webhook Stripe n'est pas encore passé.
+                try:
+                    stripe_service.finalize_checkout_session(session_id)
+                    donation = OnlineDonation.objects.filter(stripe_session_id=session_id).first()
+                    if donation:
+                        context['donation'] = donation
+                except Exception:
+                    logger.warning(
+                        "Unable to finalize checkout session from success page: %s",
+                        session_id,
+                        exc_info=True,
+                    )
         
         return context
 
