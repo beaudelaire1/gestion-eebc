@@ -11,6 +11,7 @@ import stripe
 import logging
 import hashlib
 from decimal import Decimal
+from django.db.models import F
 from django.conf import settings
 from django.urls import reverse
 from django.utils import timezone
@@ -303,6 +304,9 @@ class StripeService:
                     existing_donation.completed_at = timezone.now()
                 existing_donation.save(update_fields=['status', 'completed_at'])
 
+            if existing_donation.donor_email and not existing_donation.receipt_email_sent_at:
+                self._enqueue_donation_receipt_email(existing_donation.id)
+
             if existing_donation.transaction:
                 return {
                     'status': 'success',
@@ -356,9 +360,9 @@ class StripeService:
             except Exception as e:
                 logger.warning(f"Campaign donation link failed for campaign_id={campaign_id}: {e}")
         
-        # Envoyer un reçu par email
+        # Envoyer un reçu par email (file de retry + fallback immédiat).
         if session.get('customer_email'):
-            self._send_donation_receipt(online_donation)
+            self._enqueue_donation_receipt_email(online_donation.id)
         
         logger.info(f"Donation processed: {transaction.reference} - {amount}€")
         
@@ -448,11 +452,49 @@ class StripeService:
         """Traite l'annulation d'un abonnement."""
         logger.info(f"Subscription cancelled: {subscription['id']}")
         return {'status': 'acknowledged'}
+
+    def _enqueue_donation_receipt_email(self, online_donation_id):
+        """Planifie l'envoi du reçu et bascule en fallback synchrone si le broker est indisponible."""
+        from .models import OnlineDonation
+        from .tasks import send_donation_receipt_email_task
+
+        try:
+            send_donation_receipt_email_task.delay(online_donation_id)
+        except Exception as exc:
+            logger.warning(
+                "Failed to enqueue receipt email task for donation #%s, fallback to immediate send: %s",
+                online_donation_id,
+                exc,
+            )
+            donation = OnlineDonation.objects.filter(pk=online_donation_id).first()
+            if donation:
+                self._send_donation_receipt(donation)
     
     def _send_donation_receipt(self, online_donation):
-        """Envoie un reçu de don professionnel (PDF) par email."""
+        """Envoie un reçu de don professionnel (PDF) par email.
+
+        Returns:
+            bool: True si l'email est envoyé, sinon False.
+        """
         from django.core.mail import EmailMessage
+        from apps.communication.models import EmailLog
         from .pdf_service import generate_donation_receipt_pdf
+
+        if not online_donation.donor_email:
+            logger.warning("Donation #%s has no donor email, receipt cannot be sent.", online_donation.id)
+            return False
+
+        if online_donation.receipt_email_sent_at:
+            return True
+
+        OnlineDonationModel = type(online_donation)
+        OnlineDonationModel.objects.filter(pk=online_donation.pk).update(
+            receipt_email_attempts=F('receipt_email_attempts') + 1
+        )
+        online_donation.refresh_from_db(fields=['receipt_email_attempts', 'receipt_email_sent_at'])
+
+        if online_donation.receipt_email_sent_at:
+            return True
         
         try:
             # Générer le PDF professionnel
@@ -478,8 +520,18 @@ Que Dieu vous bénisse abondamment,
 Église Évangélique Baptiste de Cabassou
 """
             
+            subject = f"Reçu de don {ref} - EEBC"
+
+            email_log = EmailLog.objects.create(
+                recipient_email=online_donation.donor_email,
+                recipient_name=donor_name,
+                subject=subject,
+                body=body,
+                status=EmailLog.Status.PENDING,
+            )
+
             email = EmailMessage(
-                subject=f"Reçu de don {ref} - EEBC",
+                subject=subject,
                 body=body,
                 from_email=None,  # Utilise DEFAULT_FROM_EMAIL
                 to=[online_donation.donor_email],
@@ -492,11 +544,26 @@ Que Dieu vous bénisse abondamment,
                 'application/pdf'
             )
             
-            email.send()
+            email.send(fail_silently=False)
+
+            email_log.status = EmailLog.Status.SENT
+            email_log.sent_at = timezone.now()
+            email_log.error_message = ''
+            email_log.save(update_fields=['status', 'sent_at', 'error_message'])
+
+            online_donation.receipt_email_sent_at = timezone.now()
+            online_donation.receipt_email_last_error = ''
+            online_donation.save(update_fields=['receipt_email_sent_at', 'receipt_email_last_error'])
+
             logger.info(f"Donation receipt email sent to {online_donation.donor_email}: {receipt_number}")
+            return True
             
         except Exception as e:
+            error_message = str(e)
+            online_donation.receipt_email_last_error = error_message
+            online_donation.save(update_fields=['receipt_email_last_error'])
             logger.error(f"Failed to send donation receipt: {e}", exc_info=True)
+            return False
 
 
 # Instance singleton

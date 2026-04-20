@@ -96,3 +96,70 @@ def test_finalize_checkout_session_processes_paid_session(monkeypatch):
     assert captured['session'] == session_payload
     assert result['status'] == 'success'
     assert result['transaction_id'] == 123
+
+
+@pytest.mark.django_db
+def test_send_donation_receipt_updates_delivery_tracking(monkeypatch):
+    """L'envoi de reçu met à jour les champs de suivi dans OnlineDonation."""
+    donation = OnlineDonation.objects.create(
+        stripe_session_id='cs_test_tracking_001',
+        amount='10.00',
+        donation_type='don',
+        donor_email='donateur@example.com',
+        donor_name='Donateur Test',
+        status='completed',
+    )
+
+    class FakeEmailMessage:
+        def __init__(self, *args, **kwargs):
+            self.attachments = []
+
+        def attach(self, filename, content, mimetype):
+            self.attachments.append((filename, mimetype))
+
+        def send(self, fail_silently=False):
+            return 1
+
+    monkeypatch.setattr('apps.finance.stripe_service.EmailMessage', FakeEmailMessage, raising=False)
+    monkeypatch.setattr(
+        'apps.finance.pdf_service.generate_donation_receipt_pdf',
+        lambda d: (b'PDF', 'DON-TEST-00001')
+    )
+
+    sent = stripe_service._send_donation_receipt(donation)
+    donation.refresh_from_db()
+
+    assert sent is True
+    assert donation.receipt_email_attempts == 1
+    assert donation.receipt_email_sent_at is not None
+    assert donation.receipt_email_last_error == ''
+
+
+@pytest.mark.django_db
+def test_enqueue_receipt_email_fallbacks_to_sync_when_queue_is_unavailable(monkeypatch):
+    """Si Celery/Broker tombe, le service bascule en envoi immédiat."""
+    donation = OnlineDonation.objects.create(
+        stripe_session_id='cs_test_fallback_001',
+        amount='15.00',
+        donation_type='don',
+        donor_email='donateur@example.com',
+        status='completed',
+    )
+
+    class FakeTask:
+        @staticmethod
+        def delay(_donation_id):
+            raise RuntimeError('broker down')
+
+    called = {'sync': False}
+
+    def fake_send_sync(d):
+        called['sync'] = True
+        return True
+
+    monkeypatch.setattr('apps.finance.tasks.send_donation_receipt_email_task', FakeTask)
+    monkeypatch.setattr(stripe_service, '_send_donation_receipt', fake_send_sync)
+
+    stripe_service._enqueue_donation_receipt_email(donation.id)
+
+    assert called['sync'] is True

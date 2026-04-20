@@ -644,6 +644,21 @@ class OnlineDonation(models.Model):
     
     created_at = models.DateTimeField(auto_now_add=True, verbose_name="Créé le")
     completed_at = models.DateTimeField(null=True, blank=True, verbose_name="Complété le")
+
+    # Suivi d'envoi du reçu email
+    receipt_email_sent_at = models.DateTimeField(
+        null=True,
+        blank=True,
+        verbose_name="Reçu email envoyé le"
+    )
+    receipt_email_attempts = models.PositiveSmallIntegerField(
+        default=0,
+        verbose_name="Tentatives d'envoi du reçu"
+    )
+    receipt_email_last_error = models.TextField(
+        blank=True,
+        verbose_name="Dernière erreur d'envoi du reçu"
+    )
     
     class Meta:
         verbose_name = "Don en ligne"

@@ -16,6 +16,39 @@ from django.conf import settings
 logger = logging.getLogger(__name__)
 
 
+@shared_task(bind=True, max_retries=5, default_retry_delay=120)
+def send_donation_receipt_email_task(self, online_donation_id):
+    """Envoie le reçu de don avec retry automatique en cas d'échec temporaire."""
+    from .models import OnlineDonation
+    from .stripe_service import stripe_service
+
+    donation = OnlineDonation.objects.filter(pk=online_donation_id).first()
+    if not donation:
+        logger.warning("Donation #%s not found for receipt email task.", online_donation_id)
+        return {'status': 'not_found', 'donation_id': online_donation_id}
+
+    if not donation.donor_email:
+        return {'status': 'skipped', 'reason': 'no_email', 'donation_id': online_donation_id}
+
+    if donation.receipt_email_sent_at:
+        return {'status': 'already_sent', 'donation_id': online_donation_id}
+
+    sent = stripe_service._send_donation_receipt(donation)
+    if sent:
+        return {'status': 'sent', 'donation_id': online_donation_id}
+
+    if self.request.retries < self.max_retries:
+        countdown = 120 * (self.request.retries + 1)
+        raise self.retry(countdown=countdown)
+
+    return {
+        'status': 'failed',
+        'donation_id': online_donation_id,
+        'error': donation.receipt_email_last_error,
+        'attempts': donation.receipt_email_attempts,
+    }
+
+
 @shared_task(bind=True, max_retries=3, default_retry_delay=60)
 def process_ocr_task(self, receipt_proof_id):
     """
