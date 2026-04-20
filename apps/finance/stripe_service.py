@@ -280,7 +280,14 @@ class StripeService:
     def _handle_checkout_completed(self, session):
         """Traite une session de checkout complétée."""
         from .models import FinancialTransaction, OnlineDonation
-        
+
+        # Normaliser en dict standard : Stripe SDK v5+ retourne des StripeObject
+        # qui n'héritent plus de dict. On sérialise via JSON pour garantir un
+        # dict standard utilisable avec .get() dans tout le code.
+        if not isinstance(session, dict):
+            import json as _json
+            session = _json.loads(str(session))
+
         metadata = session.get('metadata', {})
         
         # Récupérer le montant
@@ -389,7 +396,7 @@ class StripeService:
             return {'status': 'invalid_session_id', 'session_id': session_id}
 
         try:
-            session = stripe.checkout.Session.retrieve(normalized_session_id)
+            stripe_session = stripe.checkout.Session.retrieve(normalized_session_id)
         except stripe.error.InvalidRequestError as exc:
             logger.warning("Stripe checkout session not found or invalid: %s", normalized_session_id)
             return {
@@ -397,6 +404,12 @@ class StripeService:
                 'session_id': normalized_session_id,
                 'error': str(exc),
             }
+
+        # Normaliser en dict standard : Stripe SDK v5+ retourne des StripeObject
+        # qui n'héritent plus de dict. La normalisation se fait ici pour que
+        # _handle_checkout_completed et les tests (mocks dict) fonctionnent pareil.
+        import json as _json
+        session = _json.loads(str(stripe_session)) if not isinstance(stripe_session, dict) else stripe_session
 
         if session.get('payment_status') != 'paid':
             return {'status': 'pending', 'session_id': normalized_session_id}
