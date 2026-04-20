@@ -163,3 +163,57 @@ def test_enqueue_receipt_email_fallbacks_to_sync_when_queue_is_unavailable(monke
     stripe_service._enqueue_donation_receipt_email(donation.id)
 
     assert called['sync'] is True
+
+
+@pytest.mark.django_db
+def test_finalize_checkout_session_rejects_placeholder_value(monkeypatch):
+    """Le placeholder Stripe ne doit jamais déclencher un appel API Stripe."""
+
+    class FakeCheckoutSession:
+        @staticmethod
+        def retrieve(session_id):
+            raise AssertionError('Stripe retrieve should not be called for placeholder values')
+
+    class FakeCheckout:
+        Session = FakeCheckoutSession
+
+    class FakeStripe:
+        checkout = FakeCheckout
+
+    monkeypatch.setattr('apps.finance.stripe_service.stripe', FakeStripe)
+    monkeypatch.setattr(stripe_service, 'api_key', 'sk_test_dummy')
+    monkeypatch.setattr(stripe_service, 'public_key', 'pk_test_dummy')
+
+    result = stripe_service.finalize_checkout_session('{CHECKOUT_SESSION_ID}')
+
+    assert result['status'] == 'invalid_session_id'
+
+
+@pytest.mark.django_db
+def test_finalize_checkout_session_handles_not_found(monkeypatch):
+    """Un id de session Stripe inconnu ne doit pas lever d'exception non gérée."""
+
+    class FakeInvalidRequestError(Exception):
+        pass
+
+    class FakeCheckoutSession:
+        @staticmethod
+        def retrieve(session_id):
+            raise FakeInvalidRequestError('No such checkout.session')
+
+    class FakeCheckout:
+        Session = FakeCheckoutSession
+
+    class FakeStripe:
+        checkout = FakeCheckout
+
+        class error:
+            InvalidRequestError = FakeInvalidRequestError
+
+    monkeypatch.setattr('apps.finance.stripe_service.stripe', FakeStripe)
+    monkeypatch.setattr(stripe_service, 'api_key', 'sk_test_dummy')
+    monkeypatch.setattr(stripe_service, 'public_key', 'pk_test_dummy')
+
+    result = stripe_service.finalize_checkout_session('cs_test_unknown_001')
+
+    assert result['status'] == 'session_not_found'

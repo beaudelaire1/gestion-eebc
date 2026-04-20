@@ -168,24 +168,27 @@ class DonationSuccessView(TemplateView):
             show_in_menu=True
         ).order_by('menu_order')
         
-        session_id = self.request.GET.get('session_id')
+        session_id = (self.request.GET.get('session_id') or '').strip()
         if session_id:
             try:
                 donation = OnlineDonation.objects.get(stripe_session_id=session_id)
                 context['donation'] = donation
             except OnlineDonation.DoesNotExist:
-                # Fallback: finaliser côté serveur si le webhook Stripe n'est pas encore passé.
-                try:
-                    stripe_service.finalize_checkout_session(session_id)
-                    donation = OnlineDonation.objects.filter(stripe_session_id=session_id).first()
-                    if donation:
-                        context['donation'] = donation
-                except Exception:
-                    logger.warning(
-                        "Unable to finalize checkout session from success page: %s",
-                        session_id,
-                        exc_info=True,
-                    )
+                if session_id == '{CHECKOUT_SESSION_ID}' or not session_id.startswith('cs_'):
+                    logger.info("Ignoring invalid success session_id: %s", session_id)
+                else:
+                    # Fallback: finaliser côté serveur si le webhook Stripe n'est pas encore passé.
+                    try:
+                        stripe_service.finalize_checkout_session(session_id)
+                        donation = OnlineDonation.objects.filter(stripe_session_id=session_id).first()
+                        if donation:
+                            context['donation'] = donation
+                    except Exception:
+                        logger.warning(
+                            "Unable to finalize checkout session from success page: %s",
+                            session_id,
+                            exc_info=True,
+                        )
         
         return context
 

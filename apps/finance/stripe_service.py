@@ -377,10 +377,29 @@ class StripeService:
         if not self.is_configured:
             raise ValueError("Stripe n'est pas configuré")
 
-        session = stripe.checkout.Session.retrieve(session_id)
+        normalized_session_id = (session_id or '').strip()
+        if (
+            not normalized_session_id
+            or normalized_session_id == '{CHECKOUT_SESSION_ID}'
+            or '{' in normalized_session_id
+            or '}' in normalized_session_id
+            or not normalized_session_id.startswith('cs_')
+        ):
+            logger.warning("Invalid checkout session id provided for finalize: %s", session_id)
+            return {'status': 'invalid_session_id', 'session_id': session_id}
+
+        try:
+            session = stripe.checkout.Session.retrieve(normalized_session_id)
+        except stripe.error.InvalidRequestError as exc:
+            logger.warning("Stripe checkout session not found or invalid: %s", normalized_session_id)
+            return {
+                'status': 'session_not_found',
+                'session_id': normalized_session_id,
+                'error': str(exc),
+            }
 
         if session.get('payment_status') != 'paid':
-            return {'status': 'pending', 'session_id': session_id}
+            return {'status': 'pending', 'session_id': normalized_session_id}
 
         return self._handle_checkout_completed(session)
     
