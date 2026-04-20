@@ -108,3 +108,73 @@ class FinanceExcelImportForm(forms.Form):
         if uploaded_file.size > 10 * 1024 * 1024:
             raise forms.ValidationError('Le fichier ne doit pas dépasser 10 Mo.')
         return uploaded_file
+
+
+class DonationReceiptForm(forms.Form):
+    """Formulaire de génération de reçu de don (espèces, chèque…)."""
+
+    DONATION_TYPE_CHOICES = [
+        ('don', 'Don'),
+        ('dime', 'Dîme'),
+        ('offrande', 'Offrande'),
+    ]
+
+    PAYMENT_METHOD_CHOICES = [
+        ('especes', 'Espèces'),
+        ('cheque', 'Chèque'),
+        ('virement', 'Virement bancaire'),
+        ('carte', 'Carte bancaire'),
+        ('mobile', 'Paiement mobile'),
+        ('autre', 'Autre'),
+    ]
+
+    member = forms.ModelChoiceField(
+        queryset=None,
+        required=False,
+        label='Membre',
+        widget=forms.Select(attrs={'class': 'form-select'}),
+        help_text='Sélectionnez un membre pour pré-remplir les informations.',
+    )
+    donor_name = forms.CharField(
+        max_length=200,
+        label='Nom du donateur',
+        widget=forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Nom et prénom'}),
+    )
+    donor_address = forms.CharField(
+        required=False,
+        label='Adresse',
+        widget=forms.Textarea(attrs={'class': 'form-control', 'rows': 2, 'placeholder': 'Adresse complète'}),
+    )
+    donor_email = forms.EmailField(
+        required=False,
+        label='Email',
+        widget=forms.EmailInput(attrs={'class': 'form-control', 'placeholder': 'email@exemple.com'}),
+    )
+    amount = forms.DecimalField(
+        max_digits=10,
+        decimal_places=2,
+        min_value=0.01,
+        label='Montant (€)',
+        widget=forms.NumberInput(attrs={'class': 'form-control', 'step': '0.01', 'min': '0.01', 'placeholder': '0.00'}),
+    )
+    donation_type = forms.ChoiceField(
+        choices=DONATION_TYPE_CHOICES,
+        label='Type',
+        widget=forms.Select(attrs={'class': 'form-select'}),
+    )
+    payment_method = forms.ChoiceField(
+        choices=PAYMENT_METHOD_CHOICES,
+        label='Mode de paiement',
+        widget=forms.Select(attrs={'class': 'form-select'}),
+    )
+    donation_date = forms.DateField(
+        label='Date du don',
+        widget=forms.DateInput(attrs={'class': 'form-control', 'type': 'date'}),
+    )
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        from apps.members.models import Member
+        self.fields['member'].queryset = Member.objects.filter(
+            status='actif'
+        ).order_by('last_name', 'first_name')

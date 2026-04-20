@@ -2,7 +2,7 @@ from django.shortcuts import render, get_object_or_404, redirect
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.core.paginator import Paginator
-from django.http import JsonResponse
+from django.http import JsonResponse, HttpResponse
 from django.views.decorators.http import require_http_methods
 from django.urls import reverse
 from django.core import signing
@@ -210,4 +210,22 @@ def donation_cancel(request, pk):
         'campaign': campaign,
     }
     return render(request, 'campaigns/donation_cancel_confirm.html', context)
+
+
+@login_required
+@role_required('admin', 'finance')
+def donation_receipt_pdf(request, pk):
+    """Génère un reçu PDF pour un don de campagne."""
+    donation = get_object_or_404(Donation, pk=pk)
+
+    if donation.is_cancelled:
+        messages.error(request, "Impossible de générer un reçu pour un don annulé.")
+        return redirect('campaigns:detail', pk=donation.campaign.pk)
+
+    from apps.finance.pdf_service import generate_campaign_donation_receipt_pdf
+    pdf_bytes, receipt_number = generate_campaign_donation_receipt_pdf(donation)
+
+    response = HttpResponse(pdf_bytes, content_type='application/pdf')
+    response['Content-Disposition'] = f'inline; filename="recu_{receipt_number}.pdf"'
+    return response
 

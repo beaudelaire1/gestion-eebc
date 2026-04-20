@@ -360,6 +360,9 @@
                     <h5 class="mb-0 fw-bold page-title">{% block page_title %}Tableau de bord{% endblock %}</h5>
                     <small class="text-muted page-subtitle">{% block page_subtitle %}{% endblock %}</small>
                 </div>
+                <div class="ms-auto d-flex align-items-center gap-2">
+                    {% block page_actions %}{% endblock %}
+                </div>
             </div>
 
             <div class="d-flex align-items-center gap-3">

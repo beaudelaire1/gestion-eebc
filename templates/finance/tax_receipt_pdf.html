@@ -5,125 +5,210 @@
     <title>Reçu fiscal {{ receipt.receipt_number }}</title>
 </head>
 <body>
-    <div class="gold-border-top"></div>
+    <!-- ═══ GOLD ACCENT ═══ -->
+    <div class="gold-accent"></div>
 
-    <div class="header">
+    <!-- ═══ EN-TÊTE ═══ -->
+    <div class="header-block">
         {% if logo_base64 %}
-        <img src="data:image/png;base64,{{ logo_base64 }}" alt="Logo EEBC" class="header-logo">
+        <div class="header-logo">
+            <img src="data:image/png;base64,{{ logo_base64 }}" alt="Logo">
+        </div>
         {% endif %}
         <div class="header-text">
-            <h1>{{ church_name }}</h1>
-            <h2>REÇU AU TITRE DES DONS</h2>
-            <p class="header-legal-ref">Article 200 du Code Général des Impôts</p>
+            <div class="header-kicker">Document fiscal officiel</div>
+            <div class="header-title">Reçu au titre des dons</div>
+            <div class="header-subtitle">Aux œuvres et organismes d'intérêt général</div>
+            <div class="header-ref">Art. 200, 238 bis et 978 du code général des impôts</div>
         </div>
-    </div>
-    
-    <div class="receipt-number">
-        N° {{ receipt.receipt_number }}
-    </div>
-    
-    <div class="section">
-        <div class="section-title">ORGANISME BÉNÉFICIAIRE</div>
-        <p>
-            <strong>{{ church_name }}</strong><br>
-            {{ church_address }}<br>
-            {% if church_siret %}SIRET : {{ church_siret }}<br>{% endif %}
-            {% if church_rna %}N° RNA : {{ church_rna }}{% endif %}
-        </p>
-        <p>
-            <em>Association cultuelle reconnue d'intérêt général</em>
-        </p>
-    </div>
-    
-    <div class="section">
-        <div class="section-title">DONATEUR</div>
-        <p>
-            <strong>{{ receipt.donor_name }}</strong><br>
-            {{ receipt.donor_address|linebreaksbr }}
-        </p>
-    </div>
-    
-    <div class="amount-box">
-        <div class="amount">{{ receipt.total_amount }} €</div>
-        <div class="amount-text">
-            ({{ receipt.total_amount|floatformat:2 }} euros)
+        <div class="receipt-panel">
+            <div class="panel-label">Reçu n°</div>
+            <div class="panel-number">{{ receipt.receipt_number }}</div>
+            <div class="panel-year">Exercice {{ receipt.fiscal_year }}</div>
         </div>
-    </div>
-    
-    <div class="section">
-        <div class="section-title">NATURE DU DON</div>
-        <p>
-            ☑ Numéraire<br>
-            ☐ Autres (préciser) : _______________
-        </p>
-        <p>
-            <strong>Année fiscale :</strong> {{ receipt.fiscal_year }}<br>
-            <strong>Date d'émission :</strong> {{ receipt.issue_date|date:"d/m/Y" }}
-        </p>
-    </div>
-    
-    {% if receipt.transactions.exists %}
-    <div class="section">
-        <div class="section-title">DÉTAIL DES VERSEMENTS</div>
-        <table style="width: 100%; border-collapse: collapse;">
-            <thead>
-                <tr style="background: #f5f5f5;">
-                    <th style="padding: 8px; border: 1px solid #ddd; text-align: left;">Date</th>
-                    <th style="padding: 8px; border: 1px solid #ddd; text-align: left;">Type</th>
-                    <th style="padding: 8px; border: 1px solid #ddd; text-align: right;">Montant</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for transaction in receipt.transactions.all %}
-                <tr>
-                    <td style="padding: 8px; border: 1px solid #ddd;">{{ transaction.transaction_date|date:"d/m/Y" }}</td>
-                    <td style="padding: 8px; border: 1px solid #ddd;">{{ transaction.get_transaction_type_display }}</td>
-                    <td style="padding: 8px; border: 1px solid #ddd; text-align: right;">{{ transaction.amount }} €</td>
-                </tr>
-                {% endfor %}
-            </tbody>
-            <tfoot>
-                <tr style="background: #f5f5f5; font-weight: bold;">
-                    <td colspan="2" style="padding: 8px; border: 1px solid #ddd;">TOTAL</td>
-                    <td style="padding: 8px; border: 1px solid #ddd; text-align: right;">{{ receipt.total_amount }} €</td>
-                </tr>
-            </tfoot>
-        </table>
-    </div>
-    {% endif %}
-    
-    <div class="legal-text">
-        <strong>Mentions légales obligatoires :</strong><br><br>
-        
-        Le bénéficiaire certifie sur l'honneur que les dons et versements qu'il reçoit 
-        ouvrent droit à la réduction d'impôt prévue à l'article 200 du CGI.<br><br>
-        
-        <strong>Réduction d'impôt :</strong> Le donateur peut bénéficier d'une réduction 
-        d'impôt sur le revenu égale à 66% du montant des dons, dans la limite de 20% 
-        du revenu imposable. Pour les dons aux organismes d'aide aux personnes en 
-        difficulté, la réduction est de 75% dans la limite de 1000€.<br><br>
-        
-        <em>Conformément à l'article 200-5 du CGI, ce reçu doit être conservé par le 
-        donateur et présenté sur demande de l'administration fiscale.</em>
-    </div>
-    
-    <div class="signature-section">
-        <div class="signature-box">
-            <strong>Date :</strong> {{ receipt.issue_date|date:"d/m/Y" }}<br>
-            <strong>Lieu :</strong> Cayenne
-        </div>
-        <div class="signature-box">
-            <strong>Signature et cachet :</strong>
-            <div class="signature-line"></div>
-        </div>
-    </div>
-    
-    <div class="footer">
-        <div class="footer-line-tax"></div>
-        {{ church_name }} — {{ church_address }}<br>
-        Ce document est un reçu fiscal officiel — Conservez-le précieusement
     </div>
 
-    <div class="gold-border-bottom"></div>
+    <div class="type-badge">Relevé fiscal annuel</div>
+
+    <!-- ═══ CADRE 1 — ORGANISME BÉNÉFICIAIRE ═══ -->
+    <div class="cadre">
+        <div class="cadre-header">
+            <span class="cadre-num">1</span>
+            <span class="cadre-title">Organisme bénéficiaire des dons</span>
+        </div>
+        <div class="cadre-body">
+            <table class="info-table">
+                <tr>
+                    <td class="info-label">Dénomination</td>
+                    <td class="info-value"><strong>{{ church_name }}</strong></td>
+                </tr>
+                <tr>
+                    <td class="info-label">Adresse</td>
+                    <td class="info-value">{{ church_address }}</td>
+                </tr>
+                {% if church_siret %}
+                <tr>
+                    <td class="info-label">SIRET</td>
+                    <td class="info-value">{{ church_siret }}</td>
+                </tr>
+                {% endif %}
+                {% if church_rna %}
+                <tr>
+                    <td class="info-label">RNA</td>
+                    <td class="info-value">{{ church_rna }}</td>
+                </tr>
+                {% endif %}
+            </table>
+            <div class="nature-organisme">
+                ☒ Association cultuelle (loi 1905) — ☒ Reconnue d'intérêt général
+            </div>
+        </div>
+    </div>
+
+    <!-- ═══ CADRE 2 — DONATEUR ═══ -->
+    <div class="cadre">
+        <div class="cadre-header">
+            <span class="cadre-num">2</span>
+            <span class="cadre-title">Donateur</span>
+        </div>
+        <div class="cadre-body">
+            <table class="info-table">
+                <tr>
+                    <td class="info-label">Nom</td>
+                    <td class="info-value"><strong>{{ receipt.donor_name }}</strong></td>
+                </tr>
+                <tr>
+                    <td class="info-label">Adresse</td>
+                    <td class="info-value">{{ receipt.donor_address|linebreaksbr }}</td>
+                </tr>
+                {% if receipt.donor_email %}
+                <tr>
+                    <td class="info-label">Email</td>
+                    <td class="info-value">{{ receipt.donor_email }}</td>
+                </tr>
+                {% endif %}
+            </table>
+        </div>
+    </div>
+
+    <!-- ═══ CADRE 3 — MONTANT TOTAL ═══ -->
+    <div class="cadre">
+        <div class="cadre-header">
+            <span class="cadre-num">3</span>
+            <span class="cadre-title">Montant total des versements</span>
+        </div>
+        <div class="cadre-body cadre-amount">
+            <div class="amount-row">
+                <span class="amount-label">Somme en chiffres</span>
+                <span class="amount-value">{{ receipt.total_amount|floatformat:2 }} euros</span>
+            </div>
+            <div class="amount-row">
+                <span class="amount-label">Somme en lettres</span>
+                <span class="amount-words">{{ amount_words }}</span>
+            </div>
+            <div class="amount-gold-bar"></div>
+        </div>
+    </div>
+
+    <!-- ═══ CADRE 4 — NATURE DES DONS ═══ -->
+    <div class="cadre">
+        <div class="cadre-header">
+            <span class="cadre-num">4</span>
+            <span class="cadre-title">Nature des dons</span>
+        </div>
+        <div class="cadre-body">
+            <div class="nature-checks">
+                ☒ Numéraire — ☐ Autres (en nature, compétences…)
+            </div>
+            <div class="nature-detail">
+                Mode de versement : ☒ Versement(s) effectué(s) au cours de l'année {{ receipt.fiscal_year }}
+            </div>
+        </div>
+    </div>
+
+    <!-- ═══ CADRE 5 — DÉTAIL DES VERSEMENTS ═══ -->
+    {% if receipt.transactions.exists %}
+    <div class="cadre">
+        <div class="cadre-header">
+            <span class="cadre-num">5</span>
+            <span class="cadre-title">Détail des versements — exercice {{ receipt.fiscal_year }}</span>
+        </div>
+        <div class="cadre-body cadre-table-body">
+            <table class="versements-table">
+                <thead>
+                    <tr>
+                        <th class="col-date">Date</th>
+                        <th class="col-type">Nature</th>
+                        <th class="col-mode">Mode</th>
+                        <th class="col-amount">Montant</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for transaction in receipt.transactions.all %}
+                    <tr>
+                        <td>{{ transaction.transaction_date|date:"d/m/Y" }}</td>
+                        <td>{{ transaction.get_transaction_type_display }}</td>
+                        <td>{{ transaction.get_payment_method_display|default:"—" }}</td>
+                        <td class="td-amount">{{ transaction.amount|floatformat:2 }} €</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+                <tfoot>
+                    <tr class="total-row">
+                        <td colspan="3">Total</td>
+                        <td class="td-amount">{{ receipt.total_amount|floatformat:2 }} €</td>
+                    </tr>
+                </tfoot>
+            </table>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- ═══ CADRE 6 — ATTESTATION ═══ -->
+    <div class="cadre cadre-attestation">
+        <div class="cadre-header">
+            <span class="cadre-num">6</span>
+            <span class="cadre-title">Attestation de l'organisme</span>
+        </div>
+        <div class="cadre-body">
+            <p class="attestation-text">
+                Le bénéficiaire mentionné au cadre 1 certifie sur l'honneur que les dons et
+                versements qu'il reçoit ouvrent droit à la réduction d'impôt prévue à
+                l'article 200 du code général des impôts.
+            </p>
+            <table class="signature-table">
+                <tr>
+                    <td class="sig-cell">
+                        Fait à Cayenne, le {{ receipt.issue_date|date:"d/m/Y" }}
+                    </td>
+                    <td class="sig-cell sig-right">
+                        Signature et cachet de l'organisme
+                        <div class="sig-line"></div>
+                    </td>
+                </tr>
+            </table>
+        </div>
+    </div>
+
+    <!-- ═══ MENTIONS LÉGALES ═══ -->
+    <div class="legal-block">
+        <p>
+            Réduction d'impôt (art. 200 du CGI) : le donateur bénéficie d'une réduction
+            d'impôt sur le revenu égale à 66 % du montant des dons, dans la limite de
+            20 % du revenu imposable. Pour les dons aux organismes d'aide aux personnes
+            en difficulté : 75 % dans la limite de 1 000 €.
+        </p>
+        <p>
+            Conformément à l'article 200-5 du CGI, ce reçu doit être conservé par le
+            donateur et présenté sur demande de l'administration fiscale.
+        </p>
+    </div>
+
+    <!-- ═══ PIED DE PAGE ═══ -->
+    <div class="footer">
+        <div class="footer-gold"></div>
+        {{ church_name }} — {{ church_address }}
+        {% if church_siret %} — SIRET {{ church_siret }}{% endif %}
+    </div>
 </body>
 </html>

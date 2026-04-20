@@ -62,171 +62,325 @@ def generate_tax_receipt_pdf(tax_receipt):
         'church_address': CHURCH_INFO['address'],
         'church_siret': CHURCH_INFO['siret'],
         'church_rna': CHURCH_INFO['rna'],
+        'amount_words': _amount_to_words(tax_receipt.total_amount),
     }
     
     # Rendre le template HTML
     html_content = render_to_string('finance/tax_receipt_pdf.html', context)
     
-    # CSS pour le PDF
+    # CSS pour le PDF — Style fiscal EEBC (charte graphique + Cerfa)
     css = CSS(string='''
         @page {
             size: A4;
-            margin: 2cm;
+            margin: 1.2cm 1.4cm;
         }
 
         body {
-            font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
-            font-size: 11pt;
+            font-family: "Aptos", "Segoe UI", Arial, sans-serif;
+            font-size: 9pt;
             line-height: 1.5;
-            color: #1e293b;
+            color: #132238;
+            background: #ffffff;
         }
 
-        .gold-border-top {
+        /* ── Gold accent bar (top) ── */
+        .gold-accent {
             height: 4px;
-            background: linear-gradient(90deg, #b8860b, #daa520, #f0c850, #daa520, #b8860b);
-            margin-bottom: 25px;
-            border-radius: 2px;
+            border-radius: 999px;
+            background: linear-gradient(90deg, #b8860b 0%, #d4a11e 45%, #f0c850 100%);
+            margin-bottom: 0.35cm;
         }
 
-        .gold-border-bottom {
-            height: 4px;
-            background: linear-gradient(90deg, #b8860b, #daa520, #f0c850, #daa520, #b8860b);
-            margin-top: 20px;
-            border-radius: 2px;
+        /* ── Header block ── */
+        .header-block {
+            display: flex;
+            align-items: flex-start;
+            gap: 0.4cm;
+            margin-bottom: 0.4cm;
         }
-
-        .header {
-            text-align: center;
-            margin-bottom: 25px;
-            border-bottom: 2px solid #0f2557;
-            padding-bottom: 20px;
-        }
-
         .header-logo {
-            width: 80px;
-            height: 80px;
+            width: 2.2cm;
+            height: 2.2cm;
+            padding: 0.12cm;
+            border-radius: 12px;
+            border: 1px solid #dbe3ef;
+            background: #ffffff;
+            box-shadow: 0 4px 12px rgba(17, 46, 99, 0.08);
+            flex-shrink: 0;
+        }
+        .header-logo img {
+            width: 100%;
+            height: 100%;
             object-fit: contain;
-            margin-bottom: 10px;
         }
-
-        .header h1 {
-            color: #0f2557;
-            font-size: 18pt;
+        .header-text {
+            flex: 1;
+            padding-top: 0.06cm;
+            text-align: center;
+        }
+        .header-kicker {
+            font-size: 7pt;
+            font-weight: 700;
+            color: #bf8c10;
+            text-transform: uppercase;
+            letter-spacing: 0.18em;
+            margin-bottom: 0.06cm;
+        }
+        .header-title {
+            font-size: 14pt;
             font-weight: 800;
-            margin: 0;
-            letter-spacing: 0.5px;
+            color: #112e63;
+            line-height: 1.1;
+            margin-bottom: 0.06cm;
+        }
+        .header-subtitle {
+            font-size: 8pt;
+            color: #5b6b7d;
+            letter-spacing: 0.04em;
+        }
+        .header-ref {
+            font-size: 7pt;
+            color: #8b97a8;
+            margin-top: 0.04cm;
         }
 
-        .header h2 {
-            font-size: 12pt;
-            color: #daa520;
-            margin: 8px 0 0 0;
-            text-transform: uppercase;
-            letter-spacing: 3px;
+        /* ── Receipt number panel ── */
+        .receipt-panel {
+            width: 4.8cm;
+            padding: 0.32cm 0.38cm;
+            border-radius: 14px;
+            background: linear-gradient(135deg, #112e63 0%, #1d478f 100%);
+            color: #ffffff;
+            box-shadow: 0 8px 20px rgba(17, 46, 99, 0.16);
+            flex-shrink: 0;
+            text-align: center;
+        }
+        .panel-label {
+            font-size: 7pt;
             font-weight: 700;
-        }
-
-        .header-legal-ref {
-            font-size: 9pt;
-            color: #64748b;
-            margin-top: 4px;
-            font-style: italic;
-        }
-
-        .receipt-number {
-            text-align: right;
-            font-size: 12pt;
-            color: #0f2557;
-            font-weight: bold;
-            margin-bottom: 20px;
-            font-family: "Courier New", monospace;
-        }
-
-        .section {
-            margin-bottom: 25px;
-        }
-
-        .section-title {
-            font-weight: 700;
-            color: #0f2557;
-            border-bottom: 2px solid #0f2557;
-            padding-bottom: 6px;
-            margin-bottom: 12px;
+            letter-spacing: 0.18em;
             text-transform: uppercase;
-            font-size: 9pt;
-            letter-spacing: 2px;
+            opacity: 0.8;
+        }
+        .panel-number {
+            font-family: "Consolas", "Courier New", monospace;
+            font-size: 10pt;
+            font-weight: 700;
+            margin: 0.08cm 0;
+        }
+        .panel-year {
+            font-size: 8pt;
+            opacity: 0.75;
         }
 
-        .info-row {
+        /* ── Type badge ── */
+        .type-badge {
+            display: inline-block;
+            background: linear-gradient(135deg, #112e63, #1d478f);
+            color: #ffffff;
+            font-size: 7.5pt;
+            font-weight: 700;
+            letter-spacing: 0.15em;
+            text-transform: uppercase;
+            padding: 3px 14px;
+            border-radius: 999px;
+            margin-bottom: 0.3cm;
+        }
+
+        /* ── Cadres ── */
+        .cadre {
+            border: 1px solid #d0d8e4;
+            border-radius: 10px;
+            margin-bottom: 0.28cm;
+            overflow: hidden;
+            box-shadow: 0 1px 4px rgba(17, 46, 99, 0.04);
+        }
+        .cadre-header {
+            background: linear-gradient(135deg, #f0f4fa 0%, #e8edf5 100%);
+            border-bottom: 1px solid #d0d8e4;
+            padding: 5px 12px;
             display: flex;
-            margin-bottom: 5px;
+            align-items: center;
+            gap: 8px;
+        }
+        .cadre-num {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            background: linear-gradient(135deg, #112e63, #1d478f);
+            color: #ffffff;
+            font-weight: 700;
+            font-size: 8.5pt;
+            text-align: center;
+            line-height: 20px;
+            border-radius: 6px;
+        }
+        .cadre-title {
+            font-size: 8pt;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.12em;
+            color: #112e63;
+        }
+        .cadre-body {
+            padding: 10px 14px;
         }
 
+        /* ── Info tables ── */
+        .info-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        .info-table td {
+            padding: 2.5px 0;
+            vertical-align: top;
+            font-size: 9pt;
+        }
         .info-label {
-            width: 150px;
-            font-weight: bold;
+            width: 100px;
+            color: #5b6b7d;
+        }
+        .info-value {
+            color: #132238;
         }
 
-        .amount-box {
-            background: linear-gradient(135deg, #0f2557 0%, #1a3a6b 100%);
-            border-radius: 8px;
-            padding: 25px;
-            text-align: center;
-            margin: 30px 0;
-            color: #ffffff;
-        }
-
-        .amount-box .amount {
-            font-size: 28pt;
-            font-weight: 900;
-            color: #ffffff;
-        }
-
-        .amount-box .amount-text {
-            font-size: 11pt;
-            color: #cbd5e1;
+        /* ── Nature & checkboxes ── */
+        .nature-organisme,
+        .nature-checks,
+        .nature-detail {
             margin-top: 6px;
-            font-style: italic;
+            font-size: 9pt;
+            color: #2d3e50;
         }
 
-        .legal-text {
-            font-size: 8.5pt;
-            color: #64748b;
-            border: 1px solid #e2e8f0;
-            padding: 15px 18px;
-            margin-top: 30px;
-            background: #f8fafc;
-            border-radius: 4px;
-            line-height: 1.6;
+        /* ── Amount cadre ── */
+        .cadre-amount {
+            background: linear-gradient(135deg, #faf8f4 0%, #f5f0e8 100%);
+            padding: 14px 18px;
         }
-
-        .signature-section {
-            margin-top: 40px;
+        .amount-row {
             display: flex;
-            justify-content: space-between;
+            align-items: baseline;
+            padding: 3px 0;
+            font-size: 9pt;
+        }
+        .amount-label {
+            width: 130px;
+            color: #5b6b7d;
+        }
+        .amount-value {
+            font-weight: 800;
+            color: #112e63;
+            font-family: "Consolas", "Courier New", monospace;
+            letter-spacing: 0.03em;
+        }
+        .amount-words {
+            color: #2d3e50;
+        }
+        .amount-gold-bar {
+            height: 2px;
+            margin-top: 8px;
+            border-radius: 999px;
+            background: linear-gradient(90deg, #b8860b 0%, #d4a11e 50%, #f0c850 100%);
+            opacity: 0.5;
         }
 
-        .signature-box {
-            width: 45%;
-        }
-
-        .signature-line {
-            border-bottom: 1px solid #1e293b;
-            height: 60px;
-            margin-top: 10px;
-        }
-
-        .footer {
-            margin-top: 40px;
-            text-align: center;
+        /* ── Versements table ── */
+        .cadre-table-body { padding: 0; }
+        .versements-table {
+            width: 100%;
+            border-collapse: collapse;
             font-size: 8.5pt;
-            color: #94a3b8;
+        }
+        .versements-table th {
+            background: linear-gradient(135deg, #f0f4fa, #e8edf5);
+            border-bottom: 1px solid #d0d8e4;
+            padding: 5px 12px;
+            text-align: left;
+            font-weight: 700;
+            font-size: 7.5pt;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            color: #112e63;
+        }
+        .versements-table td {
+            padding: 4px 12px;
+            border-bottom: 0.5px solid #e8edf5;
+        }
+        .versements-table tbody tr:nth-child(even) {
+            background: #fafbfd;
+        }
+        .td-amount {
+            text-align: right;
+            font-family: "Consolas", "Courier New", monospace;
+        }
+        .col-date { width: 22%; }
+        .col-type { width: 30%; }
+        .col-mode { width: 24%; }
+        .col-amount { width: 24%; text-align: right; }
+        .total-row {
+            background: linear-gradient(135deg, #112e63, #1d478f);
+            color: #ffffff;
+        }
+        .total-row td {
+            padding: 6px 12px;
+            border: none;
+            font-weight: 700;
         }
 
-        .footer-line-tax {
-            height: 1px;
-            background: linear-gradient(90deg, transparent, #cbd5e1, transparent);
-            margin-bottom: 12px;
+        /* ── Attestation ── */
+        .cadre-attestation { margin-top: 0.12cm; }
+        .attestation-text {
+            font-size: 9pt;
+            line-height: 1.5;
+            margin: 0 0 10px 0;
+            color: #2d3e50;
+        }
+        .signature-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        .sig-cell {
+            width: 50%;
+            padding: 5px 0;
+            vertical-align: top;
+            font-size: 9pt;
+            color: #5b6b7d;
+        }
+        .sig-right { text-align: right; }
+        .sig-line {
+            border-bottom: 1px solid #d0d8e4;
+            height: 36px;
+            margin-top: 6px;
+            margin-left: 40%;
+        }
+
+        /* ── Legal block ── */
+        .legal-block {
+            margin-top: 0.25cm;
+            padding: 10px 14px;
+            background: #f8f9fb;
+            border: 1px solid #e0e5ed;
+            border-radius: 8px;
+            font-size: 7.5pt;
+            color: #5b6b7d;
+            line-height: 1.5;
+        }
+        .legal-block p { margin: 0 0 4px 0; }
+
+        /* ── Footer ── */
+        .footer {
+            margin-top: 0.3cm;
+            text-align: center;
+            font-size: 7pt;
+            color: #8b97a8;
+            padding-top: 8px;
+        }
+        .footer-gold {
+            height: 2px;
+            border-radius: 999px;
+            background: linear-gradient(90deg, transparent, #d4a11e, #f0c850, #d4a11e, transparent);
+            margin-bottom: 8px;
         }
     ''')
     
@@ -355,6 +509,9 @@ def _format_amount_fr(amount):
 
 def _format_long_date_fr(value):
     """Formate une date francaise longue sans dependre des locales systeme."""
+    from datetime import date as date_type
+    if isinstance(value, date_type) and not hasattr(value, 'hour'):
+        return f"{value.day} {FRENCH_MONTHS[value.month - 1]} {value.year}"
     dt_value = timezone.localtime(value) if timezone.is_aware(value) else value
     return f"{dt_value.day} {FRENCH_MONTHS[dt_value.month - 1]} {dt_value.year}"
 
@@ -386,6 +543,17 @@ def _get_donation_receipt_jinja_env():
 def _render_donation_receipt_template(template_name, context):
     """Rend un gabarit Jinja2 pour les recus de don."""
     return _get_donation_receipt_jinja_env().get_template(template_name).render(**context)
+
+
+def _get_member_address_line(member):
+    """Construit la ligne d'adresse a partir d'un membre."""
+    if not member:
+        return ''
+    parts = [
+        getattr(member, 'address', '') or '',
+        ' '.join(filter(None, [getattr(member, 'postal_code', ''), getattr(member, 'city', '')])),
+    ]
+    return ', '.join(p for p in parts if p.strip())
 
 
 def _build_donation_receipt_context(online_donation, receipt_number):
@@ -438,11 +606,13 @@ def _build_donation_receipt_context(online_donation, receipt_number):
         'issue_city': os.environ.get('CHURCH_CITY', 'Cayenne'),
         'issue_date_long': _format_long_date_fr(issue_date),
         'donor_display_name': donor_name,
+        'donor_address_line': _get_member_address_line(online_donation.member),
         'donor_secondary_line': donor_secondary_line,
         'member_name': member_name,
         'donation_date_display': _format_datetime_fr(donation_date),
         'donation_type_display': type_labels.get(online_donation.donation_type, 'Don'),
         'reference': reference,
+        'payment_method_display': 'Carte bancaire (Stripe)',
         'amount_display': _format_amount_fr(online_donation.amount),
         'amount_words': _amount_to_words(online_donation.amount),
         'recurring_note': recurring_note,
@@ -476,6 +646,235 @@ def generate_donation_receipt_pdf(online_donation):
 
     logger.info(f"Donation receipt PDF generated: {receipt_number}")
     return pdf_bytes, receipt_number
+
+
+def generate_transaction_receipt_pdf(transaction):
+    """
+    Génère un PDF de reçu pour une transaction manuelle (espèces, chèque, virement…).
+
+    Args:
+        transaction: Instance de FinancialTransaction (don/dîme/offrande)
+
+    Returns:
+        tuple: (pdf_bytes, receipt_number)
+    """
+    try:
+        from weasyprint import HTML, CSS
+    except ImportError:
+        raise ImportError("WeasyPrint n'est pas installé. pip install weasyprint")
+
+    receipt_number = f"DON-{transaction.transaction_date.strftime('%Y%m')}-{transaction.id:05d}"
+
+    issue_date = timezone.now()
+    donation_date = transaction.transaction_date
+
+    member_name = transaction.member.get_full_name() if transaction.member else ''
+    donor_name = member_name or transaction.description or 'Donateur'
+    donor_secondary_line = ''
+    donor_address_line = _get_member_address_line(transaction.member)
+
+    logo_base64 = _get_logo_base64()
+
+    type_labels = {
+        'don': 'Don',
+        'dime': 'Dîme',
+        'offrande': 'Offrande',
+    }
+
+    payment_labels = {
+        'especes': 'Espèces',
+        'cheque': 'Chèque',
+        'virement': 'Virement bancaire',
+        'carte': 'Carte bancaire',
+        'mobile': 'Paiement mobile',
+        'autre': 'Autre',
+    }
+
+    church_contact_line = ' • '.join(
+        part for part in [CHURCH_INFO['phone'], CHURCH_INFO['email']] if part
+    )
+    church_registration_line = ' • '.join(
+        part
+        for part in [
+            f"SIRET {CHURCH_INFO['siret']}" if CHURCH_INFO['siret'] else '',
+            f"RNA {CHURCH_INFO['rna']}" if CHURCH_INFO['rna'] else '',
+        ]
+        if part
+    )
+
+    context = {
+        'receipt_number': receipt_number,
+        'logo_data_uri': f"data:image/png;base64,{logo_base64}" if logo_base64 else '',
+        'church_name': CHURCH_INFO['name'],
+        'church_address': CHURCH_INFO['address'],
+        'church_contact_line': church_contact_line,
+        'church_registration_line': church_registration_line,
+        'issue_city': os.environ.get('CHURCH_CITY', 'Cayenne'),
+        'issue_date_long': _format_long_date_fr(issue_date),
+        'donor_display_name': donor_name,
+        'donor_address_line': donor_address_line,
+        'donor_secondary_line': donor_secondary_line,
+        'member_name': member_name,
+        'donation_date_display': _format_long_date_fr(donation_date),
+        'donation_type_display': type_labels.get(transaction.transaction_type, 'Don'),
+        'payment_method_display': payment_labels.get(transaction.payment_method, 'Espèces'),
+        'reference': transaction.reference,
+        'amount_display': _format_amount_fr(transaction.amount),
+        'amount_words': _amount_to_words(transaction.amount),
+        'recurring_note': '',
+        'generation_date_display': _format_datetime_fr(issue_date),
+    }
+
+    html_content = _render_donation_receipt_template('donation_receipt.html.j2', context)
+    css_path = DONATION_RECEIPT_TEMPLATE_DIR / 'donation_receipt.css'
+
+    html = HTML(string=html_content, base_url=str(settings.BASE_DIR))
+    css = CSS(filename=str(css_path))
+    pdf_bytes = html.write_pdf(stylesheets=[css])
+
+    logger.info(f"Transaction receipt PDF generated: {receipt_number} (transaction #{transaction.id})")
+    return pdf_bytes, receipt_number
+
+
+def generate_campaign_donation_receipt_pdf(donation):
+    """
+    Génère un PDF de reçu pour un don de campagne.
+
+    Args:
+        donation: Instance de campaigns.Donation
+
+    Returns:
+        tuple: (pdf_bytes, receipt_number)
+    """
+    try:
+        from weasyprint import HTML, CSS
+    except ImportError:
+        raise ImportError("WeasyPrint n'est pas installé. pip install weasyprint")
+
+    receipt_number = f"DON-{donation.donation_date.strftime('%Y%m')}-C{donation.id:05d}"
+
+    issue_date = timezone.now()
+    donor_name = 'Anonyme' if donation.is_anonymous else (donation.donor_name or 'Donateur')
+    logo_base64 = _get_logo_base64()
+
+    church_contact_line = ' • '.join(
+        part for part in [CHURCH_INFO['phone'], CHURCH_INFO['email']] if part
+    )
+    church_registration_line = ' • '.join(
+        part
+        for part in [
+            f"SIRET {CHURCH_INFO['siret']}" if CHURCH_INFO['siret'] else '',
+            f"RNA {CHURCH_INFO['rna']}" if CHURCH_INFO['rna'] else '',
+        ]
+        if part
+    )
+
+    context = {
+        'receipt_number': receipt_number,
+        'logo_data_uri': f"data:image/png;base64,{logo_base64}" if logo_base64 else '',
+        'church_name': CHURCH_INFO['name'],
+        'church_address': CHURCH_INFO['address'],
+        'church_contact_line': church_contact_line,
+        'church_registration_line': church_registration_line,
+        'issue_city': os.environ.get('CHURCH_CITY', 'Cayenne'),
+        'issue_date_long': _format_long_date_fr(issue_date),
+        'donor_display_name': donor_name,
+        'donor_address_line': '',
+        'donor_secondary_line': f"Campagne : {donation.campaign.name}",
+        'member_name': '',
+        'donation_date_display': _format_long_date_fr(donation.donation_date),
+        'donation_type_display': 'Don',
+        'payment_method_display': 'Espèces',
+        'reference': receipt_number,
+        'amount_display': _format_amount_fr(donation.amount),
+        'amount_words': _amount_to_words(donation.amount),
+        'recurring_note': '',
+        'generation_date_display': _format_datetime_fr(issue_date),
+    }
+
+    html_content = _render_donation_receipt_template('donation_receipt.html.j2', context)
+    css_path = DONATION_RECEIPT_TEMPLATE_DIR / 'donation_receipt.css'
+
+    html = HTML(string=html_content, base_url=str(settings.BASE_DIR))
+    css = CSS(filename=str(css_path))
+    pdf_bytes = html.write_pdf(stylesheets=[css])
+
+    logger.info(f"Campaign donation receipt PDF generated: {receipt_number} (donation #{donation.id})")
+    return pdf_bytes, receipt_number
+
+
+def generate_manual_donation_receipt_pdf(donor_name, donor_address, donor_email,
+                                         amount, donation_type, payment_method,
+                                         donation_date):
+    """
+    Génère un PDF de reçu de don à partir des informations saisies manuellement.
+
+    Returns:
+        tuple: (pdf_bytes, receipt_number)
+    """
+    try:
+        from weasyprint import HTML, CSS
+    except ImportError:
+        raise ImportError("WeasyPrint n'est pas installé. pip install weasyprint")
+
+    import random
+    receipt_id = random.randint(10000, 99999)
+    receipt_number = f"DON-{donation_date.strftime('%Y%m')}-M{receipt_id:05d}"
+
+    issue_date = timezone.now()
+    logo_base64 = _get_logo_base64()
+
+    type_labels = {'don': 'Don', 'dime': 'Dîme', 'offrande': 'Offrande'}
+    payment_labels = {
+        'especes': 'Espèces', 'cheque': 'Chèque', 'virement': 'Virement bancaire',
+        'carte': 'Carte bancaire', 'mobile': 'Paiement mobile', 'autre': 'Autre',
+    }
+
+    church_contact_line = ' • '.join(
+        part for part in [CHURCH_INFO['phone'], CHURCH_INFO['email']] if part
+    )
+    church_registration_line = ' • '.join(
+        part
+        for part in [
+            f"SIRET {CHURCH_INFO['siret']}" if CHURCH_INFO['siret'] else '',
+            f"RNA {CHURCH_INFO['rna']}" if CHURCH_INFO['rna'] else '',
+        ]
+        if part
+    )
+
+    context = {
+        'receipt_number': receipt_number,
+        'logo_data_uri': f"data:image/png;base64,{logo_base64}" if logo_base64 else '',
+        'church_name': CHURCH_INFO['name'],
+        'church_address': CHURCH_INFO['address'],
+        'church_contact_line': church_contact_line,
+        'church_registration_line': church_registration_line,
+        'issue_city': os.environ.get('CHURCH_CITY', 'Cayenne'),
+        'issue_date_long': _format_long_date_fr(issue_date),
+        'donor_display_name': donor_name,
+        'donor_address_line': donor_address,
+        'donor_secondary_line': donor_email,
+        'member_name': '',
+        'donation_date_display': _format_long_date_fr(donation_date),
+        'donation_type_display': type_labels.get(donation_type, 'Don'),
+        'payment_method_display': payment_labels.get(payment_method, 'Espèces'),
+        'reference': receipt_number,
+        'amount_display': _format_amount_fr(amount),
+        'amount_words': _amount_to_words(amount),
+        'recurring_note': '',
+        'generation_date_display': _format_datetime_fr(issue_date),
+    }
+
+    html_content = _render_donation_receipt_template('donation_receipt.html.j2', context)
+    css_path = DONATION_RECEIPT_TEMPLATE_DIR / 'donation_receipt.css'
+
+    html = HTML(string=html_content, base_url=str(settings.BASE_DIR))
+    css = CSS(filename=str(css_path))
+    pdf_bytes = html.write_pdf(stylesheets=[css])
+
+    logger.info(f"Manual donation receipt PDF generated: {receipt_number}")
+    return pdf_bytes, receipt_number
+
 
 def number_to_words_fr(number):
     """Convertit un nombre en lettres (français)."""

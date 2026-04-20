@@ -4,6 +4,11 @@
 {% block page_title %}Transaction {{ transaction.reference }}{% endblock %}
 
 {% block page_actions %}
+{% if transaction.transaction_type == 'don' or transaction.transaction_type == 'dime' or transaction.transaction_type == 'offrande' %}
+<a href="{% url 'finance:transaction_receipt_pdf' transaction.pk %}" class="btn btn-outline-primary" target="_blank">
+    <i class="bi bi-file-earmark-pdf me-1"></i> Reçu PDF
+</a>
+{% endif %}
 {% if transaction.status == 'en_attente' and perms.finance.change_financialtransaction %}
 <a href="{% url 'finance:transaction_validate' transaction.pk %}" class="btn btn-success">
     <i class="bi bi-check-lg me-1"></i> Valider

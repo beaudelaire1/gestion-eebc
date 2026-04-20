@@ -38,6 +38,7 @@
                 <article class="meta-card">
                     <div class="meta-card-label">Donateur</div>
                     <div class="meta-card-name">{{ donor_display_name }}</div>
+                    {% if donor_address_line %}<div class="meta-card-sub">{{ donor_address_line }}</div>{% endif %}
                     {% if donor_secondary_line %}<div class="meta-card-sub">{{ donor_secondary_line }}</div>{% endif %}
                     {% if member_name and member_name != donor_display_name %}<div class="meta-card-foot">Membre : {{ member_name }}</div>{% endif %}
                 </article>
@@ -52,7 +53,7 @@
                         <div class="detail-value">{{ donation_type_display }}</div>
 
                         <div class="detail-label">Paiement</div>
-                        <div class="detail-value">Carte bancaire (Stripe)</div>
+                        <div class="detail-value">{{ payment_method_display }}</div>
 
                         <div class="detail-label">Référence</div>
                         <div class="detail-value">{{ reference or receipt_number }}</div>

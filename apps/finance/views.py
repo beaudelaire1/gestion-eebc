@@ -13,7 +13,7 @@ from datetime import date, timedelta
 from decimal import Decimal
 
 from .models import FinancialTransaction, FinanceCategory, ReceiptProof, BudgetLine, BudgetCategory, Budget, BudgetItem, BudgetRequest
-from .forms import TransactionForm, ProofUploadForm, FinanceCategoryForm, FinanceExcelImportForm
+from .forms import TransactionForm, ProofUploadForm, FinanceCategoryForm, FinanceExcelImportForm, DonationReceiptForm
 from .import_services import (
     FINANCE_IMPORT_SHEET_SPECS,
     FinanceBundleImporter,
@@ -236,6 +236,70 @@ def transaction_validate(request, pk):
         messages.error(request, result.error)
     
     return redirect('finance:transaction_detail', pk=pk)
+
+
+@login_required
+@role_required('admin', 'finance')
+def transaction_receipt_pdf(request, pk):
+    """Génère un reçu PDF pour une transaction manuelle (don, dîme, offrande)."""
+    transaction = get_object_or_404(FinancialTransaction, pk=pk)
+
+    income_types = ('don', 'dime', 'offrande')
+    if transaction.transaction_type not in income_types:
+        messages.error(request, "Seuls les dons, dîmes et offrandes peuvent avoir un reçu.")
+        return redirect('finance:transaction_detail', pk=pk)
+
+    from .pdf_service import generate_transaction_receipt_pdf
+    pdf_bytes, receipt_number = generate_transaction_receipt_pdf(transaction)
+
+    response = HttpResponse(pdf_bytes, content_type='application/pdf')
+    response['Content-Disposition'] = f'inline; filename="recu_{receipt_number}.pdf"'
+    return response
+
+
+@login_required
+@role_required('admin', 'finance')
+def donation_receipt_create(request):
+    """Page de création d'un reçu de don avec formulaire (espèces, chèque…)."""
+    if request.method == 'POST':
+        form = DonationReceiptForm(request.POST)
+        if form.is_valid():
+            from .pdf_service import generate_manual_donation_receipt_pdf
+
+            pdf_bytes, receipt_number = generate_manual_donation_receipt_pdf(
+                donor_name=form.cleaned_data['donor_name'],
+                donor_address=form.cleaned_data.get('donor_address', ''),
+                donor_email=form.cleaned_data.get('donor_email', ''),
+                amount=form.cleaned_data['amount'],
+                donation_type=form.cleaned_data['donation_type'],
+                payment_method=form.cleaned_data['payment_method'],
+                donation_date=form.cleaned_data['donation_date'],
+            )
+
+            response = HttpResponse(pdf_bytes, content_type='application/pdf')
+            response['Content-Disposition'] = f'inline; filename="recu_{receipt_number}.pdf"'
+            return response
+    else:
+        form = DonationReceiptForm(initial={'donation_date': date.today()})
+
+    return render(request, 'finance/donation_receipt_create.html', {'form': form})
+
+
+@login_required
+@role_required('admin', 'finance')
+def member_info_api(request, pk):
+    """API JSON pour pré-remplir le formulaire de reçu depuis un membre."""
+    from apps.members.models import Member
+    member = get_object_or_404(Member, pk=pk)
+    address_parts = [member.address or '']
+    city_line = ' '.join(filter(None, [member.postal_code, member.city]))
+    if city_line:
+        address_parts.append(city_line)
+    return JsonResponse({
+        'name': member.get_full_name(),
+        'email': member.email or '',
+        'address': ', '.join(p for p in address_parts if p.strip()),
+    })
 
 
 @login_required

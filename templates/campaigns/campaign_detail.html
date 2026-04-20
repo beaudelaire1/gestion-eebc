@@ -151,6 +151,13 @@
                                 <td><strong>{{ donation.amount }}€</strong></td>
                                 <td>{{ donation.donation_date|date:"d/m/Y" }}</td>
                                 <td>
+                                    {% if not donation.is_cancelled %}
+                                    <a href="{% url 'campaigns:donation_receipt_pdf' donation.pk %}"
+                                        class="btn btn-sm btn-outline-primary me-1"
+                                        target="_blank" title="Reçu PDF">
+                                        <i class="bi bi-file-earmark-pdf"></i>
+                                    </a>
+                                    {% endif %}
                                     <a href="{% url 'campaigns:donation_cancel' donation.pk %}"
                                         class="btn btn-sm btn-link text-danger"
                                         title="{% if donation.is_cancelled %}Réactiver{% else %}Annuler{% endif %}">

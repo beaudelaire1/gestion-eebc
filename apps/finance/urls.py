@@ -13,6 +13,7 @@ urlpatterns = [
     path('transactions/', views.transaction_list, name='transaction_list'),
     path('transactions/create/', views.transaction_create, name='transaction_create'),
     path('transactions/<int:pk>/', views.transaction_detail, name='transaction_detail'),
+    path('transactions/<int:pk>/receipt-pdf/', views.transaction_receipt_pdf, name='transaction_receipt_pdf'),
     path('transactions/<int:pk>/validate/', views.transaction_validate, name='transaction_validate'),
     path('proofs/<int:pk>/upload/', views.proof_upload, name='proof_upload'),
     path('budget/', views.budget_overview, name='budget_overview'),
@@ -26,6 +27,10 @@ urlpatterns = [
     path('tax-receipts/<int:pk>/', views.tax_receipt_detail, name='tax_receipt_detail'),
     path('tax-receipts/<int:pk>/pdf/', views.tax_receipt_pdf, name='tax_receipt_pdf'),
     path('tax-receipts/<int:pk>/send/', views.tax_receipt_send, name='tax_receipt_send'),
+
+    # Reçus de don (formulaire libre)
+    path('donation-receipts/create/', views.donation_receipt_create, name='donation_receipt_create'),
+    path('donation-receipts/member-info/<int:pk>/', views.member_info_api, name='member_info_api'),
     
     # Système de budget
     path('budgets/', budget_views.budget_dashboard, name='budget_dashboard'),
