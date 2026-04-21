@@ -10,7 +10,9 @@
     // --- TYPEWRITER VERSE ---
     function initTypewriter() {
         var el = document.querySelector('.verse-typewriter');
-        if (!el) return;
+        var textEl = el && el.querySelector('.verse-text');
+        var refEl = el && el.querySelector('.verse-ref');
+        if (!el || !textEl || !refEl) return;
 
         var verses = [
             { text: '\u00ab Car Dieu a tant aim\u00e9 le monde qu\u2019il a donn\u00e9 son Fils unique, afin que quiconque croit en lui ne p\u00e9risse point, mais qu\u2019il ait la vie \u00e9ternelle. \u00bb', ref: '\u2014 Jean 3:16' },
@@ -21,9 +23,6 @@
         ];
 
         var currentVerse = 0;
-        var textEl = el.querySelector('.verse-text');
-        var refEl = el.querySelector('.verse-ref');
-        if (!textEl || !refEl) return;
 
         function typeVerse(verse) {
             textEl.textContent = '';
@@ -132,11 +131,117 @@
         });
     }
 
+    // --- HERO BIBLE PANEL ---
+    function initHeroBiblePanels() {
+        if (!window.matchMedia('(hover: hover) and (pointer: fine)').matches) return;
+
+        var stages = document.querySelectorAll('.hero-bible-stage');
+        if (!stages.length) return;
+
+        stages.forEach(function (stage) {
+            function resetTilt() {
+                stage.classList.remove('is-tilting');
+                stage.style.setProperty('--hero-bible-rotate-x', '0deg');
+                stage.style.setProperty('--hero-bible-rotate-y', '0deg');
+            }
+
+            stage.addEventListener('pointerenter', function () {
+                stage.classList.add('is-tilting');
+            });
+
+            stage.addEventListener('pointermove', function (event) {
+                var rect = stage.getBoundingClientRect();
+                var offsetX = (event.clientX - rect.left) / rect.width - 0.5;
+                var offsetY = (event.clientY - rect.top) / rect.height - 0.5;
+                var rotateY = offsetX * 12;
+                var rotateX = offsetY * -10;
+
+                stage.style.setProperty('--hero-bible-rotate-x', rotateX.toFixed(2) + 'deg');
+                stage.style.setProperty('--hero-bible-rotate-y', rotateY.toFixed(2) + 'deg');
+            });
+
+            stage.addEventListener('pointerleave', resetTilt);
+            stage.addEventListener('blur', resetTilt, true);
+        });
+    }
+
+    // --- BIBLICAL JOURNEY ---
+    function initBibleJourney() {
+        var section = document.querySelector('.bible-journey-section');
+        if (!section) return;
+
+        var cards = Array.from(section.querySelectorAll('.journey-story-card'));
+        var media = section.querySelector('#journeySceneMedia');
+        var title = section.querySelector('#journeyVisualTitle');
+        var copy = section.querySelector('#journeyVisualCopy');
+        var ref = section.querySelector('#journeyVisualRef');
+        if (!cards.length || !media || !title || !copy || !ref) return;
+
+        function activateCard(card) {
+            if (!card) return;
+
+            cards.forEach(function (item) {
+                item.classList.toggle('is-active', item === card);
+            });
+
+            var nextTitle = card.dataset.journeyTitle || '';
+            var nextCopy = card.dataset.journeyCopy || '';
+            var nextRef = card.dataset.journeyRef || '';
+            var nextImage = card.dataset.journeyImage || '';
+            var cardIndex = cards.indexOf(card);
+
+            title.textContent = nextTitle;
+            copy.textContent = nextCopy;
+            ref.textContent = nextRef;
+            section.style.setProperty('--journey-bible-tilt', cardIndex % 2 === 0 ? '-6deg' : '6deg');
+
+            if (nextImage && media.dataset.currentImage !== nextImage) {
+                media.classList.add('is-switching');
+                media.dataset.currentImage = nextImage;
+                media.onload = function () {
+                    media.classList.remove('is-switching');
+                    media.onload = null;
+                };
+                media.src = nextImage;
+                media.alt = nextTitle;
+            }
+        }
+
+        var observer = new IntersectionObserver(function (entries) {
+            var visibleEntries = entries.filter(function (entry) {
+                return entry.isIntersecting;
+            }).sort(function (left, right) {
+                return right.intersectionRatio - left.intersectionRatio;
+            });
+
+            if (visibleEntries.length) {
+                activateCard(visibleEntries[0].target);
+            }
+        }, {
+            threshold: [0.35, 0.55, 0.75],
+            rootMargin: '-10% 0px -18% 0px'
+        });
+
+        cards.forEach(function (card) {
+            observer.observe(card);
+            card.addEventListener('mouseenter', function () {
+                activateCard(card);
+            });
+            card.addEventListener('focusin', function () {
+                activateCard(card);
+            });
+        });
+
+        activateCard(cards[0]);
+    }
+
     // --- INIT ---
     document.addEventListener('DOMContentLoaded', function () {
         initTypewriter();
         initScrollReveal();
         initCounters();
         initScrollDown();
+        initHeroBiblePanels();
+        initBibleJourney();
     });
 })();

@@ -218,6 +218,135 @@
 }
 
 /* =============================================
+   HERO BIBLE PANEL
+   ============================================= */
+.hero-bible-stage {
+    --hero-bible-rotate-x: 0deg;
+    --hero-bible-rotate-y: 0deg;
+    position: relative;
+    width: min(540px, 100%);
+    margin: 0 auto 2rem;
+    perspective: 1800px;
+    opacity: 0;
+    transform: translateY(40px) scale(0.96);
+    animation: heroFadeUp 1.2s cubic-bezier(0.16, 1, 0.3, 1) 0.25s forwards;
+}
+
+.hero-bible-stage::before {
+    content: '';
+    position: absolute;
+    left: 12%;
+    right: 12%;
+    bottom: -8%;
+    height: 34%;
+    border-radius: 999px;
+    background: radial-gradient(circle, rgba(248, 181, 0, 0.36), transparent 68%);
+    filter: blur(24px);
+    opacity: 0.42;
+    pointer-events: none;
+}
+
+.hero-bible-stage--compact {
+    width: min(360px, 100%);
+    margin-bottom: 0;
+}
+
+.hero-bible-scene {
+    position: relative;
+    z-index: 1;
+    min-height: 370px;
+    border-radius: 34px;
+    overflow: hidden;
+    border: 1px solid rgba(255, 255, 255, 0.14);
+    background:
+        radial-gradient(circle at 25% 25%, rgba(59, 130, 246, 0.24), transparent 34%),
+        radial-gradient(circle at 75% 22%, rgba(248, 181, 0, 0.18), transparent 28%),
+        linear-gradient(160deg, rgba(9, 18, 35, 0.98) 0%, rgba(13, 24, 46, 0.96) 58%, rgba(21, 38, 68, 0.98) 100%);
+    box-shadow: 0 26px 80px rgba(0, 0, 0, 0.34);
+    transform-style: preserve-3d;
+}
+
+.hero-bible-stage--compact .hero-bible-scene {
+    min-height: 275px;
+    border-radius: 28px;
+}
+
+.hero-bible-scene::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background:
+        radial-gradient(circle at 50% 42%, rgba(255, 255, 255, 0.08), transparent 26%),
+        linear-gradient(180deg, rgba(255, 255, 255, 0.02), transparent 32%, rgba(255, 255, 255, 0.03) 100%);
+    pointer-events: none;
+}
+
+.hero-bible-scene::after {
+    content: '';
+    position: absolute;
+    inset: 1rem;
+    border-radius: inherit;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    pointer-events: none;
+}
+
+.hero-bible-scene-overlay {
+    position: absolute;
+    inset: 0;
+    background:
+        linear-gradient(180deg, rgba(7, 15, 29, 0.04) 0%, rgba(7, 15, 29, 0.28) 64%, rgba(7, 15, 29, 0.5) 100%),
+        radial-gradient(circle at 50% 25%, rgba(248, 181, 0, 0.08), transparent 28%);
+}
+
+.hero-bible-glass {
+    position: absolute;
+    inset: 1.35rem;
+    z-index: 2;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 34px;
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.18), rgba(255, 255, 255, 0.08));
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    box-shadow: 0 20px 55px rgba(0, 0, 0, 0.28), inset 0 1px 0 rgba(255, 255, 255, 0.25);
+    -webkit-backdrop-filter: blur(18px);
+    backdrop-filter: blur(18px);
+    transform: translateZ(42px) rotateX(var(--hero-bible-rotate-x)) rotateY(var(--hero-bible-rotate-y)) rotateZ(-3deg);
+    transition: transform 0.22s ease, box-shadow 0.3s ease;
+}
+
+.hero-bible-stage.is-tilting .hero-bible-glass {
+    box-shadow: 0 28px 70px rgba(0, 0, 0, 0.38), inset 0 1px 0 rgba(255, 255, 255, 0.28);
+}
+
+.hero-bible-stage--compact .hero-bible-glass {
+    inset: 1rem;
+    border-radius: 28px;
+}
+
+.hero-bible-panel-image {
+    display: block;
+    width: min(82%, 380px);
+    height: auto;
+    transform: translateY(10px) scale(1.02);
+    filter: drop-shadow(0 22px 30px rgba(0, 0, 0, 0.3));
+    animation: heroBibleFloat 7s ease-in-out infinite;
+}
+
+.hero-bible-stage--compact .hero-bible-panel-image {
+    width: min(80%, 240px);
+}
+
+@keyframes heroBibleFloat {
+    0%, 100% {
+        transform: translateY(10px) rotate(-1.5deg) scale(1.01);
+    }
+    50% {
+        transform: translateY(-2px) rotate(1deg) scale(1.04);
+    }
+}
+
+/* =============================================
    3D OPEN BIBLE — REAL BOOK
    ============================================= */
 .bible-open-container {
@@ -902,6 +1031,347 @@
     border-radius: 2px;
 }
 
+.premium-header--light .overline {
+    color: rgba(248, 181, 0, 0.95);
+}
+
+.premium-header--light .overline::before {
+    background: linear-gradient(90deg, transparent, rgba(248, 181, 0, 0.85));
+}
+
+.premium-header--light .overline::after {
+    background: linear-gradient(90deg, rgba(248, 181, 0, 0.85), transparent);
+}
+
+.premium-header--light h2 {
+    color: #ffffff;
+}
+
+.premium-header--light .header-desc {
+    color: rgba(234, 239, 255, 0.78);
+}
+
+.premium-header--light .header-divider {
+    background: linear-gradient(90deg, rgba(248, 181, 0, 0.1), rgba(248, 181, 0, 1), rgba(59, 130, 246, 0.6));
+}
+
+.verse-typewriter-note {
+    margin-top: 1rem;
+    font-size: 0.85rem;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: rgba(255, 255, 255, 0.5);
+}
+
+.faith-content-shell,
+.cta-premium-inner {
+    z-index: 10;
+}
+
+.section-slab {
+    padding-top: 5rem !important;
+    padding-bottom: 4.5rem !important;
+}
+
+.section-slab--churches {
+    background: linear-gradient(180deg, #f8f9fa 0%, #ffffff 100%);
+}
+
+.church-title-accent {
+    color: var(--public-secondary, #1e3a5f);
+}
+
+.event-placeholder-icon {
+    font-size: 3.5rem;
+    opacity: 0.4;
+}
+
+.article-placeholder-icon {
+    font-size: 3rem;
+    opacity: 0.4;
+}
+
+.section-gradient-button {
+    background: linear-gradient(135deg, var(--public-primary, #0A36FF), #3b82f6);
+    border: none;
+}
+
+.article-category-badge {
+    font-size: 0.75rem;
+    background: linear-gradient(135deg, var(--public-primary, #0A36FF), #3b82f6);
+}
+
+.cta-premium-copy {
+    max-width: 600px;
+    margin: 0 auto 2.5rem;
+}
+
+/* =============================================
+   BIBLICAL JOURNEY
+   ============================================= */
+.bible-journey-section {
+    --journey-bible-tilt: -6deg;
+    position: relative;
+    padding: clamp(5rem, 9vw, 7.5rem) 0;
+    overflow: hidden;
+    background:
+        radial-gradient(circle at 15% 20%, rgba(59, 130, 246, 0.16), transparent 32%),
+        radial-gradient(circle at 85% 15%, rgba(248, 181, 0, 0.14), transparent 26%),
+        linear-gradient(180deg, #0b1327 0%, #111f3b 46%, #162744 100%);
+}
+
+.journey-orb {
+    position: absolute;
+    border-radius: 50%;
+    filter: blur(12px);
+    opacity: 0.35;
+    pointer-events: none;
+}
+
+.journey-orb-one {
+    width: 340px;
+    height: 340px;
+    top: 8%;
+    left: -120px;
+    background: radial-gradient(circle, rgba(248, 181, 0, 0.4), transparent 68%);
+}
+
+.journey-orb-two {
+    width: 280px;
+    height: 280px;
+    right: -80px;
+    bottom: 12%;
+    background: radial-gradient(circle, rgba(59, 130, 246, 0.35), transparent 68%);
+}
+
+.bible-journey-shell {
+    position: relative;
+    display: grid;
+    grid-template-columns: minmax(320px, 0.92fr) minmax(0, 1.08fr);
+    gap: clamp(2rem, 4vw, 4.5rem);
+    align-items: start;
+}
+
+.journey-visual-sticky {
+    position: sticky;
+    top: 110px;
+}
+
+.journey-scene-frame {
+    position: relative;
+    min-height: 680px;
+    border-radius: 30px;
+    overflow: hidden;
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    background: #081224;
+    box-shadow: 0 24px 80px rgba(0, 0, 0, 0.35);
+    transform-style: preserve-3d;
+}
+
+.journey-scene-media {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transform: scale(1.04);
+    transition: transform 0.85s ease, opacity 0.45s ease, filter 0.45s ease;
+    filter: saturate(0.95) contrast(1.05);
+}
+
+.journey-scene-media.is-switching {
+    opacity: 0.42;
+    transform: scale(1.08);
+    filter: saturate(0.85) blur(1px);
+}
+
+.journey-scene-overlay {
+    position: absolute;
+    inset: 0;
+    background:
+        linear-gradient(180deg, rgba(8, 18, 36, 0.18) 0%, rgba(8, 18, 36, 0.7) 64%, rgba(8, 18, 36, 0.92) 100%),
+        radial-gradient(circle at 50% 35%, rgba(248, 181, 0, 0.12), transparent 36%);
+}
+
+.journey-visual-copy {
+    position: absolute;
+    left: 1.6rem;
+    right: 1.6rem;
+    bottom: 1.6rem;
+    z-index: 4;
+    padding: 1.4rem 1.45rem;
+    border-radius: 22px;
+    background: linear-gradient(180deg, rgba(10, 18, 35, 0.84), rgba(15, 28, 51, 0.92));
+    border: 1px solid rgba(255, 255, 255, 0.09);
+    -webkit-backdrop-filter: blur(10px);
+    backdrop-filter: blur(10px);
+}
+
+.journey-visual-kicker {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.72rem;
+    text-transform: uppercase;
+    letter-spacing: 0.16em;
+    font-weight: 700;
+    color: rgba(248, 181, 0, 0.95);
+    margin-bottom: 0.85rem;
+}
+
+.journey-visual-kicker::before {
+    content: '';
+    width: 7px;
+    height: 7px;
+    border-radius: 999px;
+    background: currentColor;
+}
+
+.journey-visual-copy h3 {
+    font-size: clamp(1.7rem, 3vw, 2.5rem);
+    line-height: 1.05;
+    margin: 0 0 0.7rem;
+    color: #ffffff;
+}
+
+.journey-visual-copy p {
+    margin: 0;
+    font-size: 1rem;
+    line-height: 1.7;
+    color: rgba(232, 238, 255, 0.82);
+}
+
+.journey-visual-ref {
+    display: inline-block;
+    margin-top: 1rem;
+    font-size: 0.78rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: rgba(248, 181, 0, 0.88);
+}
+
+.journey-story-column {
+    display: grid;
+    gap: 1rem;
+}
+
+.journey-story-card {
+    position: relative;
+    padding: 1.2rem;
+    border-radius: 24px;
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.08), rgba(255, 255, 255, 0.05));
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    -webkit-backdrop-filter: blur(14px);
+    backdrop-filter: blur(14px);
+    transform: perspective(1400px) rotateY(0deg) translateY(0);
+    transition: transform 0.45s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.45s ease, border-color 0.45s ease, background 0.45s ease;
+}
+
+.journey-story-card::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    background: linear-gradient(135deg, rgba(248, 181, 0, 0.18), transparent 36%, transparent 68%, rgba(59, 130, 246, 0.12));
+    opacity: 0;
+    transition: opacity 0.45s ease;
+}
+
+.journey-story-card:hover,
+.journey-story-card.is-active {
+    transform: perspective(1400px) rotateY(-5deg) translateY(-4px);
+    border-color: rgba(248, 181, 0, 0.36);
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.12), rgba(255, 255, 255, 0.07));
+    box-shadow: 0 18px 40px rgba(0, 0, 0, 0.22);
+}
+
+.journey-story-card:hover::before,
+.journey-story-card.is-active::before {
+    opacity: 1;
+}
+
+.journey-story-index {
+    position: absolute;
+    top: 1.15rem;
+    right: 1.2rem;
+    z-index: 1;
+    font-size: 0.75rem;
+    letter-spacing: 0.18em;
+    font-weight: 700;
+    color: rgba(248, 181, 0, 0.82);
+}
+
+.journey-story-body {
+    position: relative;
+    z-index: 1;
+    display: grid;
+    grid-template-columns: 126px minmax(0, 1fr);
+    gap: 1.1rem;
+    align-items: center;
+}
+
+.journey-story-thumb {
+    position: relative;
+    overflow: hidden;
+    aspect-ratio: 4 / 5;
+    border-radius: 18px;
+    box-shadow: 0 12px 24px rgba(0, 0, 0, 0.18);
+}
+
+.journey-story-thumb img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform 0.5s ease;
+}
+
+.journey-story-card:hover .journey-story-thumb img,
+.journey-story-card.is-active .journey-story-thumb img {
+    transform: scale(1.05);
+}
+
+.journey-story-kicker {
+    display: inline-block;
+    margin-bottom: 0.45rem;
+    font-size: 0.75rem;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    font-weight: 700;
+    color: rgba(248, 181, 0, 0.88);
+}
+
+.journey-story-content h3 {
+    margin: 0 0 0.55rem;
+    font-size: clamp(1.2rem, 2vw, 1.6rem);
+    line-height: 1.2;
+    color: #ffffff;
+}
+
+.journey-story-content p {
+    margin: 0 0 0.95rem;
+    font-size: 0.98rem;
+    line-height: 1.7;
+    color: rgba(232, 238, 255, 0.74);
+}
+
+.journey-story-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.85rem;
+    align-items: center;
+    padding-top: 0.9rem;
+    border-top: 1px solid rgba(255, 255, 255, 0.12);
+    font-size: 0.78rem;
+    letter-spacing: 0.04em;
+    color: rgba(255, 255, 255, 0.7);
+}
+
+.journey-story-meta span:last-child {
+    color: rgba(248, 181, 0, 0.9);
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+}
+
 /* =============================================
    PREMIUM CHURCH CARDS
    ============================================= */
@@ -994,6 +1464,7 @@
     position: absolute;
     top: 12px; right: 12px;
     background: rgba(255, 255, 255, 0.92);
+    -webkit-backdrop-filter: blur(8px);
     backdrop-filter: blur(8px);
     padding: 8px 14px;
     border-radius: 12px;
@@ -1118,6 +1589,7 @@
     position: absolute;
     top: 0; left: 0;
     width: 100%; height: 100%;
+    background-color: #0f1d38;
     background-size: cover;
     background-position: center;
     transform: scale(1.08);
@@ -1183,6 +1655,7 @@
 .hero-btn-primary {
     background: rgba(255,255,255,0.15);
     border: 2px solid rgba(255,255,255,0.7);
+    -webkit-backdrop-filter: blur(5px);
     backdrop-filter: blur(5px);
 }
 .hero-btn-primary:hover {
@@ -1236,6 +1709,7 @@
     display: flex;
     align-items: center;
     justify-content: center;
+    -webkit-backdrop-filter: blur(5px);
     backdrop-filter: blur(5px);
 }
 .carousel-arrow:hover {
@@ -1300,6 +1774,35 @@
    RESPONSIVE
    ============================================= */
 @media (max-width: 768px) {
+    .hero-bible-stage {
+        width: min(100%, 380px);
+        margin-bottom: 1.6rem;
+    }
+
+    .hero-bible-scene {
+        min-height: 300px;
+        border-radius: 28px;
+    }
+
+    .hero-bible-stage--compact {
+        width: min(320px, 100%);
+    }
+
+    .hero-bible-stage--compact .hero-bible-scene {
+        min-height: 235px;
+        border-radius: 24px;
+    }
+
+    .hero-bible-glass,
+    .hero-bible-stage--compact .hero-bible-glass {
+        inset: 0.95rem;
+        border-radius: 24px;
+    }
+
+    .hero-bible-panel-image {
+        width: 78%;
+    }
+
     .bible-open-container { width: 300px; height: 215px; }
     .bible-open-small { width: 220px; height: 158px; }
     .cover-cross .cross-v { height: 45px; width: 3px; }
@@ -1324,13 +1827,93 @@
     /* Reduce particles on mobile */
     .css-particles .dot:nth-child(n+8),
     .css-particles .cross-particle:nth-child(n+13) { display: none; }
+
+    .bible-journey-section {
+        padding: 4rem 0;
+    }
+
+    .bible-journey-shell {
+        grid-template-columns: 1fr;
+    }
+
+    .journey-visual-sticky {
+        position: static;
+    }
+
+    .journey-scene-frame {
+        min-height: 520px;
+    }
+
+    .journey-visual-copy {
+        left: 1rem;
+        right: 1rem;
+        bottom: 1rem;
+        padding: 1.15rem;
+    }
+
+    .journey-story-card,
+    .journey-story-card:hover,
+    .journey-story-card.is-active {
+        transform: none;
+    }
+
+    .journey-story-body {
+        grid-template-columns: 1fr;
+    }
+
+    .journey-story-thumb {
+        aspect-ratio: 16 / 10;
+    }
 }
 
 @media (max-width: 480px) {
+    .hero-bible-stage {
+        width: min(100%, 310px);
+    }
+
+    .hero-bible-scene {
+        min-height: 250px;
+        border-radius: 24px;
+    }
+
+    .hero-bible-stage--compact {
+        width: min(280px, 100%);
+    }
+
+    .hero-bible-stage--compact .hero-bible-scene {
+        min-height: 205px;
+        border-radius: 22px;
+    }
+
+    .hero-bible-glass,
+    .hero-bible-stage--compact .hero-bible-glass {
+        inset: 0.8rem;
+        border-radius: 20px;
+    }
+
     .bible-open-container { width: 260px; height: 185px; }
     .bible-open-small { width: 180px; height: 130px; }
     .page-glow { display: none; }
     .corner { display: none; }
+
+    .journey-scene-frame {
+        min-height: 460px;
+        border-radius: 24px;
+    }
+
+    .journey-visual-copy h3 {
+        font-size: 1.45rem;
+    }
+
+    .journey-story-card {
+        padding: 1rem;
+        border-radius: 20px;
+    }
+
+    .journey-story-index {
+        top: 0.9rem;
+        right: 0.95rem;
+    }
 }
 
 /* =============================================
@@ -1341,6 +1924,17 @@
         animation-duration: 0.01ms !important;
         animation-iteration-count: 1 !important;
         transition-duration: 0.01ms !important;
+    }
+    .hero-bible-stage {
+        opacity: 1;
+        transform: none;
+    }
+    .hero-bible-panel-image {
+        animation: none;
+        transform: translateY(8px);
+    }
+    .hero-bible-glass {
+        transform: translateZ(42px) rotateZ(-2deg);
     }
     .bible-open { animation: none; transform: rotateX(12deg); }
     .hero-inner h1, .hero-inner .hero-tagline, .hero-cta-group,

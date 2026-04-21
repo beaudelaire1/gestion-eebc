@@ -19,7 +19,7 @@
 <section class="hero-carousel" id="heroCarousel">
     {% for slide in slides %}
     <div class="hero-slide {% if forloop.first %}active{% endif %}" data-index="{{ forloop.counter0 }}">
-        <div class="hero-slide-bg" style="background-image: url('{{ slide.image.url }}');"></div>
+        <div class="hero-slide-bg" data-image-url="{{ slide.image.url }}"></div>
         <div class="hero-overlay"></div>
         <div class="hero-content">
             <div class="container">
@@ -59,7 +59,7 @@
 </section>
 
 {% else %}
-<!-- HERO AURORA + BIBLE 3D OUVERTE (quand pas de slides) -->
+<!-- HERO AURORA + BIBLE PREMIUM (quand pas de slides) -->
 <section class="aurora-hero">
     <div class="css-particles">
         <div class="dot"></div><div class="dot"></div><div class="dot"></div>
@@ -71,52 +71,12 @@
     </div>
 
     <div class="hero-inner">
-        <!-- 3D Open Bible -->
-        <div class="bible-open-container">
-            <div class="bible-open">
-                <div class="page-glow"></div>
-
-                <!-- Left Cover -->
-                <div class="bible-cover-left">
-                    <div class="cover-face">
-                        <div class="cover-cross">
-                            <div class="cross-v"></div>
-                            <div class="cross-h"></div>
-                        </div>
-                        <div class="cover-label">Sainte Bible</div>
-                        <div class="corner tl"></div>
-                        <div class="corner tr"></div>
-                        <div class="corner bl"></div>
-                        <div class="corner br"></div>
-                    </div>
+        <div class="hero-bible-stage hero-bible-stage--hero">
+            <div class="hero-bible-scene">
+                <div class="hero-bible-scene-overlay"></div>
+                <div class="hero-bible-glass">
+                    <img src="{% static 'bible.png' %}" alt="Bible ouverte" class="hero-bible-panel-image" loading="lazy">
                 </div>
-
-                <!-- Page Edges -->
-                <div class="page-edge-left"></div>
-                <div class="page-edge-right"></div>
-                <div class="page-edge-bottom"></div>
-
-                <!-- Left Pages -->
-                <div class="pages-left"></div>
-
-                <!-- Spine -->
-                <div class="bible-spine-center"></div>
-
-                <!-- Right Pages -->
-                <div class="pages-right"></div>
-
-                <!-- Right Cover -->
-                <div class="bible-cover-right">
-                    <div class="cover-face">
-                        <div class="corner tl"></div>
-                        <div class="corner tr"></div>
-                        <div class="corner bl"></div>
-                        <div class="corner br"></div>
-                    </div>
-                </div>
-
-                <!-- Floating turning page -->
-                <div class="floating-page"></div>
             </div>
         </div>
 
@@ -148,39 +108,19 @@
 {% endif %}
 
 <!-- ============================================================
-     BIBLE 3D + VERSET - Section dédiée (quand carousel actif)
+     BIBLE PREMIUM + VERSET - Section dédiée (quand carousel actif)
      ============================================================ -->
 {% if slides %}
 <section class="bible-verse-section">
     <div class="container">
         <div class="row align-items-center justify-content-center">
             <div class="col-md-4 col-lg-3 text-center reveal-left">
-                <div class="bible-open-container bible-open-small">
-                    <div class="bible-open">
-                        <div class="page-glow"></div>
-                        <div class="bible-cover-left">
-                            <div class="cover-face">
-                                <div class="cover-cross">
-                                    <div class="cross-v"></div>
-                                    <div class="cross-h"></div>
-                                </div>
-                                <div class="cover-label">Bible</div>
-                                <div class="corner tl"></div>
-                                <div class="corner bl"></div>
-                            </div>
+                <div class="hero-bible-stage hero-bible-stage--compact">
+                    <div class="hero-bible-scene">
+                        <div class="hero-bible-scene-overlay"></div>
+                        <div class="hero-bible-glass">
+                            <img src="{% static 'bible.png' %}" alt="Bible ouverte" class="hero-bible-panel-image" loading="lazy">
                         </div>
-                        <div class="page-edge-left"></div>
-                        <div class="page-edge-right"></div>
-                        <div class="pages-left"></div>
-                        <div class="bible-spine-center"></div>
-                        <div class="pages-right"></div>
-                        <div class="bible-cover-right">
-                            <div class="cover-face">
-                                <div class="corner tr"></div>
-                                <div class="corner br"></div>
-                            </div>
-                        </div>
-                        <div class="floating-page"></div>
                     </div>
                 </div>
             </div>
@@ -189,7 +129,7 @@
                     <span class="verse-text"></span>
                     <span class="verse-ref"></span>
                 </div>
-                <p style="color: rgba(255,255,255,0.5); font-size: 0.85rem; margin-top: 1rem; letter-spacing: 2px; text-transform: uppercase;">La Bible, notre seule source d'autorité</p>
+                <p class="verse-typewriter-note">La Bible, notre seule source d'autorité</p>
             </div>
         </div>
     </div>
@@ -201,7 +141,7 @@
      ============================================================ -->
 <section class="faith-statement-section">
     <div class="faith-cross-bg"></div>
-    <div class="container position-relative" style="z-index: 10;">
+    <div class="container position-relative faith-content-shell">
         <div class="row justify-content-center">
             <div class="col-lg-8 text-center reveal-scale">
                 <div class="faith-icon-wrap">
@@ -224,7 +164,7 @@
 <!-- ============================================================
      NOS ÉGLISES - Premium Cards
      ============================================================ -->
-<section class="py-5" style="padding-top: 5rem !important; padding-bottom: 4.5rem !important; background: linear-gradient(180deg, #f8f9fa 0%, #ffffff 100%);">
+<section class="py-5 section-slab section-slab--churches">
     <div class="container">
         <div class="premium-header reveal-section">
             <span class="overline">Nos Communautés</span>
@@ -240,7 +180,7 @@
                     <div class="church-icon-premium">
                         <i class="bi bi-church"></i>
                     </div>
-                    <h4 class="fw-bold mb-2" style="color: var(--public-secondary);">{{ site.name }}</h4>
+                    <h4 class="fw-bold mb-2 church-title-accent">{{ site.name }}</h4>
                     <p class="text-muted mb-3">
                         <i class="bi bi-geo-alt me-1"></i>{{ site.city }}
                     </p>
@@ -265,7 +205,7 @@
      ÉVÉNEMENTS À VENIR
      ============================================================ -->
 {% if upcoming_events %}
-<section class="py-5" style="padding-top: 5rem !important; padding-bottom: 4.5rem !important;">
+<section class="py-5 section-slab section-slab--events">
     <div class="container">
         <div class="premium-header reveal-section">
             <span class="overline">Vie de l'Église</span>
@@ -283,7 +223,7 @@
                         <img src="{{ event.image.url }}" alt="{{ event.title }}" loading="lazy">
                         {% else %}
                         <div class="event-img-placeholder">
-                            <i class="bi bi-calendar-event text-white" style="font-size: 3.5rem; opacity: 0.4;"></i>
+                            <i class="bi bi-calendar-event text-white event-placeholder-icon"></i>
                         </div>
                         {% endif %}
                         <div class="date-badge">
@@ -313,7 +253,7 @@
         </div>
 
         <div class="text-center mt-5 reveal-section">
-            <a href="{% url 'public:events_list' %}" class="btn btn-primary btn-lg rounded-pill px-5" style="background: linear-gradient(135deg, var(--public-primary, #0A36FF), #3b82f6); border: none;">
+            <a href="{% url 'public:events_list' %}" class="btn btn-primary btn-lg rounded-pill px-5 section-gradient-button">
                 Tous les événements <i class="bi bi-arrow-right ms-2"></i>
             </a>
         </div>
@@ -322,10 +262,222 @@
 {% endif %}
 
 <!-- ============================================================
+     PARCOURS BIBLIQUE IMMERSIF
+     ============================================================ -->
+<section class="bible-journey-section">
+    <div class="journey-orb journey-orb-one"></div>
+    <div class="journey-orb journey-orb-two"></div>
+
+    <div class="container position-relative">
+        <div class="premium-header premium-header--light reveal-section">
+            <span class="overline">Parcours immersif</span>
+            <h2>Traversez les grandes histoires bibliques</h2>
+            <p class="header-desc">Une séquence fluide portée par les images fournies, avec une mise en profondeur qui accompagne chaque récit à mesure que l'on descend dans la page.</p>
+            <div class="header-divider"></div>
+        </div>
+
+        <div class="bible-journey-shell">
+            <div class="journey-visual-column reveal-left">
+                <div class="journey-visual-sticky">
+                    <div class="journey-scene-frame">
+                        <img
+                            src="{% static 'abraham_sacrifice.png' %}"
+                            alt="Abraham et Isaac"
+                            class="journey-scene-media"
+                            id="journeySceneMedia"
+                            loading="lazy"
+                        >
+
+                        <div class="journey-scene-overlay"></div>
+
+                        <div class="journey-visual-copy">
+                            <span class="journey-visual-kicker">Histoire en cours</span>
+                            <h3 id="journeyVisualTitle">Abraham et Isaac</h3>
+                            <p id="journeyVisualCopy">Quand tout semble incertain, la foi avance encore, portée par la confiance en la promesse de Dieu.</p>
+                            <span class="journey-visual-ref" id="journeyVisualRef">Genèse 22</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="journey-story-column stagger-children" id="journeyStoryColumn">
+                <article
+                    class="journey-story-card reveal-right is-active"
+                    data-journey-image="{% static 'abraham_sacrifice.png' %}"
+                    data-journey-title="Abraham et Isaac"
+                    data-journey-copy="Quand tout semble incertain, la foi avance encore, portée par la confiance en la promesse de Dieu."
+                    data-journey-ref="Genèse 22"
+                >
+                    <span class="journey-story-index">01</span>
+                    <div class="journey-story-body">
+                        <div class="journey-story-thumb">
+                            <img src="{% static 'abraham_sacrifice.png' %}" alt="Abraham et Isaac" loading="lazy">
+                        </div>
+                        <div class="journey-story-content">
+                            <span class="journey-story-kicker">Foi qui obéit</span>
+                            <h3>Abraham et Isaac</h3>
+                            <p>Une scène de confiance absolue, où l'obéissance laisse toute la place à la fidélité de Dieu.</p>
+                            <div class="journey-story-meta">
+                                <span>« Dieu pourvoira. »</span>
+                                <span>Genèse 22</span>
+                            </div>
+                        </div>
+                    </div>
+                </article>
+
+                <article
+                    class="journey-story-card reveal-right"
+                    data-journey-image="{% static 'jacob_vs_ange.png' %}"
+                    data-journey-title="Jacob et l'ange"
+                    data-journey-copy="La nuit devient un lieu de transformation, où la lutte intérieure débouche sur une bénédiction nouvelle."
+                    data-journey-ref="Genèse 32"
+                >
+                    <span class="journey-story-index">02</span>
+                    <div class="journey-story-body">
+                        <div class="journey-story-thumb">
+                            <img src="{% static 'jacob_vs_ange.png' %}" alt="Jacob et l'ange" loading="lazy">
+                        </div>
+                        <div class="journey-story-content">
+                            <span class="journey-story-kicker">Combat qui transforme</span>
+                            <h3>Jacob et l'ange</h3>
+                            <p>Dieu rejoint l'homme jusque dans sa lutte la plus intime et en fait un point de bascule.</p>
+                            <div class="journey-story-meta">
+                                <span>« Tu as lutté avec Dieu. »</span>
+                                <span>Genèse 32</span>
+                            </div>
+                        </div>
+                    </div>
+                </article>
+
+                <article
+                    class="journey-story-card reveal-right"
+                    data-journey-image="{% static 'daniel.png' %}"
+                    data-journey-title="Daniel dans la fosse aux lions"
+                    data-journey-copy="Même sous pression, la fidélité garde une paix que rien ne peut arracher."
+                    data-journey-ref="Daniel 6"
+                >
+                    <span class="journey-story-index">03</span>
+                    <div class="journey-story-body">
+                        <div class="journey-story-thumb">
+                            <img src="{% static 'daniel.png' %}" alt="Daniel dans la fosse aux lions" loading="lazy">
+                        </div>
+                        <div class="journey-story-content">
+                            <span class="journey-story-kicker">Fidélité sous pression</span>
+                            <h3>Daniel</h3>
+                            <p>Au cœur du danger, la présence de Dieu devient plus forte que la peur et plus stable que le pouvoir des hommes.</p>
+                            <div class="journey-story-meta">
+                                <span>« Mon Dieu a envoyé son ange. »</span>
+                                <span>Daniel 6</span>
+                            </div>
+                        </div>
+                    </div>
+                </article>
+
+                <article
+                    class="journey-story-card reveal-right"
+                    data-journey-image="{% static 'jonas.png' %}"
+                    data-journey-title="Jonas"
+                    data-journey-copy="La miséricorde divine poursuit, relève et redonne une direction même après la fuite."
+                    data-journey-ref="Jonas 2"
+                >
+                    <span class="journey-story-index">04</span>
+                    <div class="journey-story-body">
+                        <div class="journey-story-thumb">
+                            <img src="{% static 'jonas.png' %}" alt="Jonas" loading="lazy">
+                        </div>
+                        <div class="journey-story-content">
+                            <span class="journey-story-kicker">Miséricorde qui poursuit</span>
+                            <h3>Jonas</h3>
+                            <p>Le récit rappelle que la grâce ne s'arrête pas à nos détours, elle nous rejoint jusque dans la tempête.</p>
+                            <div class="journey-story-meta">
+                                <span>« Le salut vient de l'Éternel. »</span>
+                                <span>Jonas 2</span>
+                            </div>
+                        </div>
+                    </div>
+                </article>
+
+                <article
+                    class="journey-story-card reveal-right"
+                    data-journey-image="{% static 'marie_ange.png' %}"
+                    data-journey-title="Marie et l'ange"
+                    data-journey-copy="Une parole venue du ciel ouvre un chemin d'espérance, accueilli avec humilité et courage."
+                    data-journey-ref="Luc 1"
+                >
+                    <span class="journey-story-index">05</span>
+                    <div class="journey-story-body">
+                        <div class="journey-story-thumb">
+                            <img src="{% static 'marie_ange.png' %}" alt="Marie et l'ange" loading="lazy">
+                        </div>
+                        <div class="journey-story-content">
+                            <span class="journey-story-kicker">Appel reçu avec confiance</span>
+                            <h3>Marie et l'ange</h3>
+                            <p>La disponibilité du cœur transforme une annonce bouleversante en commencement d'une bonne nouvelle.</p>
+                            <div class="journey-story-meta">
+                                <span>« Qu'il me soit fait selon ta parole. »</span>
+                                <span>Luc 1</span>
+                            </div>
+                        </div>
+                    </div>
+                </article>
+
+                <article
+                    class="journey-story-card reveal-right"
+                    data-journey-image="{% static 'jesus_marcha_sur_leau.png' %}"
+                    data-journey-title="Jésus marche sur l'eau"
+                    data-journey-copy="Quand les vagues se lèvent, la paix revient en gardant les yeux fixés sur Christ."
+                    data-journey-ref="Matthieu 14"
+                >
+                    <span class="journey-story-index">06</span>
+                    <div class="journey-story-body">
+                        <div class="journey-story-thumb">
+                            <img src="{% static 'jesus_marcha_sur_leau.png' %}" alt="Jésus marche sur l'eau" loading="lazy">
+                        </div>
+                        <div class="journey-story-content">
+                            <span class="journey-story-kicker">Foi au milieu des vagues</span>
+                            <h3>Jésus marche sur l'eau</h3>
+                            <p>Le miracle ne nie pas la tempête; il révèle une présence capable de porter au-dessus d'elle.</p>
+                            <div class="journey-story-meta">
+                                <span>« C'est moi, n'ayez pas peur. »</span>
+                                <span>Matthieu 14</span>
+                            </div>
+                        </div>
+                    </div>
+                </article>
+
+                <article
+                    class="journey-story-card reveal-right"
+                    data-journey-image="{% static 'noe_arche.png' %}"
+                    data-journey-title="Noé et l'arche"
+                    data-journey-copy="L'espérance se construit parfois bien avant la pluie, dans une obéissance persévérante."
+                    data-journey-ref="Genèse 6"
+                >
+                    <span class="journey-story-index">07</span>
+                    <div class="journey-story-body">
+                        <div class="journey-story-thumb">
+                            <img src="{% static 'noe_arche.png' %}" alt="Noé et l'arche" loading="lazy">
+                        </div>
+                        <div class="journey-story-content">
+                            <span class="journey-story-kicker">Espérance qui construit</span>
+                            <h3>Noé et l'arche</h3>
+                            <p>Avant même de voir l'orage, Noé bâtit un refuge qui témoigne de la parole reçue et de la patience fidèle.</p>
+                            <div class="journey-story-meta">
+                                <span>« Noé fit tout ce que Dieu lui avait ordonné. »</span>
+                                <span>Genèse 6</span>
+                            </div>
+                        </div>
+                    </div>
+                </article>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- ============================================================
      ACTUALITÉS
      ============================================================ -->
 {% if featured_articles %}
-<section class="py-5 bg-light" style="padding-top: 5rem !important; padding-bottom: 4.5rem !important;">
+<section class="py-5 bg-light section-slab section-slab--news">
     <div class="container">
         <div class="premium-header reveal-section">
             <span class="overline">Dernières nouvelles</span>
@@ -345,13 +497,13 @@
                     {% else %}
                     <div class="article-img-wrapper">
                         <div class="article-img-placeholder">
-                            <i class="bi bi-newspaper text-white" style="font-size: 3rem; opacity: 0.4;"></i>
+                            <i class="bi bi-newspaper text-white article-placeholder-icon"></i>
                         </div>
                     </div>
                     {% endif %}
                     <div class="article-body">
                         <div class="mb-2">
-                            <span class="badge rounded-pill" style="background: linear-gradient(135deg, var(--public-primary, #0A36FF), #3b82f6); font-size: 0.75rem;">{{ article.get_category_display }}</span>
+                            <span class="badge rounded-pill article-category-badge">{{ article.get_category_display }}</span>
                             <small class="text-muted ms-2">{{ article.publish_date|date:"d M Y" }}</small>
                         </div>
                         <h5 class="fw-bold mb-2">{{ article.title }}</h5>
@@ -366,7 +518,7 @@
         </div>
 
         <div class="text-center mt-5 reveal-section">
-            <a href="{% url 'public:news_list' %}" class="btn btn-primary btn-lg rounded-pill px-5" style="background: linear-gradient(135deg, var(--public-primary, #0A36FF), #3b82f6); border: none;">
+            <a href="{% url 'public:news_list' %}" class="btn btn-primary btn-lg rounded-pill px-5 section-gradient-button">
                 Toutes les actualités <i class="bi bi-arrow-right ms-2"></i>
             </a>
         </div>
@@ -383,10 +535,10 @@
         <div class="shape"></div>
         <div class="shape"></div>
     </div>
-    <div class="container position-relative" style="z-index: 10;">
+    <div class="container position-relative cta-premium-inner">
         <div class="reveal-section">
             <h2 class="display-5 fw-bold mb-4">Vous souhaitez nous rejoindre ?</h2>
-            <p class="lead mb-5" style="max-width: 600px; margin: 0 auto 2.5rem;">
+            <p class="lead mb-5 cta-premium-copy">
                 Venez nous rencontrer lors de nos cultes ou contactez-nous pour plus d'informations. Chaque dimanche, nos portes sont ouvertes.
             </p>
             <div class="d-flex gap-3 justify-content-center flex-wrap">
@@ -410,9 +562,17 @@
 (function() {
     var currentSlide = 0;
     var slides = document.querySelectorAll('.hero-slide');
+    var slideBackgrounds = document.querySelectorAll('.hero-slide-bg[data-image-url]');
     var dots = document.querySelectorAll('.carousel-dot');
     var totalSlides = slides.length;
     var autoSlideInterval;
+
+    slideBackgrounds.forEach(function(bg) {
+        var imageUrl = bg.getAttribute('data-image-url');
+        if (imageUrl) {
+            bg.style.backgroundImage = 'url("' + imageUrl + '")';
+        }
+    });
 
     function showSlide(index) {
         if (index >= totalSlides) index = 0;
