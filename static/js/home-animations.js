@@ -1,139 +1,40 @@
 /* =============================================================================
-   HOME ANIMATIONS JS — "Divine Experience"
-   Particles, typewriter, scroll reveals, counters, mouse glow
+   HOME ANIMATIONS JS — "Divine Experience" LITE
+   Léger : typewriter, scroll reveal (IntersectionObserver), counters
+   Pas de canvas, pas de mouse tracking, pas de scroll progress
    ============================================================================= */
 
 (function () {
     'use strict';
 
-    // --- PARTICLES SYSTEM ---
-    function initParticles() {
-        const canvas = document.getElementById('particles-canvas');
-        if (!canvas) return;
-        const ctx = canvas.getContext('2d');
-
-        function resize() {
-            canvas.width = canvas.offsetWidth * (window.devicePixelRatio || 1);
-            canvas.height = canvas.offsetHeight * (window.devicePixelRatio || 1);
-            ctx.scale(window.devicePixelRatio || 1, window.devicePixelRatio || 1);
-        }
-        resize();
-        window.addEventListener('resize', resize);
-
-        const particles = [];
-        const PARTICLE_COUNT = Math.min(60, Math.floor(window.innerWidth / 25));
-
-        class Particle {
-            constructor() { this.reset(); }
-            reset() {
-                this.x = Math.random() * canvas.offsetWidth;
-                this.y = Math.random() * canvas.offsetHeight;
-                this.size = Math.random() * 3 + 1;
-                this.speedX = (Math.random() - 0.5) * 0.4;
-                this.speedY = (Math.random() - 0.5) * 0.4 - 0.2;
-                this.opacity = Math.random() * 0.5 + 0.2;
-                this.opacityDir = Math.random() > 0.5 ? 0.005 : -0.005;
-                // 30% chance to be a tiny cross, rest are circles
-                this.isCross = Math.random() < 0.3;
-                this.rotation = Math.random() * Math.PI;
-                this.rotSpeed = (Math.random() - 0.5) * 0.01;
-                // Gold or white
-                this.color = Math.random() < 0.3
-                    ? 'rgba(248, 181, 0, OPACITY)'
-                    : 'rgba(255, 255, 255, OPACITY)';
-            }
-            update() {
-                this.x += this.speedX;
-                this.y += this.speedY;
-                this.rotation += this.rotSpeed;
-                this.opacity += this.opacityDir;
-                if (this.opacity <= 0.1 || this.opacity >= 0.7) this.opacityDir *= -1;
-
-                const w = canvas.offsetWidth;
-                const h = canvas.offsetHeight;
-                if (this.x < -20 || this.x > w + 20 || this.y < -20 || this.y > h + 20) {
-                    this.reset();
-                    this.y = h + 10;
-                }
-            }
-            draw() {
-                const c = this.color.replace('OPACITY', this.opacity.toFixed(2));
-                ctx.save();
-                ctx.translate(this.x, this.y);
-                ctx.rotate(this.rotation);
-
-                if (this.isCross) {
-                    const s = this.size * 2;
-                    ctx.strokeStyle = c;
-                    ctx.lineWidth = 1;
-                    ctx.beginPath();
-                    ctx.moveTo(0, -s);
-                    ctx.lineTo(0, s);
-                    ctx.moveTo(-s * 0.6, -s * 0.3);
-                    ctx.lineTo(s * 0.6, -s * 0.3);
-                    ctx.stroke();
-                } else {
-                    ctx.fillStyle = c;
-                    ctx.beginPath();
-                    ctx.arc(0, 0, this.size, 0, Math.PI * 2);
-                    ctx.fill();
-                }
-                ctx.restore();
-            }
-        }
-
-        for (let i = 0; i < PARTICLE_COUNT; i++) particles.push(new Particle());
-
-        let animFrame;
-        function animate() {
-            ctx.clearRect(0, 0, canvas.offsetWidth, canvas.offsetHeight);
-            particles.forEach(p => { p.update(); p.draw(); });
-            animFrame = requestAnimationFrame(animate);
-        }
-
-        // Only animate when hero is visible
-        const hero = document.querySelector('.aurora-hero');
-        if (!hero) return;
-        const observer = new IntersectionObserver(entries => {
-            entries.forEach(entry => {
-                if (entry.isIntersecting) {
-                    animate();
-                } else {
-                    cancelAnimationFrame(animFrame);
-                }
-            });
-        }, { threshold: 0.1 });
-        observer.observe(hero);
-    }
-
-    // --- TYPEWRITER EFFECT ---
+    // --- TYPEWRITER VERSE ---
     function initTypewriter() {
-        const el = document.querySelector('.verse-typewriter');
+        var el = document.querySelector('.verse-typewriter');
         if (!el) return;
 
-        const verses = [
-            { text: '« Car Dieu a tant aimé le monde qu\'il a donné son Fils unique, afin que quiconque croit en lui ne périsse point, mais qu\'il ait la vie éternelle. »', ref: '— Jean 3:16' },
-            { text: '« L\'Éternel est mon berger : je ne manquerai de rien. »', ref: '— Psaume 23:1' },
-            { text: '« Je suis le chemin, la vérité, et la vie. Nul ne vient au Père que par moi. »', ref: '— Jean 14:6' },
-            { text: '« Confie-toi en l\'Éternel de tout ton cœur, et ne t\'appuie pas sur ta sagesse. »', ref: '— Proverbes 3:5' },
-            { text: '« Car je connais les projets que j\'ai formés sur vous, dit l\'Éternel, projets de paix et non de malheur, afin de vous donner un avenir et de l\'espérance. »', ref: '— Jérémie 29:11' }
+        var verses = [
+            { text: '\u00ab Car Dieu a tant aim\u00e9 le monde qu\u2019il a donn\u00e9 son Fils unique, afin que quiconque croit en lui ne p\u00e9risse point, mais qu\u2019il ait la vie \u00e9ternelle. \u00bb', ref: '\u2014 Jean 3:16' },
+            { text: '\u00ab L\u2019\u00c9ternel est mon berger : je ne manquerai de rien. \u00bb', ref: '\u2014 Psaume 23:1' },
+            { text: '\u00ab Je suis le chemin, la v\u00e9rit\u00e9, et la vie. Nul ne vient au P\u00e8re que par moi. \u00bb', ref: '\u2014 Jean 14:6' },
+            { text: '\u00ab Confie-toi en l\u2019\u00c9ternel de tout ton c\u0153ur, et ne t\u2019appuie pas sur ta sagesse. \u00bb', ref: '\u2014 Proverbes 3:5' },
+            { text: '\u00ab Car je connais les projets que j\u2019ai form\u00e9s sur vous, dit l\u2019\u00c9ternel, projets de paix et non de malheur, afin de vous donner un avenir et de l\u2019esp\u00e9rance. \u00bb', ref: '\u2014 J\u00e9r\u00e9mie 29:11' }
         ];
 
-        let currentVerse = 0;
-        const textEl = el.querySelector('.verse-text');
-        const refEl = el.querySelector('.verse-ref');
+        var currentVerse = 0;
+        var textEl = el.querySelector('.verse-text');
+        var refEl = el.querySelector('.verse-ref');
         if (!textEl || !refEl) return;
 
         function typeVerse(verse) {
             textEl.textContent = '';
             refEl.textContent = '';
             refEl.style.opacity = '0';
-            let i = 0;
-            const cursor = document.createElement('span');
+            var i = 0;
+            var cursor = document.createElement('span');
             cursor.className = 'typewriter-cursor';
             textEl.appendChild(cursor);
 
-            const interval = setInterval(() => {
+            var interval = setInterval(function () {
                 if (i < verse.text.length) {
                     cursor.before(document.createTextNode(verse.text[i]));
                     i++;
@@ -143,53 +44,51 @@
                     refEl.style.opacity = '1';
                     refEl.style.transition = 'opacity 0.6s ease';
 
-                    // After display time, erase and type next
-                    setTimeout(() => {
+                    setTimeout(function () {
                         cursor.remove();
                         textEl.style.transition = 'opacity 0.5s ease';
                         textEl.style.opacity = '0';
                         refEl.style.opacity = '0';
 
-                        setTimeout(() => {
+                        setTimeout(function () {
                             textEl.style.opacity = '1';
                             currentVerse = (currentVerse + 1) % verses.length;
                             typeVerse(verses[currentVerse]);
                         }, 600);
                     }, 6000);
                 }
-            }, 35);
+            }, 40);
         }
 
-        // Start after a delay
-        setTimeout(() => typeVerse(verses[0]), 2000);
+        setTimeout(function () { typeVerse(verses[0]); }, 1500);
     }
 
-    // --- SCROLL REVEAL ---
+    // --- SCROLL REVEAL (IntersectionObserver — no library) ---
     function initScrollReveal() {
-        const targets = document.querySelectorAll(
+        var targets = document.querySelectorAll(
             '.reveal-section, .reveal-left, .reveal-right, .reveal-scale, .stagger-children'
         );
         if (!targets.length) return;
 
-        const obs = new IntersectionObserver(entries => {
-            entries.forEach(entry => {
+        var obs = new IntersectionObserver(function (entries) {
+            entries.forEach(function (entry) {
                 if (entry.isIntersecting) {
                     entry.target.classList.add('revealed');
                     obs.unobserve(entry.target);
                 }
             });
-        }, { threshold: 0.15, rootMargin: '0px 0px -50px 0px' });
+        }, { threshold: 0.15, rootMargin: '0px 0px -40px 0px' });
 
-        targets.forEach(t => obs.observe(t));
+        targets.forEach(function (t) { obs.observe(t); });
     }
 
     // --- ANIMATED COUNTERS ---
     function initCounters() {
-        const counters = document.querySelectorAll('[data-counter]');
+        var counters = document.querySelectorAll('[data-counter]');
         if (!counters.length) return;
 
-        const obs = new IntersectionObserver(entries => {
-            entries.forEach(entry => {
+        var obs = new IntersectionObserver(function (entries) {
+            entries.forEach(function (entry) {
                 if (entry.isIntersecting) {
                     animateCounter(entry.target);
                     obs.unobserve(entry.target);
@@ -197,23 +96,22 @@
             });
         }, { threshold: 0.5 });
 
-        counters.forEach(c => obs.observe(c));
+        counters.forEach(function (c) { obs.observe(c); });
 
         function animateCounter(el) {
-            const target = parseInt(el.dataset.counter, 10);
-            const suffix = el.dataset.counterSuffix || '';
-            const duration = 2000;
-            const start = performance.now();
+            var target = parseInt(el.dataset.counter, 10);
+            var suffix = el.dataset.counterSuffix || '';
+            var duration = 2000;
+            var start = performance.now();
 
             function update(now) {
-                const elapsed = now - start;
-                const progress = Math.min(elapsed / duration, 1);
-                // Ease-out cubic
-                const eased = 1 - Math.pow(1 - progress, 3);
-                const current = Math.floor(eased * target);
+                var elapsed = now - start;
+                var progress = Math.min(elapsed / duration, 1);
+                var eased = 1 - Math.pow(1 - progress, 3);
+                var current = Math.floor(eased * target);
                 el.textContent = current.toLocaleString('fr-FR');
                 if (suffix) {
-                    const span = document.createElement('span');
+                    var span = document.createElement('span');
                     span.className = 'counter-suffix';
                     span.textContent = suffix;
                     el.appendChild(span);
@@ -224,76 +122,21 @@
         }
     }
 
-    // --- SCROLL PROGRESS BAR ---
-    function initScrollProgress() {
-        const bar = document.querySelector('.scroll-progress');
-        if (!bar) return;
-
-        function update() {
-            const scrollTop = window.scrollY;
-            const docHeight = document.documentElement.scrollHeight - window.innerHeight;
-            const progress = docHeight > 0 ? (scrollTop / docHeight) * 100 : 0;
-            bar.style.width = progress + '%';
-        }
-
-        window.addEventListener('scroll', update, { passive: true });
-        update();
-    }
-
-    // --- MOUSE GLOW ---
-    function initMouseGlow() {
-        const glow = document.querySelector('.mouse-glow');
-        if (!glow) return;
-
-        // Only on non-touch devices
-        if ('ontouchstart' in window) {
-            glow.style.display = 'none';
-            return;
-        }
-
-        document.addEventListener('mousemove', e => {
-            glow.style.left = e.clientX + 'px';
-            glow.style.top = e.clientY + 'px';
-        }, { passive: true });
-    }
-
     // --- SCROLL DOWN CLICK ---
     function initScrollDown() {
-        const btn = document.querySelector('.scroll-down-indicator');
+        var btn = document.querySelector('.scroll-down-indicator');
         if (!btn) return;
-        btn.addEventListener('click', () => {
-            const nextSection = document.querySelector('.aurora-hero + section, .aurora-hero ~ section');
-            if (nextSection) {
-                nextSection.scrollIntoView({ behavior: 'smooth' });
-            }
+        btn.addEventListener('click', function () {
+            var next = document.querySelector('.aurora-hero ~ section');
+            if (next) next.scrollIntoView({ behavior: 'smooth' });
         });
     }
 
-    // --- NAVBAR SHRINK ON SCROLL ---
-    function initNavbarShrink() {
-        const nav = document.querySelector('.navbar');
-        if (!nav) return;
-
-        window.addEventListener('scroll', () => {
-            if (window.scrollY > 100) {
-                nav.style.boxShadow = '0 4px 20px rgba(0,0,0,0.15)';
-                nav.style.padding = '0.3rem 0';
-            } else {
-                nav.style.boxShadow = '0 2px 10px rgba(0,0,0,0.1)';
-                nav.style.padding = '';
-            }
-        }, { passive: true });
-    }
-
-    // --- INIT ALL ---
-    document.addEventListener('DOMContentLoaded', () => {
-        initParticles();
+    // --- INIT ---
+    document.addEventListener('DOMContentLoaded', function () {
         initTypewriter();
         initScrollReveal();
         initCounters();
-        initScrollProgress();
-        initMouseGlow();
         initScrollDown();
-        initNavbarShrink();
     });
 })();

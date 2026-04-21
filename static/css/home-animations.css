@@ -1,6 +1,7 @@
 /* =============================================================================
-   HOME ANIMATIONS — "Divine Experience" Premium Animations
-   EEBC Church — Extraordinary homepage design
+   HOME ANIMATIONS — "Divine Experience" LITE
+   100% CSS animations (pas de canvas, pas de mouse tracking)
+   Léger, performant, GPU-accelerated
    ============================================================================= */
 
 /* --- AURORA HERO BACKGROUND --- */
@@ -25,16 +26,16 @@
         radial-gradient(ellipse at 20% 50%, rgba(10, 54, 255, 0.4) 0%, transparent 50%),
         radial-gradient(ellipse at 80% 20%, rgba(59, 130, 246, 0.3) 0%, transparent 50%),
         radial-gradient(ellipse at 50% 80%, rgba(139, 92, 246, 0.25) 0%, transparent 50%),
-        radial-gradient(ellipse at 70% 60%, rgba(248, 181, 0, 0.15) 0%, transparent 40%);
-    animation: auroraMove 12s ease-in-out infinite alternate;
+        radial-gradient(ellipse at 70% 60%, rgba(248, 181, 0, 0.12) 0%, transparent 40%);
+    animation: auroraMove 15s ease-in-out infinite alternate;
     z-index: 1;
+    will-change: transform;
 }
 
 @keyframes auroraMove {
-    0% { transform: translate(0, 0) rotate(0deg) scale(1); }
-    33% { transform: translate(30px, -20px) rotate(2deg) scale(1.05); }
-    66% { transform: translate(-20px, 15px) rotate(-1deg) scale(0.98); }
-    100% { transform: translate(10px, -10px) rotate(1deg) scale(1.02); }
+    0% { transform: translate(0, 0) scale(1); }
+    50% { transform: translate(25px, -15px) scale(1.04); }
+    100% { transform: translate(-15px, 10px) scale(0.98); }
 }
 
 .aurora-hero::after {
@@ -43,21 +44,81 @@
     bottom: 0;
     left: 0;
     width: 100%;
-    height: 200px;
+    height: 180px;
     background: linear-gradient(to top, var(--public-bg, #ffffff), transparent);
     z-index: 5;
     pointer-events: none;
 }
 
-/* --- PARTICLES CANVAS --- */
-#particles-canvas {
+/* --- CSS-ONLY FLOATING PARTICLES (no canvas) --- */
+.css-particles {
     position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
     z-index: 2;
     pointer-events: none;
+    overflow: hidden;
+}
+
+.css-particles .dot {
+    position: absolute;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.35);
+    animation: floatDot linear infinite;
+    will-change: transform, opacity;
+}
+
+/* 12 particules légères positionnées en CSS */
+.css-particles .dot:nth-child(1)  { width: 4px; height: 4px; left: 10%; animation-duration: 18s; animation-delay: 0s; }
+.css-particles .dot:nth-child(2)  { width: 3px; height: 3px; left: 25%; animation-duration: 22s; animation-delay: -3s; background: rgba(248, 181, 0, 0.4); }
+.css-particles .dot:nth-child(3)  { width: 5px; height: 5px; left: 40%; animation-duration: 20s; animation-delay: -6s; }
+.css-particles .dot:nth-child(4)  { width: 3px; height: 3px; left: 55%; animation-duration: 25s; animation-delay: -2s; background: rgba(248, 181, 0, 0.35); }
+.css-particles .dot:nth-child(5)  { width: 4px; height: 4px; left: 70%; animation-duration: 19s; animation-delay: -8s; }
+.css-particles .dot:nth-child(6)  { width: 3px; height: 3px; left: 85%; animation-duration: 23s; animation-delay: -4s; }
+.css-particles .dot:nth-child(7)  { width: 5px; height: 5px; left: 15%; animation-duration: 21s; animation-delay: -10s; background: rgba(248, 181, 0, 0.3); }
+.css-particles .dot:nth-child(8)  { width: 3px; height: 3px; left: 35%; animation-duration: 24s; animation-delay: -7s; }
+.css-particles .dot:nth-child(9)  { width: 4px; height: 4px; left: 60%; animation-duration: 17s; animation-delay: -5s; background: rgba(248, 181, 0, 0.35); }
+.css-particles .dot:nth-child(10) { width: 3px; height: 3px; left: 78%; animation-duration: 26s; animation-delay: -1s; }
+.css-particles .dot:nth-child(11) { width: 4px; height: 4px; left: 48%; animation-duration: 20s; animation-delay: -12s; }
+.css-particles .dot:nth-child(12) { width: 3px; height: 3px; left: 92%; animation-duration: 22s; animation-delay: -9s; background: rgba(248, 181, 0, 0.4); }
+
+/* CSS-only mini crosses */
+.css-particles .cross-particle {
+    position: absolute;
+    width: 10px;
+    height: 10px;
+    animation: floatDot linear infinite;
+    will-change: transform, opacity;
+}
+
+.css-particles .cross-particle::before,
+.css-particles .cross-particle::after {
+    content: '';
+    position: absolute;
+    background: rgba(248, 181, 0, 0.3);
+    border-radius: 1px;
+}
+
+.css-particles .cross-particle::before {
+    width: 2px; height: 10px;
+    left: 4px; top: 0;
+}
+
+.css-particles .cross-particle::after {
+    width: 8px; height: 2px;
+    left: 1px; top: 2.5px;
+}
+
+.css-particles .cross-particle:nth-child(13) { left: 20%; animation-duration: 28s; animation-delay: -3s; }
+.css-particles .cross-particle:nth-child(14) { left: 50%; animation-duration: 32s; animation-delay: -8s; }
+.css-particles .cross-particle:nth-child(15) { left: 75%; animation-duration: 26s; animation-delay: -15s; }
+.css-particles .cross-particle:nth-child(16) { left: 8%;  animation-duration: 30s; animation-delay: -11s; }
+
+@keyframes floatDot {
+    0%   { transform: translateY(100vh) rotate(0deg);   opacity: 0; }
+    10%  { opacity: 0.6; }
+    90%  { opacity: 0.6; }
+    100% { transform: translateY(-20vh) rotate(180deg); opacity: 0; }
 }
 
 /* --- HERO CONTENT --- */
@@ -70,10 +131,10 @@
 }
 
 .hero-inner h1 {
-    font-size: clamp(2.2rem, 6vw, 4.5rem);
+    font-size: clamp(2.2rem, 6vw, 4.2rem);
     font-weight: 800;
     color: #ffffff;
-    text-shadow: 0 4px 30px rgba(10, 54, 255, 0.5);
+    text-shadow: 0 4px 30px rgba(10, 54, 255, 0.4);
     margin-bottom: 1rem;
     opacity: 0;
     transform: translateY(40px);
@@ -82,8 +143,8 @@
 }
 
 .hero-inner .hero-tagline {
-    font-size: clamp(1rem, 2.5vw, 1.5rem);
-    color: rgba(255, 255, 255, 0.85);
+    font-size: clamp(1rem, 2.5vw, 1.4rem);
+    color: rgba(255, 255, 255, 0.8);
     font-weight: 300;
     margin-bottom: 2.5rem;
     opacity: 0;
@@ -108,7 +169,7 @@
 /* --- GLOWING CTA BUTTONS --- */
 .btn-glow {
     position: relative;
-    padding: 16px 42px;
+    padding: 15px 38px;
     font-size: 1.05rem;
     font-weight: 600;
     border-radius: 60px;
@@ -116,66 +177,64 @@
     letter-spacing: 1.5px;
     overflow: hidden;
     transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
-    z-index: 1;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
 }
 
 .btn-glow-primary {
     background: linear-gradient(135deg, #0A36FF, #3b82f6);
     color: #fff !important;
     border: none;
-    box-shadow: 0 0 30px rgba(10, 54, 255, 0.4), 0 8px 32px rgba(10, 54, 255, 0.25);
+    box-shadow: 0 0 25px rgba(10, 54, 255, 0.35), 0 8px 30px rgba(10, 54, 255, 0.2);
 }
 
 .btn-glow-primary:hover {
-    transform: translateY(-4px) scale(1.03);
-    box-shadow: 0 0 50px rgba(10, 54, 255, 0.6), 0 15px 40px rgba(10, 54, 255, 0.35);
+    transform: translateY(-3px);
+    box-shadow: 0 0 40px rgba(10, 54, 255, 0.5), 0 12px 35px rgba(10, 54, 255, 0.3);
     color: #fff !important;
 }
 
 .btn-glow-primary::after {
     content: '';
     position: absolute;
-    top: -50%;
-    left: -50%;
-    width: 200%;
-    height: 200%;
-    background: linear-gradient(45deg, transparent, rgba(255,255,255,0.15), transparent);
-    transform: rotate(45deg);
-    animation: btnShine 3s ease-in-out infinite;
+    top: -50%; left: -50%;
+    width: 200%; height: 200%;
+    background: linear-gradient(45deg, transparent, rgba(255,255,255,0.12), transparent);
+    transform: rotate(45deg) translateX(-100%);
+    animation: btnShine 4s ease-in-out infinite;
 }
 
 @keyframes btnShine {
-    0%, 100% { transform: translateX(-100%) rotate(45deg); }
-    50% { transform: translateX(100%) rotate(45deg); }
+    0%, 100% { transform: rotate(45deg) translateX(-100%); }
+    50% { transform: rotate(45deg) translateX(100%); }
 }
 
 .btn-glow-outline {
     background: transparent;
     color: #fff !important;
-    border: 2px solid rgba(255, 255, 255, 0.5);
-    backdrop-filter: blur(10px);
+    border: 2px solid rgba(255, 255, 255, 0.45);
 }
 
 .btn-glow-outline:hover {
-    background: rgba(255, 255, 255, 0.12);
+    background: rgba(255, 255, 255, 0.1);
     border-color: #fff;
-    transform: translateY(-4px);
-    box-shadow: 0 0 30px rgba(255, 255, 255, 0.15);
+    transform: translateY(-3px);
     color: #fff !important;
 }
 
 /* --- 3D ANIMATED BIBLE --- */
 .bible-3d-container {
     perspective: 1200px;
-    width: 280px;
-    height: 360px;
-    margin: 0 auto 3rem;
+    width: 240px;
+    height: 310px;
+    margin: 0 auto 2.5rem;
     opacity: 0;
     animation: bibleAppear 1.5s cubic-bezier(0.16, 1, 0.3, 1) 0.2s forwards;
 }
 
 @keyframes bibleAppear {
-    0% { opacity: 0; transform: scale(0.6) translateY(60px); }
+    0% { opacity: 0; transform: scale(0.7) translateY(50px); }
     100% { opacity: 1; transform: scale(1) translateY(0); }
 }
 
@@ -185,157 +244,127 @@
     position: relative;
     transform-style: preserve-3d;
     animation: bibleFloat 6s ease-in-out infinite;
+    will-change: transform;
 }
 
 @keyframes bibleFloat {
-    0%, 100% { transform: rotateY(-15deg) rotateX(5deg) translateY(0); }
-    50% { transform: rotateY(-15deg) rotateX(5deg) translateY(-15px); }
+    0%, 100% { transform: rotateY(-12deg) rotateX(4deg) translateY(0); }
+    50% { transform: rotateY(-12deg) rotateX(4deg) translateY(-12px); }
 }
 
-/* Book cover */
 .bible-cover {
     position: absolute;
     width: 100%;
     height: 100%;
-    border-radius: 4px 16px 16px 4px;
+    border-radius: 4px 14px 14px 4px;
     background: linear-gradient(145deg, #1a0a3e 0%, #0d0526 40%, #1a0a3e 100%);
     box-shadow:
-        inset 0 0 30px rgba(139, 92, 246, 0.15),
-        0 25px 60px rgba(0, 0, 0, 0.5),
-        0 0 80px rgba(10, 54, 255, 0.2);
+        inset 0 0 25px rgba(139, 92, 246, 0.12),
+        0 20px 50px rgba(0, 0, 0, 0.45),
+        0 0 60px rgba(10, 54, 255, 0.15);
     backface-visibility: hidden;
     overflow: hidden;
 }
 
+/* Shimmer sur la couverture */
 .bible-cover::before {
     content: '';
     position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background: linear-gradient(135deg, transparent 30%, rgba(248, 181, 0, 0.05) 50%, transparent 70%);
-    animation: coverShimmer 4s ease-in-out infinite;
+    top: -100%; left: -100%;
+    width: 300%; height: 300%;
+    background: linear-gradient(135deg, transparent 40%, rgba(248, 181, 0, 0.06) 50%, transparent 60%);
+    animation: coverShimmer 5s ease-in-out infinite;
 }
 
 @keyframes coverShimmer {
-    0%, 100% { opacity: 0.3; }
-    50% { opacity: 1; }
+    0%   { transform: translate(-30%, -30%); }
+    100% { transform: translate(30%, 30%); }
 }
 
-/* Cross on cover */
+/* Croix dorée */
 .bible-cross {
     position: absolute;
     top: 50%;
     left: 50%;
-    transform: translate(-50%, -50%);
+    transform: translate(-50%, -55%);
 }
 
 .bible-cross .cross-vertical {
     position: absolute;
-    width: 6px;
-    height: 100px;
+    width: 5px;
+    height: 85px;
     background: linear-gradient(180deg, #f8b500, #d4a017, #f8b500);
     left: 50%;
     top: 50%;
     transform: translate(-50%, -50%);
-    border-radius: 3px;
-    box-shadow: 0 0 20px rgba(248, 181, 0, 0.6), 0 0 40px rgba(248, 181, 0, 0.3);
+    border-radius: 2.5px;
+    box-shadow: 0 0 15px rgba(248, 181, 0, 0.5), 0 0 35px rgba(248, 181, 0, 0.2);
     animation: crossGlow 3s ease-in-out infinite alternate;
 }
 
 .bible-cross .cross-horizontal {
     position: absolute;
-    width: 60px;
-    height: 6px;
+    width: 50px;
+    height: 5px;
     background: linear-gradient(90deg, #f8b500, #d4a017, #f8b500);
     left: 50%;
-    top: 35%;
+    top: 32%;
     transform: translate(-50%, -50%);
-    border-radius: 3px;
-    box-shadow: 0 0 20px rgba(248, 181, 0, 0.6), 0 0 40px rgba(248, 181, 0, 0.3);
+    border-radius: 2.5px;
+    box-shadow: 0 0 15px rgba(248, 181, 0, 0.5), 0 0 35px rgba(248, 181, 0, 0.2);
     animation: crossGlow 3s ease-in-out infinite alternate;
 }
 
 @keyframes crossGlow {
-    0% { box-shadow: 0 0 15px rgba(248, 181, 0, 0.5), 0 0 30px rgba(248, 181, 0, 0.2); }
-    100% { box-shadow: 0 0 30px rgba(248, 181, 0, 0.8), 0 0 60px rgba(248, 181, 0, 0.4); }
+    0% { box-shadow: 0 0 12px rgba(248, 181, 0, 0.4), 0 0 25px rgba(248, 181, 0, 0.15); }
+    100% { box-shadow: 0 0 25px rgba(248, 181, 0, 0.7), 0 0 50px rgba(248, 181, 0, 0.3); }
 }
 
-/* Bible title */
 .bible-title {
     position: absolute;
-    bottom: 25%;
+    bottom: 22%;
     left: 50%;
     transform: translateX(-50%);
     font-family: 'Poppins', serif;
-    font-size: 1.1rem;
+    font-size: 1rem;
     font-weight: 700;
     color: #f8b500;
-    text-shadow: 0 0 15px rgba(248, 181, 0, 0.5);
-    letter-spacing: 6px;
+    text-shadow: 0 0 12px rgba(248, 181, 0, 0.4);
+    letter-spacing: 5px;
     text-transform: uppercase;
     white-space: nowrap;
 }
 
-/* Book spine */
+/* Spine + Pages */
 .bible-spine {
     position: absolute;
-    width: 30px;
+    width: 25px;
     height: 100%;
-    left: -15px;
-    background: linear-gradient(180deg, #120730 0%, #0d0526 50%, #120730 100%);
+    left: -12px;
+    background: linear-gradient(180deg, #120730, #0d0526, #120730);
     transform: rotateY(-90deg);
     transform-origin: right;
-    border-radius: 4px 0 0 4px;
+    border-radius: 3px 0 0 3px;
 }
 
-/* Pages effect */
 .bible-pages {
     position: absolute;
-    right: 4px;
-    top: 8px;
-    width: 8px;
-    height: calc(100% - 16px);
-    background: repeating-linear-gradient(
-        180deg,
-        #f5f0e8 0px,
-        #f5f0e8 1px,
-        #e8e0d4 1px,
-        #e8e0d4 2px
-    );
-    border-radius: 0 3px 3px 0;
-    box-shadow: inset -2px 0 4px rgba(0,0,0,0.1);
+    right: 3px;
+    top: 7px;
+    width: 7px;
+    height: calc(100% - 14px);
+    background: repeating-linear-gradient(180deg, #f5f0e8 0px, #f5f0e8 1px, #e8e0d4 1px, #e8e0d4 2px);
+    border-radius: 0 2px 2px 0;
+    box-shadow: inset -1px 0 3px rgba(0,0,0,0.08);
 }
 
-/* Floating page */
-.bible-floating-page {
-    position: absolute;
-    width: 85%;
-    height: 75%;
-    top: 10%;
-    left: 10%;
-    background: rgba(245, 240, 232, 0.08);
-    border: 1px solid rgba(248, 181, 0, 0.15);
-    border-radius: 4px;
-    transform: translateZ(30px) rotateY(10deg);
-    backface-visibility: hidden;
-    opacity: 0;
-    animation: pageFloat 8s ease-in-out 2s infinite;
-}
-
-@keyframes pageFloat {
-    0%, 100% { opacity: 0; transform: translateZ(30px) rotateY(10deg) translateY(10px); }
-    20%, 80% { opacity: 0.6; transform: translateZ(50px) rotateY(15deg) translateY(-5px); }
-}
-
-/* Light rays from bible */
+/* Rayons de lumière — pur CSS */
 .bible-light-rays {
     position: absolute;
     top: 50%;
     left: 50%;
-    width: 400px;
-    height: 400px;
+    width: 350px;
+    height: 350px;
     transform: translate(-50%, -50%);
     pointer-events: none;
     z-index: -1;
@@ -345,64 +374,64 @@
     position: absolute;
     top: 50%;
     left: 50%;
-    width: 2px;
-    height: 200px;
-    background: linear-gradient(to bottom, rgba(248, 181, 0, 0.4), transparent);
+    width: 1.5px;
+    height: 160px;
+    background: linear-gradient(to bottom, rgba(248, 181, 0, 0.3), transparent);
     transform-origin: top center;
     opacity: 0;
-    animation: rayAppear 4s ease-in-out infinite;
+    animation: rayPulse 5s ease-in-out infinite;
 }
 
-.ray:nth-child(1) { transform: translate(-50%, 0) rotate(0deg); animation-delay: 0s; }
-.ray:nth-child(2) { transform: translate(-50%, 0) rotate(45deg); animation-delay: 0.5s; }
-.ray:nth-child(3) { transform: translate(-50%, 0) rotate(90deg); animation-delay: 1s; }
-.ray:nth-child(4) { transform: translate(-50%, 0) rotate(135deg); animation-delay: 1.5s; }
-.ray:nth-child(5) { transform: translate(-50%, 0) rotate(180deg); animation-delay: 2s; }
-.ray:nth-child(6) { transform: translate(-50%, 0) rotate(225deg); animation-delay: 2.5s; }
-.ray:nth-child(7) { transform: translate(-50%, 0) rotate(270deg); animation-delay: 3s; }
-.ray:nth-child(8) { transform: translate(-50%, 0) rotate(315deg); animation-delay: 3.5s; }
+.ray:nth-child(1) { transform: translate(-50%, 0) rotate(0deg);   animation-delay: 0s; }
+.ray:nth-child(2) { transform: translate(-50%, 0) rotate(45deg);  animation-delay: 0.6s; }
+.ray:nth-child(3) { transform: translate(-50%, 0) rotate(90deg);  animation-delay: 1.2s; }
+.ray:nth-child(4) { transform: translate(-50%, 0) rotate(135deg); animation-delay: 1.8s; }
+.ray:nth-child(5) { transform: translate(-50%, 0) rotate(180deg); animation-delay: 2.4s; }
+.ray:nth-child(6) { transform: translate(-50%, 0) rotate(225deg); animation-delay: 3s; }
+.ray:nth-child(7) { transform: translate(-50%, 0) rotate(270deg); animation-delay: 3.6s; }
+.ray:nth-child(8) { transform: translate(-50%, 0) rotate(315deg); animation-delay: 4.2s; }
 
-@keyframes rayAppear {
-    0%, 100% { opacity: 0; height: 100px; }
-    50% { opacity: 0.7; height: 200px; }
+@keyframes rayPulse {
+    0%, 100% { opacity: 0; }
+    50% { opacity: 0.6; }
 }
 
 /* --- TYPEWRITER VERSE --- */
 .verse-typewriter {
     position: relative;
     z-index: 10;
-    max-width: 700px;
+    max-width: 680px;
     margin: 0 auto 2rem;
-    min-height: 3.5em;
+    min-height: 3.2em;
 }
 
 .verse-typewriter .verse-text {
     font-family: 'Poppins', serif;
-    font-size: clamp(1rem, 2vw, 1.25rem);
+    font-size: clamp(0.95rem, 2vw, 1.2rem);
     font-style: italic;
-    color: rgba(255, 255, 255, 0.9);
+    color: rgba(255, 255, 255, 0.85);
     line-height: 1.7;
-    text-shadow: 0 2px 15px rgba(10, 54, 255, 0.3);
 }
 
 .verse-typewriter .verse-ref {
     display: block;
     margin-top: 0.5rem;
-    font-size: 0.9rem;
+    font-size: 0.85rem;
     font-style: normal;
     font-weight: 600;
     color: #f8b500;
-    text-shadow: 0 0 10px rgba(248, 181, 0, 0.3);
+    text-shadow: 0 0 8px rgba(248, 181, 0, 0.25);
+    transition: opacity 0.6s ease;
 }
 
 .typewriter-cursor {
     display: inline-block;
-    width: 3px;
-    height: 1.2em;
+    width: 2px;
+    height: 1.1em;
     background: #f8b500;
     vertical-align: text-bottom;
-    animation: cursorBlink 0.8s step-end infinite;
     margin-left: 2px;
+    animation: cursorBlink 0.8s step-end infinite;
 }
 
 @keyframes cursorBlink {
@@ -413,8 +442,8 @@
 /* --- SCROLL REVEAL SECTIONS --- */
 .reveal-section {
     opacity: 0;
-    transform: translateY(60px);
-    transition: all 0.9s cubic-bezier(0.16, 1, 0.3, 1);
+    transform: translateY(50px);
+    transition: opacity 0.8s cubic-bezier(0.16, 1, 0.3, 1), transform 0.8s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .reveal-section.revealed {
@@ -424,8 +453,8 @@
 
 .reveal-left {
     opacity: 0;
-    transform: translateX(-80px);
-    transition: all 0.9s cubic-bezier(0.16, 1, 0.3, 1);
+    transform: translateX(-60px);
+    transition: opacity 0.8s cubic-bezier(0.16, 1, 0.3, 1), transform 0.8s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .reveal-left.revealed {
@@ -435,8 +464,8 @@
 
 .reveal-right {
     opacity: 0;
-    transform: translateX(80px);
-    transition: all 0.9s cubic-bezier(0.16, 1, 0.3, 1);
+    transform: translateX(60px);
+    transition: opacity 0.8s cubic-bezier(0.16, 1, 0.3, 1), transform 0.8s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .reveal-right.revealed {
@@ -446,8 +475,8 @@
 
 .reveal-scale {
     opacity: 0;
-    transform: scale(0.85);
-    transition: all 0.9s cubic-bezier(0.16, 1, 0.3, 1);
+    transform: scale(0.9);
+    transition: opacity 0.8s cubic-bezier(0.16, 1, 0.3, 1), transform 0.8s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .reveal-scale.revealed {
@@ -455,11 +484,11 @@
     transform: scale(1);
 }
 
-/* Stagger children */
+/* Stagger enfants */
 .stagger-children > * {
     opacity: 0;
-    transform: translateY(30px);
-    transition: all 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+    transform: translateY(25px);
+    transition: opacity 0.6s cubic-bezier(0.16, 1, 0.3, 1), transform 0.6s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .stagger-children.revealed > *:nth-child(1) { transition-delay: 0.1s; opacity: 1; transform: translateY(0); }
@@ -471,7 +500,7 @@
 
 /* --- ANIMATED COUNTERS SECTION --- */
 .stats-section {
-    padding: 80px 0;
+    padding: 70px 0;
     background: linear-gradient(135deg, #0a0e27, #0d1a3a);
     position: relative;
     overflow: hidden;
@@ -480,62 +509,59 @@
 .stats-section::before {
     content: '';
     position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
     background:
-        radial-gradient(circle at 20% 50%, rgba(10, 54, 255, 0.15) 0%, transparent 50%),
-        radial-gradient(circle at 80% 50%, rgba(139, 92, 246, 0.1) 0%, transparent 50%);
+        radial-gradient(circle at 20% 50%, rgba(10, 54, 255, 0.12) 0%, transparent 50%),
+        radial-gradient(circle at 80% 50%, rgba(139, 92, 246, 0.08) 0%, transparent 50%);
     pointer-events: none;
 }
 
 .stat-item {
     text-align: center;
-    padding: 2rem 1rem;
+    padding: 1.5rem 1rem;
 }
 
 .stat-icon {
-    width: 70px;
-    height: 70px;
+    width: 65px;
+    height: 65px;
     border-radius: 50%;
-    background: linear-gradient(135deg, rgba(10, 54, 255, 0.2), rgba(59, 130, 246, 0.1));
-    border: 2px solid rgba(10, 54, 255, 0.3);
+    background: rgba(10, 54, 255, 0.15);
+    border: 2px solid rgba(10, 54, 255, 0.25);
     display: flex;
     align-items: center;
     justify-content: center;
-    margin: 0 auto 1rem;
-    transition: all 0.4s ease;
+    margin: 0 auto 0.8rem;
+    transition: transform 0.4s ease, box-shadow 0.4s ease;
 }
 
 .stat-item:hover .stat-icon {
-    transform: scale(1.15) rotate(5deg);
-    box-shadow: 0 0 30px rgba(10, 54, 255, 0.4);
-    border-color: rgba(10, 54, 255, 0.6);
+    transform: scale(1.12);
+    box-shadow: 0 0 25px rgba(10, 54, 255, 0.35);
 }
 
 .stat-icon i {
-    font-size: 1.8rem;
+    font-size: 1.6rem;
     color: #3b82f6;
 }
 
 .stat-number {
-    font-size: 3rem;
+    font-size: 2.8rem;
     font-weight: 800;
     color: #ffffff;
     line-height: 1;
-    margin-bottom: 0.5rem;
+    margin-bottom: 0.4rem;
     font-variant-numeric: tabular-nums;
 }
 
 .stat-number .counter-suffix {
-    font-size: 2rem;
+    font-size: 1.8rem;
     color: #f8b500;
 }
 
 .stat-label {
-    font-size: 0.95rem;
-    color: rgba(255, 255, 255, 0.6);
+    font-size: 0.85rem;
+    color: rgba(255, 255, 255, 0.55);
     text-transform: uppercase;
     letter-spacing: 2px;
     font-weight: 500;
@@ -544,18 +570,17 @@
 /* --- PREMIUM SECTION HEADERS --- */
 .premium-header {
     text-align: center;
-    margin-bottom: 4rem;
-    position: relative;
+    margin-bottom: 3.5rem;
 }
 
 .premium-header .overline {
     display: inline-block;
-    font-size: 0.8rem;
+    font-size: 0.78rem;
     font-weight: 600;
     text-transform: uppercase;
-    letter-spacing: 4px;
+    letter-spacing: 3.5px;
     color: #0A36FF;
-    margin-bottom: 1rem;
+    margin-bottom: 0.8rem;
     position: relative;
 }
 
@@ -564,67 +589,65 @@
     content: '';
     position: absolute;
     top: 50%;
-    width: 40px;
+    width: 35px;
     height: 1px;
-    background: linear-gradient(90deg, transparent, #0A36FF);
 }
 
 .premium-header .overline::before {
-    right: calc(100% + 15px);
+    right: calc(100% + 12px);
+    background: linear-gradient(90deg, transparent, #0A36FF);
 }
 
 .premium-header .overline::after {
-    left: calc(100% + 15px);
+    left: calc(100% + 12px);
     background: linear-gradient(90deg, #0A36FF, transparent);
 }
 
 .premium-header h2 {
-    font-size: clamp(2rem, 4vw, 3rem);
+    font-size: clamp(1.8rem, 4vw, 2.8rem);
     font-weight: 800;
     color: var(--secondary-color, #1e3a5f);
-    margin-bottom: 1rem;
+    margin-bottom: 0.8rem;
     line-height: 1.2;
 }
 
 .premium-header .header-desc {
-    font-size: 1.15rem;
+    font-size: 1.1rem;
     color: #6c757d;
-    max-width: 600px;
+    max-width: 550px;
     margin: 0 auto;
-    line-height: 1.7;
+    line-height: 1.65;
 }
 
 .premium-header .header-divider {
-    width: 60px;
-    height: 4px;
+    width: 55px;
+    height: 3px;
     background: linear-gradient(90deg, #0A36FF, #f8b500);
-    margin: 1.5rem auto 0;
+    margin: 1.2rem auto 0;
     border-radius: 2px;
 }
 
 /* --- PREMIUM CHURCH CARDS --- */
 .church-card-premium {
     background: #ffffff;
-    border-radius: 24px;
-    padding: 3rem 2rem;
+    border-radius: 20px;
+    padding: 2.5rem 1.8rem;
     text-align: center;
     position: relative;
     overflow: hidden;
-    transition: all 0.5s cubic-bezier(0.16, 1, 0.3, 1);
-    border: 1px solid rgba(0, 0, 0, 0.06);
+    transition: transform 0.45s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.45s ease;
+    border: 1px solid rgba(0, 0, 0, 0.05);
 }
 
 .church-card-premium::before {
     content: '';
     position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 5px;
+    top: 0; left: 0;
+    width: 100%; height: 4px;
     background: linear-gradient(90deg, #0A36FF, #3b82f6, #f8b500);
     transform: scaleX(0);
     transform-origin: left;
-    transition: transform 0.5s ease;
+    transition: transform 0.45s ease;
 }
 
 .church-card-premium:hover::before {
@@ -632,87 +655,66 @@
 }
 
 .church-card-premium:hover {
-    transform: translateY(-12px);
-    box-shadow: 0 30px 60px rgba(10, 54, 255, 0.12), 0 10px 20px rgba(0, 0, 0, 0.06);
+    transform: translateY(-8px);
+    box-shadow: 0 25px 50px rgba(10, 54, 255, 0.1), 0 8px 16px rgba(0, 0, 0, 0.05);
 }
 
 .church-icon-premium {
-    width: 90px;
-    height: 90px;
+    width: 80px;
+    height: 80px;
     border-radius: 50%;
     background: linear-gradient(135deg, #0A36FF, #3b82f6);
     display: flex;
     align-items: center;
     justify-content: center;
-    margin: 0 auto 1.5rem;
-    position: relative;
-    transition: all 0.5s ease;
-}
-
-.church-icon-premium::after {
-    content: '';
-    position: absolute;
-    width: 100%;
-    height: 100%;
-    border-radius: 50%;
-    border: 2px dashed rgba(10, 54, 255, 0.3);
-    animation: iconSpin 20s linear infinite;
-    top: -8px;
-    left: -8px;
-    width: calc(100% + 16px);
-    height: calc(100% + 16px);
-}
-
-@keyframes iconSpin {
-    to { transform: rotate(360deg); }
+    margin: 0 auto 1.2rem;
+    transition: transform 0.4s ease, box-shadow 0.4s ease;
 }
 
 .church-card-premium:hover .church-icon-premium {
-    transform: scale(1.1) rotate(-5deg);
-    box-shadow: 0 15px 40px rgba(10, 54, 255, 0.3);
+    transform: scale(1.08);
+    box-shadow: 0 10px 30px rgba(10, 54, 255, 0.25);
 }
 
 .church-icon-premium i {
-    font-size: 2.5rem;
+    font-size: 2.2rem;
     color: #ffffff;
 }
 
 /* --- PREMIUM EVENT CARDS --- */
 .event-card-premium {
-    border-radius: 20px;
+    border-radius: 18px;
     overflow: hidden;
     background: #ffffff;
-    border: 1px solid rgba(0, 0, 0, 0.06);
-    transition: all 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+    border: 1px solid rgba(0, 0, 0, 0.05);
+    transition: transform 0.45s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.45s ease;
     height: 100%;
 }
 
 .event-card-premium:hover {
-    transform: translateY(-10px) scale(1.02);
-    box-shadow: 0 25px 50px rgba(0, 0, 0, 0.12);
+    transform: translateY(-8px);
+    box-shadow: 0 20px 45px rgba(0, 0, 0, 0.1);
 }
 
 .event-card-premium .event-img-wrapper {
     position: relative;
-    height: 200px;
+    height: 190px;
     overflow: hidden;
 }
 
 .event-card-premium .event-img-wrapper img {
-    width: 100%;
-    height: 100%;
+    width: 100%; height: 100%;
     object-fit: cover;
-    transition: transform 0.6s ease;
+    transition: transform 0.5s ease;
 }
 
 .event-card-premium:hover .event-img-wrapper img {
-    transform: scale(1.1);
+    transform: scale(1.06);
 }
 
 .event-card-premium .event-img-placeholder {
-    width: 100%;
-    height: 100%;
-    background: linear-gradient(135deg, #0A36FF 0%, #1e3a5f 100%);
+    width: 100%; height: 100%;
+    background: linear-gradient(135deg, #0A36FF, #1e3a5f);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -720,34 +722,33 @@
 
 .event-card-premium .date-badge {
     position: absolute;
-    top: 15px;
-    right: 15px;
-    background: rgba(255, 255, 255, 0.95);
-    backdrop-filter: blur(10px);
-    padding: 10px 16px;
-    border-radius: 14px;
+    top: 12px; right: 12px;
+    background: rgba(255, 255, 255, 0.92);
+    backdrop-filter: blur(8px);
+    padding: 8px 14px;
+    border-radius: 12px;
     text-align: center;
-    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.12);
 }
 
 .event-card-premium .date-badge .day {
-    font-size: 1.6rem;
+    font-size: 1.5rem;
     font-weight: 800;
     color: #0A36FF;
     line-height: 1;
 }
 
 .event-card-premium .date-badge .month {
-    font-size: 0.7rem;
+    font-size: 0.65rem;
     text-transform: uppercase;
     color: #6c757d;
     font-weight: 700;
     letter-spacing: 1px;
 }
 
-/* --- CTA PREMIUM SECTION --- */
+/* --- CTA PREMIUM --- */
 .cta-premium {
-    padding: 100px 0;
+    padding: 90px 0;
     position: relative;
     overflow: hidden;
     background: linear-gradient(135deg, #0A36FF, #1e3a5f);
@@ -756,75 +757,27 @@
 .cta-premium .floating-shapes .shape {
     position: absolute;
     border-radius: 50%;
-    opacity: 0.06;
+    opacity: 0.05;
     background: #ffffff;
-    animation: floatShape 20s ease-in-out infinite;
+    animation: floatShape 25s ease-in-out infinite;
 }
 
-.cta-premium .floating-shapes .shape:nth-child(1) {
-    width: 300px; height: 300px; top: -100px; right: -50px;
-    animation-delay: 0s;
-}
-.cta-premium .floating-shapes .shape:nth-child(2) {
-    width: 200px; height: 200px; bottom: -50px; left: -50px;
-    animation-delay: 5s;
-}
-.cta-premium .floating-shapes .shape:nth-child(3) {
-    width: 150px; height: 150px; top: 50%; left: 60%;
-    animation-delay: 10s;
-}
+.cta-premium .floating-shapes .shape:nth-child(1) { width: 280px; height: 280px; top: -80px; right: -40px; }
+.cta-premium .floating-shapes .shape:nth-child(2) { width: 180px; height: 180px; bottom: -40px; left: -40px; animation-delay: 6s; }
+.cta-premium .floating-shapes .shape:nth-child(3) { width: 120px; height: 120px; top: 45%; left: 55%; animation-delay: 12s; }
 
 @keyframes floatShape {
-    0%, 100% { transform: translateY(0) rotate(0deg); }
-    33% { transform: translateY(-30px) rotate(5deg); }
-    66% { transform: translateY(20px) rotate(-3deg); }
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-20px); }
 }
 
-.cta-premium h2 {
-    color: #ffffff !important;
-    font-size: clamp(2rem, 4vw, 3rem);
-    font-weight: 800;
-}
+.cta-premium h2 { color: #ffffff !important; font-size: clamp(1.8rem, 4vw, 2.8rem); font-weight: 800; }
+.cta-premium p  { color: rgba(255, 255, 255, 0.75) !important; font-size: 1.15rem; }
 
-.cta-premium p {
-    color: rgba(255, 255, 255, 0.8) !important;
-    font-size: 1.2rem;
-}
-
-/* --- SCROLL PROGRESS INDICATOR --- */
-.scroll-progress {
-    position: fixed;
-    top: 0;
-    left: 0;
-    height: 3px;
-    background: linear-gradient(90deg, #0A36FF, #f8b500);
-    z-index: 99999;
-    transition: width 0.1s linear;
-    box-shadow: 0 0 10px rgba(10, 54, 255, 0.5);
-}
-
-/* --- MOUSE-FOLLOW GLOW --- */
-.mouse-glow {
-    position: fixed;
-    width: 400px;
-    height: 400px;
-    border-radius: 50%;
-    background: radial-gradient(circle, rgba(10, 54, 255, 0.08) 0%, transparent 70%);
-    pointer-events: none;
-    z-index: 0;
-    transform: translate(-50%, -50%);
-    transition: all 0.3s ease;
-    opacity: 0;
-}
-
-.aurora-hero .mouse-glow {
-    opacity: 1;
-}
-
-/* --- DOWN SCROLL ARROW --- */
+/* --- SCROLL DOWN INDICATOR --- */
 .scroll-down-indicator {
     position: absolute;
-    bottom: 50px;
+    bottom: 45px;
     left: 50%;
     transform: translateX(-50%);
     z-index: 10;
@@ -834,88 +787,51 @@
 }
 
 .scroll-down-indicator .scroll-arrow {
-    width: 30px;
-    height: 50px;
-    border: 2px solid rgba(255, 255, 255, 0.4);
-    border-radius: 20px;
-    position: relative;
+    width: 28px;
+    height: 46px;
+    border: 2px solid rgba(255, 255, 255, 0.35);
+    border-radius: 18px;
     display: flex;
     justify-content: center;
 }
 
 .scroll-down-indicator .scroll-dot {
-    width: 4px;
-    height: 10px;
+    width: 3px;
+    height: 8px;
     background: #fff;
     border-radius: 2px;
-    margin-top: 8px;
+    margin-top: 7px;
     animation: scrollDot 2s ease-in-out infinite;
 }
 
 @keyframes scrollDot {
     0%, 100% { transform: translateY(0); opacity: 1; }
-    50% { transform: translateY(15px); opacity: 0.3; }
+    50% { transform: translateY(14px); opacity: 0.2; }
 }
 
-/* --- RESPONSIVE OVERRIDES --- */
+/* --- RESPONSIVE --- */
 @media (max-width: 768px) {
-    .bible-3d-container {
-        width: 200px;
-        height: 260px;
-    }
+    .bible-3d-container { width: 180px; height: 230px; }
+    .bible-cross .cross-vertical { height: 60px; width: 4px; }
+    .bible-cross .cross-horizontal { width: 38px; height: 4px; }
+    .bible-title { font-size: 0.8rem; letter-spacing: 3px; }
+    .stats-section { padding: 45px 0; }
+    .stat-number { font-size: 2rem; }
+    .hero-cta-group { flex-direction: column; align-items: center; }
+    .btn-glow { width: 100%; max-width: 280px; justify-content: center; }
+    .premium-header .overline::before, .premium-header .overline::after { display: none; }
+    .bible-light-rays { width: 250px; height: 250px; }
+    .bible-light-rays .ray { height: 100px; }
 
-    .bible-cross .cross-vertical {
-        height: 70px;
-        width: 5px;
-    }
-
-    .bible-cross .cross-horizontal {
-        width: 45px;
-        height: 5px;
-    }
-
-    .bible-title {
-        font-size: 0.85rem;
-        letter-spacing: 4px;
-    }
-
-    .stats-section {
-        padding: 50px 0;
-    }
-
-    .stat-number {
-        font-size: 2.2rem;
-    }
-
-    .hero-cta-group {
-        flex-direction: column;
-        align-items: center;
-    }
-
-    .btn-glow {
-        width: 100%;
-        max-width: 300px;
-    }
-
-    .premium-header .overline::before,
-    .premium-header .overline::after {
-        display: none;
-    }
-
-    .bible-light-rays {
-        display: none;
-    }
+    /* Reduce particles on mobile */
+    .css-particles .dot:nth-child(n+9),
+    .css-particles .cross-particle:nth-child(n+15) { display: none; }
 }
 
 @media (max-width: 480px) {
-    .bible-3d-container {
-        width: 160px;
-        height: 210px;
-    }
-
-    .stat-item {
-        padding: 1rem 0.5rem;
-    }
+    .bible-3d-container { width: 150px; height: 195px; }
+    .stat-item { padding: 1rem 0.5rem; }
+    .bible-light-rays { display: none; }
 }
 
 /* --- PREFERS REDUCED MOTION --- */
@@ -926,16 +842,14 @@
         transition-duration: 0.01ms !important;
     }
 
-    .bible-3d {
-        animation: none;
-        transform: rotateY(-15deg) rotateX(5deg);
+    .bible-3d { animation: none; transform: rotateY(-12deg) rotateX(4deg); }
+    .hero-inner h1, .hero-inner .hero-tagline, .hero-cta-group,
+    .bible-3d-container, .scroll-down-indicator {
+        opacity: 1; transform: none;
     }
-
-    .reveal-section,
-    .reveal-left,
-    .reveal-right,
-    .reveal-scale {
-        opacity: 1;
-        transform: none;
+    .reveal-section, .reveal-left, .reveal-right, .reveal-scale,
+    .stagger-children > * {
+        opacity: 1; transform: none;
     }
+    .css-particles { display: none; }
 }

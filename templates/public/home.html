@@ -11,18 +11,19 @@
 {% endblock %}
 
 {% block content %}
-<!-- Scroll Progress Bar -->
-<div class="scroll-progress" style="width: 0;"></div>
-
-<!-- Mouse Glow Effect (desktop) -->
-<div class="mouse-glow"></div>
-
 <!-- ============================================================
      HERO — Aurora + Bible 3D + Typewriter Verse
      ============================================================ -->
 <section class="aurora-hero">
-    <!-- Particle System -->
-    <canvas id="particles-canvas"></canvas>
+    <!-- CSS-Only Floating Particles (pas de canvas) -->
+    <div class="css-particles">
+        <div class="dot"></div><div class="dot"></div><div class="dot"></div>
+        <div class="dot"></div><div class="dot"></div><div class="dot"></div>
+        <div class="dot"></div><div class="dot"></div><div class="dot"></div>
+        <div class="dot"></div><div class="dot"></div><div class="dot"></div>
+        <div class="cross-particle"></div><div class="cross-particle"></div>
+        <div class="cross-particle"></div><div class="cross-particle"></div>
+    </div>
 
     <div class="hero-inner">
         <!-- 3D Animated Bible -->
