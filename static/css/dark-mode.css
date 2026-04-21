@@ -26,6 +26,26 @@
     --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.3);
     --shadow-md: 0 4px 6px rgba(0, 0, 0, 0.4);
     --shadow-lg: 0 10px 15px rgba(0, 0, 0, 0.5);
+
+    /* Mapping --eebc-* pour cohérence avec components.css */
+    --eebc-primary: #3b82f6;
+    --eebc-primary-dark: #2563eb;
+    --eebc-primary-light: #60a5fa;
+    --eebc-white: #1e293b;
+    --eebc-black: #f1f5f9;
+    --eebc-gray-50: #1e293b;
+    --eebc-gray-100: #334155;
+    --eebc-gray-200: #475569;
+    --eebc-gray-300: #64748b;
+    --eebc-gray-400: #94a3b8;
+    --eebc-gray-500: #cbd5e1;
+    --eebc-gray-600: #e2e8f0;
+    --eebc-gray-700: #f1f5f9;
+    --eebc-gray-800: #f8fafc;
+    --eebc-success: #22c55e;
+    --eebc-warning: #f59e0b;
+    --eebc-danger: #ef4444;
+    --eebc-info: #06b6d4;
 }
 
 /* Body */

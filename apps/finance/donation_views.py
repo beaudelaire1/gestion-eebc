@@ -42,6 +42,18 @@ class DonationPageView(TemplateView):
         from apps.core.models import Site
         context['sites'] = Site.objects.filter(is_active=True)
 
+        # Pré-remplir pour les membres connectés
+        if self.request.user.is_authenticated:
+            context['user_authenticated'] = True
+            context['user_email'] = self.request.user.email or ''
+            context['user_full_name'] = f"{self.request.user.first_name} {self.request.user.last_name}".strip()
+            if hasattr(self.request.user, 'member_profile'):
+                member = self.request.user.member_profile
+                context['user_full_name'] = member.full_name or context['user_full_name']
+                context['user_member_id'] = member.id
+        else:
+            context['user_authenticated'] = False
+
         # Campagne sélectionnée via token signé (partage mobile sécurisé)
         token = self.request.GET.get('c')
         selected_campaign = None
