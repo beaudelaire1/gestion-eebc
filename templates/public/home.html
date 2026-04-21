@@ -6,16 +6,65 @@
 {% block og_title %}Accueil - {{ settings.site_name|default:'EEBC' }}{% endblock %}
 
 {% block extra_css %}
-<!-- Home Animations CSS -->
 <link rel="stylesheet" href="{% static 'css/home-animations.css' %}">
 {% endblock %}
 
 {% block content %}
+
 <!-- ============================================================
-     HERO — Aurora + Bible 3D + Typewriter Verse
+     HERO — Carousel dynamique OU Aurora + Bible 3D (fallback)
      ============================================================ -->
+{% if slides %}
+<!-- HERO CAROUSEL (slides gérées depuis l'admin) -->
+<section class="hero-carousel" id="heroCarousel">
+    {% for slide in slides %}
+    <div class="hero-slide {% if forloop.first %}active{% endif %}" data-index="{{ forloop.counter0 }}">
+        <div class="hero-slide-bg" style="background-image: url('{{ slide.image.url }}');"></div>
+        <div class="hero-overlay"></div>
+        <div class="hero-content">
+            <div class="container">
+                <div class="hero-text">
+                    <h1>{{ slide.title }}</h1>
+                    {% if slide.subtitle %}
+                    <p>{{ slide.subtitle }}</p>
+                    {% endif %}
+                    <div class="btn-group-hero">
+                        {% if slide.button_text and slide.button_url %}
+                        <a href="{{ slide.button_url }}" class="hero-btn hero-btn-primary me-3">{{ slide.button_text }}</a>
+                        {% endif %}
+                        <a href="{% url 'public:sites' %}" class="hero-btn hero-btn-outline">Nos Églises</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+
+    <!-- Navigation Arrows -->
+    <button class="carousel-arrow prev" onclick="changeSlide(-1)" aria-label="Slide précédent">
+        <i class="bi bi-chevron-left"></i>
+    </button>
+    <button class="carousel-arrow next" onclick="changeSlide(1)" aria-label="Slide suivant">
+        <i class="bi bi-chevron-right"></i>
+    </button>
+
+    <!-- Dots Navigation -->
+    <div class="carousel-nav">
+        {% for slide in slides %}
+        <div class="carousel-dot {% if forloop.first %}active{% endif %}" data-index="{{ forloop.counter0 }}" onclick="goToSlide({{ forloop.counter0 }})"></div>
+        {% endfor %}
+    </div>
+
+    <!-- Scroll Indicator -->
+    <div class="scroll-indicator">
+        <i class="bi bi-chevron-double-down"></i>
+    </div>
+</section>
+
+{% else %}
+<!-- HERO AURORA + BIBLE 3D (quand pas de slides) -->
 <section class="aurora-hero">
-    <!-- CSS-Only Floating Particles (pas de canvas) -->
+    <!-- CSS-Only Floating Particles -->
     <div class="css-particles">
         <div class="dot"></div><div class="dot"></div><div class="dot"></div>
         <div class="dot"></div><div class="dot"></div><div class="dot"></div>
@@ -35,21 +84,14 @@
                         <div class="cross-horizontal"></div>
                     </div>
                     <div class="bible-title">Bible</div>
-                    <div class="bible-floating-page"></div>
                 </div>
                 <div class="bible-spine"></div>
                 <div class="bible-pages"></div>
-
-                <!-- Light Rays -->
                 <div class="bible-light-rays">
-                    <div class="ray"></div>
-                    <div class="ray"></div>
-                    <div class="ray"></div>
-                    <div class="ray"></div>
-                    <div class="ray"></div>
-                    <div class="ray"></div>
-                    <div class="ray"></div>
-                    <div class="ray"></div>
+                    <div class="ray"></div><div class="ray"></div>
+                    <div class="ray"></div><div class="ray"></div>
+                    <div class="ray"></div><div class="ray"></div>
+                    <div class="ray"></div><div class="ray"></div>
                 </div>
             </div>
         </div>
@@ -60,11 +102,9 @@
             <span class="verse-ref"></span>
         </div>
 
-        <!-- Title -->
         <h1>{{ settings.site_name|default:'Église Évangélique Baptiste de Cabassou' }}</h1>
         <p class="hero-tagline">{{ settings.tagline|default:'Un lieu de foi, d\'espérance et d\'amour en Guyane' }}</p>
 
-        <!-- CTA Buttons -->
         <div class="hero-cta-group">
             <a href="{% url 'public:sites' %}" class="btn-glow btn-glow-primary">
                 <i class="bi bi-geo-alt me-2"></i>Nos Églises
@@ -75,18 +115,57 @@
         </div>
     </div>
 
-    <!-- Scroll Down Indicator -->
     <div class="scroll-down-indicator">
         <div class="scroll-arrow">
             <div class="scroll-dot"></div>
         </div>
     </div>
 </section>
+{% endif %}
+
+<!-- ============================================================
+     BIBLE 3D + VERSET — Section dédiée (visible avec ou sans carousel)
+     ============================================================ -->
+{% if slides %}
+<section class="bible-verse-section">
+    <div class="container">
+        <div class="row align-items-center justify-content-center">
+            <div class="col-md-4 col-lg-3 text-center reveal-left">
+                <div class="bible-3d-container bible-3d-small">
+                    <div class="bible-3d">
+                        <div class="bible-cover">
+                            <div class="bible-cross">
+                                <div class="cross-vertical"></div>
+                                <div class="cross-horizontal"></div>
+                            </div>
+                            <div class="bible-title">Bible</div>
+                        </div>
+                        <div class="bible-spine"></div>
+                        <div class="bible-pages"></div>
+                        <div class="bible-light-rays">
+                            <div class="ray"></div><div class="ray"></div>
+                            <div class="ray"></div><div class="ray"></div>
+                            <div class="ray"></div><div class="ray"></div>
+                            <div class="ray"></div><div class="ray"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-7 col-lg-6 reveal-right">
+                <div class="verse-typewriter verse-typewriter-dark">
+                    <span class="verse-text"></span>
+                    <span class="verse-ref"></span>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+{% endif %}
 
 <!-- ============================================================
      NOS ÉGLISES — Premium Cards
      ============================================================ -->
-<section class="py-5" style="padding-top: 6rem !important; padding-bottom: 5rem !important; background: linear-gradient(180deg, #f8f9fa 0%, #ffffff 100%);">
+<section class="py-5" style="padding-top: 5rem !important; padding-bottom: 4.5rem !important; background: linear-gradient(180deg, #f8f9fa 0%, #ffffff 100%);">
     <div class="container">
         <div class="premium-header reveal-section">
             <span class="overline">Nos Communautés</span>
@@ -131,36 +210,28 @@
         <div class="row g-4 stagger-children">
             <div class="col-6 col-md-3">
                 <div class="stat-item">
-                    <div class="stat-icon">
-                        <i class="bi bi-people-fill"></i>
-                    </div>
+                    <div class="stat-icon"><i class="bi bi-people-fill"></i></div>
                     <div class="stat-number" data-counter="250" data-counter-suffix="+">0</div>
                     <div class="stat-label">Membres</div>
                 </div>
             </div>
             <div class="col-6 col-md-3">
                 <div class="stat-item">
-                    <div class="stat-icon">
-                        <i class="bi bi-church"></i>
-                    </div>
+                    <div class="stat-icon"><i class="bi bi-church"></i></div>
                     <div class="stat-number" data-counter="2">0</div>
                     <div class="stat-label">Églises</div>
                 </div>
             </div>
             <div class="col-6 col-md-3">
                 <div class="stat-item">
-                    <div class="stat-icon">
-                        <i class="bi bi-calendar-heart"></i>
-                    </div>
+                    <div class="stat-icon"><i class="bi bi-calendar-heart"></i></div>
                     <div class="stat-number" data-counter="52" data-counter-suffix="/an">0</div>
                     <div class="stat-label">Cultes</div>
                 </div>
             </div>
             <div class="col-6 col-md-3">
                 <div class="stat-item">
-                    <div class="stat-icon">
-                        <i class="bi bi-book"></i>
-                    </div>
+                    <div class="stat-icon"><i class="bi bi-book"></i></div>
                     <div class="stat-number" data-counter="15" data-counter-suffix="+">0</div>
                     <div class="stat-label">Groupes</div>
                 </div>
@@ -173,7 +244,7 @@
      ÉVÉNEMENTS À VENIR — Premium Event Cards
      ============================================================ -->
 {% if upcoming_events %}
-<section class="py-5" style="padding-top: 6rem !important; padding-bottom: 5rem !important;">
+<section class="py-5" style="padding-top: 5rem !important; padding-bottom: 4.5rem !important;">
     <div class="container">
         <div class="premium-header reveal-section">
             <span class="overline">Vie de l'Église</span>
@@ -233,7 +304,7 @@
      ACTUALITÉS — Premium Article Cards
      ============================================================ -->
 {% if featured_articles %}
-<section class="py-5 bg-light" style="padding-top: 6rem !important; padding-bottom: 5rem !important;">
+<section class="py-5 bg-light" style="padding-top: 5rem !important; padding-bottom: 4.5rem !important;">
     <div class="container">
         <div class="premium-header reveal-section">
             <span class="overline">Dernières nouvelles</span>
@@ -245,30 +316,25 @@
         <div class="row g-4 stagger-children">
             {% for article in featured_articles %}
             <div class="col-md-4">
-                <div class="card h-100" style="border-radius: 20px; overflow: hidden; border: 1px solid rgba(0,0,0,0.06); transition: all 0.5s cubic-bezier(0.16, 1, 0.3, 1);"
-                     onmouseenter="this.style.transform='translateY(-10px)'; this.style.boxShadow='0 25px 50px rgba(0,0,0,0.12)'"
-                     onmouseleave="this.style.transform=''; this.style.boxShadow=''">
+                <div class="article-card-premium">
                     {% if article.featured_image %}
-                    <div style="height: 200px; overflow: hidden;">
-                        <img src="{{ article.featured_image.url }}" class="card-img-top" alt="{{ article.title }}" loading="lazy"
-                             style="height: 100%; object-fit: cover; transition: transform 0.6s ease;"
-                             onmouseenter="this.style.transform='scale(1.08)'"
-                             onmouseleave="this.style.transform=''">
+                    <div class="article-img-wrapper">
+                        <img src="{{ article.featured_image.url }}" alt="{{ article.title }}" loading="lazy">
                     </div>
                     {% else %}
-                    <div class="d-flex align-items-center justify-content-center" style="height: 200px; background: linear-gradient(135deg, #0A36FF 0%, #1e3a5f 100%);">
-                        <i class="bi bi-newspaper text-white" style="font-size: 3rem; opacity: 0.4;"></i>
+                    <div class="article-img-wrapper">
+                        <div class="article-img-placeholder">
+                            <i class="bi bi-newspaper text-white" style="font-size: 3rem; opacity: 0.4;"></i>
+                        </div>
                     </div>
                     {% endif %}
-                    <div class="card-body">
+                    <div class="article-body">
                         <div class="mb-2">
                             <span class="badge rounded-pill" style="background: linear-gradient(135deg, #0A36FF, #3b82f6); font-size: 0.75rem;">{{ article.get_category_display }}</span>
                             <small class="text-muted ms-2">{{ article.publish_date|date:"d M Y" }}</small>
                         </div>
-                        <h5 class="card-title fw-bold">{{ article.title }}</h5>
-                        <p class="card-text text-muted">{{ article.excerpt|truncatewords:15 }}</p>
-                    </div>
-                    <div class="card-footer bg-transparent border-0 pt-0 pb-3 px-3">
+                        <h5 class="fw-bold mb-2">{{ article.title }}</h5>
+                        <p class="text-muted mb-3">{{ article.excerpt|truncatewords:15 }}</p>
                         <a href="{% url 'public:news_detail' article.slug %}" class="btn btn-outline-primary rounded-pill w-100">
                             Lire la suite <i class="bi bi-arrow-right ms-1"></i>
                         </a>
@@ -316,6 +382,79 @@
 {% endblock %}
 
 {% block extra_js %}
-<!-- Home Animations JS -->
+<!-- Home Animations JS (typewriter, scroll reveal, counters) -->
 <script defer src="{% static 'js/home-animations.js' %}"></script>
+
+{% if slides %}
+<!-- Carousel Logic (only when slides exist) -->
+<script>
+(function() {
+    var currentSlide = 0;
+    var slides = document.querySelectorAll('.hero-slide');
+    var dots = document.querySelectorAll('.carousel-dot');
+    var totalSlides = slides.length;
+    var autoSlideInterval;
+
+    function showSlide(index) {
+        if (index >= totalSlides) index = 0;
+        if (index < 0) index = totalSlides - 1;
+        currentSlide = index;
+
+        slides.forEach(function(slide, i) {
+            slide.classList.remove('active');
+            if (i === index) {
+                slide.classList.add('active');
+                var h1 = slide.querySelector('h1');
+                var p = slide.querySelector('p');
+                var btnGroup = slide.querySelector('.btn-group-hero');
+                if (h1) { h1.style.animation = 'none'; h1.offsetHeight; h1.style.animation = null; }
+                if (p) { p.style.animation = 'none'; p.offsetHeight; p.style.animation = null; }
+                if (btnGroup) { btnGroup.style.animation = 'none'; btnGroup.offsetHeight; btnGroup.style.animation = null; }
+            }
+        });
+
+        dots.forEach(function(dot, i) {
+            dot.classList.toggle('active', i === index);
+        });
+    }
+
+    window.changeSlide = function(dir) { showSlide(currentSlide + dir); resetAutoSlide(); };
+    window.goToSlide = function(idx) { showSlide(idx); resetAutoSlide(); };
+
+    function resetAutoSlide() { clearInterval(autoSlideInterval); startAutoSlide(); }
+    function startAutoSlide() {
+        if (totalSlides > 1) {
+            autoSlideInterval = setInterval(function() { showSlide(currentSlide + 1); }, 6000);
+        }
+    }
+    startAutoSlide();
+
+    // Keyboard
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'ArrowLeft') { window.changeSlide(-1); }
+        if (e.key === 'ArrowRight') { window.changeSlide(1); }
+    });
+
+    // Touch / Swipe
+    var touchStartX = 0;
+    var carousel = document.getElementById('heroCarousel');
+    if (carousel) {
+        carousel.addEventListener('touchstart', function(e) { touchStartX = e.changedTouches[0].screenX; });
+        carousel.addEventListener('touchend', function(e) {
+            var diff = touchStartX - e.changedTouches[0].screenX;
+            if (Math.abs(diff) > 50) { window.changeSlide(diff > 0 ? 1 : -1); }
+        });
+    }
+
+    // Scroll indicator
+    var scrollInd = document.querySelector('.scroll-indicator');
+    if (scrollInd) {
+        scrollInd.addEventListener('click', function() {
+            var next = document.querySelector('.hero-carousel + section, .hero-carousel ~ section');
+            if (next) next.scrollIntoView({ behavior: 'smooth' });
+        });
+    }
+})();
+</script>
+{% endif %}
 {% endblock %}
