@@ -562,7 +562,9 @@ Que Dieu vous bénisse abondamment,
                 status=EmailLog.Status.PENDING,
             )
 
-            email = EmailMessage(
+            from django.core.mail import EmailMultiAlternatives
+            
+            email = EmailMultiAlternatives(
                 subject=subject,
                 body=body,
                 from_email=None,  # Utilise DEFAULT_FROM_EMAIL

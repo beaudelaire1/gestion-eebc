@@ -311,7 +311,7 @@ class HostingerEmailBackend(BaseEmailBackend):
         """
         Prépare le message MIME à partir du message Django.
         """
-        if email_message.alternatives:
+        if hasattr(email_message, 'alternatives') and email_message.alternatives:
             # Message avec alternatives (HTML + texte)
             msg = MIMEMultipart('alternative')
             
