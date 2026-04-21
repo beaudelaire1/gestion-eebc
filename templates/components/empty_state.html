@@ -1,0 +1,79 @@
+{# Empty state component — used when list/query returns 0 results #}
+
+<div class="empty-state">
+    <div class="empty-state__icon">
+        {% if icon %}
+            <i class="bi {{ icon }}"></i>
+        {% else %}
+            <i class="bi bi-inbox"></i>
+        {% endif %}
+    </div>
+    
+    <h3 class="empty-state__title">
+        {% if title %}
+            {{ title }}
+        {% else %}
+            Aucune donnée
+        {% endif %}
+    </h3>
+    
+    {% if description %}
+    <p class="empty-state__description">
+        {{ description }}
+    </p>
+    {% endif %}
+    
+    {% if action_url and action_text %}
+    <a href="{{ action_url }}" class="btn btn-primary empty-state__action">
+        {{ action_text }}
+    </a>
+    {% endif %}
+</div>
+
+<style>
+.empty-state {
+    text-align: center;
+    padding: 4rem 2rem;
+    background: var(--eebc-gray-50, #f8fafc);
+    border-radius: 0.5rem;
+    border: 1px dashed var(--eebc-gray-200, #e2e8f0);
+    margin: 2rem 0;
+}
+
+.empty-state__icon {
+    font-size: 3rem;
+    color: var(--eebc-gray-300, #cbd5e1);
+    margin-bottom: 1rem;
+}
+
+.empty-state__title {
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: var(--eebc-gray-700, #334155);
+    margin: 0 0 0.5rem 0;
+}
+
+.empty-state__description {
+    color: var(--eebc-gray-500, #64748b);
+    margin: 0.5rem 0 1.5rem 0;
+    font-size: 0.95rem;
+}
+
+.empty-state__action {
+    margin-top: 1rem;
+}
+
+/* Dark mode */
+[data-theme="dark"] .empty-state {
+    background: var(--eebc-gray-800, #1e293b);
+    border-color: var(--eebc-gray-700, #334155);
+}
+
+[data-theme="dark"] .empty-state__title {
+    color: var(--eebc-gray-100, #f1f5f9);
+}
+
+[data-theme="dark"] .empty-state__description {
+    color: var(--eebc-gray-400, #94a3b8);
+}
+</style>
