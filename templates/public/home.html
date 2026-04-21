@@ -40,7 +40,6 @@
     </div>
     {% endfor %}
 
-    <!-- Navigation Arrows -->
     <button class="carousel-arrow prev" onclick="changeSlide(-1)" aria-label="Slide précédent">
         <i class="bi bi-chevron-left"></i>
     </button>
@@ -48,51 +47,76 @@
         <i class="bi bi-chevron-right"></i>
     </button>
 
-    <!-- Dots Navigation -->
     <div class="carousel-nav">
         {% for slide in slides %}
         <div class="carousel-dot {% if forloop.first %}active{% endif %}" data-index="{{ forloop.counter0 }}" onclick="goToSlide({{ forloop.counter0 }})"></div>
         {% endfor %}
     </div>
 
-    <!-- Scroll Indicator -->
     <div class="scroll-indicator">
         <i class="bi bi-chevron-double-down"></i>
     </div>
 </section>
 
 {% else %}
-<!-- HERO AURORA + BIBLE 3D (quand pas de slides) -->
+<!-- HERO AURORA + BIBLE 3D OUVERTE (quand pas de slides) -->
 <section class="aurora-hero">
-    <!-- CSS-Only Floating Particles -->
     <div class="css-particles">
         <div class="dot"></div><div class="dot"></div><div class="dot"></div>
         <div class="dot"></div><div class="dot"></div><div class="dot"></div>
         <div class="dot"></div><div class="dot"></div><div class="dot"></div>
-        <div class="dot"></div><div class="dot"></div><div class="dot"></div>
+        <div class="dot"></div>
         <div class="cross-particle"></div><div class="cross-particle"></div>
         <div class="cross-particle"></div><div class="cross-particle"></div>
     </div>
 
     <div class="hero-inner">
-        <!-- 3D Animated Bible -->
-        <div class="bible-3d-container">
-            <div class="bible-3d">
-                <div class="bible-cover">
-                    <div class="bible-cross">
-                        <div class="cross-vertical"></div>
-                        <div class="cross-horizontal"></div>
+        <!-- 3D Open Bible -->
+        <div class="bible-open-container">
+            <div class="bible-open">
+                <div class="page-glow"></div>
+
+                <!-- Left Cover -->
+                <div class="bible-cover-left">
+                    <div class="cover-face">
+                        <div class="cover-cross">
+                            <div class="cross-v"></div>
+                            <div class="cross-h"></div>
+                        </div>
+                        <div class="cover-label">Sainte Bible</div>
+                        <div class="corner tl"></div>
+                        <div class="corner tr"></div>
+                        <div class="corner bl"></div>
+                        <div class="corner br"></div>
                     </div>
-                    <div class="bible-title">Bible</div>
                 </div>
-                <div class="bible-spine"></div>
-                <div class="bible-pages"></div>
-                <div class="bible-light-rays">
-                    <div class="ray"></div><div class="ray"></div>
-                    <div class="ray"></div><div class="ray"></div>
-                    <div class="ray"></div><div class="ray"></div>
-                    <div class="ray"></div><div class="ray"></div>
+
+                <!-- Page Edges -->
+                <div class="page-edge-left"></div>
+                <div class="page-edge-right"></div>
+                <div class="page-edge-bottom"></div>
+
+                <!-- Left Pages -->
+                <div class="pages-left"></div>
+
+                <!-- Spine -->
+                <div class="bible-spine-center"></div>
+
+                <!-- Right Pages -->
+                <div class="pages-right"></div>
+
+                <!-- Right Cover -->
+                <div class="bible-cover-right">
+                    <div class="cover-face">
+                        <div class="corner tl"></div>
+                        <div class="corner tr"></div>
+                        <div class="corner bl"></div>
+                        <div class="corner br"></div>
+                    </div>
                 </div>
+
+                <!-- Floating turning page -->
+                <div class="floating-page"></div>
             </div>
         </div>
 
@@ -103,7 +127,7 @@
         </div>
 
         <h1>{{ settings.site_name|default:'Église Évangélique Baptiste de Cabassou' }}</h1>
-        <p class="hero-tagline">{{ settings.tagline|default:'Un lieu de foi, d\'espérance et d\'amour en Guyane' }}</p>
+        <p class="hero-tagline">La Bible, notre seule source d'autorité</p>
 
         <div class="hero-cta-group">
             <a href="{% url 'public:sites' %}" class="btn-glow btn-glow-primary">
@@ -124,30 +148,39 @@
 {% endif %}
 
 <!-- ============================================================
-     BIBLE 3D + VERSET — Section dédiée (visible avec ou sans carousel)
+     BIBLE 3D + VERSET — Section dédiée (quand carousel actif)
      ============================================================ -->
 {% if slides %}
 <section class="bible-verse-section">
     <div class="container">
         <div class="row align-items-center justify-content-center">
             <div class="col-md-4 col-lg-3 text-center reveal-left">
-                <div class="bible-3d-container bible-3d-small">
-                    <div class="bible-3d">
-                        <div class="bible-cover">
-                            <div class="bible-cross">
-                                <div class="cross-vertical"></div>
-                                <div class="cross-horizontal"></div>
+                <div class="bible-open-container bible-open-small">
+                    <div class="bible-open">
+                        <div class="page-glow"></div>
+                        <div class="bible-cover-left">
+                            <div class="cover-face">
+                                <div class="cover-cross">
+                                    <div class="cross-v"></div>
+                                    <div class="cross-h"></div>
+                                </div>
+                                <div class="cover-label">Bible</div>
+                                <div class="corner tl"></div>
+                                <div class="corner bl"></div>
                             </div>
-                            <div class="bible-title">Bible</div>
                         </div>
-                        <div class="bible-spine"></div>
-                        <div class="bible-pages"></div>
-                        <div class="bible-light-rays">
-                            <div class="ray"></div><div class="ray"></div>
-                            <div class="ray"></div><div class="ray"></div>
-                            <div class="ray"></div><div class="ray"></div>
-                            <div class="ray"></div><div class="ray"></div>
+                        <div class="page-edge-left"></div>
+                        <div class="page-edge-right"></div>
+                        <div class="pages-left"></div>
+                        <div class="bible-spine-center"></div>
+                        <div class="pages-right"></div>
+                        <div class="bible-cover-right">
+                            <div class="cover-face">
+                                <div class="corner tr"></div>
+                                <div class="corner br"></div>
+                            </div>
                         </div>
+                        <div class="floating-page"></div>
                     </div>
                 </div>
             </div>
@@ -156,6 +189,7 @@
                     <span class="verse-text"></span>
                     <span class="verse-ref"></span>
                 </div>
+                <p style="color: rgba(255,255,255,0.5); font-size: 0.85rem; margin-top: 1rem; letter-spacing: 2px; text-transform: uppercase;">La Bible, notre seule source d'autorité</p>
             </div>
         </div>
     </div>
@@ -181,7 +215,7 @@
                     <div class="church-icon-premium">
                         <i class="bi bi-church"></i>
                     </div>
-                    <h4 class="fw-bold mb-2" style="color: var(--secondary-color);">{{ site.name }}</h4>
+                    <h4 class="fw-bold mb-2" style="color: var(--public-secondary);">{{ site.name }}</h4>
                     <p class="text-muted mb-3">
                         <i class="bi bi-geo-alt me-1"></i>{{ site.city }}
                     </p>
@@ -203,7 +237,7 @@
 </section>
 
 <!-- ============================================================
-     ÉVÉNEMENTS À VENIR — Premium Event Cards
+     ÉVÉNEMENTS À VENIR
      ============================================================ -->
 {% if upcoming_events %}
 <section class="py-5" style="padding-top: 5rem !important; padding-bottom: 4.5rem !important;">
@@ -254,7 +288,7 @@
         </div>
 
         <div class="text-center mt-5 reveal-section">
-            <a href="{% url 'public:events_list' %}" class="btn btn-primary btn-lg rounded-pill px-5" style="background: linear-gradient(135deg, #0A36FF, #3b82f6); border: none;">
+            <a href="{% url 'public:events_list' %}" class="btn btn-primary btn-lg rounded-pill px-5" style="background: linear-gradient(135deg, var(--public-primary, #0A36FF), #3b82f6); border: none;">
                 Tous les événements <i class="bi bi-arrow-right ms-2"></i>
             </a>
         </div>
@@ -263,7 +297,7 @@
 {% endif %}
 
 <!-- ============================================================
-     ACTUALITÉS — Premium Article Cards
+     ACTUALITÉS
      ============================================================ -->
 {% if featured_articles %}
 <section class="py-5 bg-light" style="padding-top: 5rem !important; padding-bottom: 4.5rem !important;">
@@ -292,7 +326,7 @@
                     {% endif %}
                     <div class="article-body">
                         <div class="mb-2">
-                            <span class="badge rounded-pill" style="background: linear-gradient(135deg, #0A36FF, #3b82f6); font-size: 0.75rem;">{{ article.get_category_display }}</span>
+                            <span class="badge rounded-pill" style="background: linear-gradient(135deg, var(--public-primary, #0A36FF), #3b82f6); font-size: 0.75rem;">{{ article.get_category_display }}</span>
                             <small class="text-muted ms-2">{{ article.publish_date|date:"d M Y" }}</small>
                         </div>
                         <h5 class="fw-bold mb-2">{{ article.title }}</h5>
@@ -307,7 +341,7 @@
         </div>
 
         <div class="text-center mt-5 reveal-section">
-            <a href="{% url 'public:news_list' %}" class="btn btn-primary btn-lg rounded-pill px-5" style="background: linear-gradient(135deg, #0A36FF, #3b82f6); border: none;">
+            <a href="{% url 'public:news_list' %}" class="btn btn-primary btn-lg rounded-pill px-5" style="background: linear-gradient(135deg, var(--public-primary, #0A36FF), #3b82f6); border: none;">
                 Toutes les actualités <i class="bi bi-arrow-right ms-2"></i>
             </a>
         </div>
@@ -316,7 +350,7 @@
 {% endif %}
 
 <!-- ============================================================
-     CTA PREMIUM — Rejoignez-nous
+     CTA PREMIUM
      ============================================================ -->
 <section class="cta-premium text-center">
     <div class="floating-shapes">
@@ -344,11 +378,9 @@
 {% endblock %}
 
 {% block extra_js %}
-<!-- Home Animations JS (typewriter, scroll reveal, counters) -->
 <script defer src="{% static 'js/home-animations.js' %}"></script>
 
 {% if slides %}
-<!-- Carousel Logic (only when slides exist) -->
 <script>
 (function() {
     var currentSlide = 0;
@@ -361,61 +393,49 @@
         if (index >= totalSlides) index = 0;
         if (index < 0) index = totalSlides - 1;
         currentSlide = index;
-
         slides.forEach(function(slide, i) {
             slide.classList.remove('active');
             if (i === index) {
                 slide.classList.add('active');
                 var h1 = slide.querySelector('h1');
                 var p = slide.querySelector('p');
-                var btnGroup = slide.querySelector('.btn-group-hero');
+                var bg = slide.querySelector('.btn-group-hero');
                 if (h1) { h1.style.animation = 'none'; h1.offsetHeight; h1.style.animation = null; }
                 if (p) { p.style.animation = 'none'; p.offsetHeight; p.style.animation = null; }
-                if (btnGroup) { btnGroup.style.animation = 'none'; btnGroup.offsetHeight; btnGroup.style.animation = null; }
+                if (bg) { bg.style.animation = 'none'; bg.offsetHeight; bg.style.animation = null; }
             }
         });
-
-        dots.forEach(function(dot, i) {
-            dot.classList.toggle('active', i === index);
-        });
+        dots.forEach(function(dot, i) { dot.classList.toggle('active', i === index); });
     }
 
     window.changeSlide = function(dir) { showSlide(currentSlide + dir); resetAutoSlide(); };
     window.goToSlide = function(idx) { showSlide(idx); resetAutoSlide(); };
-
     function resetAutoSlide() { clearInterval(autoSlideInterval); startAutoSlide(); }
     function startAutoSlide() {
-        if (totalSlides > 1) {
-            autoSlideInterval = setInterval(function() { showSlide(currentSlide + 1); }, 6000);
-        }
+        if (totalSlides > 1) autoSlideInterval = setInterval(function() { showSlide(currentSlide + 1); }, 6000);
     }
     startAutoSlide();
 
-    // Keyboard
     document.addEventListener('keydown', function(e) {
-        if (e.key === 'ArrowLeft') { window.changeSlide(-1); }
-        if (e.key === 'ArrowRight') { window.changeSlide(1); }
+        if (e.key === 'ArrowLeft') window.changeSlide(-1);
+        if (e.key === 'ArrowRight') window.changeSlide(1);
     });
 
-    // Touch / Swipe
     var touchStartX = 0;
     var carousel = document.getElementById('heroCarousel');
     if (carousel) {
         carousel.addEventListener('touchstart', function(e) { touchStartX = e.changedTouches[0].screenX; });
         carousel.addEventListener('touchend', function(e) {
             var diff = touchStartX - e.changedTouches[0].screenX;
-            if (Math.abs(diff) > 50) { window.changeSlide(diff > 0 ? 1 : -1); }
+            if (Math.abs(diff) > 50) window.changeSlide(diff > 0 ? 1 : -1);
         });
     }
 
-    // Scroll indicator
-    var scrollInd = document.querySelector('.scroll-indicator');
-    if (scrollInd) {
-        scrollInd.addEventListener('click', function() {
-            var next = document.querySelector('.hero-carousel + section, .hero-carousel ~ section');
-            if (next) next.scrollIntoView({ behavior: 'smooth' });
-        });
-    }
+    var si = document.querySelector('.scroll-indicator');
+    if (si) si.addEventListener('click', function() {
+        var next = document.querySelector('.hero-carousel ~ section');
+        if (next) next.scrollIntoView({ behavior: 'smooth' });
+    });
 })();
 </script>
 {% endif %}

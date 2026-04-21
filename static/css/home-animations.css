@@ -1,10 +1,12 @@
 /* =============================================================================
-   HOME ANIMATIONS — "Divine Experience" LITE
-   100% CSS animations (pas de canvas, pas de mouse tracking)
-   Léger, performant, GPU-accelerated
+   HOME ANIMATIONS — "Divine Experience" ULTRA PREMIUM
+   Bible 3D ouverte + Aurora + Particules CSS + Typewriter + Scroll Reveal
+   Charte : --public-primary: #0A36FF | --public-secondary: #1e3a5f | --public-accent: #f8b500
    ============================================================================= */
 
-/* --- AURORA HERO BACKGROUND --- */
+/* =============================================
+   AURORA HERO BACKGROUND
+   ============================================= */
 .aurora-hero {
     position: relative;
     min-height: 100vh;
@@ -18,39 +20,37 @@
 .aurora-hero::before {
     content: '';
     position: absolute;
-    top: -50%;
-    left: -50%;
-    width: 200%;
-    height: 200%;
+    top: -50%; left: -50%;
+    width: 200%; height: 200%;
     background:
-        radial-gradient(ellipse at 20% 50%, rgba(10, 54, 255, 0.4) 0%, transparent 50%),
-        radial-gradient(ellipse at 80% 20%, rgba(59, 130, 246, 0.3) 0%, transparent 50%),
-        radial-gradient(ellipse at 50% 80%, rgba(139, 92, 246, 0.25) 0%, transparent 50%),
-        radial-gradient(ellipse at 70% 60%, rgba(248, 181, 0, 0.12) 0%, transparent 40%);
+        radial-gradient(ellipse at 20% 50%, rgba(10, 54, 255, 0.35) 0%, transparent 50%),
+        radial-gradient(ellipse at 80% 20%, rgba(59, 130, 246, 0.25) 0%, transparent 50%),
+        radial-gradient(ellipse at 50% 80%, rgba(30, 58, 95, 0.3) 0%, transparent 50%),
+        radial-gradient(ellipse at 70% 60%, rgba(248, 181, 0, 0.1) 0%, transparent 40%);
     animation: auroraMove 15s ease-in-out infinite alternate;
     z-index: 1;
     will-change: transform;
 }
 
 @keyframes auroraMove {
-    0% { transform: translate(0, 0) scale(1); }
-    50% { transform: translate(25px, -15px) scale(1.04); }
+    0%   { transform: translate(0, 0) scale(1); }
+    50%  { transform: translate(25px, -15px) scale(1.04); }
     100% { transform: translate(-15px, 10px) scale(0.98); }
 }
 
 .aurora-hero::after {
     content: '';
     position: absolute;
-    bottom: 0;
-    left: 0;
-    width: 100%;
-    height: 180px;
-    background: linear-gradient(to top, var(--public-bg, #ffffff), transparent);
+    bottom: 0; left: 0;
+    width: 100%; height: 180px;
+    background: linear-gradient(to top, var(--public-bg-primary, #ffffff), transparent);
     z-index: 5;
     pointer-events: none;
 }
 
-/* --- CSS-ONLY FLOATING PARTICLES (no canvas) --- */
+/* =============================================
+   CSS-ONLY PARTICLES (léger, GPU)
+   ============================================= */
 .css-particles {
     position: absolute;
     top: 0; left: 0;
@@ -63,30 +63,26 @@
 .css-particles .dot {
     position: absolute;
     border-radius: 50%;
-    background: rgba(255, 255, 255, 0.35);
+    background: rgba(255, 255, 255, 0.3);
     animation: floatDot linear infinite;
     will-change: transform, opacity;
 }
 
-/* 12 particules légères positionnées en CSS */
-.css-particles .dot:nth-child(1)  { width: 4px; height: 4px; left: 10%; animation-duration: 18s; animation-delay: 0s; }
-.css-particles .dot:nth-child(2)  { width: 3px; height: 3px; left: 25%; animation-duration: 22s; animation-delay: -3s; background: rgba(248, 181, 0, 0.4); }
-.css-particles .dot:nth-child(3)  { width: 5px; height: 5px; left: 40%; animation-duration: 20s; animation-delay: -6s; }
-.css-particles .dot:nth-child(4)  { width: 3px; height: 3px; left: 55%; animation-duration: 25s; animation-delay: -2s; background: rgba(248, 181, 0, 0.35); }
-.css-particles .dot:nth-child(5)  { width: 4px; height: 4px; left: 70%; animation-duration: 19s; animation-delay: -8s; }
-.css-particles .dot:nth-child(6)  { width: 3px; height: 3px; left: 85%; animation-duration: 23s; animation-delay: -4s; }
-.css-particles .dot:nth-child(7)  { width: 5px; height: 5px; left: 15%; animation-duration: 21s; animation-delay: -10s; background: rgba(248, 181, 0, 0.3); }
-.css-particles .dot:nth-child(8)  { width: 3px; height: 3px; left: 35%; animation-duration: 24s; animation-delay: -7s; }
-.css-particles .dot:nth-child(9)  { width: 4px; height: 4px; left: 60%; animation-duration: 17s; animation-delay: -5s; background: rgba(248, 181, 0, 0.35); }
-.css-particles .dot:nth-child(10) { width: 3px; height: 3px; left: 78%; animation-duration: 26s; animation-delay: -1s; }
-.css-particles .dot:nth-child(11) { width: 4px; height: 4px; left: 48%; animation-duration: 20s; animation-delay: -12s; }
-.css-particles .dot:nth-child(12) { width: 3px; height: 3px; left: 92%; animation-duration: 22s; animation-delay: -9s; background: rgba(248, 181, 0, 0.4); }
+.css-particles .dot:nth-child(1)  { width: 3px; height: 3px; left: 8%;  animation-duration: 20s; }
+.css-particles .dot:nth-child(2)  { width: 2px; height: 2px; left: 22%; animation-duration: 25s; animation-delay: -4s; background: rgba(248, 181, 0, 0.35); }
+.css-particles .dot:nth-child(3)  { width: 4px; height: 4px; left: 38%; animation-duration: 18s; animation-delay: -8s; }
+.css-particles .dot:nth-child(4)  { width: 2px; height: 2px; left: 52%; animation-duration: 22s; animation-delay: -2s; background: rgba(248, 181, 0, 0.3); }
+.css-particles .dot:nth-child(5)  { width: 3px; height: 3px; left: 67%; animation-duration: 21s; animation-delay: -6s; }
+.css-particles .dot:nth-child(6)  { width: 2px; height: 2px; left: 82%; animation-duration: 24s; animation-delay: -10s; }
+.css-particles .dot:nth-child(7)  { width: 3px; height: 3px; left: 15%; animation-duration: 19s; animation-delay: -3s; background: rgba(248, 181, 0, 0.25); }
+.css-particles .dot:nth-child(8)  { width: 2px; height: 2px; left: 45%; animation-duration: 26s; animation-delay: -7s; }
+.css-particles .dot:nth-child(9)  { width: 3px; height: 3px; left: 73%; animation-duration: 17s; animation-delay: -5s; background: rgba(248, 181, 0, 0.3); }
+.css-particles .dot:nth-child(10) { width: 2px; height: 2px; left: 90%; animation-duration: 23s; animation-delay: -1s; }
 
-/* CSS-only mini crosses */
+/* Mini croix flottantes */
 .css-particles .cross-particle {
     position: absolute;
-    width: 10px;
-    height: 10px;
+    width: 10px; height: 10px;
     animation: floatDot linear infinite;
     will-change: transform, opacity;
 }
@@ -95,43 +91,38 @@
 .css-particles .cross-particle::after {
     content: '';
     position: absolute;
-    background: rgba(248, 181, 0, 0.3);
+    background: rgba(248, 181, 0, 0.25);
     border-radius: 1px;
 }
 
-.css-particles .cross-particle::before {
-    width: 2px; height: 10px;
-    left: 4px; top: 0;
-}
+.css-particles .cross-particle::before { width: 2px; height: 10px; left: 4px; top: 0; }
+.css-particles .cross-particle::after  { width: 8px; height: 2px; left: 1px; top: 2.5px; }
 
-.css-particles .cross-particle::after {
-    width: 8px; height: 2px;
-    left: 1px; top: 2.5px;
-}
-
-.css-particles .cross-particle:nth-child(13) { left: 20%; animation-duration: 28s; animation-delay: -3s; }
-.css-particles .cross-particle:nth-child(14) { left: 50%; animation-duration: 32s; animation-delay: -8s; }
-.css-particles .cross-particle:nth-child(15) { left: 75%; animation-duration: 26s; animation-delay: -15s; }
-.css-particles .cross-particle:nth-child(16) { left: 8%;  animation-duration: 30s; animation-delay: -11s; }
+.css-particles .cross-particle:nth-child(11) { left: 20%; animation-duration: 28s; animation-delay: -3s; }
+.css-particles .cross-particle:nth-child(12) { left: 50%; animation-duration: 32s; animation-delay: -8s; }
+.css-particles .cross-particle:nth-child(13) { left: 75%; animation-duration: 26s; animation-delay: -15s; }
+.css-particles .cross-particle:nth-child(14) { left: 8%;  animation-duration: 30s; animation-delay: -11s; }
 
 @keyframes floatDot {
     0%   { transform: translateY(100vh) rotate(0deg);   opacity: 0; }
-    10%  { opacity: 0.6; }
-    90%  { opacity: 0.6; }
+    10%  { opacity: 0.5; }
+    90%  { opacity: 0.5; }
     100% { transform: translateY(-20vh) rotate(180deg); opacity: 0; }
 }
 
-/* --- HERO CONTENT --- */
+/* =============================================
+   HERO INNER CONTENT
+   ============================================= */
 .hero-inner {
     position: relative;
     z-index: 10;
     text-align: center;
     padding: 2rem;
-    max-width: 900px;
+    max-width: 950px;
 }
 
 .hero-inner h1 {
-    font-size: clamp(2.2rem, 6vw, 4.2rem);
+    font-size: clamp(2rem, 5.5vw, 4rem);
     font-weight: 800;
     color: #ffffff;
     text-shadow: 0 4px 30px rgba(10, 54, 255, 0.4);
@@ -143,13 +134,14 @@
 }
 
 .hero-inner .hero-tagline {
-    font-size: clamp(1rem, 2.5vw, 1.4rem);
+    font-size: clamp(1rem, 2.5vw, 1.35rem);
     color: rgba(255, 255, 255, 0.8);
-    font-weight: 300;
+    font-weight: 400;
     margin-bottom: 2.5rem;
     opacity: 0;
     transform: translateY(30px);
     animation: heroFadeUp 1.2s cubic-bezier(0.16, 1, 0.3, 1) 0.8s forwards;
+    letter-spacing: 0.5px;
 }
 
 .hero-cta-group {
@@ -166,7 +158,9 @@
     to { opacity: 1; transform: translateY(0); }
 }
 
-/* --- GLOWING CTA BUTTONS --- */
+/* =============================================
+   GLOWING CTA BUTTONS
+   ============================================= */
 .btn-glow {
     position: relative;
     padding: 15px 38px;
@@ -183,7 +177,7 @@
 }
 
 .btn-glow-primary {
-    background: linear-gradient(135deg, #0A36FF, #3b82f6);
+    background: linear-gradient(135deg, var(--public-primary, #0A36FF), #3b82f6);
     color: #fff !important;
     border: none;
     box-shadow: 0 0 25px rgba(10, 54, 255, 0.35), 0 8px 30px rgba(10, 54, 255, 0.2);
@@ -207,7 +201,7 @@
 
 @keyframes btnShine {
     0%, 100% { transform: rotate(45deg) translateX(-100%); }
-    50% { transform: rotate(45deg) translateX(100%); }
+    50%      { transform: rotate(45deg) translateX(100%); }
 }
 
 .btn-glow-outline {
@@ -223,180 +217,337 @@
     color: #fff !important;
 }
 
-/* --- 3D ANIMATED BIBLE --- */
-.bible-3d-container {
-    perspective: 1200px;
-    width: 240px;
-    height: 310px;
-    margin: 0 auto 2.5rem;
+/* =============================================
+   3D OPEN BIBLE — REAL BOOK
+   ============================================= */
+.bible-open-container {
+    perspective: 1800px;
+    width: 420px;
+    height: 300px;
+    margin: 0 auto 2rem;
     opacity: 0;
     animation: bibleAppear 1.5s cubic-bezier(0.16, 1, 0.3, 1) 0.2s forwards;
 }
 
+/* Smaller variant for inline section */
+.bible-open-small {
+    width: 300px;
+    height: 215px;
+    margin-bottom: 0;
+}
+
 @keyframes bibleAppear {
-    0% { opacity: 0; transform: scale(0.7) translateY(50px); }
+    0%   { opacity: 0; transform: scale(0.7) translateY(50px); }
     100% { opacity: 1; transform: scale(1) translateY(0); }
 }
 
-.bible-3d {
+.bible-open {
     width: 100%;
     height: 100%;
     position: relative;
     transform-style: preserve-3d;
-    animation: bibleFloat 6s ease-in-out infinite;
+    transform: rotateX(12deg);
+    animation: bibleBreath 5s ease-in-out infinite;
     will-change: transform;
 }
 
-@keyframes bibleFloat {
-    0%, 100% { transform: rotateY(-12deg) rotateX(4deg) translateY(0); }
-    50% { transform: rotateY(-12deg) rotateX(4deg) translateY(-12px); }
+@keyframes bibleBreath {
+    0%, 100% { transform: rotateX(12deg) translateY(0); }
+    50%      { transform: rotateX(12deg) translateY(-8px); }
 }
 
-.bible-cover {
+/* --- Spine (center) --- */
+.bible-spine-center {
     position: absolute;
-    width: 100%;
+    left: 50%;
+    top: 0;
+    width: 20px;
     height: 100%;
-    border-radius: 4px 14px 14px 4px;
-    background: linear-gradient(145deg, #1a0a3e 0%, #0d0526 40%, #1a0a3e 100%);
+    transform: translateX(-50%);
+    background: linear-gradient(180deg, #2a1248 0%, #1a0830 50%, #2a1248 100%);
+    border-radius: 2px;
+    z-index: 5;
+    box-shadow: 0 0 15px rgba(0,0,0,0.5);
+}
+
+/* --- Left Cover (opened) --- */
+.bible-cover-left {
+    position: absolute;
+    left: 0; top: 0;
+    width: 50%; height: 100%;
+    transform-style: preserve-3d;
+    transform-origin: right center;
+    transform: rotateY(15deg);
+}
+
+.bible-cover-left .cover-face {
+    position: absolute;
+    width: 100%; height: 100%;
+    border-radius: 8px 2px 2px 8px;
+    background: linear-gradient(135deg, #1f0d45 0%, #150835 30%, #1a0a3e 60%, #0d0526 100%);
     box-shadow:
-        inset 0 0 25px rgba(139, 92, 246, 0.12),
-        0 20px 50px rgba(0, 0, 0, 0.45),
-        0 0 60px rgba(10, 54, 255, 0.15);
+        inset 0 2px 20px rgba(30, 58, 95, 0.1),
+        -8px 8px 30px rgba(0, 0, 0, 0.5);
     backface-visibility: hidden;
     overflow: hidden;
 }
 
-/* Shimmer sur la couverture */
-.bible-cover::before {
+/* Leather texture */
+.cover-face::before {
     content: '';
     position: absolute;
-    top: -100%; left: -100%;
-    width: 300%; height: 300%;
-    background: linear-gradient(135deg, transparent 40%, rgba(248, 181, 0, 0.06) 50%, transparent 60%);
-    animation: coverShimmer 5s ease-in-out infinite;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    background-image:
+        repeating-linear-gradient(0deg, transparent, transparent 3px, rgba(255,255,255,0.01) 3px, rgba(255,255,255,0.01) 4px),
+        repeating-linear-gradient(90deg, transparent, transparent 5px, rgba(255,255,255,0.008) 5px, rgba(255,255,255,0.008) 6px);
+    pointer-events: none;
 }
 
-@keyframes coverShimmer {
-    0%   { transform: translate(-30%, -30%); }
-    100% { transform: translate(30%, 30%); }
-}
-
-/* Croix dorée */
-.bible-cross {
+/* Gold inner border */
+.cover-face::after {
+    content: '';
     position: absolute;
-    top: 50%;
-    left: 50%;
+    top: 12px; left: 12px;
+    right: 12px; bottom: 12px;
+    border: 1px solid rgba(248, 181, 0, 0.2);
+    border-radius: 4px;
+    pointer-events: none;
+}
+
+/* --- Right Cover --- */
+.bible-cover-right {
+    position: absolute;
+    right: 0; top: 0;
+    width: 50%; height: 100%;
+    transform-style: preserve-3d;
+    transform-origin: left center;
+    transform: rotateY(-15deg);
+}
+
+.bible-cover-right .cover-face {
+    position: absolute;
+    width: 100%; height: 100%;
+    border-radius: 2px 8px 8px 2px;
+    background: linear-gradient(225deg, #1f0d45 0%, #150835 30%, #1a0a3e 60%, #0d0526 100%);
+    box-shadow:
+        inset 0 2px 20px rgba(30, 58, 95, 0.1),
+        8px 8px 30px rgba(0, 0, 0, 0.5);
+    backface-visibility: hidden;
+    overflow: hidden;
+}
+
+/* --- Golden Cross (on left cover) --- */
+.cover-cross {
+    position: absolute;
+    top: 50%; left: 50%;
     transform: translate(-50%, -55%);
+    z-index: 2;
 }
 
-.bible-cross .cross-vertical {
+.cover-cross .cross-v {
     position: absolute;
-    width: 5px;
-    height: 85px;
+    width: 4px; height: 65px;
     background: linear-gradient(180deg, #f8b500, #d4a017, #f8b500);
-    left: 50%;
-    top: 50%;
+    left: 50%; top: 50%;
     transform: translate(-50%, -50%);
-    border-radius: 2.5px;
-    box-shadow: 0 0 15px rgba(248, 181, 0, 0.5), 0 0 35px rgba(248, 181, 0, 0.2);
-    animation: crossGlow 3s ease-in-out infinite alternate;
+    border-radius: 2px;
+    box-shadow: 0 0 12px rgba(248, 181, 0, 0.5), 0 0 30px rgba(248, 181, 0, 0.2);
+    animation: crossPulse 3s ease-in-out infinite alternate;
 }
 
-.bible-cross .cross-horizontal {
+.cover-cross .cross-h {
     position: absolute;
-    width: 50px;
-    height: 5px;
+    width: 40px; height: 4px;
     background: linear-gradient(90deg, #f8b500, #d4a017, #f8b500);
-    left: 50%;
-    top: 32%;
+    left: 50%; top: 32%;
     transform: translate(-50%, -50%);
-    border-radius: 2.5px;
-    box-shadow: 0 0 15px rgba(248, 181, 0, 0.5), 0 0 35px rgba(248, 181, 0, 0.2);
-    animation: crossGlow 3s ease-in-out infinite alternate;
+    border-radius: 2px;
+    box-shadow: 0 0 12px rgba(248, 181, 0, 0.5), 0 0 30px rgba(248, 181, 0, 0.2);
+    animation: crossPulse 3s ease-in-out infinite alternate;
 }
 
-@keyframes crossGlow {
-    0% { box-shadow: 0 0 12px rgba(248, 181, 0, 0.4), 0 0 25px rgba(248, 181, 0, 0.15); }
-    100% { box-shadow: 0 0 25px rgba(248, 181, 0, 0.7), 0 0 50px rgba(248, 181, 0, 0.3); }
+@keyframes crossPulse {
+    0%   { box-shadow: 0 0 10px rgba(248, 181, 0, 0.4), 0 0 20px rgba(248, 181, 0, 0.15); }
+    100% { box-shadow: 0 0 20px rgba(248, 181, 0, 0.7), 0 0 45px rgba(248, 181, 0, 0.3); }
 }
 
-.bible-title {
+/* Cover title */
+.cover-label {
     position: absolute;
-    bottom: 22%;
-    left: 50%;
+    bottom: 20%; left: 50%;
     transform: translateX(-50%);
-    font-family: 'Poppins', serif;
-    font-size: 1rem;
+    font-size: 0.75rem;
     font-weight: 700;
     color: #f8b500;
-    text-shadow: 0 0 12px rgba(248, 181, 0, 0.4);
-    letter-spacing: 5px;
+    text-shadow: 0 0 10px rgba(248, 181, 0, 0.35);
+    letter-spacing: 4px;
     text-transform: uppercase;
     white-space: nowrap;
 }
 
-/* Spine + Pages */
-.bible-spine {
+/* Corner ornaments */
+.corner { position: absolute; width: 16px; height: 16px; border-color: rgba(248, 181, 0, 0.22); border-style: solid; border-width: 0; }
+.corner.tl { top: 16px; left: 16px; border-top-width: 1px; border-left-width: 1px; border-radius: 3px 0 0 0; }
+.corner.tr { top: 16px; right: 16px; border-top-width: 1px; border-right-width: 1px; border-radius: 0 3px 0 0; }
+.corner.bl { bottom: 16px; left: 16px; border-bottom-width: 1px; border-left-width: 1px; border-radius: 0 0 0 3px; }
+.corner.br { bottom: 16px; right: 16px; border-bottom-width: 1px; border-right-width: 1px; border-radius: 0 0 3px 0; }
+
+/* --- Left Pages --- */
+.pages-left {
     position: absolute;
-    width: 25px;
-    height: 100%;
-    left: -12px;
-    background: linear-gradient(180deg, #120730, #0d0526, #120730);
-    transform: rotateY(-90deg);
-    transform-origin: right;
-    border-radius: 3px 0 0 3px;
+    left: 8px; top: 6px;
+    width: calc(50% - 18px);
+    height: calc(100% - 12px);
+    transform-origin: right center;
+    transform: rotateY(13deg) translateZ(2px);
+    border-radius: 4px 1px 1px 4px;
+    background: linear-gradient(90deg, #f5f0e4, #faf6ee, #f5f0e4);
+    box-shadow: inset 3px 0 8px rgba(0,0,0,0.06), inset -1px 0 3px rgba(0,0,0,0.03);
+    overflow: hidden;
 }
 
-.bible-pages {
+/* Text lines on pages */
+.pages-left::before,
+.pages-right::before {
+    content: '';
     position: absolute;
-    right: 3px;
-    top: 7px;
-    width: 7px;
-    height: calc(100% - 14px);
-    background: repeating-linear-gradient(180deg, #f5f0e8 0px, #f5f0e8 1px, #e8e0d4 1px, #e8e0d4 2px);
+    top: 15%; left: 12%; right: 12%; bottom: 15%;
+    background: repeating-linear-gradient(
+        180deg,
+        transparent 0px, transparent 10px,
+        rgba(100, 80, 60, 0.08) 10px, rgba(100, 80, 60, 0.08) 11px
+    );
+}
+
+/* --- Right Pages --- */
+.pages-right {
+    position: absolute;
+    right: 8px; top: 6px;
+    width: calc(50% - 18px);
+    height: calc(100% - 12px);
+    transform-origin: left center;
+    transform: rotateY(-13deg) translateZ(2px);
+    border-radius: 1px 4px 4px 1px;
+    background: linear-gradient(270deg, #f5f0e4, #faf6ee, #f5f0e4);
+    box-shadow: inset -3px 0 8px rgba(0,0,0,0.06), inset 1px 0 3px rgba(0,0,0,0.03);
+    overflow: hidden;
+}
+
+/* --- Page Edge Thickness --- */
+.page-edge-left {
+    position: absolute;
+    left: 6px; top: 8px;
+    width: 5px;
+    height: calc(100% - 16px);
+    background: repeating-linear-gradient(180deg, #f0ead8 0, #f0ead8 1px, #e5dece 1px, #e5dece 2px);
+    border-radius: 2px 0 0 2px;
+    box-shadow: -2px 0 5px rgba(0,0,0,0.1);
+}
+
+.page-edge-right {
+    position: absolute;
+    right: 6px; top: 8px;
+    width: 5px;
+    height: calc(100% - 16px);
+    background: repeating-linear-gradient(180deg, #f0ead8 0, #f0ead8 1px, #e5dece 1px, #e5dece 2px);
     border-radius: 0 2px 2px 0;
-    box-shadow: inset -1px 0 3px rgba(0,0,0,0.08);
+    box-shadow: 2px 0 5px rgba(0,0,0,0.1);
 }
 
-/* Rayons de lumière — pur CSS */
-.bible-light-rays {
+.page-edge-bottom {
     position: absolute;
-    top: 50%;
-    left: 50%;
-    width: 350px;
-    height: 350px;
-    transform: translate(-50%, -50%);
+    bottom: 4px;
+    left: 15%; width: 70%;
+    height: 4px;
+    background: repeating-linear-gradient(90deg, #f0ead8 0, #f0ead8 1px, #e5dece 1px, #e5dece 2px);
+    border-radius: 0 0 2px 2px;
+}
+
+/* --- Light Glow from pages --- */
+.page-glow {
+    position: absolute;
+    top: 50%; left: 50%;
+    width: 320px; height: 220px;
+    transform: translate(-50%, -50%) rotateX(12deg);
+    background: radial-gradient(ellipse, rgba(248, 181, 0, 0.07) 0%, rgba(255,255,255,0.025) 40%, transparent 70%);
     pointer-events: none;
-    z-index: -1;
+    z-index: 1;
+    animation: glowPulse 4s ease-in-out infinite alternate;
 }
 
-.bible-light-rays .ray {
+@keyframes glowPulse {
+    0%   { opacity: 0.6; transform: translate(-50%, -50%) rotateX(12deg) scale(1); }
+    100% { opacity: 1;   transform: translate(-50%, -50%) rotateX(12deg) scale(1.08); }
+}
+
+/* --- Floating Page Turn --- */
+.floating-page {
     position: absolute;
-    top: 50%;
-    left: 50%;
-    width: 1.5px;
-    height: 160px;
-    background: linear-gradient(to bottom, rgba(248, 181, 0, 0.3), transparent);
-    transform-origin: top center;
+    left: 50%; top: 10%;
+    width: calc(50% - 22px);
+    height: 80%;
+    transform-origin: left center;
+    background: linear-gradient(90deg, #faf6ee, #f5f0e4);
+    border-radius: 1px 3px 3px 1px;
+    box-shadow: 2px 2px 10px rgba(0,0,0,0.1);
     opacity: 0;
-    animation: rayPulse 5s ease-in-out infinite;
+    animation: pageTurn 8s ease-in-out 3s infinite;
 }
 
-.ray:nth-child(1) { transform: translate(-50%, 0) rotate(0deg);   animation-delay: 0s; }
-.ray:nth-child(2) { transform: translate(-50%, 0) rotate(45deg);  animation-delay: 0.6s; }
-.ray:nth-child(3) { transform: translate(-50%, 0) rotate(90deg);  animation-delay: 1.2s; }
-.ray:nth-child(4) { transform: translate(-50%, 0) rotate(135deg); animation-delay: 1.8s; }
-.ray:nth-child(5) { transform: translate(-50%, 0) rotate(180deg); animation-delay: 2.4s; }
-.ray:nth-child(6) { transform: translate(-50%, 0) rotate(225deg); animation-delay: 3s; }
-.ray:nth-child(7) { transform: translate(-50%, 0) rotate(270deg); animation-delay: 3.6s; }
-.ray:nth-child(8) { transform: translate(-50%, 0) rotate(315deg); animation-delay: 4.2s; }
-
-@keyframes rayPulse {
-    0%, 100% { opacity: 0; }
-    50% { opacity: 0.6; }
+.floating-page::before {
+    content: '';
+    position: absolute;
+    top: 12%; left: 10%; right: 10%; bottom: 12%;
+    background: repeating-linear-gradient(
+        180deg,
+        transparent 0px, transparent 9px,
+        rgba(100, 80, 60, 0.06) 9px, rgba(100, 80, 60, 0.06) 10px
+    );
 }
 
-/* --- TYPEWRITER VERSE --- */
+@keyframes pageTurn {
+    0%          { opacity: 0; transform: rotateY(0deg); }
+    5%          { opacity: 0.7; transform: rotateY(-20deg); }
+    15%         { opacity: 0.9; transform: rotateY(-80deg); }
+    25%         { opacity: 0.5; transform: rotateY(-160deg); }
+    30%, 100%   { opacity: 0; transform: rotateY(-180deg); }
+}
+
+/* =============================================
+   BIBLE VERSE SECTION (below carousel)
+   ============================================= */
+.bible-verse-section {
+    padding: 5rem 0;
+    background: linear-gradient(180deg, #0a0e27 0%, #0f1535 50%, #0a0e27 100%);
+    position: relative;
+    overflow: hidden;
+}
+
+.bible-verse-section::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    background:
+        radial-gradient(circle at 30% 50%, rgba(10, 54, 255, 0.1) 0%, transparent 50%),
+        radial-gradient(circle at 70% 50%, rgba(248, 181, 0, 0.05) 0%, transparent 40%);
+    pointer-events: none;
+}
+
+/* Typewriter in dark section */
+.verse-typewriter-dark .verse-text {
+    color: rgba(255, 255, 255, 0.85);
+    font-size: clamp(1rem, 2.2vw, 1.25rem);
+}
+
+.verse-typewriter-dark .verse-ref { color: #f8b500; }
+.verse-typewriter-dark .typewriter-cursor { background: #f8b500; }
+.verse-typewriter-dark { min-height: 4em; }
+
+/* =============================================
+   TYPEWRITER VERSE
+   ============================================= */
 .verse-typewriter {
     position: relative;
     z-index: 10;
@@ -406,8 +557,7 @@
 }
 
 .verse-typewriter .verse-text {
-    font-family: 'Poppins', serif;
-    font-size: clamp(0.95rem, 2vw, 1.2rem);
+    font-size: clamp(0.95rem, 2vw, 1.15rem);
     font-style: italic;
     color: rgba(255, 255, 255, 0.85);
     line-height: 1.7;
@@ -420,14 +570,13 @@
     font-style: normal;
     font-weight: 600;
     color: #f8b500;
-    text-shadow: 0 0 8px rgba(248, 181, 0, 0.25);
+    text-shadow: 0 0 8px rgba(248, 181, 0, 0.2);
     transition: opacity 0.6s ease;
 }
 
 .typewriter-cursor {
     display: inline-block;
-    width: 2px;
-    height: 1.1em;
+    width: 2px; height: 1.1em;
     background: #f8b500;
     vertical-align: text-bottom;
     margin-left: 2px;
@@ -436,61 +585,46 @@
 
 @keyframes cursorBlink {
     0%, 100% { opacity: 1; }
-    50% { opacity: 0; }
+    50%      { opacity: 0; }
 }
 
-/* --- SCROLL REVEAL SECTIONS --- */
+/* =============================================
+   SCROLL REVEAL SECTIONS
+   ============================================= */
 .reveal-section {
     opacity: 0;
     transform: translateY(50px);
     transition: opacity 0.8s cubic-bezier(0.16, 1, 0.3, 1), transform 0.8s cubic-bezier(0.16, 1, 0.3, 1);
 }
-
-.reveal-section.revealed {
-    opacity: 1;
-    transform: translateY(0);
-}
+.reveal-section.revealed { opacity: 1; transform: translateY(0); }
 
 .reveal-left {
     opacity: 0;
     transform: translateX(-60px);
     transition: opacity 0.8s cubic-bezier(0.16, 1, 0.3, 1), transform 0.8s cubic-bezier(0.16, 1, 0.3, 1);
 }
-
-.reveal-left.revealed {
-    opacity: 1;
-    transform: translateX(0);
-}
+.reveal-left.revealed { opacity: 1; transform: translateX(0); }
 
 .reveal-right {
     opacity: 0;
     transform: translateX(60px);
     transition: opacity 0.8s cubic-bezier(0.16, 1, 0.3, 1), transform 0.8s cubic-bezier(0.16, 1, 0.3, 1);
 }
-
-.reveal-right.revealed {
-    opacity: 1;
-    transform: translateX(0);
-}
+.reveal-right.revealed { opacity: 1; transform: translateX(0); }
 
 .reveal-scale {
     opacity: 0;
     transform: scale(0.9);
     transition: opacity 0.8s cubic-bezier(0.16, 1, 0.3, 1), transform 0.8s cubic-bezier(0.16, 1, 0.3, 1);
 }
+.reveal-scale.revealed { opacity: 1; transform: scale(1); }
 
-.reveal-scale.revealed {
-    opacity: 1;
-    transform: scale(1);
-}
-
-/* Stagger enfants */
+/* Stagger children */
 .stagger-children > * {
     opacity: 0;
     transform: translateY(25px);
     transition: opacity 0.6s cubic-bezier(0.16, 1, 0.3, 1), transform 0.6s cubic-bezier(0.16, 1, 0.3, 1);
 }
-
 .stagger-children.revealed > *:nth-child(1) { transition-delay: 0.1s; opacity: 1; transform: translateY(0); }
 .stagger-children.revealed > *:nth-child(2) { transition-delay: 0.2s; opacity: 1; transform: translateY(0); }
 .stagger-children.revealed > *:nth-child(3) { transition-delay: 0.3s; opacity: 1; transform: translateY(0); }
@@ -498,76 +632,9 @@
 .stagger-children.revealed > *:nth-child(5) { transition-delay: 0.5s; opacity: 1; transform: translateY(0); }
 .stagger-children.revealed > *:nth-child(6) { transition-delay: 0.6s; opacity: 1; transform: translateY(0); }
 
-/* --- ANIMATED COUNTERS SECTION --- */
-.stats-section {
-    padding: 70px 0;
-    background: linear-gradient(135deg, #0a0e27, #0d1a3a);
-    position: relative;
-    overflow: hidden;
-}
-
-.stats-section::before {
-    content: '';
-    position: absolute;
-    top: 0; left: 0;
-    width: 100%; height: 100%;
-    background:
-        radial-gradient(circle at 20% 50%, rgba(10, 54, 255, 0.12) 0%, transparent 50%),
-        radial-gradient(circle at 80% 50%, rgba(139, 92, 246, 0.08) 0%, transparent 50%);
-    pointer-events: none;
-}
-
-.stat-item {
-    text-align: center;
-    padding: 1.5rem 1rem;
-}
-
-.stat-icon {
-    width: 65px;
-    height: 65px;
-    border-radius: 50%;
-    background: rgba(10, 54, 255, 0.15);
-    border: 2px solid rgba(10, 54, 255, 0.25);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    margin: 0 auto 0.8rem;
-    transition: transform 0.4s ease, box-shadow 0.4s ease;
-}
-
-.stat-item:hover .stat-icon {
-    transform: scale(1.12);
-    box-shadow: 0 0 25px rgba(10, 54, 255, 0.35);
-}
-
-.stat-icon i {
-    font-size: 1.6rem;
-    color: #3b82f6;
-}
-
-.stat-number {
-    font-size: 2.8rem;
-    font-weight: 800;
-    color: #ffffff;
-    line-height: 1;
-    margin-bottom: 0.4rem;
-    font-variant-numeric: tabular-nums;
-}
-
-.stat-number .counter-suffix {
-    font-size: 1.8rem;
-    color: #f8b500;
-}
-
-.stat-label {
-    font-size: 0.85rem;
-    color: rgba(255, 255, 255, 0.55);
-    text-transform: uppercase;
-    letter-spacing: 2px;
-    font-weight: 500;
-}
-
-/* --- PREMIUM SECTION HEADERS --- */
+/* =============================================
+   PREMIUM SECTION HEADERS
+   ============================================= */
 .premium-header {
     text-align: center;
     margin-bottom: 3.5rem;
@@ -579,7 +646,7 @@
     font-weight: 600;
     text-transform: uppercase;
     letter-spacing: 3.5px;
-    color: #0A36FF;
+    color: var(--public-primary, #0A36FF);
     margin-bottom: 0.8rem;
     position: relative;
 }
@@ -592,42 +659,35 @@
     width: 35px;
     height: 1px;
 }
-
-.premium-header .overline::before {
-    right: calc(100% + 12px);
-    background: linear-gradient(90deg, transparent, #0A36FF);
-}
-
-.premium-header .overline::after {
-    left: calc(100% + 12px);
-    background: linear-gradient(90deg, #0A36FF, transparent);
-}
+.premium-header .overline::before { right: calc(100% + 12px); background: linear-gradient(90deg, transparent, var(--public-primary, #0A36FF)); }
+.premium-header .overline::after  { left: calc(100% + 12px);  background: linear-gradient(90deg, var(--public-primary, #0A36FF), transparent); }
 
 .premium-header h2 {
     font-size: clamp(1.8rem, 4vw, 2.8rem);
     font-weight: 800;
-    color: var(--secondary-color, #1e3a5f);
+    color: var(--public-secondary, #1e3a5f);
     margin-bottom: 0.8rem;
     line-height: 1.2;
 }
 
 .premium-header .header-desc {
     font-size: 1.1rem;
-    color: #6c757d;
+    color: var(--public-text-secondary, #6c757d);
     max-width: 550px;
     margin: 0 auto;
     line-height: 1.65;
 }
 
 .premium-header .header-divider {
-    width: 55px;
-    height: 3px;
-    background: linear-gradient(90deg, #0A36FF, #f8b500);
+    width: 55px; height: 3px;
+    background: linear-gradient(90deg, var(--public-primary, #0A36FF), var(--public-accent, #f8b500));
     margin: 1.2rem auto 0;
     border-radius: 2px;
 }
 
-/* --- PREMIUM CHURCH CARDS --- */
+/* =============================================
+   PREMIUM CHURCH CARDS
+   ============================================= */
 .church-card-premium {
     background: #ffffff;
     border-radius: 20px;
@@ -644,15 +704,12 @@
     position: absolute;
     top: 0; left: 0;
     width: 100%; height: 4px;
-    background: linear-gradient(90deg, #0A36FF, #3b82f6, #f8b500);
+    background: linear-gradient(90deg, var(--public-primary, #0A36FF), #3b82f6, var(--public-accent, #f8b500));
     transform: scaleX(0);
     transform-origin: left;
     transition: transform 0.45s ease;
 }
-
-.church-card-premium:hover::before {
-    transform: scaleX(1);
-}
+.church-card-premium:hover::before { transform: scaleX(1); }
 
 .church-card-premium:hover {
     transform: translateY(-8px);
@@ -660,10 +717,9 @@
 }
 
 .church-icon-premium {
-    width: 80px;
-    height: 80px;
+    width: 80px; height: 80px;
     border-radius: 50%;
-    background: linear-gradient(135deg, #0A36FF, #3b82f6);
+    background: linear-gradient(135deg, var(--public-primary, #0A36FF), #3b82f6);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -676,12 +732,11 @@
     box-shadow: 0 10px 30px rgba(10, 54, 255, 0.25);
 }
 
-.church-icon-premium i {
-    font-size: 2.2rem;
-    color: #ffffff;
-}
+.church-icon-premium i { font-size: 2.2rem; color: #ffffff; }
 
-/* --- PREMIUM EVENT CARDS --- */
+/* =============================================
+   PREMIUM EVENT CARDS
+   ============================================= */
 .event-card-premium {
     border-radius: 18px;
     overflow: hidden;
@@ -708,13 +763,11 @@
     transition: transform 0.5s ease;
 }
 
-.event-card-premium:hover .event-img-wrapper img {
-    transform: scale(1.06);
-}
+.event-card-premium:hover .event-img-wrapper img { transform: scale(1.06); }
 
 .event-card-premium .event-img-placeholder {
     width: 100%; height: 100%;
-    background: linear-gradient(135deg, #0A36FF, #1e3a5f);
+    background: linear-gradient(135deg, var(--public-primary, #0A36FF), var(--public-secondary, #1e3a5f));
     display: flex;
     align-items: center;
     justify-content: center;
@@ -732,92 +785,22 @@
 }
 
 .event-card-premium .date-badge .day {
-    font-size: 1.5rem;
-    font-weight: 800;
-    color: #0A36FF;
+    font-size: 1.5rem; font-weight: 800;
+    color: var(--public-primary, #0A36FF);
     line-height: 1;
 }
 
 .event-card-premium .date-badge .month {
     font-size: 0.65rem;
     text-transform: uppercase;
-    color: #6c757d;
+    color: var(--public-text-secondary, #6c757d);
     font-weight: 700;
     letter-spacing: 1px;
 }
 
-/* --- CTA PREMIUM --- */
-.cta-premium {
-    padding: 90px 0;
-    position: relative;
-    overflow: hidden;
-    background: linear-gradient(135deg, #0A36FF, #1e3a5f);
-}
-
-.cta-premium .floating-shapes .shape {
-    position: absolute;
-    border-radius: 50%;
-    opacity: 0.05;
-    background: #ffffff;
-    animation: floatShape 25s ease-in-out infinite;
-}
-
-.cta-premium .floating-shapes .shape:nth-child(1) { width: 280px; height: 280px; top: -80px; right: -40px; }
-.cta-premium .floating-shapes .shape:nth-child(2) { width: 180px; height: 180px; bottom: -40px; left: -40px; animation-delay: 6s; }
-.cta-premium .floating-shapes .shape:nth-child(3) { width: 120px; height: 120px; top: 45%; left: 55%; animation-delay: 12s; }
-
-@keyframes floatShape {
-    0%, 100% { transform: translateY(0); }
-    50% { transform: translateY(-20px); }
-}
-
-.cta-premium h2 { color: #ffffff !important; font-size: clamp(1.8rem, 4vw, 2.8rem); font-weight: 800; }
-.cta-premium p  { color: rgba(255, 255, 255, 0.75) !important; font-size: 1.15rem; }
-
-/* --- BIBLE VERSE SECTION (below carousel) --- */
-.bible-verse-section {
-    padding: 5rem 0;
-    background: linear-gradient(180deg, #0a0e27 0%, #0f1535 50%, #0a0e27 100%);
-    position: relative;
-    overflow: hidden;
-}
-
-.bible-verse-section::before {
-    content: '';
-    position: absolute;
-    top: 0; left: 0;
-    width: 100%; height: 100%;
-    background:
-        radial-gradient(circle at 30% 50%, rgba(10, 54, 255, 0.12) 0%, transparent 50%),
-        radial-gradient(circle at 70% 50%, rgba(248, 181, 0, 0.06) 0%, transparent 40%);
-    pointer-events: none;
-}
-
-.bible-3d-small {
-    width: 160px;
-    height: 210px;
-    margin-bottom: 0;
-}
-
-/* Typewriter in dark section */
-.verse-typewriter-dark .verse-text {
-    color: rgba(255, 255, 255, 0.85);
-    font-size: clamp(1rem, 2.2vw, 1.3rem);
-}
-
-.verse-typewriter-dark .verse-ref {
-    color: #f8b500;
-}
-
-.verse-typewriter-dark .typewriter-cursor {
-    background: #f8b500;
-}
-
-.verse-typewriter-dark {
-    min-height: 4em;
-}
-
-/* --- ARTICLE CARDS PREMIUM --- */
+/* =============================================
+   PREMIUM ARTICLE CARDS
+   ============================================= */
 .article-card-premium {
     border-radius: 20px;
     overflow: hidden;
@@ -845,13 +828,11 @@
     transition: transform 0.5s ease;
 }
 
-.article-card-premium:hover .article-img-wrapper img {
-    transform: scale(1.06);
-}
+.article-card-premium:hover .article-img-wrapper img { transform: scale(1.06); }
 
 .article-card-premium .article-img-placeholder {
     width: 100%; height: 100%;
-    background: linear-gradient(135deg, #0A36FF, #1e3a5f);
+    background: linear-gradient(135deg, var(--public-primary, #0A36FF), var(--public-secondary, #1e3a5f));
     display: flex;
     align-items: center;
     justify-content: center;
@@ -864,11 +845,40 @@
     flex-direction: column;
 }
 
-.article-card-premium .article-body p {
-    flex: 1;
+.article-card-premium .article-body p { flex: 1; }
+
+/* =============================================
+   CTA PREMIUM
+   ============================================= */
+.cta-premium {
+    padding: 90px 0;
+    position: relative;
+    overflow: hidden;
+    background: linear-gradient(135deg, var(--public-primary, #0A36FF), var(--public-secondary, #1e3a5f));
 }
 
-/* --- HERO CAROUSEL STYLES (kept from original, enhanced) --- */
+.cta-premium .floating-shapes .shape {
+    position: absolute;
+    border-radius: 50%;
+    opacity: 0.05;
+    background: #ffffff;
+    animation: floatShape 25s ease-in-out infinite;
+}
+.cta-premium .floating-shapes .shape:nth-child(1) { width: 280px; height: 280px; top: -80px; right: -40px; }
+.cta-premium .floating-shapes .shape:nth-child(2) { width: 180px; height: 180px; bottom: -40px; left: -40px; animation-delay: 6s; }
+.cta-premium .floating-shapes .shape:nth-child(3) { width: 120px; height: 120px; top: 45%; left: 55%; animation-delay: 12s; }
+
+@keyframes floatShape {
+    0%, 100% { transform: translateY(0); }
+    50%      { transform: translateY(-20px); }
+}
+
+.cta-premium h2 { color: #ffffff !important; font-size: clamp(1.8rem, 4vw, 2.8rem); font-weight: 800; }
+.cta-premium p  { color: rgba(255, 255, 255, 0.75) !important; font-size: 1.15rem; }
+
+/* =============================================
+   HERO CAROUSEL (slides admin)
+   ============================================= */
 .hero-carousel {
     position: relative;
     height: 100vh;
@@ -885,7 +895,6 @@
     transition: opacity 1.5s ease-in-out;
     z-index: 1;
 }
-
 .hero-slide.active { opacity: 1; z-index: 2; }
 
 .hero-slide-bg {
@@ -897,7 +906,6 @@
     transform: scale(1.08);
     transition: transform 8s ease-out;
 }
-
 .hero-slide.active .hero-slide-bg { transform: scale(1); }
 
 .hero-overlay {
@@ -916,10 +924,7 @@
     padding: 0 5%;
 }
 
-.hero-text {
-    max-width: 700px;
-    color: #ffffff !important;
-}
+.hero-text { max-width: 700px; color: #ffffff !important; }
 
 .hero-text h1 {
     font-size: clamp(2rem, 5vw, 4rem);
@@ -927,8 +932,7 @@
     color: #ffffff !important;
     margin-bottom: 1.5rem;
     text-shadow: 0 2px 15px rgba(0, 0, 0, 0.3);
-    opacity: 0;
-    transform: translateY(40px);
+    opacity: 0; transform: translateY(40px);
     animation: heroFadeUp 1s ease forwards 0.3s;
 }
 
@@ -936,14 +940,12 @@
     font-size: 1.3rem;
     color: #e8eeff !important;
     margin-bottom: 2rem;
-    opacity: 0;
-    transform: translateY(30px);
+    opacity: 0; transform: translateY(30px);
     animation: heroFadeUp 1s ease forwards 0.6s;
 }
 
 .hero-text .btn-group-hero {
-    opacity: 0;
-    transform: translateY(20px);
+    opacity: 0; transform: translateY(20px);
     animation: heroFadeUp 1s ease forwards 0.9s;
 }
 
@@ -959,7 +961,6 @@
     text-decoration: none;
     display: inline-block;
 }
-
 .hero-btn:visited, .hero-btn:hover, .hero-btn:focus { color: #ffffff !important; }
 
 .hero-btn-primary {
@@ -967,7 +968,6 @@
     border: 2px solid rgba(255,255,255,0.7);
     backdrop-filter: blur(5px);
 }
-
 .hero-btn-primary:hover {
     background: rgba(255,255,255,0.25);
     transform: translateY(-3px);
@@ -978,22 +978,19 @@
     background: transparent;
     border: 2px solid rgba(255,255,255,0.5);
 }
-
 .hero-btn-outline:hover {
     background: rgba(255,255,255,0.12);
     border-color: #fff;
     transform: translateY(-3px);
 }
 
-/* Carousel Navigation */
+/* Carousel navigation */
 .carousel-nav {
     position: absolute;
-    bottom: 45px;
-    left: 50%;
+    bottom: 45px; left: 50%;
     transform: translateX(-50%);
     z-index: 20;
-    display: flex;
-    gap: 12px;
+    display: flex; gap: 12px;
 }
 
 .carousel-dot {
@@ -1004,14 +1001,12 @@
     transition: all 0.4s ease;
     border: 2px solid transparent;
 }
-
 .carousel-dot:hover { background: rgba(255,255,255,0.6); }
-.carousel-dot.active { background: white; transform: scale(1.25); border-color: var(--primary-color); }
+.carousel-dot.active { background: white; transform: scale(1.25); border-color: var(--public-primary, #0A36FF); }
 
 .carousel-arrow {
     position: absolute;
-    top: 50%;
-    transform: translateY(-50%);
+    top: 50%; transform: translateY(-50%);
     z-index: 20;
     width: 55px; height: 55px;
     border-radius: 50%;
@@ -1026,26 +1021,22 @@
     justify-content: center;
     backdrop-filter: blur(5px);
 }
-
 .carousel-arrow:hover {
     background: rgba(255,255,255,0.9);
-    color: var(--primary-color);
+    color: var(--public-primary, #0A36FF);
     transform: translateY(-50%) scale(1.08);
 }
-
 .carousel-arrow.prev { left: 25px; }
 .carousel-arrow.next { right: 25px; }
 
 .scroll-indicator {
     position: absolute;
-    bottom: 25px;
-    left: 50%;
+    bottom: 25px; left: 50%;
     transform: translateX(-50%);
     z-index: 20;
     animation: bounce 2s infinite;
     cursor: pointer;
 }
-
 .scroll-indicator i { font-size: 1.8rem; color: white; opacity: 0.6; }
 
 @keyframes bounce {
@@ -1054,11 +1045,12 @@
     60% { transform: translateX(-50%) translateY(-5px); }
 }
 
-/* --- SCROLL DOWN INDICATOR --- */
+/* =============================================
+   SCROLL DOWN INDICATOR (aurora hero)
+   ============================================= */
 .scroll-down-indicator {
     position: absolute;
-    bottom: 45px;
-    left: 50%;
+    bottom: 45px; left: 50%;
     transform: translateX(-50%);
     z-index: 10;
     cursor: pointer;
@@ -1067,8 +1059,7 @@
 }
 
 .scroll-down-indicator .scroll-arrow {
-    width: 28px;
-    height: 46px;
+    width: 28px; height: 46px;
     border: 2px solid rgba(255, 255, 255, 0.35);
     border-radius: 18px;
     display: flex;
@@ -1076,8 +1067,7 @@
 }
 
 .scroll-down-indicator .scroll-dot {
-    width: 3px;
-    height: 8px;
+    width: 3px; height: 8px;
     background: #fff;
     border-radius: 2px;
     margin-top: 7px;
@@ -1086,22 +1076,21 @@
 
 @keyframes scrollDot {
     0%, 100% { transform: translateY(0); opacity: 1; }
-    50% { transform: translateY(14px); opacity: 0.2; }
+    50%      { transform: translateY(14px); opacity: 0.2; }
 }
 
-/* --- RESPONSIVE --- */
+/* =============================================
+   RESPONSIVE
+   ============================================= */
 @media (max-width: 768px) {
-    .bible-3d-container { width: 180px; height: 230px; }
-    .bible-cross .cross-vertical { height: 60px; width: 4px; }
-    .bible-cross .cross-horizontal { width: 38px; height: 4px; }
-    .bible-title { font-size: 0.8rem; letter-spacing: 3px; }
-    .stats-section { padding: 45px 0; }
-    .stat-number { font-size: 2rem; }
+    .bible-open-container { width: 300px; height: 215px; }
+    .bible-open-small { width: 220px; height: 158px; }
+    .cover-cross .cross-v { height: 45px; width: 3px; }
+    .cover-cross .cross-h { width: 28px; height: 3px; }
+    .cover-label { font-size: 0.6rem; letter-spacing: 3px; }
     .hero-cta-group { flex-direction: column; align-items: center; }
     .btn-glow { width: 100%; max-width: 280px; justify-content: center; }
     .premium-header .overline::before, .premium-header .overline::after { display: none; }
-    .bible-light-rays { width: 250px; height: 250px; }
-    .bible-light-rays .ray { height: 100px; }
 
     /* Carousel mobile */
     .hero-carousel { height: 80vh; min-height: 500px; }
@@ -1113,33 +1102,32 @@
     .carousel-arrow.prev { left: 12px; }
     .carousel-arrow.next { right: 12px; }
     .scroll-indicator { display: none; }
-
-    /* Bible verse section mobile */
     .bible-verse-section { padding: 3rem 0; }
-    .bible-3d-small { width: 130px; height: 170px; margin-bottom: 1.5rem; }
 
     /* Reduce particles on mobile */
-    .css-particles .dot:nth-child(n+9),
-    .css-particles .cross-particle:nth-child(n+15) { display: none; }
+    .css-particles .dot:nth-child(n+8),
+    .css-particles .cross-particle:nth-child(n+13) { display: none; }
 }
 
 @media (max-width: 480px) {
-    .bible-3d-container { width: 150px; height: 195px; }
-    .stat-item { padding: 1rem 0.5rem; }
-    .bible-light-rays { display: none; }
+    .bible-open-container { width: 260px; height: 185px; }
+    .bible-open-small { width: 180px; height: 130px; }
+    .page-glow { display: none; }
+    .corner { display: none; }
 }
 
-/* --- PREFERS REDUCED MOTION --- */
+/* =============================================
+   PREFERS REDUCED MOTION
+   ============================================= */
 @media (prefers-reduced-motion: reduce) {
     *, *::before, *::after {
         animation-duration: 0.01ms !important;
         animation-iteration-count: 1 !important;
         transition-duration: 0.01ms !important;
     }
-
-    .bible-3d { animation: none; transform: rotateY(-12deg) rotateX(4deg); }
+    .bible-open { animation: none; transform: rotateX(12deg); }
     .hero-inner h1, .hero-inner .hero-tagline, .hero-cta-group,
-    .bible-3d-container, .scroll-down-indicator {
+    .bible-open-container, .scroll-down-indicator {
         opacity: 1; transform: none;
     }
     .reveal-section, .reveal-left, .reveal-right, .reveal-scale,
