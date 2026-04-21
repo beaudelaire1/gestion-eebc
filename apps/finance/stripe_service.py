@@ -327,7 +327,7 @@ class StripeService:
             stripe_payment_intent=session.get('payment_intent', ''),
             amount=amount,
             donation_type=donation_type,
-            donor_email=session.get('customer_email', ''),
+            donor_email=(session.get('customer_details') or {}).get('email', '') or session.get('customer_email', ''),
             donor_name=(session.get('customer_details') or {}).get('name', ''),
             status='completed',
             completed_at=timezone.now(),
@@ -342,7 +342,7 @@ class StripeService:
             payment_method=FinancialTransaction.PaymentMethod.CARTE,
             status=FinancialTransaction.Status.VALIDE,
             transaction_date=timezone.now().date(),
-            description=f"Don en ligne - {session.get('customer_email', 'Anonyme')}",
+            description=f"Don en ligne - {(session.get('customer_details') or {}).get('email', '') or session.get('customer_email', 'Anonyme')}",
             site_id=metadata.get('site_id') or None,
             member_id=metadata.get('member_id') or None,
         )
@@ -357,7 +357,7 @@ class StripeService:
                 from apps.campaigns.models import Campaign, Donation as CampaignDonation
                 campaign = Campaign.objects.filter(pk=campaign_id, is_active=True).first()
                 if campaign:
-                    donor_name = session.get('customer_details', {}).get('name') or session.get('customer_email', 'Donateur en ligne')
+                    donor_name = (session.get('customer_details') or {}).get('name', '') or (session.get('customer_details') or {}).get('email', '') or 'Donateur en ligne'
                     CampaignDonation.objects.create(
                         campaign=campaign,
                         donor_name=donor_name,
@@ -368,7 +368,7 @@ class StripeService:
                 logger.warning(f"Campaign donation link failed for campaign_id={campaign_id}: {e}")
         
         # Envoyer un reçu par email (file de retry + fallback immédiat).
-        if session.get('customer_email'):
+        if online_donation.donor_email:
             self._enqueue_donation_receipt_email(online_donation.id)
         
         logger.info(f"Donation processed: {transaction.reference} - {amount}€")
