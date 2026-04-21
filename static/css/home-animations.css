@@ -633,6 +633,223 @@
 .stagger-children.revealed > *:nth-child(6) { transition-delay: 0.6s; opacity: 1; transform: translateY(0); }
 
 /* =============================================
+   BIBLICAL GALLERY — Immersive Parallax Scenes
+   ============================================= */
+.biblical-gallery {
+    position: relative;
+    overflow: hidden;
+}
+
+.biblical-scene {
+    position: relative;
+    min-height: 80vh;
+    background-size: cover;
+    background-position: center;
+    background-attachment: fixed;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    /* Fallback gradient if image fails to load */
+    background-color: #0a0e27;
+}
+
+/* Disable parallax on mobile (perf) */
+@media (max-width: 768px) {
+    .biblical-scene {
+        background-attachment: scroll;
+        min-height: 70vh;
+    }
+}
+
+.scene-overlay {
+    position: absolute;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    background: linear-gradient(180deg,
+        rgba(10, 14, 39, 0.7) 0%,
+        rgba(10, 54, 255, 0.35) 50%,
+        rgba(10, 14, 39, 0.85) 100%);
+    z-index: 1;
+}
+
+.scene-overlay-warm {
+    background: linear-gradient(180deg,
+        rgba(10, 14, 39, 0.7) 0%,
+        rgba(30, 58, 95, 0.4) 50%,
+        rgba(10, 14, 39, 0.85) 100%) !important;
+}
+
+.scene-overlay-gold {
+    background: linear-gradient(180deg,
+        rgba(10, 14, 39, 0.7) 0%,
+        rgba(248, 181, 0, 0.12) 50%,
+        rgba(10, 14, 39, 0.85) 100%) !important;
+}
+
+.scene-content {
+    position: relative;
+    z-index: 10;
+    text-align: center;
+    padding: 3rem 2rem;
+    max-width: 700px;
+}
+
+.scene-number {
+    display: inline-block;
+    font-size: 0.75rem;
+    font-weight: 700;
+    letter-spacing: 4px;
+    color: var(--public-accent, #f8b500);
+    text-transform: uppercase;
+    margin-bottom: 1rem;
+    opacity: 0.7;
+}
+
+.scene-title {
+    font-size: clamp(2rem, 5vw, 3.5rem);
+    font-weight: 800;
+    color: #ffffff;
+    margin-bottom: 1.5rem;
+    line-height: 1.15;
+    text-shadow: 0 4px 30px rgba(0, 0, 0, 0.5);
+}
+
+.scene-verse {
+    font-size: clamp(1rem, 2vw, 1.25rem);
+    font-style: italic;
+    color: rgba(255, 255, 255, 0.85);
+    line-height: 1.7;
+    margin-bottom: 0.75rem;
+    max-width: 550px;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+.scene-ref {
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: var(--public-accent, #f8b500);
+    letter-spacing: 1px;
+    text-shadow: 0 0 10px rgba(248, 181, 0, 0.3);
+}
+
+/* Scene divider line between scenes */
+.biblical-scene + .biblical-scene {
+    border-top: 1px solid rgba(248, 181, 0, 0.1);
+}
+
+/* Decorative line at top of gallery */
+.biblical-gallery::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 50%;
+    transform: translateX(-50%);
+    width: 1px; height: 80px;
+    background: linear-gradient(180deg, transparent, var(--public-accent, #f8b500), transparent);
+    z-index: 20;
+}
+
+/* =============================================
+   FAITH STATEMENT SECTION
+   ============================================= */
+.faith-statement-section {
+    padding: 6rem 0;
+    background: linear-gradient(135deg, #0a0e27 0%, #0d1535 50%, #0a0e27 100%);
+    position: relative;
+    overflow: hidden;
+    text-align: center;
+}
+
+/* Large subtle cross background */
+.faith-cross-bg {
+    position: absolute;
+    top: 50%; left: 50%;
+    transform: translate(-50%, -50%);
+    width: 200px; height: 300px;
+    pointer-events: none;
+    z-index: 1;
+}
+
+.faith-cross-bg::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 50%;
+    transform: translateX(-50%);
+    width: 4px; height: 100%;
+    background: linear-gradient(180deg, transparent, rgba(248, 181, 0, 0.08), transparent);
+    border-radius: 2px;
+}
+
+.faith-cross-bg::after {
+    content: '';
+    position: absolute;
+    top: 28%; left: 0;
+    width: 100%; height: 4px;
+    background: linear-gradient(90deg, transparent, rgba(248, 181, 0, 0.08), transparent);
+    border-radius: 2px;
+}
+
+.faith-icon-wrap {
+    width: 80px; height: 80px;
+    border-radius: 50%;
+    border: 2px solid rgba(248, 181, 0, 0.25);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 1.5rem;
+    animation: faithIconPulse 4s ease-in-out infinite alternate;
+}
+
+.faith-icon-wrap i {
+    font-size: 2rem;
+    color: var(--public-accent, #f8b500);
+}
+
+@keyframes faithIconPulse {
+    0%   { box-shadow: 0 0 0 0 rgba(248, 181, 0, 0.1); }
+    100% { box-shadow: 0 0 0 20px rgba(248, 181, 0, 0); }
+}
+
+.faith-title {
+    font-size: clamp(2rem, 4vw, 3rem);
+    font-weight: 800;
+    color: #ffffff;
+    margin-bottom: 1.5rem;
+    letter-spacing: -0.5px;
+}
+
+.faith-text {
+    font-size: 1.15rem;
+    color: rgba(255, 255, 255, 0.75);
+    line-height: 1.8;
+    max-width: 600px;
+    margin: 0 auto 1.5rem;
+}
+
+.faith-divider {
+    width: 50px; height: 2px;
+    background: linear-gradient(90deg, transparent, var(--public-accent, #f8b500), transparent);
+    margin: 1.5rem auto;
+}
+
+.faith-verse {
+    font-size: 1.05rem;
+    font-style: italic;
+    color: rgba(255, 255, 255, 0.65);
+    line-height: 1.7;
+    max-width: 550px;
+    margin: 0 auto 0.5rem;
+}
+
+.faith-ref {
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: var(--public-accent, #f8b500);
+    opacity: 0.8;
+}
+
+/* =============================================
    PREMIUM SECTION HEADERS
    ============================================= */
 .premium-header {
