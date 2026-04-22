@@ -1068,6 +1068,20 @@
     z-index: 10;
 }
 
+.section-slab,
+.bible-journey-section,
+.cta-premium {
+    position: relative;
+    isolation: isolate;
+}
+
+.section-slab > .container,
+.bible-journey-section > .container,
+.cta-premium > .container {
+    position: relative;
+    z-index: 2;
+}
+
 .section-slab {
     padding-top: 5rem !important;
     padding-bottom: 4.5rem !important;
@@ -1075,6 +1089,48 @@
 
 .section-slab--churches {
     background: linear-gradient(180deg, #f8f9fa 0%, #ffffff 100%);
+}
+
+.section-slab--churches::before,
+.bible-journey-section::before,
+.section-slab--news::before,
+.cta-premium::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: clamp(54px, 7vw, 88px);
+    pointer-events: none;
+    z-index: 1;
+}
+
+.section-slab--churches::before {
+    background: linear-gradient(180deg, rgba(10, 14, 39, 0.26) 0%, rgba(18, 28, 51, 0.1) 34%, rgba(255, 255, 255, 0) 100%);
+}
+
+.section-slab--events {
+    background: linear-gradient(180deg, #ffffff 0%, #f8fafc 78%, #f2f6fd 100%);
+}
+
+.section-slab--events::after {
+    content: '';
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    height: clamp(20px, 3vw, 34px);
+    background: linear-gradient(180deg, rgba(237, 243, 255, 0) 0%, rgba(124, 150, 206, 0.03) 58%, rgba(17, 31, 59, 0.05) 100%);
+    pointer-events: none;
+    z-index: 1;
+}
+
+.section-slab--news {
+    background: linear-gradient(180deg, #f8fafc 0%, #ffffff 24%, #f7f9fc 100%) !important;
+}
+
+.section-slab--news::before {
+    background: linear-gradient(180deg, rgba(11, 19, 39, 0.28) 0%, rgba(17, 31, 59, 0.1) 34%, rgba(247, 249, 252, 0) 100%);
 }
 
 .church-title-accent {
@@ -1119,6 +1175,10 @@
         radial-gradient(circle at 85% 15%, rgba(248, 181, 0, 0.14), transparent 26%),
         linear-gradient(180deg, #0b1327 0%, #111f3b 46%, #162744 100%);
 }
+
+    .bible-journey-section::before {
+        background: linear-gradient(180deg, rgba(255, 255, 255, 0.18) 0%, rgba(232, 239, 255, 0.05) 32%, rgba(11, 19, 39, 0) 100%);
+    }
 
 .journey-orb {
     position: absolute;
@@ -1545,6 +1605,11 @@
     background: linear-gradient(135deg, var(--public-primary, #0A36FF), var(--public-secondary, #1e3a5f));
 }
 
+.cta-premium::before {
+    height: clamp(12px, 1.8vw, 20px);
+    background: linear-gradient(180deg, rgba(247, 249, 252, 0.22) 0%, rgba(225, 234, 255, 0.08) 42%, rgba(10, 54, 255, 0) 100%);
+}
+
 .cta-premium .floating-shapes .shape {
     position: absolute;
     border-radius: 50%;
@@ -1774,6 +1839,21 @@
    RESPONSIVE
    ============================================= */
 @media (max-width: 768px) {
+    .section-slab--churches::before,
+    .bible-journey-section::before,
+    .section-slab--news::before,
+    .cta-premium::before {
+        height: 58px;
+    }
+
+    .cta-premium::before {
+        height: 14px;
+    }
+
+    .section-slab--events::after {
+        height: 24px;
+    }
+
     .hero-bible-stage {
         width: min(100%, 380px);
         margin-bottom: 1.6rem;
@@ -1867,6 +1947,21 @@
 }
 
 @media (max-width: 480px) {
+    .section-slab--churches::before,
+    .bible-journey-section::before,
+    .section-slab--news::before,
+    .cta-premium::before {
+        height: 44px;
+    }
+
+    .cta-premium::before {
+        height: 10px;
+    }
+
+    .section-slab--events::after {
+        height: 18px;
+    }
+
     .hero-bible-stage {
         width: min(100%, 310px);
     }
