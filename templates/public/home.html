@@ -279,23 +279,44 @@
         <div class="bible-journey-shell">
             <div class="journey-visual-column reveal-left">
                 <div class="journey-visual-sticky">
-                    <div class="journey-scene-frame">
-                        <img
-                            src="{% static 'abraham_sacrifice.png' %}"
-                            alt="Abraham et Isaac"
-                            class="journey-scene-media"
-                            id="journeySceneMedia"
-                            loading="lazy"
-                        >
+                    <div class="journey-scene-space" id="journeySceneSpace">
+                        <div class="journey-scene-frame">
+                            <div class="journey-scene-depth" aria-hidden="true">
+                                <span class="journey-star journey-star--1"></span>
+                                <span class="journey-star journey-star--2"></span>
+                                <span class="journey-star journey-star--3"></span>
+                                <span class="journey-star journey-star--4"></span>
+                                <span class="journey-star journey-star--5"></span>
+                                <span class="journey-star journey-star--6"></span>
+                                <span class="journey-star journey-star--7"></span>
+                                <span class="journey-star journey-star--8"></span>
+                            </div>
+                            <div class="journey-scene-stage" id="journeySceneStage">
+                                <img
+                                    src="{% static 'abraham_sacrifice.png' %}"
+                                    alt="Abraham et Isaac"
+                                    class="journey-scene-media"
+                                    id="journeySceneMedia"
+                                    loading="lazy"
+                                >
+                            </div>
+                            <div class="journey-scene-rays" aria-hidden="true"></div>
+                            <div class="journey-scene-overlay"></div>
+                            <div class="journey-scene-vignette" aria-hidden="true"></div>
 
-                        <div class="journey-scene-overlay"></div>
-
-                        <div class="journey-visual-copy">
-                            <span class="journey-visual-kicker">Histoire en cours</span>
-                            <h3 id="journeyVisualTitle">Abraham et Isaac</h3>
-                            <p id="journeyVisualCopy">Quand tout semble incertain, la foi avance encore, portée par la confiance en la promesse de Dieu.</p>
-                            <span class="journey-visual-ref" id="journeyVisualRef">Genèse 22</span>
+                            <div class="journey-visual-copy">
+                                <span class="journey-visual-kicker">Histoire en cours</span>
+                                <h3 id="journeyVisualTitle">Abraham et Isaac</h3>
+                                <p id="journeyVisualCopy">Quand tout semble incertain, la foi avance encore, portée par la confiance en la promesse de Dieu.</p>
+                                <span class="journey-visual-ref" id="journeyVisualRef">Genèse 22</span>
+                            </div>
                         </div>
+                    </div>
+
+                    <div class="journey-verse-stream" aria-live="polite">
+                        <span class="journey-verse-label">Passage biblique</span>
+                        <ol class="journey-verse-list" id="journeyVerseList"></ol>
+                        <span class="journey-verse-cite" id="journeyVerseCite"></span>
                     </div>
                 </div>
             </div>
