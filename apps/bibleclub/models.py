@@ -125,7 +125,27 @@ class Child(models.Model):
         related_name='children',
         verbose_name="Classe"
     )
-    
+
+    # Rattachement famille (facultatif)
+    family = models.ForeignKey(
+        'core.Family',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='bibleclub_children',
+        verbose_name="Famille",
+    )
+
+    # Lien vers la fiche Membre (créée quand l'enfant est rattaché à une famille)
+    linked_member = models.OneToOneField(
+        'members.Member',
+        on_delete=models.SET_NULL,
+        null=True, blank=True,
+        related_name='bibleclub_profile',
+        verbose_name="Fiche membre liée",
+        help_text="Fiche membre correspondante (créée automatiquement lors du rattachement à une famille)",
+    )
+
     # Contacts parents
     father_name = models.CharField(max_length=200, verbose_name="Nom du père")
     father_phone = models.CharField(max_length=20, verbose_name="Téléphone du père")

@@ -55,7 +55,32 @@ class TransportRequest(models.Model):
         CONFIRMED = 'confirmed', 'Confirmé'
         COMPLETED = 'completed', 'Effectué'
         CANCELLED = 'cancelled', 'Annulé'
-    
+
+    class RequestType(models.TextChoices):
+        CULTE = 'culte', 'Culte du dimanche'
+        EVENEMENT = 'evenement', 'Événement'
+        CLUB = 'club', 'Club biblique / Jeunesse'
+        COVOITURAGE = 'covoiturage', 'Covoiturage entre membres'
+        AUTRE = 'autre', 'Autre'
+
+    # Lien optionnel vers un membre demandeur (covoiturage / transport membre)
+    requester_member = models.ForeignKey(
+        'members.Member',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='transport_requests',
+        verbose_name="Membre demandeur",
+        help_text="Lié automatiquement si le demandeur est connecté",
+    )
+
+    request_type = models.CharField(
+        max_length=15,
+        choices=RequestType.choices,
+        default=RequestType.CULTE,
+        verbose_name="Type de demande",
+    )
+
     requester_name = models.CharField(max_length=200, verbose_name="Demandeur")
     requester_phone = models.CharField(max_length=20, verbose_name="Téléphone")
     requester_email = models.EmailField(blank=True, verbose_name="Email du demandeur")

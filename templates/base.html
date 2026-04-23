@@ -102,58 +102,6 @@
             </div>
 
             <div class="nav-section">
-                <div class="nav-section__title">Club Biblique</div>
-                <nav class="nav flex-column">
-                    <a class="nav-link {% if request.path == '/bibleclub/' %}nav-link--active{% endif %}"
-                        href="{% url 'bibleclub:home' %}">
-                        <i class="bi bi-mortarboard-fill nav-link__icon"></i>
-                        <span>Vue d'ensemble</span>
-                    </a>
-                    <a class="nav-link {% if 'children' in request.path %}nav-link--active{% endif %}"
-                        href="{% url 'bibleclub:children_list' %}">
-                        <i class="bi bi-people-fill nav-link__icon"></i>
-                        <span>Enfants</span>
-                    </a>
-                    <a class="nav-link {% if 'classes' in request.path %}nav-link--active{% endif %}"
-                        href="{% url 'bibleclub:class_list' %}">
-                        <i class="bi bi-collection-fill nav-link__icon"></i>
-                        <span>Classes</span>
-                    </a>
-                    <a class="nav-link {% if 'sessions' in request.path %}nav-link--active{% endif %}"
-                        href="{% url 'bibleclub:session_list' %}">
-                        <i class="bi bi-clipboard-check-fill nav-link__icon"></i>
-                        <span>Sessions & Appels</span>
-                    </a>
-                </nav>
-            </div>
-
-            <div class="nav-section">
-                <div class="nav-section__title">Jeunesse</div>
-                <nav class="nav flex-column">
-                    <a class="nav-link {% if request.path == '/app/young/' %}nav-link--active{% endif %}"
-                        href="{% url 'young:home' %}">
-                        <i class="bi bi-mortarboard nav-link__icon"></i>
-                        <span>Vue d'ensemble</span>
-                    </a>
-                    <a class="nav-link {% if '/young/members' in request.path %}nav-link--active{% endif %}"
-                        href="{% url 'young:member_list' %}">
-                        <i class="bi bi-people-fill nav-link__icon"></i>
-                        <span>Jeunes</span>
-                    </a>
-                    <a class="nav-link {% if '/young/groups' in request.path %}nav-link--active{% endif %}"
-                        href="{% url 'young:group_list' %}">
-                        <i class="bi bi-collection-fill nav-link__icon"></i>
-                        <span>Groupes</span>
-                    </a>
-                    <a class="nav-link {% if '/young/events' in request.path %}nav-link--active{% endif %}"
-                        href="{% url 'young:event_list' %}">
-                        <i class="bi bi-calendar-event-fill nav-link__icon"></i>
-                        <span>Activités & Appels</span>
-                    </a>
-                </nav>
-            </div>
-
-            <div class="nav-section">
                 <div class="nav-section__title">Vie d'Église</div>
                 <nav class="nav flex-column">
                     <a class="nav-link {% if 'worship' in request.path and 'planning' not in request.path %}nav-link--active{% endif %}"
@@ -211,25 +159,15 @@
                         <i class="bi bi-person-badge-fill nav-link__icon"></i>
                         <span>Membres</span>
                     </a>
-                    <a class="nav-link {% if 'members/map' in request.path %}nav-link--active{% endif %}"
-                        href="{% url 'members:map' %}">
-                        <i class="bi bi-geo-alt-fill nav-link__icon"></i>
-                        <span>Carte des membres</span>
-                    </a>
                     <a class="nav-link {% if 'families' in request.path %}nav-link--active{% endif %}"
                         href="{% url 'members:family_list' %}">
                         <i class="bi bi-house-heart nav-link__icon"></i>
                         <span>Familles</span>
                     </a>
-                    <a class="nav-link {% if 'life-events' in request.path %}nav-link--active{% endif %}"
-                        href="{% url 'members:life_events' %}">
-                        <i class="bi bi-heart-fill nav-link__icon"></i>
-                        <span>Événements de vie</span>
-                    </a>
-                    <a class="nav-link {% if 'visits' in request.path %}nav-link--active{% endif %}"
-                        href="{% url 'members:visits' %}">
-                        <i class="bi bi-house-heart-fill nav-link__icon"></i>
-                        <span>Visites pastorales</span>
+                    <a class="nav-link {% if 'members/map' in request.path %}nav-link--active{% endif %}"
+                        href="{% url 'members:map' %}">
+                        <i class="bi bi-geo-alt-fill nav-link__icon"></i>
+                        <span>Carte des membres</span>
                     </a>
                     <a class="nav-link {% if 'groups' in request.path %}nav-link--active{% endif %}"
                         href="{% url 'groups:list' %}">
@@ -241,18 +179,68 @@
                         <i class="bi bi-building nav-link__icon"></i>
                         <span>Départements</span>
                     </a>
-                    <a class="nav-link {% if 'imports' in request.path %}nav-link--active{% endif %}"
-                        href="{% url 'imports:hub' %}">
-                        <i class="bi bi-upload nav-link__icon"></i>
-                        <span>Imports & Exports</span>
+                    <a class="nav-link {% if 'life-events' in request.path %}nav-link--active{% endif %}"
+                        href="{% url 'members:life_events' %}">
+                        <i class="bi bi-heart-fill nav-link__icon"></i>
+                        <span>Événements de vie</span>
                     </a>
-                    {% if request.user.is_admin or request.user.role == 'admin' or request.user.role == 'secretariat' %}
-                    <a class="nav-link {% if 'accounts/users' in request.path %}nav-link--active{% endif %}"
-                        href="{% url 'accounts:user_list' %}">
-                        <i class="bi bi-people nav-link__icon"></i>
-                        <span>Utilisateurs</span>
+                    <a class="nav-link {% if 'visits' in request.path %}nav-link--active{% endif %}"
+                        href="{% url 'members:visits' %}">
+                        <i class="bi bi-house-heart-fill nav-link__icon"></i>
+                        <span>Visites pastorales</span>
                     </a>
-                    {% endif %}
+                </nav>
+            </div>
+
+            <div class="nav-section">
+                <div class="nav-section__title">Jeunesse</div>
+                <nav class="nav flex-column">
+                    <a class="nav-link {% if request.path == '/app/young/' %}nav-link--active{% endif %}"
+                        href="{% url 'young:home' %}">
+                        <i class="bi bi-mortarboard nav-link__icon"></i>
+                        <span>Vue d'ensemble</span>
+                    </a>
+                    <a class="nav-link {% if '/young/members' in request.path %}nav-link--active{% endif %}"
+                        href="{% url 'young:member_list' %}">
+                        <i class="bi bi-people-fill nav-link__icon"></i>
+                        <span>Jeunes</span>
+                    </a>
+                    <a class="nav-link {% if '/young/groups' in request.path %}nav-link--active{% endif %}"
+                        href="{% url 'young:group_list' %}">
+                        <i class="bi bi-collection-fill nav-link__icon"></i>
+                        <span>Groupes</span>
+                    </a>
+                    <a class="nav-link {% if '/young/events' in request.path %}nav-link--active{% endif %}"
+                        href="{% url 'young:event_list' %}">
+                        <i class="bi bi-calendar-event-fill nav-link__icon"></i>
+                        <span>Activités & Appels</span>
+                    </a>
+                </nav>
+            </div>
+
+            <div class="nav-section">
+                <div class="nav-section__title">Club Biblique</div>
+                <nav class="nav flex-column">
+                    <a class="nav-link {% if request.path == '/bibleclub/' %}nav-link--active{% endif %}"
+                        href="{% url 'bibleclub:home' %}">
+                        <i class="bi bi-mortarboard-fill nav-link__icon"></i>
+                        <span>Vue d'ensemble</span>
+                    </a>
+                    <a class="nav-link {% if 'children' in request.path %}nav-link--active{% endif %}"
+                        href="{% url 'bibleclub:children_list' %}">
+                        <i class="bi bi-people-fill nav-link__icon"></i>
+                        <span>Enfants</span>
+                    </a>
+                    <a class="nav-link {% if 'classes' in request.path %}nav-link--active{% endif %}"
+                        href="{% url 'bibleclub:class_list' %}">
+                        <i class="bi bi-collection-fill nav-link__icon"></i>
+                        <span>Classes</span>
+                    </a>
+                    <a class="nav-link {% if 'sessions' in request.path %}nav-link--active{% endif %}"
+                        href="{% url 'bibleclub:session_list' %}">
+                        <i class="bi bi-clipboard-check-fill nav-link__icon"></i>
+                        <span>Sessions & Appels</span>
+                    </a>
                 </nav>
             </div>
 
@@ -347,6 +335,24 @@
                         <i class="bi bi-clock nav-link__icon"></i>
                         <span>Horaires</span>
                     </a>
+                </nav>
+            </div>
+
+            <div class="nav-section">
+                <div class="nav-section__title">Administration</div>
+                <nav class="nav flex-column">
+                    <a class="nav-link {% if 'imports' in request.path %}nav-link--active{% endif %}"
+                        href="{% url 'imports:hub' %}">
+                        <i class="bi bi-upload nav-link__icon"></i>
+                        <span>Imports & Exports</span>
+                    </a>
+                    {% if request.user.is_admin or request.user.role == 'admin' or request.user.role == 'secretariat' %}
+                    <a class="nav-link {% if 'accounts/users' in request.path %}nav-link--active{% endif %}"
+                        href="{% url 'accounts:user_list' %}">
+                        <i class="bi bi-people nav-link__icon"></i>
+                        <span>Utilisateurs</span>
+                    </a>
+                    {% endif %}
                 </nav>
             </div>
         </div>

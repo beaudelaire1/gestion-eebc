@@ -2,14 +2,14 @@
 
 {% block title %}{{ title }} - EEBC{% endblock %}
 {% block page_title %}{{ title }}{% endblock %}
-{% block page_subtitle %}Gestion des demandes de transport{% endblock %}
+{% block page_subtitle %}Ouvert à tous : membres, jeunesse, club biblique, covoiturage{% endblock %}
 
 {% block content %}
 <div class="row justify-content-center">
     <div class="col-lg-8">
         <!-- Bannière de verset biblique -->
         <div class="animated-verse-banner mb-4"></div>
-        
+
         <div class="card">
             <div class="card-header">
                 <h5 class="mb-0">{{ title }}</h5>
@@ -17,7 +17,39 @@
             <div class="card-body">
                 <form method="post">
                     {% csrf_token %}
-                    
+
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="{{ form.request_type.id_for_label }}" class="form-label">
+                                {{ form.request_type.label }}
+                            </label>
+                            {{ form.request_type }}
+                            <div class="form-text">
+                                Choisissez « Covoiturage entre membres » si vous demandez un trajet entre membres.
+                            </div>
+                            {% if form.request_type.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {{ form.request_type.errors.0 }}
+                                </div>
+                            {% endif %}
+                        </div>
+
+                        <div class="col-md-6 mb-3">
+                            <label for="{{ form.requester_member.id_for_label }}" class="form-label">
+                                {{ form.requester_member.label }}
+                            </label>
+                            {{ form.requester_member }}
+                            <div class="form-text">
+                                Optionnel. Rempli automatiquement si vous êtes connecté avec une fiche membre.
+                            </div>
+                            {% if form.requester_member.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {{ form.requester_member.errors.0 }}
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+
                     <div class="row">
                         <div class="col-md-4 mb-3">
                             <label for="{{ form.requester_name.id_for_label }}" class="form-label">

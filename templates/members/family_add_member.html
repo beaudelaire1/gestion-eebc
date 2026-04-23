@@ -1,57 +1,193 @@
 {% extends 'base.html' %}
 
 {% block title %}Ajouter un membre - {{ family.name }} - EEBC{% endblock %}
-{% block page_title %}Ajouter un membre{% endblock %}
+{% block page_title %}Ajouter à la famille{% endblock %}
 {% block page_subtitle %}Famille {{ family.name }}{% endblock %}
 
 {% block content %}
 <div class="row justify-content-center">
-    <div class="col-lg-6">
+    <div class="col-lg-7">
         <div class="card">
             <div class="card-body">
-                <form method="post">
-                    {% csrf_token %}
-                    
-                    <div class="mb-3">
-                        <label class="form-label">Membre à ajouter *</label>
-                        <select name="member_id" class="form-select tom-select" required
-                                data-placeholder="Rechercher un membre...">
-                            <option value="">-- Sélectionner un membre --</option>
-                            {% for member in available_members %}
-                            <option value="{{ member.id }}">{{ member.full_name }}</option>
-                            {% endfor %}
-                        </select>
-                        <small class="text-muted">Seuls les membres actifs sans famille sont affichés</small>
-                    </div>
-                    
-                    <div class="mb-3">
-                        <label class="form-label">Rôle dans la famille</label>
-                        <select name="family_role" class="form-select">
-                            <option value="">-- Sélectionner --</option>
-                            {% for code, label in family_roles %}
-                            <option value="{{ code }}">{{ label }}</option>
-                            {% endfor %}
-                        </select>
-                    </div>
-                    
-                    <div class="d-flex justify-content-between mt-4">
-                        <a href="{% url 'members:family_detail' family.pk %}" class="btn btn-outline-secondary">
-                            <i class="bi bi-arrow-left me-1"></i>Annuler
-                        </a>
-                        <button type="submit" class="btn btn-primary">
-                            <i class="bi bi-plus-lg me-1"></i>Ajouter à la famille
+                <ul class="nav nav-tabs mb-3" id="familyAddTabs" role="tablist">
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link active" id="tab-member" data-bs-toggle="tab"
+                                data-bs-target="#pane-member" type="button" role="tab">
+                            <i class="bi bi-person me-1"></i>Membre
+                            <span class="badge bg-secondary ms-1">{{ available_members|length }}</span>
                         </button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="tab-young" data-bs-toggle="tab"
+                                data-bs-target="#pane-young" type="button" role="tab">
+                            <i class="bi bi-people me-1"></i>Jeunesse
+                            <span class="badge bg-secondary ms-1">{{ available_young|length }}</span>
+                        </button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="tab-child" data-bs-toggle="tab"
+                                data-bs-target="#pane-child" type="button" role="tab">
+                            <i class="bi bi-emoji-smile me-1"></i>Club biblique
+                            <span class="badge bg-secondary ms-1">{{ available_children|length }}</span>
+                        </button>
+                    </li>
+                </ul>
+
+                <div class="tab-content">
+                    <!-- MEMBRE -->
+                    <div class="tab-pane fade show active" id="pane-member" role="tabpanel">
+                        <form method="post">
+                            {% csrf_token %}
+                            <input type="hidden" name="target_type" value="member">
+
+                            <div class="mb-3">
+                                <label class="form-label">Membre à ajouter *</label>
+                                <select name="member_id" class="form-select tom-select" required
+                                        title="Membre à ajouter" aria-label="Membre à ajouter"
+                                        data-placeholder="Rechercher un membre...">
+                                    <option value="">-- Sélectionner un membre --</option>
+                                    {% for member in available_members %}
+                                    <option value="{{ member.id }}">{{ member.full_name }}</option>
+                                    {% endfor %}
+                                </select>
+                                <small class="text-muted">Seuls les membres actifs sans famille sont affichés</small>
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="form-label">Rôle dans la famille</label>
+                                <select name="family_role" class="form-select"
+                                        title="Rôle dans la famille" aria-label="Rôle dans la famille">
+                                    <option value="">-- Sélectionner --</option>
+                                    {% for code, label in family_roles %}
+                                    <option value="{{ code }}">{{ label }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+
+                            <div class="d-flex justify-content-between mt-4">
+                                <a href="{% url 'members:family_detail' family.pk %}" class="btn btn-outline-secondary">
+                                    <i class="bi bi-arrow-left me-1"></i>Annuler
+                                </a>
+                                <button type="submit" class="btn btn-primary" {% if not available_members %}disabled{% endif %}>
+                                    <i class="bi bi-plus-lg me-1"></i>Ajouter à la famille
+                                </button>
+                            </div>
+                        </form>
+
+                        {% if not available_members %}
+                        <div class="alert alert-info mt-3 mb-0">
+                            <i class="bi bi-info-circle me-2"></i>
+                            Tous les membres actifs sont déjà assignés à une famille.
+                        </div>
+                        {% endif %}
                     </div>
-                </form>
+
+                    <!-- JEUNESSE -->
+                    <div class="tab-pane fade" id="pane-young" role="tabpanel">
+                        <form method="post">
+                            {% csrf_token %}
+                            <input type="hidden" name="target_type" value="young">
+
+                            <div class="mb-3">
+                                <label class="form-label">Jeune à ajouter *</label>
+                                <select name="young_id" class="form-select tom-select" required
+                                        title="Jeune à ajouter" aria-label="Jeune à ajouter"
+                                        data-placeholder="Rechercher un jeune...">
+                                    <option value="">-- Sélectionner un jeune --</option>
+                                    {% for young in available_young %}
+                                    <option value="{{ young.id }}">
+                                        {{ young.first_name }} {{ young.last_name }}{% if young.group %} — {{ young.group.name }}{% endif %}
+                                    </option>
+                                    {% endfor %}
+                                </select>
+                                <small class="text-muted">Jeunes actifs de la jeunesse non encore rattachés à une famille</small>
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="form-label">Rôle dans la famille</label>
+                                <select name="family_role" class="form-select"
+                                        title="Rôle dans la famille" aria-label="Rôle dans la famille">
+                                    {% for code, label in family_roles %}
+                                    <option value="{{ code }}"{% if code == 'CHILD' %} selected{% endif %}>{{ label }}</option>
+                                    {% endfor %}
+                                </select>
+                                <small class="text-muted">
+                                    <i class="bi bi-info-circle me-1"></i>Une fiche membre sera créée à partir des données du jeune.
+                                </small>
+                            </div>
+
+                            <div class="d-flex justify-content-between mt-4">
+                                <a href="{% url 'members:family_detail' family.pk %}" class="btn btn-outline-secondary">
+                                    <i class="bi bi-arrow-left me-1"></i>Annuler
+                                </a>
+                                <button type="submit" class="btn btn-primary" {% if not available_young %}disabled{% endif %}>
+                                    <i class="bi bi-plus-lg me-1"></i>Ajouter à la famille
+                                </button>
+                            </div>
+                        </form>
+
+                        {% if not available_young %}
+                        <div class="alert alert-info mt-3 mb-0">
+                            <i class="bi bi-info-circle me-2"></i>
+                            Aucun jeune disponible sans famille.
+                        </div>
+                        {% endif %}
+                    </div>
+
+                    <!-- CLUB BIBLIQUE -->
+                    <div class="tab-pane fade" id="pane-child" role="tabpanel">
+                        <form method="post">
+                            {% csrf_token %}
+                            <input type="hidden" name="target_type" value="child">
+
+                            <div class="mb-3">
+                                <label class="form-label">Enfant à ajouter *</label>
+                                <select name="child_id" class="form-select tom-select" required
+                                        title="Enfant à ajouter" aria-label="Enfant à ajouter"
+                                        data-placeholder="Rechercher un enfant...">
+                                    <option value="">-- Sélectionner un enfant --</option>
+                                    {% for child in available_children %}
+                                    <option value="{{ child.id }}">
+                                        {{ child.first_name }} {{ child.last_name }}{% if child.bible_class %} — {{ child.bible_class }}{% endif %}
+                                    </option>
+                                    {% endfor %}
+                                </select>
+                                <small class="text-muted">Enfants actifs du club biblique non encore rattachés à une famille</small>
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="form-label">Rôle dans la famille</label>
+                                <select name="family_role" class="form-select"
+                                        title="Rôle dans la famille" aria-label="Rôle dans la famille">
+                                    {% for code, label in family_roles %}
+                                    <option value="{{ code }}"{% if code == 'CHILD' %} selected{% endif %}>{{ label }}</option>
+                                    {% endfor %}
+                                </select>
+                                <small class="text-muted">
+                                    <i class="bi bi-info-circle me-1"></i>Une fiche membre sera créée à partir des données de l'enfant.
+                                </small>
+                            </div>
+
+                            <div class="d-flex justify-content-between mt-4">
+                                <a href="{% url 'members:family_detail' family.pk %}" class="btn btn-outline-secondary">
+                                    <i class="bi bi-arrow-left me-1"></i>Annuler
+                                </a>
+                                <button type="submit" class="btn btn-primary" {% if not available_children %}disabled{% endif %}>
+                                    <i class="bi bi-plus-lg me-1"></i>Ajouter à la famille
+                                </button>
+                            </div>
+                        </form>
+
+                        {% if not available_children %}
+                        <div class="alert alert-info mt-3 mb-0">
+                            <i class="bi bi-info-circle me-2"></i>
+                            Aucun enfant disponible sans famille.
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
             </div>
         </div>
-        
-        {% if not available_members %}
-        <div class="alert alert-info mt-3">
-            <i class="bi bi-info-circle me-2"></i>
-            Tous les membres actifs sont déjà assignés à une famille.
-        </div>
-        {% endif %}
     </div>
 </div>
 {% endblock %}

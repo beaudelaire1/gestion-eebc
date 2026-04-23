@@ -45,15 +45,18 @@ class DriverProfileForm(forms.ModelForm):
 
 class TransportRequestForm(forms.ModelForm):
     """Formulaire pour créer/modifier une demande de transport."""
-    
+
     class Meta:
         model = TransportRequest
         fields = [
+            'request_type', 'requester_member',
             'requester_name', 'requester_phone', 'requester_email', 'pickup_address',
             'event_date', 'event_time', 'event_name', 'passengers_count',
             'notes'
         ]
         widgets = {
+            'request_type': forms.Select(attrs={'class': 'form-select'}),
+            'requester_member': forms.Select(attrs={'class': 'form-select'}),
             'requester_name': forms.TextInput(attrs={'class': 'form-control'}),
             'requester_phone': forms.TextInput(attrs={'class': 'form-control'}),
             'requester_email': forms.EmailInput(attrs={'class': 'form-control'}),
@@ -64,15 +67,34 @@ class TransportRequestForm(forms.ModelForm):
             'passengers_count': forms.NumberInput(attrs={'class': 'form-control', 'min': '1', 'max': '20'}),
             'notes': forms.Textarea(attrs={'class': 'form-control', 'rows': 3}),
         }
-    
-    def __init__(self, *args, **kwargs):
+
+    def __init__(self, *args, current_user=None, **kwargs):
         super().__init__(*args, **kwargs)
+
         # Rendre certains champs obligatoires
         self.fields['requester_name'].required = True
         self.fields['requester_phone'].required = True
         self.fields['pickup_address'].required = True
         self.fields['event_date'].required = True
         self.fields['event_time'].required = True
+        self.fields['requester_member'].required = False
+        self.fields['requester_member'].empty_label = "— Aucun —"
+
+        # Préremplissage automatique pour un membre connecté (en création uniquement)
+        if current_user is not None and current_user.is_authenticated and not self.instance.pk:
+            member = getattr(current_user, 'member_profile', None)
+            if member is not None:
+                self.fields['requester_member'].initial = member.pk
+                if not self.initial.get('requester_name'):
+                    self.initial['requester_name'] = member.full_name
+                if not self.initial.get('requester_phone') and member.phone:
+                    self.initial['requester_phone'] = member.phone
+                if not self.initial.get('requester_email') and member.email:
+                    self.initial['requester_email'] = member.email
+                if not self.initial.get('pickup_address') and member.address:
+                    self.initial['pickup_address'] = member.address
+                if not self.initial.get('request_type'):
+                    self.initial['request_type'] = TransportRequest.RequestType.COVOITURAGE
 
 
 class DriverAssignmentForm(forms.ModelForm):

@@ -91,14 +91,14 @@ def transport_requests(request):
 def transport_request_create(request):
     """Créer une nouvelle demande de transport."""
     if request.method == 'POST':
-        form = TransportRequestForm(request.POST)
+        form = TransportRequestForm(request.POST, current_user=request.user)
         if form.is_valid():
             transport_request = form.save()
             messages.success(request, 'Demande de transport créée avec succès.')
             return redirect('transport:requests')
     else:
-        form = TransportRequestForm()
-    
+        form = TransportRequestForm(current_user=request.user)
+
     return render(request, 'transport/transport_request_form.html', {
         'form': form,
         'title': 'Nouvelle demande de transport',
@@ -113,13 +113,13 @@ def transport_request_update(request, pk):
     transport_request = get_object_or_404(TransportRequest, pk=pk)
     
     if request.method == 'POST':
-        form = TransportRequestForm(request.POST, instance=transport_request)
+        form = TransportRequestForm(request.POST, instance=transport_request, current_user=request.user)
         if form.is_valid():
             transport_request = form.save()
             messages.success(request, 'Demande de transport mise à jour.')
             return redirect('transport:requests')
     else:
-        form = TransportRequestForm(instance=transport_request)
+        form = TransportRequestForm(instance=transport_request, current_user=request.user)
     
     return render(request, 'transport/transport_request_form.html', {
         'form': form,
