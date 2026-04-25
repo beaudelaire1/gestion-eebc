@@ -21,7 +21,8 @@ def generate_member_id_on_create(sender, instance, **kwargs):
 @receiver(post_save, sender=Member)
 def log_member_creation(sender, instance, created, **kwargs):
     """
-    Log la création d'un nouveau membre dans l'audit trail.
+    Log la création d'un nouveau membre dans l'audit trail
+    et notifie les responsables.
     """
     if created:
         from apps.core.models import AuditLog
@@ -44,6 +45,34 @@ def log_member_creation(sender, instance, created, **kwargs):
             ip_address=request.META.get('REMOTE_ADDR') if request else None,
             user_agent=request.META.get('HTTP_USER_AGENT', '')[:500] if request else '',
         )
+        
+        # Notifier les admins/secrétariat du nouveau membre
+        try:
+            from apps.communication.models import Notification
+            from apps.accounts.models import User
+            from django.db.models import Q
+            
+            staff = User.objects.filter(
+                is_active=True
+            ).filter(
+                Q(role__icontains='admin') | Q(role__icontains='secretariat') | Q(is_superuser=True)
+            ).distinct()
+            
+            site_name = str(instance.site) if instance.site else 'Non assigné'
+            
+            for u in staff:
+                Notification.objects.create(
+                    user=u,
+                    title=f"👤 Nouveau membre : {instance.full_name}",
+                    message=(
+                        f"Un nouveau membre a été enregistré.\n"
+                        f"ID : {instance.member_id}\n"
+                        f"Site : {site_name}"
+                    ),
+                    notification_type='info',
+                )
+        except Exception:
+            pass  # Ne pas bloquer la création du membre
 
 
 @receiver(post_save, sender=LifeEvent)
