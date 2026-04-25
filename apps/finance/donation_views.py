@@ -126,12 +126,15 @@ class CreateDonationSessionView(View):
                     member_id = request.user.member_profile.id
             
             # URLs de retour
-            # Important : on construit la base via build_absolute_uri puis on concatène
-            # le placeholder {CHECKOUT_SESSION_ID} tel quel. Passer le placeholder
-            # directement à build_absolute_uri encoderait les accolades en %7B/%7D,
-            # ce qui empêche Stripe de substituer la valeur de la session.
+            # On construit la base via build_absolute_uri puis on concatène
+            # le placeholder {CHECKOUT_SESSION_ID} tel quel.
             success_url = request.build_absolute_uri('/don/succes/') + '?session_id={CHECKOUT_SESSION_ID}'
             cancel_url = request.build_absolute_uri('/don/annule/')
+            
+            # Forcer HTTPS en production (derrière proxy Render)
+            if not settings.DEBUG:
+                success_url = success_url.replace('http://', 'https://')
+                cancel_url = cancel_url.replace('http://', 'https://')
             
             if is_recurring:
                 result = stripe_service.create_recurring_donation(
@@ -185,20 +188,25 @@ class DonationSuccessView(TemplateView):
         ).order_by('menu_order')
         
         session_id = (self.request.GET.get('session_id') or '').strip()
+        context['payment_confirmed'] = False
+        
         if session_id:
             try:
                 donation = OnlineDonation.objects.get(stripe_session_id=session_id)
                 context['donation'] = donation
+                context['payment_confirmed'] = True
             except OnlineDonation.DoesNotExist:
                 if session_id == '{CHECKOUT_SESSION_ID}' or not session_id.startswith('cs_'):
                     logger.info("Ignoring invalid success session_id: %s", session_id)
                 else:
                     # Fallback: finaliser côté serveur si le webhook Stripe n'est pas encore passé.
                     try:
+                        logger.info("Attempting to finalize checkout session: %s", session_id)
                         stripe_service.finalize_checkout_session(session_id)
                         donation = OnlineDonation.objects.filter(stripe_session_id=session_id).first()
                         if donation:
                             context['donation'] = donation
+                            context['payment_confirmed'] = True
                     except Exception:
                         logger.warning(
                             "Unable to finalize checkout session from success page: %s",
@@ -256,12 +264,17 @@ class StripeWebhookView(View):
         payload = request.body
         sig_header = request.META.get('HTTP_STRIPE_SIGNATURE')
         
+        logger.info("Stripe webhook received, sig_header present: %s", bool(sig_header))
+        
         try:
             result = stripe_service.handle_webhook(payload, sig_header)
+            logger.info("Stripe webhook processed: %s", result.get('status', 'unknown'))
             return JsonResponse(result)
         
         except ValueError as e:
+            logger.error("Stripe webhook ValueError: %s", e)
             return HttpResponse(status=400)
         
         except Exception as e:
+            logger.error("Stripe webhook error: %s", e, exc_info=True)
             return HttpResponse(status=400)
