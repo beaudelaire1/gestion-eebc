@@ -373,6 +373,9 @@ class StripeService:
         
         logger.info(f"Donation processed: {transaction.reference} - {amount}€")
         
+        # Notifier l'équipe finance du nouveau don
+        self._notify_finance_team(online_donation, transaction)
+        
         return {
             'status': 'success',
             'transaction_id': transaction.id,
@@ -502,6 +505,42 @@ class StripeService:
             if donation:
                 self._send_donation_receipt(donation)
     
+    def _notify_finance_team(self, online_donation, transaction):
+        """Notifie l'équipe finance qu'un don en ligne a été reçu."""
+        try:
+            from apps.communication.models import Notification
+            from apps.accounts.models import User
+            from django.db import models as db_models
+
+            type_labels = {'don': 'Don', 'dime': 'Dîme', 'offrande': 'Offrande'}
+            type_label = type_labels.get(online_donation.donation_type, 'Don')
+            donor = online_donation.donor_name or online_donation.donor_email or 'Anonyme'
+
+            finance_users = User.objects.filter(
+                is_active=True
+            ).filter(
+                db_models.Q(role__icontains='finance') |
+                db_models.Q(role__icontains='admin') |
+                db_models.Q(is_superuser=True)
+            ).distinct()
+
+            for user in finance_users:
+                Notification.objects.create(
+                    user=user,
+                    title=f"💰 {type_label} en ligne reçu : {online_donation.amount}€",
+                    message=(
+                        f"{donor} a effectué un {type_label.lower()} de {online_donation.amount}€ en ligne.\n"
+                        f"Référence : {transaction.reference}\n"
+                        f"Email : {online_donation.donor_email or 'Non renseigné'}"
+                    ),
+                    notification_type='success',
+                    action_url=f"/app/finance/transactions/{transaction.pk}/",
+                )
+
+            logger.info("Finance team notified of donation %s", transaction.reference)
+        except Exception as e:
+            logger.warning("Failed to notify finance team: %s", e)
+
     def _send_donation_receipt(self, online_donation):
         """Envoie un reçu de don professionnel (PDF + HTML) par email.
 
@@ -622,6 +661,43 @@ L'Équipe de Finance EEBC
             online_donation.save(update_fields=['receipt_email_last_error'])
             logger.error(f"Failed to send donation receipt: {e}", exc_info=True)
             return False
+
+    def _notify_finance_team(self, online_donation, transaction):
+        """Notifie l'équipe finance qu'un don en ligne a été reçu."""
+        try:
+            from apps.communication.models import Notification
+            from apps.accounts.models import User
+
+            type_labels = {'don': 'Don', 'dime': 'Dîme', 'offrande': 'Offrande'}
+            type_label = type_labels.get(online_donation.donation_type, 'Don')
+            donor = online_donation.donor_name or online_donation.donor_email or 'Anonyme'
+
+            # Notifier les admins et responsables finance
+            finance_users = User.objects.filter(
+                is_active=True
+            ).filter(
+                models.Q(role__icontains='finance') |
+                models.Q(role__icontains='admin') |
+                models.Q(is_superuser=True)
+            ).distinct()
+
+            for user in finance_users:
+                Notification.objects.create(
+                    user=user,
+                    title=f"💰 {type_label} en ligne reçu : {online_donation.amount}€",
+                    message=(
+                        f"{donor} a effectué un {type_label.lower()} de {online_donation.amount}€ en ligne.\n"
+                        f"Référence : {transaction.reference}\n"
+                        f"Email : {online_donation.donor_email or 'Non renseigné'}"
+                    ),
+                    notification_type='success',
+                    action_url=f"/app/finance/transactions/{transaction.pk}/",
+                )
+
+            logger.info("Finance team notified of donation %s", transaction.reference)
+        except Exception as e:
+            logger.warning("Failed to notify finance team: %s", e)
+
 
 
 # Instance singleton

@@ -1,1 +1,1 @@
-# Management commands for communication app
+# management package

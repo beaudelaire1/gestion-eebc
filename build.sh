@@ -58,6 +58,9 @@ python manage.py migrate --noinput
 echo "=== Initialisation des données (sites, etc.) ==="
 python manage.py setup_sites
 
+echo "=== Exécution des notifications planifiées ==="
+python manage.py run_notifications --all || true
+
 echo "=== Vérification que Django démarre correctement ==="
 python -c "
 import django
