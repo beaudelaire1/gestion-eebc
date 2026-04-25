@@ -278,11 +278,15 @@ class HostingerEmailBackend(BaseEmailBackend):
         log = self._create_email_log(email_message)
         
         try:
+            # Forcer l'expéditeur au compte authentifié Hostinger
+            # Hostinger rejette les emails envoyés depuis une adresse différente
+            email_message.from_email = self.username
+            
             # Préparer le message MIME
             msg = self._prepare_mime_message(email_message)
             
             # Envoyer via SMTP
-            from_email = email_message.from_email or self.username
+            from_email = self.username
             recipients = email_message.recipients()
             
             self.connection.sendmail(from_email, recipients, msg.as_string())
