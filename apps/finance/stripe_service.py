@@ -503,12 +503,13 @@ class StripeService:
                 self._send_donation_receipt(donation)
     
     def _send_donation_receipt(self, online_donation):
-        """Envoie un reçu de don professionnel (PDF) par email.
+        """Envoie un reçu de don professionnel (PDF + HTML) par email.
 
         Returns:
             bool: True si l'email est envoyé, sinon False.
         """
         from django.core.mail import EmailMessage
+        from django.template.loader import render_to_string
         from apps.communication.models import EmailLog
         from .pdf_service import generate_donation_receipt_pdf
 
@@ -535,24 +536,44 @@ class StripeService:
             donor_name = online_donation.donor_name or 'Frère/Sœur'
             ref = online_donation.transaction.reference if online_donation.transaction else receipt_number
             
-            # Corps de l'email (texte)
+            # Labels des types de don
+            type_labels = {
+                'don': 'Don', 'dime': 'Dîme', 'offrande': 'Offrande',
+            }
+            donation_type_label = type_labels.get(online_donation.donation_type, 'Don')
+            
+            # Date formatée
+            donation_date = online_donation.completed_at.strftime('%d/%m/%Y') if online_donation.completed_at else timezone.now().strftime('%d/%m/%Y')
+            
+            subject = f"Reçu de don {ref} - EEBC"
+            
+            # Corps texte (fallback)
             body = f"""Bonjour {donor_name},
 
-Nous vous remercions chaleureusement pour votre don de {online_donation.amount}€ \
-({online_donation.get_donation_type_display()}).
+Nous vous remercions chaleureusement pour votre {donation_type_label.lower()} de {online_donation.amount}€.
 
 Votre générosité contribue à l'avancement de l'œuvre de Dieu au sein de notre communauté.
 
-Vous trouverez ci-joint votre reçu de don (PDF) portant la référence {ref}.
+Votre reçu de don (PDF) portant la référence {ref} est joint à cet email.
 
-« Chacun donne comme il l'a résolu en son cœur, sans tristesse ni contrainte ; \
-car Dieu aime celui qui donne avec joie. » — 2 Corinthiens 9:7
+« Chacun donne comme il l'a résolu en son cœur, sans tristesse ni contrainte ; car Dieu aime celui qui donne avec joie. » — 2 Corinthiens 9:7
 
-Que Dieu vous bénisse abondamment,
+Que Dieu vous bénisse abondamment.
+
+L'Équipe de Finance EEBC
 Église Évangélique Baptiste de Cabassou
+11 lot Calimbé 2, rte de Cabassou
+97300 Cayenne, Guyane française
 """
             
-            subject = f"Reçu de don {ref} - EEBC"
+            # Corps HTML avec template
+            html_body = render_to_string('emails/donation_receipt.html', {
+                'donor_name': donor_name,
+                'amount': online_donation.amount,
+                'donation_type_label': donation_type_label,
+                'reference': ref,
+                'donation_date': donation_date,
+            })
 
             email_log = EmailLog.objects.create(
                 recipient_email=online_donation.donor_email,
@@ -567,9 +588,12 @@ Que Dieu vous bénisse abondamment,
             email = EmailMultiAlternatives(
                 subject=subject,
                 body=body,
-                from_email=None,  # Utilise DEFAULT_FROM_EMAIL
+                from_email=None,
                 to=[online_donation.donor_email],
             )
+            
+            # Ajouter le contenu HTML
+            email.attach_alternative(html_body, 'text/html')
             
             # Attacher le PDF
             email.attach(
