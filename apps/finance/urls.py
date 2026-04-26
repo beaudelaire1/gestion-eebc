@@ -81,6 +81,15 @@ urlpatterns = [
     
     # Prévisionnel budgétaire
     path('forecasts/', budget_views.forecast_list, name='forecast_list'),
+    
+    # Dons en ligne
+    path('online-donations/', views.online_donation_list, name='online_donation_list'),
+    
+    # Récapitulatif annuel par membre
+    path('member-summary/', views.member_annual_summary, name='member_annual_summary'),
+    path('member-summary/<int:member_id>/', views.member_donation_detail, name='member_donation_detail'),
+    path('member-summary/<int:member_id>/pdf/', views.member_donation_detail_pdf, name='member_donation_detail_pdf'),
+    
     path('forecasts/create/', budget_views.forecast_create, name='forecast_create'),
     path('forecasts/<int:forecast_id>/', budget_views.forecast_detail, name='forecast_detail'),
     path('forecasts/<int:forecast_id>/edit/', budget_views.forecast_edit, name='forecast_edit'),

@@ -32,3 +32,44 @@ def notify_large_transaction(sender, instance, created, **kwargs):
                 notification_type='info',
                 action_url=f"/admin/finance/financialtransaction/{instance.pk}/change/"
             )
+
+
+@receiver(post_save, sender=FinancialTransaction)
+def notify_pending_expense(sender, instance, created, **kwargs):
+    """
+    Notifie les responsables finance quand une dépense est créée en attente de validation.
+    """
+    if not created:
+        return
+    
+    if instance.status != 'en_attente':
+        return
+    
+    if instance.transaction_type != 'depense':
+        return
+    
+    from apps.communication.models import Notification
+    from apps.accounts.models import User
+    from django.db.models import Q
+    
+    validators = User.objects.filter(
+        is_active=True
+    ).filter(
+        Q(role__icontains='finance') | Q(role__icontains='admin') | Q(is_superuser=True)
+    ).distinct()
+    
+    recorded_by = instance.recorded_by.get_full_name() if instance.recorded_by else 'Inconnu'
+    
+    for user in validators:
+        Notification.objects.create(
+            user=user,
+            title=f"💳 Dépense à valider : {instance.amount}€",
+            message=(
+                f"Une dépense de {instance.amount}€ est en attente de validation.\n"
+                f"Référence : {instance.reference}\n"
+                f"Description : {instance.description[:100] if instance.description else 'Aucune'}\n"
+                f"Enregistrée par : {recorded_by}"
+            ),
+            notification_type='warning',
+            action_url=f"/app/finance/transactions/{instance.pk}/",
+        )

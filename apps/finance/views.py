@@ -1440,3 +1440,230 @@ def yearly_comparison(request):
         'selected_year': year_n,
     }
     return render(request, 'finance/yearly_comparison.html', context)
+
+
+# =============================================================================
+# DONS EN LIGNE
+# =============================================================================
+
+@login_required
+@role_required('admin', 'finance')
+def online_donation_list(request):
+    """Liste des dons en ligne (Stripe)."""
+    from .models import OnlineDonation
+    
+    qs = OnlineDonation.objects.select_related('transaction', 'site', 'member').order_by('-created_at')
+    
+    # Filtres
+    status = request.GET.get('status', '')
+    donation_type = request.GET.get('type', '')
+    date_from = request.GET.get('from', '')
+    date_to = request.GET.get('to', '')
+    
+    if status:
+        qs = qs.filter(status=status)
+    if donation_type:
+        qs = qs.filter(donation_type=donation_type)
+    if date_from:
+        qs = qs.filter(created_at__date__gte=date_from)
+    if date_to:
+        qs = qs.filter(created_at__date__lte=date_to)
+    
+    # Stats
+    stats = qs.filter(status='completed').aggregate(
+        total=Sum('amount'),
+        count=Count('id'),
+    )
+    
+    paginator = Paginator(qs, 25)
+    page = paginator.get_page(request.GET.get('page'))
+    
+    context = {
+        'donations': page,
+        'stats': stats,
+        'filter_status': status,
+        'filter_type': donation_type,
+        'filter_from': date_from,
+        'filter_to': date_to,
+    }
+    return render(request, 'finance/online_donations.html', context)
+
+
+# =============================================================================
+# RÉCAPITULATIF ANNUEL PAR MEMBRE
+# =============================================================================
+
+@login_required
+@role_required('admin', 'finance')
+def member_annual_summary(request):
+    """Récapitulatif annuel des dons par membre."""
+    from apps.members.models import Member
+    
+    year = int(request.GET.get('year', date.today().year))
+    site_id = request.GET.get('site', '')
+    
+    income_types = ['don', 'dime', 'offrande']
+    
+    # Membres ayant des transactions cette année
+    members_qs = Member.objects.filter(
+        transactions__transaction_date__year=year,
+        transactions__status='valide',
+        transactions__transaction_type__in=income_types,
+        transactions__is_deleted=False,
+    ).distinct()
+    
+    if site_id:
+        members_qs = members_qs.filter(site_id=site_id)
+    
+    # Annoter avec les totaux
+    members_qs = members_qs.annotate(
+        total_dons=Sum('transactions__amount', filter=Q(
+            transactions__transaction_type='don',
+            transactions__transaction_date__year=year,
+            transactions__status='valide',
+            transactions__is_deleted=False,
+        )),
+        total_dimes=Sum('transactions__amount', filter=Q(
+            transactions__transaction_type='dime',
+            transactions__transaction_date__year=year,
+            transactions__status='valide',
+            transactions__is_deleted=False,
+        )),
+        total_offrandes=Sum('transactions__amount', filter=Q(
+            transactions__transaction_type='offrande',
+            transactions__transaction_date__year=year,
+            transactions__status='valide',
+            transactions__is_deleted=False,
+        )),
+    ).order_by('last_name', 'first_name')
+    
+    # Calculer les totaux globaux
+    grand_total = {'dons': Decimal('0'), 'dimes': Decimal('0'), 'offrandes': Decimal('0')}
+    members_data = []
+    for m in members_qs:
+        dons = m.total_dons or Decimal('0')
+        dimes = m.total_dimes or Decimal('0')
+        offrandes = m.total_offrandes or Decimal('0')
+        total = dons + dimes + offrandes
+        members_data.append({
+            'member': m,
+            'dons': dons,
+            'dimes': dimes,
+            'offrandes': offrandes,
+            'total': total,
+        })
+        grand_total['dons'] += dons
+        grand_total['dimes'] += dimes
+        grand_total['offrandes'] += offrandes
+    
+    grand_total['total'] = grand_total['dons'] + grand_total['dimes'] + grand_total['offrandes']
+    
+    from apps.core.models import Site
+    sites = Site.objects.filter(is_active=True)
+    
+    context = {
+        'year': year,
+        'site_id': site_id,
+        'sites': sites,
+        'years': range(date.today().year, date.today().year - 5, -1),
+        'members_data': members_data,
+        'grand_total': grand_total,
+        'member_count': len(members_data),
+    }
+    return render(request, 'finance/member_summary.html', context)
+
+
+@login_required
+@role_required('admin', 'finance')
+def member_donation_detail(request, member_id):
+    """Détail des dons d'un membre pour une année."""
+    from apps.members.models import Member
+    
+    member = get_object_or_404(Member, pk=member_id)
+    year = int(request.GET.get('year', date.today().year))
+    
+    income_types = ['don', 'dime', 'offrande']
+    transactions = FinancialTransaction.objects.filter(
+        member=member,
+        transaction_date__year=year,
+        status='valide',
+        transaction_type__in=income_types,
+    ).order_by('transaction_date')
+    
+    # Totaux par type
+    totals = transactions.values('transaction_type').annotate(
+        total=Sum('amount'), count=Count('id')
+    )
+    totals_dict = {t['transaction_type']: t for t in totals}
+    
+    # Par mois
+    monthly = []
+    for m in range(1, 13):
+        m_txs = transactions.filter(transaction_date__month=m)
+        m_total = m_txs.aggregate(t=Sum('amount'))['t'] or 0
+        monthly.append({
+            'month': m,
+            'month_name': ['', 'Janvier', 'Février', 'Mars', 'Avril', 'Mai', 'Juin',
+                           'Juillet', 'Août', 'Septembre', 'Octobre', 'Novembre', 'Décembre'][m],
+            'total': m_total,
+            'count': m_txs.count(),
+        })
+    
+    # Dons en ligne
+    from .models import OnlineDonation
+    online = OnlineDonation.objects.filter(
+        member=member, status='completed', created_at__year=year
+    ).order_by('created_at')
+    online_total = online.aggregate(t=Sum('amount'))['t'] or 0
+    
+    context = {
+        'member': member,
+        'year': year,
+        'years': range(date.today().year, date.today().year - 5, -1),
+        'transactions': transactions,
+        'totals': totals_dict,
+        'monthly': monthly,
+        'online_donations': online,
+        'online_total': online_total,
+        'grand_total': (transactions.aggregate(t=Sum('amount'))['t'] or 0) + online_total,
+    }
+    return render(request, 'finance/member_donation_detail.html', context)
+
+
+@login_required
+@role_required('admin', 'finance')
+def member_donation_detail_pdf(request, member_id):
+    """Export PDF du récapitulatif d'un membre."""
+    from apps.members.models import Member
+    from django.template.loader import render_to_string
+    
+    member = get_object_or_404(Member, pk=member_id)
+    year = int(request.GET.get('year', date.today().year))
+    
+    income_types = ['don', 'dime', 'offrande']
+    transactions = FinancialTransaction.objects.filter(
+        member=member, transaction_date__year=year,
+        status='valide', transaction_type__in=income_types,
+    ).order_by('transaction_date')
+    
+    totals = transactions.values('transaction_type').annotate(total=Sum('amount'))
+    totals_dict = {t['transaction_type']: t['total'] for t in totals}
+    grand_total = sum(totals_dict.values(), Decimal('0'))
+    
+    try:
+        from weasyprint import HTML
+    except ImportError:
+        return HttpResponse("WeasyPrint non installé.", status=500)
+    
+    html_content = render_to_string('finance/member_donation_detail_pdf.html', {
+        'member': member,
+        'year': year,
+        'transactions': transactions,
+        'totals': totals_dict,
+        'grand_total': grand_total,
+    })
+    
+    pdf = HTML(string=html_content).write_pdf()
+    response = HttpResponse(pdf, content_type='application/pdf')
+    response['Content-Disposition'] = f'inline; filename="recapitulatif_{member.member_id}_{year}.pdf"'
+    return response
