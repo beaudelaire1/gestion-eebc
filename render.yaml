@@ -123,3 +123,53 @@ databases:
     plan: free
     databaseName: eebc
     user: eebc_user
+
+# =============================================================================
+# CRON JOBS - Tâches planifiées (sans Celery)
+# =============================================================================
+# Note: Les cron jobs Render nécessitent un plan payant (Starter+).
+# Sur le plan gratuit, les notifications et backups s'exécutent
+# uniquement lors des déploiements (via build.sh).
+# Pour activer les crons, passer au plan Starter et décommenter ci-dessous.
+
+#  - type: cron
+#    name: eebc-daily-notifications
+#    runtime: python
+#    region: frankfurt
+#    plan: starter
+#    schedule: "0 7 * * *"  # Tous les jours à 7h (heure serveur)
+#    buildCommand: pip install -r requirements/prod.txt
+#    startCommand: python manage.py run_notifications --all
+#    envVars:
+#      - key: DJANGO_SETTINGS_MODULE
+#        value: gestion_eebc.settings.prod
+#      - key: DATABASE_URL
+#        fromDatabase:
+#          name: eebc-db
+#          property: connectionString
+#      - key: SECRET_KEY
+#        fromService:
+#          type: web
+#          name: gestion-eebc
+#          envVarKey: SECRET_KEY
+
+#  - type: cron
+#    name: eebc-daily-backup
+#    runtime: python
+#    region: frankfurt
+#    plan: starter
+#    schedule: "0 2 * * *"  # Tous les jours à 2h du matin
+#    buildCommand: pip install -r requirements/prod.txt
+#    startCommand: python manage.py backup_db
+#    envVars:
+#      - key: DJANGO_SETTINGS_MODULE
+#        value: gestion_eebc.settings.prod
+#      - key: DATABASE_URL
+#        fromDatabase:
+#          name: eebc-db
+#          property: connectionString
+#      - key: SECRET_KEY
+#        fromService:
+#          type: web
+#          name: gestion-eebc
+#          envVarKey: SECRET_KEY
