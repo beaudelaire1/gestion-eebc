@@ -61,6 +61,9 @@ python manage.py setup_sites
 echo "=== Exécution des notifications planifiées ==="
 python manage.py run_notifications --all || true
 
+echo "=== Sauvegarde de la base de données ==="
+python manage.py backup_db || true
+
 echo "=== Vérification que Django démarre correctement ==="
 python -c "
 import django
