@@ -1,0 +1,18 @@
+{% extends 'emails/base_email.html' %}
+{% block content %}
+<h2 style="color:#16a34a;margin:0 0 15px;font-size:18px;">✅ Session terminée</h2>
+<p style="color:#333;font-size:15px;line-height:1.7;">Bonjour {{ recipient_name|default:"Responsable" }},</p>
+<p style="color:#333;font-size:15px;line-height:1.7;">La session du <strong>{{ session.date|date:"d/m/Y" }}</strong> est terminée. Voici le résumé :</p>
+{% if stats %}
+<table role="presentation" width="100%" style="background:#f8f9fc;border-radius:10px;border:1px solid #e8ecf4;margin:20px 0;">
+<tr><td style="padding:20px;">
+    <table role="presentation" width="100%">
+    <tr><td style="padding:6px 0;color:#666;font-size:14px;">Présents</td><td style="padding:6px 0;color:#16a34a;font-weight:700;text-align:right;">{{ stats.present }}</td></tr>
+    <tr><td style="padding:6px 0;color:#666;font-size:14px;">Absents</td><td style="padding:6px 0;color:#dc2626;font-weight:700;text-align:right;">{{ stats.absent }}</td></tr>
+    <tr><td style="padding:6px 0;color:#666;font-size:14px;border-top:1px solid #e8ecf4;">Taux de présence</td><td style="padding:6px 0;color:#0A36FF;font-weight:700;text-align:right;border-top:1px solid #e8ecf4;">{{ stats.attendance_rate }}%</td></tr>
+    </table>
+</td></tr>
+</table>
+{% endif %}
+{% endblock %}
+{% block signature %}L'équipe du Club Biblique EEBC{% endblock %}

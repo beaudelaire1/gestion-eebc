@@ -127,3 +127,68 @@ def quick_stats(request):
     }
     
     return render(request, 'dashboard/partials/quick_stats.html', {'stats': stats})
+
+
+@login_required
+def global_search(request):
+    """Recherche globale transversale."""
+    from apps.members.models import Member
+    from apps.events.models import Event
+    from apps.finance.models import FinancialTransaction
+    from apps.bibleclub.models import Child
+    from apps.groups.models import Group
+    from django.db.models import Q
+    
+    query = request.GET.get('q', '').strip()
+    results = {'members': [], 'events': [], 'transactions': [], 'children': [], 'groups': []}
+    
+    if query and len(query) >= 2:
+        # Membres
+        results['members'] = list(Member.objects.filter(
+            Q(first_name__icontains=query) | Q(last_name__icontains=query) |
+            Q(email__icontains=query) | Q(phone__icontains=query) |
+            Q(member_id__icontains=query)
+        )[:10])
+        
+        # Événements
+        results['events'] = list(Event.objects.filter(
+            Q(title__icontains=query) | Q(description__icontains=query) |
+            Q(location__icontains=query)
+        ).order_by('-start_date')[:10])
+        
+        # Transactions
+        results['transactions'] = list(FinancialTransaction.objects.filter(
+            Q(reference__icontains=query) | Q(description__icontains=query)
+        ).order_by('-transaction_date')[:10])
+        
+        # Enfants
+        results['children'] = list(Child.objects.filter(
+            Q(first_name__icontains=query) | Q(last_name__icontains=query)
+        )[:10])
+        
+        # Groupes
+        results['groups'] = list(Group.objects.filter(
+            Q(name__icontains=query) | Q(description__icontains=query)
+        )[:10])
+    
+    total = sum(len(v) for v in results.values())
+    
+    # Si requête AJAX, retourner JSON
+    if request.headers.get('Accept') == 'application/json':
+        from django.http import JsonResponse
+        data = {
+            'query': query,
+            'total': total,
+            'members': [{'id': m.pk, 'name': m.full_name, 'member_id': m.member_id, 'url': f'/app/members/{m.pk}/'} for m in results['members']],
+            'events': [{'id': e.pk, 'title': e.title, 'date': e.start_date.strftime('%d/%m/%Y'), 'url': f'/app/events/{e.pk}/'} for e in results['events']],
+            'transactions': [{'id': t.pk, 'ref': t.reference, 'amount': str(t.amount), 'url': f'/app/finance/transactions/{t.pk}/'} for t in results['transactions']],
+            'children': [{'id': c.pk, 'name': f'{c.first_name} {c.last_name}', 'url': f'/app/bibleclub/children/{c.pk}/'} for c in results['children']],
+            'groups': [{'id': g.pk, 'name': g.name, 'url': f'/app/groups/{g.pk}/'} for g in results['groups']],
+        }
+        return JsonResponse(data)
+    
+    return render(request, 'dashboard/search_results.html', {
+        'query': query,
+        'results': results,
+        'total': total,
+    })

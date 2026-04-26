@@ -1,44 +1,31 @@
 <!DOCTYPE html>
-<html>
+<html lang="fr">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{{ site_name }}</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 </head>
-<body style="margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f4f4f4;">
-    <table role="presentation" style="width: 100%; border-collapse: collapse;">
-        <tr>
-            <td style="padding: 40px 0;">
-                <table role="presentation" style="width: 100%; max-width: 600px; margin: 0 auto; background-color: #ffffff; border-radius: 10px; overflow: hidden; box-shadow: 0 4px 15px rgba(0,0,0,0.1);">
-                    <!-- Header -->
-                    <tr>
-                        <td style="background: linear-gradient(135deg, #0A36FF 0%, #1e3a5f 100%); padding: 30px; text-align: center;">
-                            <h1 style="color: #ffffff; margin: 0; font-size: 28px; font-weight: 700;">{{ site_name }}</h1>
-                            <p style="color: rgba(255,255,255,0.8); margin: 10px 0 0; font-size: 14px;">Église Évangélique Baptiste de Cabassou</p>
-                        </td>
-                    </tr>
-                    
-                    <!-- Content -->
-                    <tr>
-                        <td style="padding: 40px 30px;">
-                            {% block content %}{% endblock %}
-                        </td>
-                    </tr>
-                    
-                    <!-- Footer -->
-                    <tr>
-                        <td style="background-color: #f8f9fa; padding: 25px 30px; text-align: center; border-top: 1px solid #e9ecef;">
-                            <p style="margin: 0 0 10px; color: #6c757d; font-size: 14px;">
-                                {{ site_name }} - Guyane
-                            </p>
-                            <p style="margin: 0; color: #adb5bd; font-size: 12px;">
-                                Cet email a été envoyé automatiquement, merci de ne pas y répondre directement.
-                            </p>
-                        </td>
-                    </tr>
-                </table>
-            </td>
-        </tr>
-    </table>
+<body style="margin:0;padding:0;background:#f4f6f9;font-family:'Segoe UI',Tahoma,Geneva,Verdana,sans-serif;">
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f4f6f9;padding:30px 0;">
+<tr><td align="center">
+<table role="presentation" width="600" cellpadding="0" cellspacing="0" style="background:#fff;border-radius:12px;overflow:hidden;box-shadow:0 4px 20px rgba(0,0,0,0.08);">
+<tr><td style="background:linear-gradient(135deg,#0A36FF 0%,#1e3a5f 100%);padding:24px 40px;text-align:center;">
+    <h1 style="color:#fff;margin:0;font-size:20px;font-weight:700;">Église Évangélique Baptiste de Cabassou</h1>
+    <p style="color:rgba(255,255,255,0.8);margin:4px 0 0;font-size:12px;">11 lot Calimbé 2, rte de Cabassou, 97300 Cayenne</p>
+</td></tr>
+<tr><td style="background:linear-gradient(90deg,#b8860b,#d4a11e,#f0c850);height:4px;"></td></tr>
+<tr><td style="padding:30px 40px;">
+{% block content %}{% endblock %}
+</td></tr>
+<tr><td style="padding:0 40px;"><hr style="border:none;border-top:1px solid #e8ecf4;margin:0;"></td></tr>
+<tr><td style="padding:20px 40px;">
+    <p style="color:#0A36FF;font-size:14px;font-weight:700;margin:0 0 4px;">{% block signature %}L'équipe EEBC{% endblock %}</p>
+    <p style="color:#666;font-size:12px;margin:0;">Église Évangélique Baptiste de Cabassou<br>97300 Cayenne, Guyane française</p>
+</td></tr>
+<tr><td style="background:#1e3a5f;padding:16px 40px;text-align:center;">
+    <p style="color:rgba(255,255,255,0.6);font-size:11px;margin:0;">© 2026 EEBC — contact@eglise-ebc.org | eglise-ebc.org</p>
+</td></tr>
+</table>
+</td></tr>
+</table>
 </body>
 </html>

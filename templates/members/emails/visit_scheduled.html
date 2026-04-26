@@ -1,0 +1,14 @@
+{% extends 'emails/base_email.html' %}
+{% block content %}
+<h2 style="color:#0A36FF;margin:0 0 15px;font-size:18px;">📅 Visite pastorale programmée</h2>
+<p style="color:#333;font-size:15px;line-height:1.7;">Bonjour {{ recipient_name|default:"Responsable" }},</p>
+<p style="color:#333;font-size:15px;line-height:1.7;">Une visite pastorale a été programmée :</p>
+<table role="presentation" width="100%" style="background:#f8f9fc;border-radius:10px;border:1px solid #e8ecf4;margin:20px 0;">
+<tr><td style="padding:20px;">
+    <p style="color:#555;margin:4px 0;font-size:14px;">Membre : <strong>{{ visit.member.full_name }}</strong></p>
+    <p style="color:#555;margin:4px 0;font-size:14px;">Type : {{ visit.get_visit_type_display }}</p>
+    {% if visit.scheduled_date %}<p style="color:#555;margin:4px 0;font-size:14px;">Date prévue : {{ visit.scheduled_date|date:"d/m/Y" }}</p>{% endif %}
+    {% if visit.summary %}<p style="color:#666;margin:10px 0 0;font-size:13px;">{{ visit.summary }}</p>{% endif %}
+</td></tr>
+</table>
+{% endblock %}

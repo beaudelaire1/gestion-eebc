@@ -345,9 +345,108 @@ def budget_overview(request):
 @login_required
 @role_required('admin', 'finance')
 def reports(request):
-    """Rapports financiers."""
-    # Placeholder pour les rapports avancés
-    return render(request, 'finance/reports.html')
+    """Rapports financiers avec filtres et export PDF."""
+    from django.db.models import Sum, Count
+    from datetime import date
+    
+    # Filtres
+    year = int(request.GET.get('year', date.today().year))
+    month = request.GET.get('month', '')
+    site_id = request.GET.get('site', '')
+    
+    # Transactions de la période
+    qs = FinancialTransaction.objects.filter(
+        transaction_date__year=year,
+        status='valide',
+    )
+    if month:
+        qs = qs.filter(transaction_date__month=int(month))
+    if site_id:
+        qs = qs.filter(site_id=site_id)
+    
+    # Calculs
+    income_types = ['don', 'dime', 'offrande']
+    income = qs.filter(transaction_type__in=income_types).aggregate(
+        total=Sum('amount'), count=Count('id')
+    )
+    expenses = qs.filter(transaction_type='depense').aggregate(
+        total=Sum('amount'), count=Count('id')
+    )
+    
+    # Par type
+    by_type = qs.values('transaction_type').annotate(
+        total=Sum('amount'), count=Count('id')
+    ).order_by('-total')
+    
+    # Par mois (si année complète)
+    monthly = []
+    if not month:
+        for m in range(1, 13):
+            m_qs = qs.filter(transaction_date__month=m)
+            m_income = m_qs.filter(transaction_type__in=income_types).aggregate(t=Sum('amount'))['t'] or 0
+            m_expense = m_qs.filter(transaction_type='depense').aggregate(t=Sum('amount'))['t'] or 0
+            monthly.append({
+                'month': m,
+                'month_name': ['', 'Janvier', 'Février', 'Mars', 'Avril', 'Mai', 'Juin',
+                               'Juillet', 'Août', 'Septembre', 'Octobre', 'Novembre', 'Décembre'][m],
+                'income': m_income,
+                'expense': m_expense,
+                'balance': m_income - m_expense,
+            })
+    
+    # Par méthode de paiement
+    by_method = qs.values('payment_method').annotate(
+        total=Sum('amount'), count=Count('id')
+    ).order_by('-total')
+    
+    from apps.core.models import Site
+    sites = Site.objects.filter(is_active=True)
+    
+    context = {
+        'year': year,
+        'month': month,
+        'site_id': site_id,
+        'sites': sites,
+        'years': range(date.today().year, date.today().year - 5, -1),
+        'income_total': income['total'] or 0,
+        'income_count': income['count'] or 0,
+        'expense_total': expenses['total'] or 0,
+        'expense_count': expenses['count'] or 0,
+        'balance': (income['total'] or 0) - (expenses['total'] or 0),
+        'by_type': by_type,
+        'monthly': monthly,
+        'by_method': by_method,
+        'transaction_count': qs.count(),
+    }
+    
+    # Export PDF
+    if request.GET.get('export') == 'pdf':
+        return _generate_report_pdf(context)
+    
+    return render(request, 'finance/reports.html', context)
+
+
+def _generate_report_pdf(context):
+    """Génère un PDF du rapport financier."""
+    from django.template.loader import render_to_string
+    from django.http import HttpResponse
+    
+    try:
+        from weasyprint import HTML, CSS
+    except ImportError:
+        return HttpResponse("WeasyPrint non installé.", status=500)
+    
+    html_content = render_to_string('finance/report_pdf.html', context)
+    html = HTML(string=html_content)
+    pdf = html.write_pdf()
+    
+    period = f"{context['year']}"
+    if context['month']:
+        period += f"-{context['month']:0>2}"
+    
+    response = HttpResponse(pdf, content_type='application/pdf')
+    response['Content-Disposition'] = f'inline; filename="rapport_financier_{period}.pdf"'
+    return response
 
 
 @login_required

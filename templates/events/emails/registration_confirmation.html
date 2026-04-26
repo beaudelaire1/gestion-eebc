@@ -1,0 +1,13 @@
+{% extends 'emails/base_email.html' %}
+{% block content %}
+<h2 style="color:#16a34a;margin:0 0 15px;font-size:18px;">✅ Inscription confirmée</h2>
+<p style="color:#333;font-size:15px;line-height:1.7;">Bonjour {{ registration.name }},</p>
+<p style="color:#333;font-size:15px;line-height:1.7;">Votre inscription à l'événement suivant est confirmée :</p>
+<table role="presentation" width="100%" style="background:#f0fdf4;border-radius:10px;border:1px solid #bbf7d0;margin:20px 0;">
+<tr><td style="padding:20px;">
+    <h3 style="color:#166534;margin:0 0 10px;">{{ event.title }}</h3>
+    <p style="color:#555;margin:4px 0;font-size:14px;">📆 {{ event.start_date|date:"d/m/Y" }}{% if event.start_time %} à {{ event.start_time|time:"H:i" }}{% endif %}</p>
+    {% if event.location %}<p style="color:#555;margin:4px 0;font-size:14px;">📍 {{ event.location }}</p>{% endif %}
+</td></tr>
+</table>
+{% endblock %}

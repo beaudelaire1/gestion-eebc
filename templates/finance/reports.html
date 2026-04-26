@@ -2,122 +2,146 @@
 
 {% block title %}Rapports financiers - EEBC{% endblock %}
 {% block page_title %}Rapports financiers{% endblock %}
-{% block page_subtitle %}Analyses et exports{% endblock %}
 
 {% block content %}
-<div class="row g-4">
-    <!-- Rapports disponibles -->
-    <div class="col-lg-8">
+<div class="row mb-4">
+    <div class="col-12">
         <div class="card border-0 shadow-sm">
-            <div class="card-header bg-transparent border-0">
-                <h6 class="mb-0 fw-bold">
-                    <i class="bi bi-file-earmark-bar-graph me-2"></i>Rapports disponibles
-                </h6>
-            </div>
             <div class="card-body">
-                <div class="list-group list-group-flush">
-                    <a href="{% url 'finance:transaction_list' %}?type=don" class="list-group-item list-group-item-action d-flex align-items-center">
-                        <div class="rounded-circle p-2 bg-success bg-opacity-10 me-3">
-                            <i class="bi bi-heart text-success"></i>
-                        </div>
-                        <div class="flex-grow-1">
-                            <h6 class="mb-0">Rapport des dons</h6>
-                            <small class="text-muted">Liste de tous les dons reçus</small>
-                        </div>
-                        <i class="bi bi-chevron-right text-muted"></i>
-                    </a>
-                    
-                    <a href="{% url 'finance:transaction_list' %}?type=depense" class="list-group-item list-group-item-action d-flex align-items-center">
-                        <div class="rounded-circle p-2 bg-danger bg-opacity-10 me-3">
-                            <i class="bi bi-cart text-danger"></i>
-                        </div>
-                        <div class="flex-grow-1">
-                            <h6 class="mb-0">Rapport des dépenses</h6>
-                            <small class="text-muted">Liste de toutes les dépenses</small>
-                        </div>
-                        <i class="bi bi-chevron-right text-muted"></i>
-                    </a>
-                    
-                    <a href="{% url 'finance:tax_receipt_list' %}" class="list-group-item list-group-item-action d-flex align-items-center">
-                        <div class="rounded-circle p-2 bg-primary bg-opacity-10 me-3">
-                            <i class="bi bi-file-text text-primary"></i>
-                        </div>
-                        <div class="flex-grow-1">
-                            <h6 class="mb-0">Reçus fiscaux</h6>
-                            <small class="text-muted">Gestion des reçus fiscaux</small>
-                        </div>
-                        <i class="bi bi-chevron-right text-muted"></i>
-                    </a>
-                    
-                    <a href="{% url 'finance:budget_overview' %}" class="list-group-item list-group-item-action d-flex align-items-center">
-                        <div class="rounded-circle p-2 bg-warning bg-opacity-10 me-3">
-                            <i class="bi bi-pie-chart text-warning"></i>
-                        </div>
-                        <div class="flex-grow-1">
-                            <h6 class="mb-0">Suivi budgétaire</h6>
-                            <small class="text-muted">Comparaison prévu vs réalisé</small>
-                        </div>
-                        <i class="bi bi-chevron-right text-muted"></i>
-                    </a>
-                    
-                    <a href="{% url 'finance:receipt_proof_list' %}" class="list-group-item list-group-item-action d-flex align-items-center">
-                        <div class="rounded-circle p-2 bg-info bg-opacity-10 me-3">
-                            <i class="bi bi-receipt text-info"></i>
-                        </div>
-                        <div class="flex-grow-1">
-                            <h6 class="mb-0">Justificatifs</h6>
-                            <small class="text-muted">Gestion des preuves de paiement</small>
-                        </div>
-                        <i class="bi bi-chevron-right text-muted"></i>
-                    </a>
-                </div>
-            </div>
-        </div>
-    </div>
-    
-    <!-- Actions rapides -->
-    <div class="col-lg-4">
-        <div class="card border-0 shadow-sm mb-4">
-            <div class="card-header bg-transparent border-0">
-                <h6 class="mb-0 fw-bold">
-                    <i class="bi bi-lightning me-2"></i>Actions rapides
-                </h6>
-            </div>
-            <div class="card-body">
-                <div class="d-grid gap-2">
-                    <a href="{% url 'finance:transaction_create' %}" class="btn btn-primary">
-                        <i class="bi bi-plus-lg me-1"></i> Nouvelle transaction
-                    </a>
-                    <a href="{% url 'finance:tax_receipt_create' %}" class="btn btn-outline-primary">
-                        <i class="bi bi-file-earmark-plus me-1"></i> Créer un reçu fiscal
-                    </a>
-                    <a href="{% url 'finance:receipt_proof_upload' %}" class="btn btn-outline-secondary">
-                        <i class="bi bi-upload me-1"></i> Uploader un justificatif
-                    </a>
-                </div>
-            </div>
-        </div>
-        
-        <div class="card border-0 shadow-sm">
-            <div class="card-header bg-transparent border-0">
-                <h6 class="mb-0 fw-bold">
-                    <i class="bi bi-gear me-2"></i>Administration
-                </h6>
-            </div>
-            <div class="card-body">
-                <div class="d-grid gap-2">
-                    <a href="{% url 'admin:finance_financialtransaction_changelist' %}" class="btn btn-outline-secondary btn-sm">
-                        Transactions (admin)
-                    </a>
-                    <a href="{% url 'admin:finance_financecategory_changelist' %}" class="btn btn-outline-secondary btn-sm">
-                        Catégories (admin)
-                    </a>
-                    <a href="{% url 'admin:finance_budgetline_changelist' %}" class="btn btn-outline-secondary btn-sm">
-                        Budget (admin)
-                    </a>
-                </div>
+                <form method="get" class="row g-3 align-items-end">
+                    <div class="col-md-3">
+                        <label class="form-label fw-semibold">Année</label>
+                        <select name="year" class="form-select">
+                            {% for y in years %}<option value="{{ y }}" {% if y == year %}selected{% endif %}>{{ y }}</option>{% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label fw-semibold">Mois</label>
+                        <select name="month" class="form-select">
+                            <option value="">Année complète</option>
+                            {% for m_num, m_name in "1:Janvier,2:Février,3:Mars,4:Avril,5:Mai,6:Juin,7:Juillet,8:Août,9:Septembre,10:Octobre,11:Novembre,12:Décembre"|split:"," %}
+                            {% with parts=m_num|split:":" %}
+                            <option value="{{ parts.0 }}" {% if month == parts.0 %}selected{% endif %}>{{ parts.1 }}</option>
+                            {% endwith %}
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label fw-semibold">Site</label>
+                        <select name="site" class="form-select">
+                            <option value="">Tous les sites</option>
+                            {% for s in sites %}<option value="{{ s.id }}" {% if site_id == s.id|stringformat:"d" %}selected{% endif %}>{{ s.name }}</option>{% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-3 d-flex gap-2">
+                        <button type="submit" class="btn btn-primary flex-fill"><i class="bi bi-funnel me-1"></i>Filtrer</button>
+                        <a href="?year={{ year }}&month={{ month }}&site={{ site_id }}&export=pdf" class="btn btn-outline-danger" target="_blank"><i class="bi bi-file-pdf me-1"></i>PDF</a>
+                    </div>
+                </form>
             </div>
         </div>
     </div>
 </div>
+
+<!-- KPIs -->
+<div class="row g-4 mb-4">
+    <div class="col-md-3">
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-body text-center">
+                <div class="text-success fs-2 fw-bold">{{ income_total|floatformat:2 }}€</div>
+                <div class="text-muted">Recettes ({{ income_count }})</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-body text-center">
+                <div class="text-danger fs-2 fw-bold">{{ expense_total|floatformat:2 }}€</div>
+                <div class="text-muted">Dépenses ({{ expense_count }})</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-body text-center">
+                <div class="fs-2 fw-bold {% if balance >= 0 %}text-primary{% else %}text-danger{% endif %}">{{ balance|floatformat:2 }}€</div>
+                <div class="text-muted">Solde</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card border-0 shadow-sm h-100">
+            <div class="card-body text-center">
+                <div class="fs-2 fw-bold text-secondary">{{ transaction_count }}</div>
+                <div class="text-muted">Transactions</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row g-4">
+    <!-- Par type -->
+    <div class="col-md-6">
+        <div class="card border-0 shadow-sm">
+            <div class="card-header bg-white"><h6 class="mb-0 fw-bold">Par type</h6></div>
+            <div class="card-body p-0">
+                <table class="table table-hover mb-0">
+                    <thead><tr><th>Type</th><th class="text-end">Montant</th><th class="text-end">Nb</th></tr></thead>
+                    <tbody>
+                    {% for item in by_type %}
+                    <tr><td>{{ item.transaction_type }}</td><td class="text-end fw-bold">{{ item.total|floatformat:2 }}€</td><td class="text-end">{{ item.count }}</td></tr>
+                    {% empty %}
+                    <tr><td colspan="3" class="text-center text-muted py-3">Aucune transaction</td></tr>
+                    {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Par méthode -->
+    <div class="col-md-6">
+        <div class="card border-0 shadow-sm">
+            <div class="card-header bg-white"><h6 class="mb-0 fw-bold">Par méthode de paiement</h6></div>
+            <div class="card-body p-0">
+                <table class="table table-hover mb-0">
+                    <thead><tr><th>Méthode</th><th class="text-end">Montant</th><th class="text-end">Nb</th></tr></thead>
+                    <tbody>
+                    {% for item in by_method %}
+                    <tr><td>{{ item.payment_method }}</td><td class="text-end fw-bold">{{ item.total|floatformat:2 }}€</td><td class="text-end">{{ item.count }}</td></tr>
+                    {% empty %}
+                    <tr><td colspan="3" class="text-center text-muted py-3">Aucune transaction</td></tr>
+                    {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% if monthly %}
+<!-- Évolution mensuelle -->
+<div class="row mt-4">
+    <div class="col-12">
+        <div class="card border-0 shadow-sm">
+            <div class="card-header bg-white"><h6 class="mb-0 fw-bold">Évolution mensuelle {{ year }}</h6></div>
+            <div class="card-body p-0">
+                <table class="table table-hover mb-0">
+                    <thead><tr><th>Mois</th><th class="text-end">Recettes</th><th class="text-end">Dépenses</th><th class="text-end">Solde</th></tr></thead>
+                    <tbody>
+                    {% for m in monthly %}
+                    <tr>
+                        <td>{{ m.month_name }}</td>
+                        <td class="text-end text-success">{{ m.income|floatformat:2 }}€</td>
+                        <td class="text-end text-danger">{{ m.expense|floatformat:2 }}€</td>
+                        <td class="text-end fw-bold {% if m.balance >= 0 %}text-primary{% else %}text-danger{% endif %}">{{ m.balance|floatformat:2 }}€</td>
+                    </tr>
+                    {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
 {% endblock %}

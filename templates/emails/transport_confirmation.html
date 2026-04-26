@@ -1,0 +1,15 @@
+{% extends 'emails/base_email.html' %}
+{% block content %}
+<h2 style="color:#0A36FF;margin:0 0 15px;font-size:18px;">🚐 Confirmation de transport</h2>
+<p style="color:#333;font-size:15px;line-height:1.7;">Bonjour{% if recipient_name %} {{ recipient_name }}{% endif %},</p>
+<p style="color:#333;font-size:15px;line-height:1.7;">Votre demande de transport a été confirmée.</p>
+{% if transport_request %}
+<table role="presentation" width="100%" style="background:#f8f9fc;border-radius:10px;border:1px solid #e8ecf4;margin:20px 0;">
+<tr><td style="padding:20px;">
+    <p style="color:#555;margin:4px 0;font-size:14px;">Date : <strong>{{ transport_request.date|date:"d/m/Y" }}</strong></p>
+    {% if transport_request.pickup_address %}<p style="color:#555;margin:4px 0;font-size:14px;">Prise en charge : {{ transport_request.pickup_address }}</p>{% endif %}
+    {% if transport_request.driver %}<p style="color:#555;margin:4px 0;font-size:14px;">Chauffeur : {{ transport_request.driver }}</p>{% endif %}
+</td></tr>
+</table>
+{% endif %}
+{% endblock %}
