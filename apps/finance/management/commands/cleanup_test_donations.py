@@ -108,7 +108,12 @@ class Command(BaseCommand):
                 donation.delete()
                 deleted_donations += 1
                 if tx:
-                    tx.delete()
+                    # FinancialTransaction utilise soft-delete,
+                    # on force la suppression réelle pour les données de test
+                    if hasattr(tx, 'hard_delete'):
+                        tx.hard_delete()
+                    else:
+                        type(tx).all_objects.filter(pk=tx.pk).delete()
                     deleted_transactions += 1
 
         self.stdout.write(self.style.SUCCESS(
