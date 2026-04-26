@@ -10,10 +10,11 @@ class Campaign(models.Model):
     
     class NotificationScope(models.TextChoices):
         NONE = 'none', 'Aucune notification'
-        ALL = 'all', 'Tout le monde'
-        MEMBERS = 'members', 'Tous les membres'
+        CREATOR = 'creator', 'Créateur / personne sélectionnée'
         STAFF = 'staff', 'Direction (pasteurs, diacres, anciens)'
+        MEMBERS = 'members', 'Tous les membres'
         GROUP = 'group', 'Un groupe spécifique'
+        ALL = 'all', 'Tout le monde'
     
     name = models.CharField(max_length=200, verbose_name="Nom de la campagne")
     description = models.TextField(blank=True, verbose_name="Description")
@@ -73,6 +74,17 @@ class Campaign(models.Model):
         related_name='targeted_campaigns',
         verbose_name="Groupe cible",
         help_text="Requis si la portée est 'Un groupe spécifique'"
+    )
+    
+    # Personne spécifique (si scope = creator)
+    target_person = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='targeted_campaigns',
+        verbose_name="Personne à notifier",
+        help_text="Si vide, le créateur (responsable) sera notifié"
     )
     
     notification_sent = models.BooleanField(default=False, verbose_name="Notification envoyée")
@@ -144,7 +156,13 @@ class Campaign(models.Model):
         if self.notification_scope == self.NotificationScope.NONE:
             return []
         
-        if self.notification_scope == self.NotificationScope.ALL:
+        if self.notification_scope == self.NotificationScope.CREATOR:
+            # Personne sélectionnée, ou le responsable par défaut
+            person = self.target_person or self.responsible
+            if person and person.email:
+                emails.add(person.email)
+        
+        elif self.notification_scope == self.NotificationScope.ALL:
             for user in User.objects.filter(is_active=True).exclude(email=''):
                 emails.add(user.email)
             for member in Member.objects.exclude(email='').exclude(email__isnull=True):
