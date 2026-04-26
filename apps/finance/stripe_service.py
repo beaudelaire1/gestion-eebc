@@ -100,6 +100,7 @@ class StripeService:
         # Métadonnées pour le webhook
         metadata = {
             'donation_type': donation_type,
+            'donor_name': donor_name or '',
             'site_id': str(site_id) if site_id else '',
             'member_id': str(member_id) if member_id else '',
             'campaign_id': str(campaign_id) if campaign_id else '',
@@ -328,7 +329,7 @@ class StripeService:
             amount=amount,
             donation_type=donation_type,
             donor_email=(session.get('customer_details') or {}).get('email', '') or session.get('customer_email', ''),
-            donor_name=(session.get('customer_details') or {}).get('name', ''),
+            donor_name=metadata.get('donor_name', '') or (session.get('customer_details') or {}).get('name', ''),
             status='completed',
             completed_at=timezone.now(),
             site_id=metadata.get('site_id') or None,
@@ -342,7 +343,7 @@ class StripeService:
             payment_method=FinancialTransaction.PaymentMethod.CARTE,
             status=FinancialTransaction.Status.VALIDE,
             transaction_date=timezone.now().date(),
-            description=f"Don en ligne - {(session.get('customer_details') or {}).get('email', '') or session.get('customer_email', 'Anonyme')}",
+            description=f"Don en ligne - {metadata.get('donor_name', '') or (session.get('customer_details') or {}).get('email', '') or session.get('customer_email', 'Anonyme')}",
             site_id=metadata.get('site_id') or None,
             member_id=metadata.get('member_id') or None,
         )
