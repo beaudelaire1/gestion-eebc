@@ -1222,14 +1222,13 @@
 
 .journey-visual-column {
     position: relative;
-    align-self: start;
+    align-self: stretch;
 }
 
 .journey-visual-sticky {
     position: sticky;
-    top: 96px;
-    height: calc(100vh - 120px);
-    min-height: 800px;
+    top: 80px;
+    height: calc(100vh - 100px);
     display: flex;
     flex-direction: column;
     gap: 1.2rem;
@@ -1238,8 +1237,8 @@
 .journey-verse-stream {
     position: relative;
     padding: 1.2rem 1.5rem 1.3rem;
-    flex: 0 0 auto;
-    height: clamp(190px, 24vh, 250px);
+    flex: 1 1 auto;
+    min-height: 190px;
     display: flex;
     flex-direction: column;
     border-radius: 24px;
@@ -1248,7 +1247,7 @@
     -webkit-backdrop-filter: blur(8px);
     backdrop-filter: blur(8px);
     box-shadow: 0 14px 36px rgba(0, 0, 0, 0.28);
-    overflow: hidden;
+    overflow-y: auto;
 }
 
 .journey-verse-stream::before {
@@ -1571,7 +1570,7 @@
     z-index: 6;
     padding: 0.95rem 1.1rem;
     border-radius: 18px;
-    background: linear-gradient(180deg, rgba(10, 18, 35, 0.72), rgba(15, 28, 51, 0.86));
+    background: linear-gradient(180deg, rgba(10, 18, 35, 0.45), rgba(15, 28, 51, 0.6));
     border: 1px solid rgba(255, 255, 255, 0.09);
     -webkit-backdrop-filter: blur(10px);
     backdrop-filter: blur(10px);

@@ -545,5 +545,32 @@
         document.getElementById('cookie-banner').style.display = 'none';
     }
     </script>
+
+    <!-- Bouton retour en haut -->
+    <button id="scrollTopBtn" onclick="window.scrollTo({top:0,behavior:'smooth'})" aria-label="Retour en haut"
+        style="display:none;position:fixed;bottom:80px;right:24px;z-index:9998;
+               width:48px;height:48px;border-radius:50%;border:none;
+               background:linear-gradient(135deg,#0A36FF,#3b82f6);color:#fff;
+               font-size:1.3rem;cursor:pointer;box-shadow:0 4px 15px rgba(10,54,255,0.4);
+               transition:all 0.3s ease;opacity:0;transform:translateY(20px);">
+        <i class="bi bi-chevron-up"></i>
+    </button>
+    <script>
+    (function(){
+        var btn=document.getElementById('scrollTopBtn');
+        window.addEventListener('scroll',function(){
+            if(window.scrollY>400){
+                btn.style.display='flex';
+                btn.style.alignItems='center';
+                btn.style.justifyContent='center';
+                setTimeout(function(){btn.style.opacity='1';btn.style.transform='translateY(0)';},10);
+            }else{
+                btn.style.opacity='0';
+                btn.style.transform='translateY(20px)';
+                setTimeout(function(){if(window.scrollY<=400)btn.style.display='none';},300);
+            }
+        });
+    })();
+    </script>
 </body>
 </html>
