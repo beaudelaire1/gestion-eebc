@@ -7,6 +7,14 @@ class Campaign(models.Model):
     """
     Modèle représentant une campagne de collecte de fonds.
     """
+    
+    class NotificationScope(models.TextChoices):
+        NONE = 'none', 'Aucune notification'
+        ALL = 'all', 'Tout le monde'
+        MEMBERS = 'members', 'Tous les membres'
+        STAFF = 'staff', 'Direction (pasteurs, diacres, anciens)'
+        GROUP = 'group', 'Un groupe spécifique'
+    
     name = models.CharField(max_length=200, verbose_name="Nom de la campagne")
     description = models.TextField(blank=True, verbose_name="Description")
     
@@ -46,6 +54,28 @@ class Campaign(models.Model):
         related_name='campaigns',
         verbose_name="Responsable"
     )
+    
+    # Portée des notifications
+    notification_scope = models.CharField(
+        max_length=15,
+        choices=NotificationScope.choices,
+        default=NotificationScope.MEMBERS,
+        verbose_name="Portée des notifications",
+        help_text="Qui doit être notifié de cette campagne"
+    )
+    
+    # Groupe spécifique (si scope = group)
+    target_group = models.ForeignKey(
+        'groups.Group',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='targeted_campaigns',
+        verbose_name="Groupe cible",
+        help_text="Requis si la portée est 'Un groupe spécifique'"
+    )
+    
+    notification_sent = models.BooleanField(default=False, verbose_name="Notification envoyée")
     
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -103,6 +133,40 @@ class Campaign(models.Model):
         
         days_remaining = (self.end_date - today).days
         return days_remaining <= 14 and self.progress_percentage < 50
+    
+    def get_notification_recipients(self):
+        """Retourne les emails des personnes à notifier selon la portée."""
+        from apps.accounts.models import User
+        from apps.members.models import Member
+        
+        emails = set()
+        
+        if self.notification_scope == self.NotificationScope.NONE:
+            return []
+        
+        if self.notification_scope == self.NotificationScope.ALL:
+            for user in User.objects.filter(is_active=True).exclude(email=''):
+                emails.add(user.email)
+            for member in Member.objects.exclude(email='').exclude(email__isnull=True):
+                emails.add(member.email)
+        
+        elif self.notification_scope == self.NotificationScope.MEMBERS:
+            for member in Member.objects.filter(status='actif').exclude(email='').exclude(email__isnull=True):
+                emails.add(member.email)
+        
+        elif self.notification_scope == self.NotificationScope.STAFF:
+            staff_roles = ['pasteur', 'ancien', 'diacre', 'admin']
+            for user in User.objects.filter(is_active=True).exclude(email=''):
+                if any(r in user.role for r in staff_roles) or user.is_superuser:
+                    emails.add(user.email)
+        
+        elif self.notification_scope == self.NotificationScope.GROUP:
+            if self.target_group:
+                for member in self.target_group.members.all():
+                    if member.email:
+                        emails.add(member.email)
+        
+        return list(emails)
 
 
 class Donation(models.Model):
