@@ -114,10 +114,57 @@
                         <i class="bi bi-calendar-month nav-link__icon"></i>
                         <span>Planning mensuel</span>
                     </a>
+                </nav>
+            </div>
+
+            <div class="nav-section">
+                <div class="nav-section__title">Finances</div>
+                <nav class="nav flex-column">
                     <a class="nav-link {% if request.path == '/app/finance/' %}nav-link--active{% endif %}"
                         href="{% url 'finance:dashboard' %}">
                         <i class="bi bi-cash-coin nav-link__icon"></i>
                         <span>Trésorerie</span>
+                    </a>
+                    <!-- Recettes -->
+                    <a class="nav-link {% if request.GET.type == 'dime' %}nav-link--active{% endif %}"
+                        href="{% url 'finance:transaction_list' %}?type=dime" style="padding-left:2.2rem;">
+                        <i class="bi bi-percent nav-link__icon" style="font-size:0.85em;"></i>
+                        <span>Dîmes</span>
+                    </a>
+                    <a class="nav-link {% if request.GET.type == 'don' %}nav-link--active{% endif %}"
+                        href="{% url 'finance:transaction_list' %}?type=don" style="padding-left:2.2rem;">
+                        <i class="bi bi-gift nav-link__icon" style="font-size:0.85em;"></i>
+                        <span>Dons</span>
+                    </a>
+                    <a class="nav-link {% if request.GET.type == 'offrande' %}nav-link--active{% endif %}"
+                        href="{% url 'finance:transaction_list' %}?type=offrande" style="padding-left:2.2rem;">
+                        <i class="bi bi-flower1 nav-link__icon" style="font-size:0.85em;"></i>
+                        <span>Offrandes</span>
+                    </a>
+                    <a class="nav-link {% if request.GET.type == 'depense' %}nav-link--active{% endif %}"
+                        href="{% url 'finance:transaction_list' %}?type=depense" style="padding-left:2.2rem;">
+                        <i class="bi bi-cart-dash nav-link__icon" style="font-size:0.85em;"></i>
+                        <span>Dépenses</span>
+                    </a>
+                    <a class="nav-link {% if 'online-donations' in request.path %}nav-link--active{% endif %}"
+                        href="{% url 'finance:online_donation_list' %}">
+                        <i class="bi bi-credit-card nav-link__icon"></i>
+                        <span>Dons en ligne</span>
+                    </a>
+                    <a class="nav-link {% if 'campaigns' in request.path %}nav-link--active{% endif %}"
+                        href="{% url 'campaigns:list' %}">
+                        <i class="bi bi-megaphone nav-link__icon"></i>
+                        <span>Campagnes</span>
+                    </a>
+                    <a class="nav-link {% if 'member-summary' in request.path %}nav-link--active{% endif %}"
+                        href="{% url 'finance:member_annual_summary' %}">
+                        <i class="bi bi-person-lines-fill nav-link__icon"></i>
+                        <span>Récap. par membre</span>
+                    </a>
+                    <a class="nav-link {% if 'reports' in request.path and 'finance' in request.path %}nav-link--active{% endif %}"
+                        href="{% url 'finance:reports' %}">
+                        <i class="bi bi-file-earmark-bar-graph nav-link__icon"></i>
+                        <span>Rapports</span>
                     </a>
                     <a class="nav-link {% if 'comparison' in request.path %}nav-link--active{% endif %}"
                         href="{% url 'finance:yearly_comparison' %}">
@@ -138,11 +185,6 @@
                         href="{% url 'finance:forecast_list' %}">
                         <i class="bi bi-graph-up-arrow nav-link__icon"></i>
                         <span>Prévisionnel</span>
-                    </a>
-                    <a class="nav-link {% if 'campaigns' in request.path %}nav-link--active{% endif %}"
-                        href="{% url 'campaigns:list' %}">
-                        <i class="bi bi-graph-up-arrow nav-link__icon"></i>
-                        <span>Campagnes</span>
                     </a>
                     <a class="nav-link" href="{% url 'public:donation' %}" target="_blank">
                         <i class="bi bi-heart-fill nav-link__icon" style="color: #EC4899;"></i>

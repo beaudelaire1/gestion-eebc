@@ -192,7 +192,10 @@ def transaction_create(request):
             else:
                 messages.error(request, result.error)
     else:
-        form = TransactionForm()
+        initial = {}
+        if request.GET.get('type'):
+            initial['transaction_type'] = request.GET['type']
+        form = TransactionForm(initial=initial)
     
     return render(request, 'finance/transaction_form.html', {'form': form})
 

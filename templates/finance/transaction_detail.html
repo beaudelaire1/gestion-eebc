@@ -4,6 +4,9 @@
 {% block page_title %}Transaction {{ transaction.reference }}{% endblock %}
 
 {% block page_actions %}
+<a href="{% url 'finance:transaction_list' %}{% if transaction.transaction_type %}?type={{ transaction.transaction_type }}{% endif %}" class="btn btn-outline-secondary btn-sm">
+    <i class="bi bi-arrow-left me-1"></i>Retour
+</a>
 {% if transaction.transaction_type == 'don' or transaction.transaction_type == 'dime' or transaction.transaction_type == 'offrande' %}
 <a href="{% url 'finance:transaction_receipt_pdf' transaction.pk %}" class="btn btn-outline-primary" target="_blank">
     <i class="bi bi-file-earmark-pdf me-1"></i> Reçu PDF

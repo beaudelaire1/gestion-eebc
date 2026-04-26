@@ -164,6 +164,58 @@
     </form>
 </div>
 
+<!-- Accès rapides -->
+<div class="row g-2 mb-4">
+    <div class="col-6 col-md">
+        <a href="{% url 'finance:transaction_list' %}?type=dime" class="card border-0 shadow-sm text-decoration-none h-100">
+            <div class="card-body text-center py-3">
+                <i class="bi bi-percent text-primary fs-4"></i>
+                <div class="small fw-semibold mt-1">Dîmes</div>
+            </div>
+        </a>
+    </div>
+    <div class="col-6 col-md">
+        <a href="{% url 'finance:transaction_list' %}?type=don" class="card border-0 shadow-sm text-decoration-none h-100">
+            <div class="card-body text-center py-3">
+                <i class="bi bi-gift text-info fs-4"></i>
+                <div class="small fw-semibold mt-1">Dons</div>
+            </div>
+        </a>
+    </div>
+    <div class="col-6 col-md">
+        <a href="{% url 'finance:transaction_list' %}?type=offrande" class="card border-0 shadow-sm text-decoration-none h-100">
+            <div class="card-body text-center py-3">
+                <i class="bi bi-flower1 text-warning fs-4"></i>
+                <div class="small fw-semibold mt-1">Offrandes</div>
+            </div>
+        </a>
+    </div>
+    <div class="col-6 col-md">
+        <a href="{% url 'finance:transaction_list' %}?type=depense" class="card border-0 shadow-sm text-decoration-none h-100">
+            <div class="card-body text-center py-3">
+                <i class="bi bi-cart-dash text-danger fs-4"></i>
+                <div class="small fw-semibold mt-1">Dépenses</div>
+            </div>
+        </a>
+    </div>
+    <div class="col-6 col-md">
+        <a href="{% url 'finance:online_donation_list' %}" class="card border-0 shadow-sm text-decoration-none h-100">
+            <div class="card-body text-center py-3">
+                <i class="bi bi-credit-card text-success fs-4"></i>
+                <div class="small fw-semibold mt-1">Dons en ligne</div>
+            </div>
+        </a>
+    </div>
+    <div class="col-6 col-md">
+        <a href="{% url 'finance:transaction_create' %}" class="card border-0 shadow-sm text-decoration-none h-100" style="background:linear-gradient(135deg,#0A36FF,#3b82f6);">
+            <div class="card-body text-center py-3">
+                <i class="bi bi-plus-lg text-white fs-4"></i>
+                <div class="small fw-semibold mt-1 text-white">Nouvelle</div>
+            </div>
+        </a>
+    </div>
+</div>
+
 <!-- Stats Cards -->
 <div class="row g-4 mb-4">
     <div class="col-md-3">

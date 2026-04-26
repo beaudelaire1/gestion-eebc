@@ -1,9 +1,43 @@
 {% extends 'base.html' %}
 
 {% block title %}Transactions - EEBC{% endblock %}
-{% block page_title %}Transactions{% endblock %}
+{% block page_title %}{% if request.GET.type == 'dime' %}Dîmes{% elif request.GET.type == 'don' %}Dons{% elif request.GET.type == 'offrande' %}Offrandes{% elif request.GET.type == 'depense' %}Dépenses{% elif request.GET.type == 'remboursement' %}Remboursements{% else %}Transactions{% endif %}{% endblock %}
 
 {% block content %}
+<!-- Onglets rapides par type -->
+<ul class="nav nav-pills mb-4">
+    <li class="nav-item">
+        <a class="nav-link {% if not request.GET.type %}active{% endif %}" href="{% url 'finance:transaction_list' %}">
+            Tout
+        </a>
+    </li>
+    <li class="nav-item">
+        <a class="nav-link {% if request.GET.type == 'dime' %}active{% endif %}" href="?type=dime">
+            <i class="bi bi-percent me-1"></i>Dîmes
+        </a>
+    </li>
+    <li class="nav-item">
+        <a class="nav-link {% if request.GET.type == 'don' %}active{% endif %}" href="?type=don">
+            <i class="bi bi-gift me-1"></i>Dons
+        </a>
+    </li>
+    <li class="nav-item">
+        <a class="nav-link {% if request.GET.type == 'offrande' %}active{% endif %}" href="?type=offrande">
+            <i class="bi bi-flower1 me-1"></i>Offrandes
+        </a>
+    </li>
+    <li class="nav-item">
+        <a class="nav-link {% if request.GET.type == 'depense' %}active{% endif %}" href="?type=depense">
+            <i class="bi bi-cart-dash me-1"></i>Dépenses
+        </a>
+    </li>
+    <li class="nav-item">
+        <a class="nav-link {% if request.GET.type == 'remboursement' %}active{% endif %}" href="?type=remboursement">
+            <i class="bi bi-arrow-return-left me-1"></i>Remboursements
+        </a>
+    </li>
+</ul>
+
 <!-- Filtres -->
 <div class="card border-0 shadow-sm mb-4">
     <div class="card-body">
