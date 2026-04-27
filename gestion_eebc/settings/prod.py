@@ -186,13 +186,25 @@ class _SafeWhiteNoiseStorage(_WhiteNoiseBase):
             yield entry
 
 STORAGES = {
-    "default": {
-        "BACKEND": "django.core.files.storage.FileSystemStorage",
-    },
     "staticfiles": {
         "BACKEND": "gestion_eebc.settings.prod._SafeWhiteNoiseStorage",
     },
 }
+
+# Stockage médias : Cloudinary si configuré, sinon filesystem local
+CLOUDINARY_URL = os.environ.get('CLOUDINARY_URL', '')
+if CLOUDINARY_URL:
+    INSTALLED_APPS += ['cloudinary_storage', 'cloudinary']
+    STORAGES["default"] = {
+        "BACKEND": "cloudinary_storage.storage.MediaCloudinaryStorage",
+    }
+    CLOUDINARY_STORAGE = {
+        'CLOUDINARY_URL': CLOUDINARY_URL,
+    }
+else:
+    STORAGES["default"] = {
+        "BACKEND": "django.core.files.storage.FileSystemStorage",
+    }
 
 # WhiteNoise middleware (doit être après SecurityMiddleware)
 MIDDLEWARE.insert(2, 'whitenoise.middleware.WhiteNoiseMiddleware')
