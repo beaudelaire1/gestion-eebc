@@ -221,8 +221,8 @@ def members_map_data(request):
         if not coords and member.family and member.family.latitude is not None and member.family.longitude is not None:
             coords = (float(member.family.latitude), float(member.family.longitude))
 
-        if not coords and member.site and member.site.latitude is not None and member.site.longitude is not None:
-            coords = (float(member.site.latitude), float(member.site.longitude))
+        # NE PAS utiliser les coordonnées du site comme fallback
+        # (sinon le membre apparaît à l'église au lieu de chez lui)
 
         if not coords and member.family and member.family.neighborhood and member.family.neighborhood.city:
             city_obj = member.family.neighborhood.city
@@ -234,9 +234,7 @@ def members_map_data(request):
             if city_key in city_coords:
                 coords = deterministic_offset_coords(city_coords[city_key][0], city_coords[city_key][1], f"cityname:{city_key}:addr:{address_key}")
 
-        # Fallback final: si adresse présente mais aucun géocodage possible, placer autour de Cayenne
-        if not coords and base_address:
-            coords = deterministic_offset_coords(4.9225, -52.3058, f"default:{address_key}", min_offset_meters=300, max_offset_meters=2500)
+        # Pas de fallback par défaut : si on ne peut pas géolocaliser, on n'affiche pas
         
         if coords:
             # Appliquer l'obfuscation si nécessaire (déterministe : même adresse = même position)
