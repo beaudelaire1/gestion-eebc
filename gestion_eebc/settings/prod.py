@@ -198,9 +198,23 @@ if CLOUDINARY_URL:
     STORAGES["default"] = {
         "BACKEND": "cloudinary_storage.storage.MediaCloudinaryStorage",
     }
-    CLOUDINARY_STORAGE = {
-        'CLOUDINARY_URL': CLOUDINARY_URL,
-    }
+    # django-cloudinary-storage parse CLOUDINARY_URL automatiquement
+    # Format: cloudinary://API_KEY:API_SECRET@CLOUD_NAME
+    import re as _re
+    _match = _re.match(r'cloudinary://(\w+):(\w+)@(\w+)', CLOUDINARY_URL)
+    if _match:
+        CLOUDINARY_STORAGE = {
+            'CLOUD_NAME': _match.group(3),
+            'API_KEY': _match.group(1),
+            'API_SECRET': _match.group(2),
+        }
+    else:
+        # Fallback: variables séparées
+        CLOUDINARY_STORAGE = {
+            'CLOUD_NAME': os.environ.get('CLOUDINARY_CLOUD_NAME', ''),
+            'API_KEY': os.environ.get('CLOUDINARY_API_KEY', ''),
+            'API_SECRET': os.environ.get('CLOUDINARY_API_SECRET', ''),
+        }
 else:
     STORAGES["default"] = {
         "BACKEND": "django.core.files.storage.FileSystemStorage",
