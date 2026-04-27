@@ -130,7 +130,7 @@
     /* Zone photo */
     .member-photo-zone {
         position: relative;
-        height: 200px;
+        height: 160px;
         overflow: hidden;
         background: #f0f2f5;
     }
@@ -151,8 +151,9 @@
     .member-photo-zone img {
         width: 100%;
         height: 100%;
-        object-fit: cover;
-        object-position: center 20%;
+        object-fit: contain;
+        object-position: center center;
+        background: #f0f2f5;
     }
     
     .member-photo-zone .initials {
