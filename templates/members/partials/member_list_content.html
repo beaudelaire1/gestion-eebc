@@ -5,7 +5,7 @@
     {% for member in members %}
     <div class="member-card">
         <!-- Zone photo -->
-        <div class="member-photo-zone {% if member.gender == 'M' %}homme{% else %}femme{% endif %}">
+        <div class="member-photo-zone {% if member.photo %}has-photo{% elif member.gender == 'M' %}homme{% else %}femme{% endif %}">
             {% if member.photo %}
             <img src="{{ member.photo.url }}" alt="{{ member.full_name }}">
             {% else %}

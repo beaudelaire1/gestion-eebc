@@ -130,8 +130,9 @@
     /* Zone photo */
     .member-photo-zone {
         position: relative;
-        height: 180px;
+        height: 200px;
         overflow: hidden;
+        background: #f0f2f5;
     }
     
     .member-photo-zone.homme {
@@ -142,10 +143,16 @@
         background: linear-gradient(135deg, #8b5cf6 0%, #6d28d9 100%);
     }
     
+    /* Quand il y a une photo, pas de fond coloré */
+    .member-photo-zone.has-photo {
+        background: #f0f2f5;
+    }
+    
     .member-photo-zone img {
         width: 100%;
         height: 100%;
         object-fit: cover;
+        object-position: center top;
     }
     
     .member-photo-zone .initials {
@@ -448,7 +455,7 @@
         {% for member in members %}
         <div class="member-card">
             <!-- Zone photo -->
-            <div class="member-photo-zone {% if member.gender == 'M' %}homme{% else %}femme{% endif %}">
+            <div class="member-photo-zone {% if member.photo %}has-photo{% elif member.gender == 'M' %}homme{% else %}femme{% endif %}">
                 {% if member.photo %}
                 <img src="{{ member.photo.url }}" alt="{{ member.full_name }}">
                 {% else %}
