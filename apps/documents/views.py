@@ -228,6 +228,10 @@ def document_stream(request, pk):
         raise Http404
 
     content_type = doc.file_type or get_mime_type(doc.file_name)
+    # Force correct MIME for PDFs: file_type may be stored as application/octet-stream by Cloudinary.
+    # Without this, SECURE_CONTENT_TYPE_NOSNIFF causes the browser to download instead of display.
+    if doc.is_pdf:
+        content_type = 'application/pdf'
     response = FileResponse(_open_document_file_or_404(doc), content_type=content_type)
     response['Content-Disposition'] = f'inline; filename="{doc.file_name}"'
 

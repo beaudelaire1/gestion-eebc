@@ -61,6 +61,9 @@ def test_document_stream_pdf_extension_allows_inline_even_with_generic_mime(auth
     assert response.headers['Content-Disposition'].startswith('inline;')
     assert 'X-Frame-Options' not in response.headers
     assert document.is_previewable is True
+    # Content-Type must be application/pdf regardless of stored file_type (octet-stream),
+    # because SECURE_CONTENT_TYPE_NOSNIFF would otherwise cause the browser to download the file.
+    assert response.headers['Content-Type'].startswith('application/pdf')
 
 
 @pytest.mark.django_db
