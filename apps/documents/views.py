@@ -1,4 +1,5 @@
 import mimetypes
+import logging
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.db.models import Q
@@ -12,6 +13,40 @@ from apps.core.permissions import role_required
 from .models import Document, DocumentCategory, DocumentShare, GeneratedDocument
 from .forms import DocumentUploadForm, DocumentEditForm, DocumentShareForm, CategoryForm, GeneratedDocumentForm
 from .services import validate_file, detect_media_type, get_mime_type, get_documents_stats, log_access, share_document_by_email, create_default_categories, generate_preview_html
+
+
+logger = logging.getLogger(__name__)
+
+
+def _is_storage_upload_rejection(exc):
+    exc_module = exc.__class__.__module__
+    message = str(exc)
+    return (
+        exc_module.startswith('cloudinary')
+        or 'Unsupported ZIP file' in message
+        or 'Invalid image file' in message
+    )
+
+
+def _is_storage_read_error(exc):
+    exc_module = exc.__class__.__module__
+    return isinstance(exc, OSError) or exc_module.startswith(('requests', 'cloudinary'))
+
+
+def _open_document_file_or_404(document):
+    try:
+        return document.file.open('rb')
+    except Exception as exc:
+        if not _is_storage_read_error(exc):
+            raise
+        logger.warning(
+            "Document storage could not open file for document %s (%s): %s",
+            document.pk,
+            document.file_name,
+            exc,
+            exc_info=True,
+        )
+        raise Http404("Fichier document indisponible")
 
 
 def _apply_document_frame_policy(response, *, allow_inline_pdf=False):
@@ -115,7 +150,23 @@ def document_upload(request):
                 allowed_roles=','.join(form.cleaned_data.get('allowed_roles_list') or []) if form.is_valid() else '',
                 uploaded_by=request.user,
             )
-            doc.save()
+            try:
+                doc.save()
+            except Exception as exc:
+                if not _is_storage_upload_rejection(exc):
+                    raise
+                logger.warning(
+                    "Document storage rejected uploaded file %s: %s",
+                    uploaded_file.name,
+                    exc,
+                    exc_info=True,
+                )
+                messages.error(
+                    request,
+                    f"{uploaded_file.name} : le fichier a été refusé par le stockage distant. "
+                    "Veuillez réessayer ou contacter l'administration.",
+                )
+                continue
             success_count += 1
 
         if success_count:
@@ -158,7 +209,7 @@ def document_download(request, pk):
 
     log_access(doc, request.user, 'download', request)
 
-    response = FileResponse(doc.file.open('rb'), content_type=doc.file_type or 'application/octet-stream')
+    response = FileResponse(_open_document_file_or_404(doc), content_type=doc.file_type or 'application/octet-stream')
 
     # Support Range headers pour streaming audio/vidéo
     if doc.media_type in ('audio', 'video'):
@@ -177,7 +228,7 @@ def document_stream(request, pk):
         raise Http404
 
     content_type = doc.file_type or get_mime_type(doc.file_name)
-    response = FileResponse(doc.file.open('rb'), content_type=content_type)
+    response = FileResponse(_open_document_file_or_404(doc), content_type=content_type)
     response['Content-Disposition'] = f'inline; filename="{doc.file_name}"'
 
     if doc.media_type in ('audio', 'video'):

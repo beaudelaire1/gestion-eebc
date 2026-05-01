@@ -4,6 +4,8 @@ from django.db import models
 from django.db.models import Q
 from django.utils.text import slugify
 
+from .storage import document_storage
+
 
 class DocumentCategory(models.Model):
     name = models.CharField(max_length=100, verbose_name="Nom")
@@ -53,7 +55,7 @@ class Document(models.Model):
 
     title = models.CharField(max_length=255, verbose_name="Titre")
     description = models.TextField(blank=True, verbose_name="Description")
-    file = models.FileField(upload_to='documents/%Y/%m/', verbose_name="Fichier")
+    file = models.FileField(upload_to='documents/%Y/%m/', storage=document_storage, verbose_name="Fichier")
     file_name = models.CharField(max_length=255, verbose_name="Nom du fichier")
     file_size = models.PositiveIntegerField(default=0, verbose_name="Taille (octets)")
     file_type = models.CharField(max_length=100, blank=True, verbose_name="Type MIME")
