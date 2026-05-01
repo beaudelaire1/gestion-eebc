@@ -242,6 +242,8 @@ def generate_preview_html(document):
             return _preview_xlsx(document)
         elif ext == 'pptx':
             return _preview_pptx(document)
+        elif ext in {'doc', 'xls', 'ppt'}:
+            return _preview_legacy_office(document, ext)
     except Exception as e:
         logger.error(f"Erreur preview document {document.id}: {e}")
         return None, f"Impossible de générer l'aperçu : {e}"
@@ -441,6 +443,24 @@ def _preview_pptx(document):
 
     html = '\n'.join(parts)
     return _wrap_preview(html, False, 'PowerPoint (.pptx)'), None
+
+
+def _preview_legacy_office(document, ext):
+    labels = {
+        'doc': 'Word 97-2003 (.doc)',
+        'xls': 'Excel 97-2003 (.xls)',
+        'ppt': 'PowerPoint 97-2003 (.ppt)',
+    }
+    label = labels.get(ext, ext.upper())
+    html = (
+        '<div class="alert alert-warning mb-0">'
+        '<i class="bi bi-exclamation-triangle me-1"></i>'
+        f"L'aperçu intégré ne peut pas lire directement les anciens fichiers {label}. "
+        'Téléchargez le fichier ou enregistrez-le au format moderne '
+        '(.docx, .xlsx ou .pptx) pour obtenir une prévisualisation dans l\'application.'
+        '</div>'
+    )
+    return _wrap_preview(html, False, label), None
 
 
 def _wrap_preview(inner_html, truncated, format_label):

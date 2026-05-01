@@ -1,4 +1,5 @@
 from datetime import date
+from io import BytesIO
 
 import pytest
 from django.core.files.uploadedfile import SimpleUploadedFile
@@ -77,6 +78,51 @@ def test_document_preview_html_stays_sameorigin(authenticated_client, admin_user
 
     assert response.status_code == 200
     assert response.headers['X-Frame-Options'] == 'SAMEORIGIN'
+
+
+@pytest.mark.django_db
+def test_document_preview_docx_renders_content(authenticated_client, admin_user, settings, tmp_path):
+    from docx import Document as DocxDocument
+
+    docx = DocxDocument()
+    docx.add_heading('Compte rendu', level=1)
+    docx.add_paragraph('Contenu du document Word.')
+    buffer = BytesIO()
+    docx.save(buffer)
+
+    document = _create_document(
+        admin_user=admin_user,
+        settings=settings,
+        tmp_path=tmp_path,
+        name='compte-rendu.docx',
+        content=buffer.getvalue(),
+        content_type='application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+    )
+
+    response = authenticated_client.get(reverse('documents:preview', args=[document.pk]))
+
+    assert response.status_code == 200
+    assert 'Compte rendu'.encode() in response.content
+    assert b'Word (.docx)' in response.content
+
+
+@pytest.mark.django_db
+def test_document_preview_legacy_doc_shows_clear_message(authenticated_client, admin_user, settings, tmp_path):
+    document = _create_document(
+        admin_user=admin_user,
+        settings=settings,
+        tmp_path=tmp_path,
+        name='ancien.doc',
+        content=b'D0CF11E0 legacy doc placeholder',
+        content_type='application/msword',
+    )
+
+    response = authenticated_client.get(reverse('documents:preview', args=[document.pk]))
+
+    assert response.status_code == 200
+    assert document.is_previewable is True
+    assert b'Word 97-2003 (.doc)' in response.content
+    assert 'anciens fichiers'.encode() in response.content
 
 
 @pytest.mark.django_db
