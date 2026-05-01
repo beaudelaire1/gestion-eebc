@@ -140,8 +140,12 @@ class Document(models.Model):
         return ''
 
     @property
+    def is_pdf(self):
+        return self.file_type == 'application/pdf' or self.extension == 'pdf'
+
+    @property
     def is_previewable(self):
-        return self.media_type in ('image', 'audio', 'video') or self.file_type == 'application/pdf' or self.extension in (
+        return self.media_type in ('image', 'audio', 'video') or self.is_pdf or self.extension in (
             'txt', 'csv', 'json', 'xml', 'md', 'log', 'yml', 'yaml', 'ini', 'conf', 'html', 'css',
             'docx', 'xlsx', 'pptx',
         )

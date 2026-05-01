@@ -82,9 +82,7 @@ def get_mime_type(filename):
 # ─── Statistiques ──────────────────────────────────────────────
 
 def get_documents_stats(user=None):
-    qs = Document.objects.all()
-    if user and not (user.is_superuser or getattr(user, 'is_admin', False)):
-        qs = qs.filter(is_confidential=False)
+    qs = Document.accessible_queryset(user) if user else Document.objects.all()
 
     total = qs.count()
     total_size = qs.aggregate(s=Sum('file_size'))['s'] or 0
@@ -96,6 +94,8 @@ def get_documents_stats(user=None):
         .values_list('category__name', 'c')
     )
     confidential = qs.filter(is_confidential=True).count()
+    recent_cutoff = timezone.now() - timedelta(days=30)
+    recent_count = qs.filter(created_at__gte=recent_cutoff).count()
     recent = qs.order_by('-created_at')[:5]
 
     return {
@@ -105,6 +105,7 @@ def get_documents_stats(user=None):
         'by_media': by_media,
         'by_category': by_category,
         'confidential': confidential,
+        'recent_count': recent_count,
         'recent': recent,
     }
 

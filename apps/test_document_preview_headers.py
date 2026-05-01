@@ -44,6 +44,25 @@ def test_document_stream_pdf_allows_browser_inline_viewer(authenticated_client, 
 
 
 @pytest.mark.django_db
+def test_document_stream_pdf_extension_allows_inline_even_with_generic_mime(authenticated_client, admin_user, settings, tmp_path):
+    document = _create_document(
+        admin_user=admin_user,
+        settings=settings,
+        tmp_path=tmp_path,
+        name='notice.pdf',
+        content=PDF_BYTES,
+        content_type='application/octet-stream',
+    )
+
+    response = authenticated_client.get(reverse('documents:stream', args=[document.pk]))
+
+    assert response.status_code == 200
+    assert response.headers['Content-Disposition'].startswith('inline;')
+    assert 'X-Frame-Options' not in response.headers
+    assert document.is_previewable is True
+
+
+@pytest.mark.django_db
 def test_document_preview_html_stays_sameorigin(authenticated_client, admin_user, settings, tmp_path):
     document = _create_document(
         admin_user=admin_user,

@@ -172,7 +172,7 @@
             Votre navigateur ne supporte pas la lecture vidéo.
         </video>
 
-    {% elif document.file_type == 'application/pdf' %}
+    {% elif document.is_pdf %}
         <iframe src="{% url 'documents:stream' document.pk %}" title="{{ document.title }}"></iframe>
 
     {% else %}

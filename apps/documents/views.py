@@ -236,7 +236,7 @@ def document_stream(request, pk):
 
     return _apply_document_frame_policy(
         response,
-        allow_inline_pdf=content_type == 'application/pdf',
+        allow_inline_pdf=doc.is_pdf or content_type.startswith('application/pdf'),
     )
 
 
