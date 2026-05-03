@@ -262,6 +262,59 @@
 {% endif %}
 
 <!-- ============================================================
+     ACTUALITÉS
+     ============================================================ -->
+{% if featured_articles %}
+<section class="py-5 bg-light section-slab section-slab--news">
+    <div class="container">
+        <div class="premium-header reveal-section">
+            <span class="overline">Dernières nouvelles</span>
+            <h2>Actualités</h2>
+            <p class="header-desc">Restez informé de la vie et des projets de notre communauté.</p>
+            <div class="header-divider"></div>
+        </div>
+
+        <div class="row g-4 stagger-children">
+            {% for article in featured_articles %}
+            <div class="col-md-4">
+                <div class="article-card-premium">
+                    {% if article.featured_image %}
+                    <div class="article-img-wrapper">
+                        <img src="{{ article.featured_image.url }}" alt="{{ article.title }}" loading="lazy">
+                    </div>
+                    {% else %}
+                    <div class="article-img-wrapper">
+                        <div class="article-img-placeholder">
+                            <i class="bi bi-newspaper text-white article-placeholder-icon"></i>
+                        </div>
+                    </div>
+                    {% endif %}
+                    <div class="article-body">
+                        <div class="mb-2">
+                            <span class="badge rounded-pill article-category-badge">{{ article.get_category_display }}</span>
+                            <small class="text-muted ms-2">{{ article.publish_date|date:"d M Y" }}</small>
+                        </div>
+                        <h5 class="fw-bold mb-2">{{ article.title }}</h5>
+                        <p class="text-muted mb-3">{{ article.excerpt|truncatewords:15 }}</p>
+                        <a href="{% url 'public:news_detail' article.slug %}" class="btn btn-outline-primary rounded-pill w-100">
+                            Lire la suite <i class="bi bi-arrow-right ms-1"></i>
+                        </a>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+
+        <div class="text-center mt-5 reveal-section">
+            <a href="{% url 'public:news_list' %}" class="btn btn-primary btn-lg rounded-pill px-5 section-gradient-button">
+                Toutes les actualités <i class="bi bi-arrow-right ms-2"></i>
+            </a>
+        </div>
+    </div>
+</section>
+{% endif %}
+
+<!-- ============================================================
      PARCOURS BIBLIQUE IMMERSIF
      ============================================================ -->
 <section class="bible-journey-section">
@@ -538,71 +591,6 @@
                     </div>
                 </article>
             </div>
-        </div>
-    </div>
-</section>
-
-<!-- ============================================================
-     ACTUALITÉS
-     ============================================================ -->
-<section class="py-5 bg-light section-slab section-slab--news">
-    <div class="container">
-        <div class="premium-header reveal-section">
-            <span class="overline">Dernières nouvelles</span>
-            <h2>Actualités</h2>
-            <p class="header-desc">Restez informé de la vie et des projets de notre communauté.</p>
-            <div class="header-divider"></div>
-        </div>
-
-        {% if featured_articles %}
-        <div class="row g-4 stagger-children">
-            {% for article in featured_articles %}
-            <div class="col-md-4">
-                <div class="article-card-premium">
-                    {% if article.featured_image %}
-                    <div class="article-img-wrapper">
-                        <img src="{{ article.featured_image.url }}" alt="{{ article.title }}" loading="lazy">
-                    </div>
-                    {% else %}
-                    <div class="article-img-wrapper">
-                        <div class="article-img-placeholder">
-                            <i class="bi bi-newspaper text-white article-placeholder-icon"></i>
-                        </div>
-                    </div>
-                    {% endif %}
-                    <div class="article-body">
-                        <div class="mb-2">
-                            <span class="badge rounded-pill article-category-badge">{{ article.get_category_display }}</span>
-                            <small class="text-muted ms-2">{{ article.publish_date|date:"d M Y" }}</small>
-                        </div>
-                        <h5 class="fw-bold mb-2">{{ article.title }}</h5>
-                        <p class="text-muted mb-3">{{ article.excerpt|truncatewords:15 }}</p>
-                        <a href="{% url 'public:news_detail' article.slug %}" class="btn btn-outline-primary rounded-pill w-100">
-                            Lire la suite <i class="bi bi-arrow-right ms-1"></i>
-                        </a>
-                    </div>
-                </div>
-            </div>
-            {% endfor %}
-        </div>
-        {% else %}
-        <div class="row justify-content-center">
-            <div class="col-md-8 text-center py-5">
-                <div class="article-empty-state">
-                    <div class="article-empty-icon">
-                        <i class="bi bi-newspaper"></i>
-                    </div>
-                    <h5 class="fw-semibold mt-4 mb-2">Aucune actualité pour le moment</h5>
-                    <p class="text-muted mb-0">Revenez bientôt pour découvrir les dernières nouvelles de notre communauté.</p>
-                </div>
-            </div>
-        </div>
-        {% endif %}
-
-        <div class="text-center mt-5 reveal-section">
-            <a href="{% url 'public:news_list' %}" class="btn btn-primary btn-lg rounded-pill px-5 section-gradient-button">
-                Toutes les actualités <i class="bi bi-arrow-right ms-2"></i>
-            </a>
         </div>
     </div>
 </section>
