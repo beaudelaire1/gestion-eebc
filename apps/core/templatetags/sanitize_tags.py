@@ -1,6 +1,7 @@
 """Filtres template pour la sanitisation de contenu HTML."""
 import nh3
 from django import template
+from django.utils.safestring import mark_safe
 
 register = template.Library()
 
@@ -19,14 +20,14 @@ ALLOWED_ATTRIBUTES = {
 }
 
 
-@register.filter(name='sanitize')
+@register.filter(name='sanitize', is_safe=True)
 def sanitize_html(value):
     """Nettoie le HTML en ne gardant que les tags/attributs autorisés."""
     if not value:
         return ''
-    return nh3.clean(
+    return mark_safe(nh3.clean(
         str(value),
         tags=ALLOWED_TAGS,
         attributes=ALLOWED_ATTRIBUTES,
         link_rel='noopener noreferrer',
-    )
+    ))
