@@ -4,7 +4,7 @@
  * Gère le cache et le mode offline
  */
 
-const CACHE_NAME = 'eebc-cache-v3';
+const CACHE_NAME = 'eebc-cache-v4';
 const OFFLINE_URL = '/offline/';
 
 // Ressources à mettre en cache immédiatement
@@ -46,7 +46,20 @@ self.addEventListener('activate', event => {
                         return caches.delete(cacheName);
                     })
             );
-        }).then(() => self.clients.claim())
+        })
+        .then(() => self.clients.claim())
+        .then(() => self.clients.matchAll({ type: 'window', includeUncontrolled: true }))
+        .then(clients => {
+            return Promise.all(clients.map(client => {
+                const clientUrl = new URL(client.url);
+                if (clientUrl.pathname.startsWith('/admin/') ||
+                    clientUrl.pathname.startsWith('/app/') ||
+                    clientUrl.pathname.includes('/api/')) {
+                    return Promise.resolve();
+                }
+                return client.navigate(client.url);
+            }));
+        })
     );
 });
 
@@ -67,7 +80,7 @@ self.addEventListener('fetch', event => {
 
     if (event.request.headers.get('accept')?.includes('text/html')) {
         event.respondWith(
-            fetch(event.request)
+            fetch(event.request, { cache: 'no-store' })
                 .then(response => {
                     if (response && response.status === 200 && response.type === 'basic') {
                         const responseToCache = response.clone();
