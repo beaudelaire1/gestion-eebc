@@ -377,6 +377,11 @@
                         <i class="bi bi-clock nav-link__icon"></i>
                         <span>Horaires</span>
                     </a>
+                    <a class="nav-link {% if 'cms/events' in request.path %}nav-link--active{% endif %}"
+                        href="{% url 'public_cms:event_list' %}">
+                        <i class="bi bi-calendar-event nav-link__icon"></i>
+                        <span>Événements</span>
+                    </a>
                 </nav>
             </div>
 

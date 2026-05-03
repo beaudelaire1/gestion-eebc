@@ -1,6 +1,6 @@
 from django import forms
 from django.utils.html import escape
-from apps.core.models import NewsArticle, PageContent, Testimony, WorshipSchedule, ContactMessage
+from apps.core.models import NewsArticle, PageContent, Testimony, WorshipSchedule, ContactMessage, PublicEvent
 
 class NewsArticleForm(forms.ModelForm):
     class Meta:
@@ -69,4 +69,21 @@ class WorshipScheduleForm(forms.ModelForm):
             'start_time': forms.TimeInput(attrs={'type': 'time'}),
             'end_time': forms.TimeInput(attrs={'type': 'time'}),
             'description': forms.Textarea(attrs={'rows': 3}),
+        }
+
+class PublicEventForm(forms.ModelForm):
+    class Meta:
+        model = PublicEvent
+        fields = [
+            'title', 'slug', 'description', 'start_date', 'start_time',
+            'end_date', 'end_time', 'location', 'address', 'site',
+            'image', 'is_published', 'is_featured', 'allow_registration',
+        ]
+        widgets = {
+            'description': forms.Textarea(attrs={'rows': 5, 'class': 'tinymce-editor'}),
+            'start_date': forms.DateInput(attrs={'type': 'date'}),
+            'end_date': forms.DateInput(attrs={'type': 'date'}),
+            'start_time': forms.TimeInput(attrs={'type': 'time'}),
+            'end_time': forms.TimeInput(attrs={'type': 'time'}),
+            'address': forms.Textarea(attrs={'rows': 2}),
         }

@@ -28,3 +28,11 @@ urlpatterns = [
     path('schedules/<int:pk>/edit/', views.ScheduleUpdateView.as_view(), name='schedule_update'),
     path('schedules/<int:pk>/delete/', views.ScheduleDeleteView.as_view(), name='schedule_delete'),
 ]
+
+urlpatterns += [
+    # Public Events
+    path('events/', views.PublicEventListView.as_view(), name='event_list'),
+    path('events/create/', views.PublicEventCreateView.as_view(), name='event_create'),
+    path('events/<int:pk>/edit/', views.PublicEventUpdateView.as_view(), name='event_update'),
+    path('events/<int:pk>/delete/', views.PublicEventDeleteView.as_view(), name='event_delete'),
+]

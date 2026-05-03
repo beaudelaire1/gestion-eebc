@@ -4,8 +4,8 @@ from django.urls import reverse_lazy
 from django.contrib import messages
 from django.shortcuts import redirect
 
-from apps.core.models import NewsArticle, PageContent, Testimony, WorshipSchedule
-from .forms import NewsArticleForm, PageContentForm, TestimonyForm, WorshipScheduleForm
+from apps.core.models import NewsArticle, PageContent, Testimony, WorshipSchedule, PublicEvent
+from .forms import NewsArticleForm, PageContentForm, TestimonyForm, WorshipScheduleForm, PublicEventForm
 import logging
 
 logger = logging.getLogger(__name__)
@@ -139,3 +139,41 @@ class ScheduleDeleteView(CMSRoleRequiredMixin, DeleteView):
     model = WorshipSchedule
     template_name = 'public_cms/schedule_confirm_delete.html'
     success_url = reverse_lazy('public_cms:schedule_list')
+
+
+# ==================== PUBLIC EVENTS ====================
+class PublicEventListView(CMSRoleRequiredMixin, ListView):
+    model = PublicEvent
+    template_name = 'public_cms/event_list.html'
+    context_object_name = 'events'
+    paginate_by = 20
+    ordering = ['start_date']
+
+class PublicEventCreateView(CMSRoleRequiredMixin, CreateView):
+    model = PublicEvent
+    form_class = PublicEventForm
+    template_name = 'public_cms/event_form.html'
+    success_url = reverse_lazy('public_cms:event_list')
+
+    def form_valid(self, form):
+        messages.success(self.request, "Événement créé avec succès.")
+        return super().form_valid(form)
+
+class PublicEventUpdateView(CMSRoleRequiredMixin, UpdateView):
+    model = PublicEvent
+    form_class = PublicEventForm
+    template_name = 'public_cms/event_form.html'
+    success_url = reverse_lazy('public_cms:event_list')
+
+    def form_valid(self, form):
+        messages.success(self.request, "Événement mis à jour.")
+        return super().form_valid(form)
+
+class PublicEventDeleteView(CMSRoleRequiredMixin, DeleteView):
+    model = PublicEvent
+    template_name = 'public_cms/event_confirm_delete.html'
+    success_url = reverse_lazy('public_cms:event_list')
+
+    def delete(self, request, *args, **kwargs):
+        messages.success(self.request, "Événement supprimé.")
+        return super().delete(request, *args, **kwargs)
