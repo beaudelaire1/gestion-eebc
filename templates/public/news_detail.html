@@ -4,106 +4,6 @@
 {% block title %}{{ article.title }} - {{ settings.site_name|default:'EEBC' }}{% endblock %}
 {% block meta_description %}{{ article.excerpt|truncatewords:25 }}{% endblock %}
 
-{% block extra_css %}
-<style>
-a.share-btn {
-    display: inline-flex !important;
-    align-items: center;
-    gap: 0.35rem;
-    padding: 0.4rem 1rem;
-    border-radius: 6px;
-    border-width: 2px;
-    border-style: solid;
-    font-size: 0.875rem;
-    font-weight: 600;
-    text-decoration: none !important;
-    background: transparent;
-    transition: background 0.2s, color 0.2s;
-    opacity: 1 !important;
-    visibility: visible !important;
-}
-a.share-btn--facebook,
-a.share-btn--facebook .bi,
-a.share-btn--facebook span { color: #0A36FF !important; }
-a.share-btn--facebook { border-color: #0A36FF !important; }
-a.share-btn--facebook:hover,
-a.share-btn--facebook:hover .bi,
-a.share-btn--facebook:hover span { color: #fff !important; background: #0A36FF; }
-
-a.share-btn--whatsapp,
-a.share-btn--whatsapp .bi,
-a.share-btn--whatsapp span { color: #25D366 !important; }
-a.share-btn--whatsapp { border-color: #25D366 !important; }
-a.share-btn--whatsapp:hover,
-a.share-btn--whatsapp:hover .bi,
-a.share-btn--whatsapp:hover span { color: #fff !important; background: #25D366; }
-
-.news-detail-actions {
-    display: flex;
-    justify-content: flex-start;
-}
-
-.news-share {
-    display: block;
-    margin-top: 1.5rem;
-    padding: 1.25rem;
-    border: 1px solid #d7dee8;
-    border-radius: 8px;
-    background: #ffffff;
-}
-
-.news-share__label {
-    display: block;
-    margin-bottom: 0.75rem;
-    color: #4b5f73 !important;
-    font-weight: 500;
-}
-
-.news-share__links {
-    display: flex;
-    align-items: center;
-    gap: 0.75rem;
-    flex-wrap: wrap;
-}
-
-.news-share__link {
-    display: inline-flex !important;
-    align-items: center;
-    justify-content: center;
-    min-width: 120px;
-    padding: 0.6rem 1rem;
-    border: 2px solid #0A36FF;
-    border-radius: 6px;
-    color: #0A36FF !important;
-    font-weight: 700;
-    text-decoration: none !important;
-    background: #ffffff;
-}
-
-.news-share__link--whatsapp {
-    border-color: #168a43;
-    color: #168a43 !important;
-}
-
-.news-share__link:hover,
-.news-share__link:focus {
-    background: #0A36FF;
-    color: #ffffff !important;
-}
-
-.news-share__link--whatsapp:hover,
-.news-share__link--whatsapp:focus {
-    background: #168a43;
-    color: #ffffff !important;
-}
-
-@media (max-width: 767.98px) {
-    .news-share__links { align-items: stretch; flex-direction: column; }
-    .news-share__link { width: 100%; }
-}
-</style>
-{% endblock %}
-
 {% block content %}
 <article>
     <!-- Header -->
@@ -161,24 +61,20 @@ a.share-btn--whatsapp:hover span { color: #fff !important; background: #25D366; 
                         </a>
                     </div>
 
-                    <!-- Partage -->
-                    <div class="news-share" aria-label="Options de partage">
-                        <span class="news-share__label">Partager cette actualité :</span>
-                        <div class="news-share__links">
+                    <section class="mt-4 pt-4 border-top" aria-labelledby="article-share-title">
+                        <h2 id="article-share-title" class="h5 mb-3">Partager cette actualité</h2>
+                        <p class="mb-0">
                             <a href="https://www.facebook.com/sharer/sharer.php?u={{ request.build_absolute_uri }}"
                                target="_blank" rel="noopener noreferrer"
-                               class="news-share__link"
-                               aria-label="Partager sur Facebook">
-                                Facebook
+                               class="me-4">
+                                Partager sur Facebook
                             </a>
                             <a href="https://wa.me/?text={{ article.title|urlencode }} {{ request.build_absolute_uri }}"
-                               target="_blank" rel="noopener noreferrer"
-                               class="news-share__link news-share__link--whatsapp"
-                               aria-label="Partager sur WhatsApp">
-                                WhatsApp
+                               target="_blank" rel="noopener noreferrer">
+                                Partager sur WhatsApp
                             </a>
-                        </div>
-                    </div>
+                        </p>
+                    </section>
                 </div>
             </div>
         </div>
