@@ -4,7 +4,7 @@
  * Gère le cache et le mode offline
  */
 
-const CACHE_NAME = 'eebc-cache-v1';
+const CACHE_NAME = 'eebc-cache-v2';
 const OFFLINE_URL = '/offline/';
 
 // Ressources à mettre en cache immédiatement
