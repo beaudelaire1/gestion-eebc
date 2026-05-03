@@ -29,6 +29,10 @@
                             </div>
                             {{ form.excerpt|as_crispy_field }}
                             {{ form.content|as_crispy_field }}
+                            <div class="small text-muted mt-2">
+                                Astuce: vous pouvez publier une actualité courte avec seulement le résumé.
+                                Le contenu sera généré automatiquement si le champ contenu est laissé vide.
+                            </div>
                         </div>
 
                         <div class="col-md-4">
@@ -89,4 +93,5 @@
         }
     });
 </script>
+{% include 'includes/tinymce.html' with selector='.tinymce-editor' %}
 {% endblock %}

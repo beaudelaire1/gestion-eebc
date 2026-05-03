@@ -1,4 +1,5 @@
 from django import forms
+from django.utils.html import escape
 from apps.core.models import NewsArticle, PageContent, Testimony, WorshipSchedule, ContactMessage
 
 class NewsArticleForm(forms.ModelForm):
@@ -10,11 +11,28 @@ class NewsArticleForm(forms.ModelForm):
             'is_featured', 'publish_date', 'display_start_date', 'display_end_date'
         ]
         widgets = {
-            'content': forms.Textarea(attrs={'rows': 10}),
+            'content': forms.Textarea(attrs={'rows': 10, 'class': 'tinymce-editor'}),
             'publish_date': forms.DateTimeInput(attrs={'type': 'datetime-local'}),
             'display_start_date': forms.DateInput(attrs={'type': 'date'}),
             'display_end_date': forms.DateInput(attrs={'type': 'date'}),
         }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields['content'].required = False
+        self.fields['content'].help_text = (
+            "Optionnel pour une actualité courte : si vide, le résumé sera utilisé automatiquement."
+        )
+
+    def clean_content(self):
+        if content := (self.cleaned_data.get('content') or '').strip():
+            return content
+
+        if excerpt := (self.cleaned_data.get('excerpt') or '').strip():
+            safe_excerpt = escape(excerpt).replace('\n', '<br>')
+            return f'<p>{safe_excerpt}</p>'
+
+        raise forms.ValidationError("Le contenu ou le résumé est requis.")
 
 class PageContentForm(forms.ModelForm):
     class Meta:
