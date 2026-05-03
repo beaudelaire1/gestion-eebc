@@ -37,6 +37,43 @@ a.share-btn--whatsapp { border-color: #25D366 !important; }
 a.share-btn--whatsapp:hover,
 a.share-btn--whatsapp:hover .bi,
 a.share-btn--whatsapp:hover span { color: #fff !important; background: #25D366; }
+
+.news-detail-actions {
+    display: flex;
+    justify-content: space-between;
+    gap: 1rem;
+    flex-wrap: wrap;
+}
+
+.news-share {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+}
+
+.news-share__label {
+    color: #4b5f73 !important;
+    font-weight: 500;
+}
+
+.news-share__link {
+    color: #0A36FF !important;
+    font-weight: 700;
+    text-decoration: underline;
+    text-underline-offset: 0.2em;
+}
+
+.news-share__link--whatsapp {
+    color: #168a43 !important;
+}
+
+@media (max-width: 767.98px) {
+    .news-detail-actions {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+}
 </style>
 {% endblock %}
 
@@ -91,25 +128,25 @@ a.share-btn--whatsapp:hover span { color: #fff !important; background: #25D366; 
                     <hr class="my-5">
                     
                     <!-- Navigation -->
-                    <div class="d-flex justify-content-between">
+                    <div class="news-detail-actions">
                         <a href="{% url 'public:news_list' %}" class="btn btn-outline-primary">
                             <i class="bi bi-arrow-left me-2"></i>Retour aux actualités
                         </a>
                         
                         <!-- Partage -->
-                        <div class="d-flex align-items-center gap-2 flex-wrap">
-                            <span class="text-muted me-1">Partager :</span>
+                        <div class="news-share">
+                            <span class="news-share__label">Partager :</span>
                             <a href="https://www.facebook.com/sharer/sharer.php?u={{ request.build_absolute_uri }}"
                                target="_blank" rel="noopener noreferrer"
-                               class="share-btn share-btn--facebook"
+                               class="news-share__link"
                                aria-label="Partager sur Facebook">
-                                <i class="bi bi-facebook"></i><span>Facebook</span>
+                                Facebook
                             </a>
                             <a href="https://wa.me/?text={{ article.title|urlencode }} {{ request.build_absolute_uri }}"
                                target="_blank" rel="noopener noreferrer"
-                               class="share-btn share-btn--whatsapp"
+                               class="news-share__link news-share__link--whatsapp"
                                aria-label="Partager sur WhatsApp">
-                                <i class="bi bi-whatsapp"></i><span>WhatsApp</span>
+                                WhatsApp
                             </a>
                         </div>
                     </div>
