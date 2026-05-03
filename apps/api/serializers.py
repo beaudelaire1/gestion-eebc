@@ -3,6 +3,7 @@ Serializers for the EEBC Mobile API.
 """
 from django.contrib.auth import get_user_model
 from django.conf import settings
+from django.templatetags.static import static
 from django.utils import timezone
 from rest_framework import serializers
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
@@ -24,6 +25,11 @@ from apps.core.models import (
 )
 
 User = get_user_model()
+PUBLIC_LOGO_STATIC_PATH = 'images/eebc-logo.png'
+
+
+def _absolute_url(request, url):
+    return request.build_absolute_uri(url) if request else url
 
 
 # =============================================================================
@@ -523,10 +529,7 @@ class PublicSettingsSerializer(serializers.ModelSerializer):
 
     def get_logo_url(self, obj):
         request = self.context.get('request')
-        if obj.logo:
-            url = obj.logo.url
-            return request.build_absolute_uri(url) if request else url
-        return None
+        return _absolute_url(request, static(PUBLIC_LOGO_STATIC_PATH))
 
     def get_favicon_url(self, obj):
         request = self.context.get('request')

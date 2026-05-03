@@ -348,11 +348,7 @@
     <nav class="navbar navbar-expand-lg navbar-light bg-white sticky-top" role="navigation" aria-label="Navigation principale">
         <div class="container">
             <a class="navbar-brand text-primary" href="{% url 'public:home' %}">
-                {% if settings.logo %}
-                    <img src="{{ settings.logo.url }}" alt="{{ settings.site_name }}" height="40">
-                {% else %}
-                    <i class="bi bi-church me-2"></i>{{ settings.site_name|default:'EEBC' }}
-                {% endif %}
+                <img src="{% static 'images/eebc-logo.png' %}" alt="{{ settings.site_name|default:'EEBC' }}" height="40">
             </a>
             
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">

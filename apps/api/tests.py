@@ -602,6 +602,7 @@ class PublicApiTests(APITestCase):
         response = self.client.get(reverse('api:public_settings'))
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertTrue(response.data['success'])
+        self.assertTrue(response.data['data']['logo_url'].endswith('/static/images/eebc-logo.png'))
 
     def test_public_meta(self):
         response = self.client.get(reverse('api:public_meta'))
