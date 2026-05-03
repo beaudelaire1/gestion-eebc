@@ -1961,6 +1961,33 @@
 
 .article-card-premium .article-body p { flex: 1; }
 
+/* État vide – section Actualités */
+.article-empty-state {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 2.5rem 2rem;
+    border-radius: 20px;
+    background: linear-gradient(135deg, rgba(10,54,255,.04), rgba(10,54,255,.08));
+    border: 1.5px dashed rgba(10,54,255,.18);
+}
+
+.article-empty-icon {
+    width: 80px;
+    height: 80px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, rgba(10,54,255,.10), rgba(10,54,255,.18));
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.article-empty-icon i {
+    font-size: 2.2rem;
+    color: var(--public-primary, #0A36FF);
+    opacity: .7;
+}
+
 /* =============================================
    CTA PREMIUM
    ============================================= */
