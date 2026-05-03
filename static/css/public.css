@@ -385,6 +385,69 @@
 .activity-item:nth-child(5) { animation-delay: 0.5s; }
 .activity-item:nth-child(6) { animation-delay: 0.6s; }
 
+/* =============================================================================
+   BOUTONS DE PARTAGE - résistants aux overrides globaux du thème
+   ============================================================================= */
+
+a.share-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    padding: 0.4rem 1rem;
+    border-radius: 6px;
+    border-width: 2px;
+    border-style: solid;
+    font-size: 0.875rem;
+    font-weight: 600;
+    text-decoration: none !important;
+    background: transparent;
+    transition: background 0.2s, color 0.2s;
+}
+
+a.share-btn--facebook {
+    border-color: #0A36FF;
+    color: #0A36FF !important;
+}
+
+a.share-btn--facebook .bi,
+a.share-btn--facebook span {
+    color: #0A36FF !important;
+}
+
+a.share-btn--facebook:hover {
+    background: #0A36FF;
+    color: #fff !important;
+}
+
+a.share-btn--facebook:hover .bi,
+a.share-btn--facebook:hover span {
+    color: #fff !important;
+}
+
+a.share-btn--whatsapp {
+    border-color: #25D366;
+    color: #25D366 !important;
+}
+
+a.share-btn--whatsapp .bi,
+a.share-btn--whatsapp span {
+    color: #25D366 !important;
+}
+
+a.share-btn--whatsapp:hover {
+    background: #25D366;
+    color: #fff !important;
+}
+
+a.share-btn--whatsapp:hover .bi,
+a.share-btn--whatsapp:hover span {
+    color: #fff !important;
+}
+
+/* =============================================================================
+   FIN BOUTONS DE PARTAGE
+   ============================================================================= */
+
 @keyframes slideInUp {
     from {
         opacity: 0;

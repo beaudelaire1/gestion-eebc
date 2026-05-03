@@ -61,21 +61,19 @@
                         </a>
                         
                         <!-- Partage -->
-                        <div style="display:flex; align-items:center; gap:0.5rem; flex-wrap:wrap;">
-                            <span style="color:#6c757d; font-size:0.9rem;">Partager :</span>
+                        <div class="d-flex align-items-center gap-2 flex-wrap">
+                            <span class="text-muted me-1">Partager :</span>
                             <a href="https://www.facebook.com/sharer/sharer.php?u={{ request.build_absolute_uri }}"
                                target="_blank" rel="noopener noreferrer"
-                               aria-label="Partager sur Facebook"
-                               style="display:inline-flex; align-items:center; gap:0.35rem; padding:0.4rem 0.9rem; border-radius:6px; border:2px solid #0A36FF; color:#0A36FF; background:transparent; font-size:0.875rem; font-weight:600; text-decoration:none; transition:all .2s;">
-                                <i class="bi bi-facebook" style="color:#0A36FF; font-size:1rem;"></i>
-                                <span style="color:#0A36FF;">Facebook</span>
+                               class="share-btn share-btn--facebook"
+                               aria-label="Partager sur Facebook">
+                                <i class="bi bi-facebook"></i><span>Facebook</span>
                             </a>
                             <a href="https://wa.me/?text={{ article.title|urlencode }} {{ request.build_absolute_uri }}"
                                target="_blank" rel="noopener noreferrer"
-                               aria-label="Partager sur WhatsApp"
-                               style="display:inline-flex; align-items:center; gap:0.35rem; padding:0.4rem 0.9rem; border-radius:6px; border:2px solid #25D366; color:#25D366; background:transparent; font-size:0.875rem; font-weight:600; text-decoration:none; transition:all .2s;">
-                                <i class="bi bi-whatsapp" style="color:#25D366; font-size:1rem;"></i>
-                                <span style="color:#25D366;">WhatsApp</span>
+                               class="share-btn share-btn--whatsapp"
+                               aria-label="Partager sur WhatsApp">
+                                <i class="bi bi-whatsapp"></i><span>WhatsApp</span>
                             </a>
                         </div>
                     </div>
