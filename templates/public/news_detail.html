@@ -4,6 +4,42 @@
 {% block title %}{{ article.title }} - {{ settings.site_name|default:'EEBC' }}{% endblock %}
 {% block meta_description %}{{ article.excerpt|truncatewords:25 }}{% endblock %}
 
+{% block extra_css %}
+<style>
+a.share-btn {
+    display: inline-flex !important;
+    align-items: center;
+    gap: 0.35rem;
+    padding: 0.4rem 1rem;
+    border-radius: 6px;
+    border-width: 2px;
+    border-style: solid;
+    font-size: 0.875rem;
+    font-weight: 600;
+    text-decoration: none !important;
+    background: transparent;
+    transition: background 0.2s, color 0.2s;
+    opacity: 1 !important;
+    visibility: visible !important;
+}
+a.share-btn--facebook,
+a.share-btn--facebook .bi,
+a.share-btn--facebook span { color: #0A36FF !important; }
+a.share-btn--facebook { border-color: #0A36FF !important; }
+a.share-btn--facebook:hover,
+a.share-btn--facebook:hover .bi,
+a.share-btn--facebook:hover span { color: #fff !important; background: #0A36FF; }
+
+a.share-btn--whatsapp,
+a.share-btn--whatsapp .bi,
+a.share-btn--whatsapp span { color: #25D366 !important; }
+a.share-btn--whatsapp { border-color: #25D366 !important; }
+a.share-btn--whatsapp:hover,
+a.share-btn--whatsapp:hover .bi,
+a.share-btn--whatsapp:hover span { color: #fff !important; background: #25D366; }
+</style>
+{% endblock %}
+
 {% block content %}
 <article>
     <!-- Header -->
