@@ -8,15 +8,15 @@
 <article>
     <!-- Header -->
     {% if article.featured_image %}
-    <div style="background: linear-gradient(rgba(0,0,0,0.6), rgba(0,0,0,0.6)), url('{{ article.featured_image.url }}') center/cover; height: 400px;">
+    <div style="background: linear-gradient(rgba(0,0,0,0.72), rgba(0,0,0,0.72)), url('{{ article.featured_image.url }}') center/cover; height: 400px;">
         <div class="container h-100 d-flex align-items-end pb-5">
             <div class="text-white">
                 <span class="badge bg-primary mb-2">{{ article.get_category_display }}</span>
-                <h1 class="display-5 fw-bold">{{ article.title }}</h1>
-                <p class="lead mb-0">
+                <h1 class="display-5 fw-bold text-white">{{ article.title }}</h1>
+                <p class="lead mb-0 text-white">
                     <i class="bi bi-calendar me-2"></i>{{ article.publish_date|date:"d F Y" }}
                     {% if article.display_author %}
-                    <span class="ms-3"><i class="bi bi-person me-2"></i>{{ article.display_author }}</span>
+                    <span class="ms-3 text-white"><i class="bi bi-person me-2"></i>{{ article.display_author }}</span>
                     {% endif %}
                 </p>
             </div>
@@ -26,11 +26,11 @@
     <section class="hero-section py-5">
         <div class="container">
             <span class="badge bg-light text-primary mb-2">{{ article.get_category_display }}</span>
-            <h1 class="display-5 fw-bold">{{ article.title }}</h1>
-            <p class="lead mb-0">
+            <h1 class="display-5 fw-bold text-white">{{ article.title }}</h1>
+            <p class="lead mb-0 text-white">
                 <i class="bi bi-calendar me-2"></i>{{ article.publish_date|date:"d F Y" }}
                 {% if article.display_author %}
-                <span class="ms-3"><i class="bi bi-person me-2"></i>{{ article.display_author }}</span>
+                <span class="ms-3 text-white"><i class="bi bi-person me-2"></i>{{ article.display_author }}</span>
                 {% endif %}
             </p>
         </div>
@@ -61,15 +61,19 @@
                         </a>
                         
                         <!-- Partage -->
-                        <div>
+                        <div class="d-flex align-items-center gap-2 flex-wrap">
                             <span class="text-muted me-2">Partager :</span>
                             <a href="https://www.facebook.com/sharer/sharer.php?u={{ request.build_absolute_uri }}" 
-                               target="_blank" class="btn btn-outline-primary btn-sm">
-                                <i class="bi bi-facebook"></i>
+                               target="_blank" rel="noopener noreferrer"
+                               class="btn btn-outline-primary btn-sm d-inline-flex align-items-center gap-1"
+                               aria-label="Partager sur Facebook">
+                                <i class="bi bi-facebook"></i><span>Facebook</span>
                             </a>
                             <a href="https://wa.me/?text={{ article.title }} {{ request.build_absolute_uri }}" 
-                               target="_blank" class="btn btn-outline-success btn-sm">
-                                <i class="bi bi-whatsapp"></i>
+                               target="_blank" rel="noopener noreferrer"
+                               class="btn btn-outline-success btn-sm d-inline-flex align-items-center gap-1"
+                               aria-label="Partager sur WhatsApp">
+                                <i class="bi bi-whatsapp"></i><span>WhatsApp</span>
                             </a>
                         </div>
                     </div>
