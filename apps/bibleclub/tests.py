@@ -3,9 +3,11 @@ Tests pour l'app bibleclub — modèles, validations.
 """
 import pytest
 from datetime import date, timedelta
+from django.contrib.auth import get_user_model
 from django.core.exceptions import ValidationError
+from django.urls import reverse
 
-from apps.bibleclub.models import AgeGroup, BibleClass, Child, Session, Attendance
+from apps.bibleclub.models import AgeGroup, BibleClass, Child, Session, Attendance, Monitor
 
 
 # =============================================================================
@@ -39,6 +41,38 @@ class TestBibleClass:
         ag = AgeGroup.objects.create(name='Grands', min_age=11, max_age=14)
         bc = BibleClass.objects.create(age_group=ag, room='Salle B')
         assert bc.children_count == 0
+
+
+@pytest.mark.django_db
+class TestBibleClassViews:
+
+    def test_create_class_from_view(self, authenticated_client):
+        ag = AgeGroup.objects.create(name='Primaires', min_age=6, max_age=8)
+
+        response = authenticated_client.post(reverse('bibleclub:bible_class_create'), {
+            'age_group': ag.pk,
+            'room': 'Salle B',
+            'max_capacity': '20',
+        })
+
+        bible_class = BibleClass.objects.get(age_group=ag, room='Salle B')
+        assert response.status_code == 302
+        assert bible_class.max_capacity == 20
+
+    def test_add_multiple_monitors_to_class(self, authenticated_client):
+        User = get_user_model()
+        ag = AgeGroup.objects.create(name='Ados', min_age=12, max_age=15)
+        bible_class = BibleClass.objects.create(age_group=ag, room='Salle C')
+        user_one = User.objects.create_user(username='monitor_one', password='password123')
+        user_two = User.objects.create_user(username='monitor_two', password='password123')
+
+        response = authenticated_client.post(reverse('bibleclub:class_add_monitors', args=[bible_class.pk]), {
+            'users': [user_one.pk, user_two.pk],
+            'role': 'moniteur',
+        })
+
+        assert response.status_code == 302
+        assert Monitor.objects.filter(bible_class=bible_class).count() == 2
 
 
 @pytest.mark.django_db

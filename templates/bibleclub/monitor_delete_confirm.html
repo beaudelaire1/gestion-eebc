@@ -26,10 +26,9 @@
                             <h6 class="card-title">{{ monitor.user.get_full_name }}</h6>
                             <p class="card-text">
                                 <i class="fas fa-envelope"></i> {{ monitor.user.email }}<br>
-                                <i class="fas fa-user-tag"></i> {{ monitor.role|capfirst }}<br>
+                                <i class="fas fa-user-tag"></i> {{ monitor.role_label }}<br>
                                 {% if monitor.bible_class %}
-                                    <i class="fas fa-chalkboard-teacher"></i> Classe : {{ monitor.bible_class.name }}
-                                    {% if monitor.bible_class.age_group %} ({{ monitor.bible_class.age_group.name }}){% endif %}
+                                    <i class="fas fa-chalkboard-teacher"></i> Classe : {{ monitor.bible_class }}
                                 {% else %}
                                     <i class="fas fa-chalkboard-teacher"></i> Aucune classe assignée
                                 {% endif %}

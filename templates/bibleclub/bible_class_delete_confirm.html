@@ -1,7 +1,7 @@
 {% extends 'base.html' %}
 {% load static %}
 
-{% block title %}Supprimer la classe {{ bible_class.name }}{% endblock %}
+{% block title %}Supprimer la classe {{ bible_class }}{% endblock %}
 
 {% block content %}
 <div class="container-fluid">
@@ -19,7 +19,7 @@
                         <strong>Attention !</strong> Cette action marquera la classe comme inactive.
                     </div>
 
-                    <p>Êtes-vous sûr de vouloir supprimer la classe <strong>"{{ bible_class.name }}"</strong> ?</p>
+                    <p>Êtes-vous sûr de vouloir supprimer la classe <strong>"{{ bible_class }}"</strong> ?</p>
 
                     {% if children_count > 0 or monitors_count > 0 %}
                         <div class="alert alert-info">
@@ -51,8 +51,7 @@
                                             <option value="">Choisir une classe...</option>
                                             {% for other_class in other_classes %}
                                                 <option value="{{ other_class.pk }}">
-                                                    {{ other_class.name }}
-                                                    {% if other_class.age_group %} - {{ other_class.age_group.name }}{% endif %}
+                                                    {{ other_class }}
                                                 </option>
                                             {% endfor %}
                                         </select>

@@ -96,6 +96,14 @@ class Monitor(models.Model):
         verbose_name = "Moniteur"
         verbose_name_plural = "Moniteurs"
         ordering = ['-is_lead', 'user__last_name']
+
+    @property
+    def role(self):
+        return 'responsable' if self.is_lead else 'moniteur'
+
+    @property
+    def role_label(self):
+        return 'Moniteur principal' if self.is_lead else 'Moniteur'
     
     def __str__(self):
         return self.user.get_full_name() or self.user.username

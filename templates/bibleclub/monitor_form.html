@@ -18,7 +18,7 @@
                         {% for message in messages %}
                             <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
                                 {{ message }}
-                                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Fermer"></button>
                             </div>
                         {% endfor %}
                     {% endif %}
@@ -58,8 +58,7 @@
                                 {% for bible_class in bible_classes %}
                                     <option value="{{ bible_class.pk }}" 
                                             {% if monitor.bible_class_id == bible_class.pk %}selected{% endif %}>
-                                        {{ bible_class.name }}
-                                        {% if bible_class.age_group %} - {{ bible_class.age_group.name }}{% endif %}
+                                        {{ bible_class }}
                                     </option>
                                 {% endfor %}
                             </select>

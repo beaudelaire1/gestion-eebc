@@ -18,7 +18,7 @@
                         {% for message in messages %}
                             <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
                                 {{ message }}
-                                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Fermer"></button>
                             </div>
                         {% endfor %}
                     {% endif %}
@@ -27,22 +27,9 @@
                         {% csrf_token %}
                         
                         <div class="mb-3">
-                            <label for="name" class="form-label">Nom de la classe *</label>
-                            <input type="text" 
-                                   class="form-control" 
-                                   id="name" 
-                                   name="name" 
-                                   value="{{ bible_class.name|default:'' }}"
-                                   required
-                                   maxlength="100"
-                                   placeholder="Ex: Petits (3-6 ans), Moyens (7-10 ans)...">
-                            <div class="form-text">Le nom doit être unique.</div>
-                        </div>
-
-                        <div class="mb-3">
-                            <label for="age_group" class="form-label">Tranche d'âge</label>
-                            <select class="form-select" id="age_group" name="age_group">
-                                <option value="">Aucune tranche d'âge spécifique</option>
+                            <label for="age_group" class="form-label">Tranche d'âge *</label>
+                            <select class="form-select" id="age_group" name="age_group" required>
+                                <option value="">Choisir une tranche d'âge...</option>
                                 {% for age_group in age_groups %}
                                     <option value="{{ age_group.pk }}" 
                                             {% if bible_class.age_group_id == age_group.pk %}selected{% endif %}>
@@ -50,18 +37,19 @@
                                     </option>
                                 {% endfor %}
                             </select>
-                            <div class="form-text">Optionnel - Associer à une tranche d'âge prédéfinie.</div>
+                            <div class="form-text">La classe sera identifiée par sa tranche d'âge et sa salle.</div>
                         </div>
 
                         <div class="mb-3">
-                            <label for="description" class="form-label">Description</label>
-                            <textarea class="form-control" 
-                                      id="description" 
-                                      name="description" 
-                                      rows="3"
-                                      maxlength="500"
-                                      placeholder="Description de la classe, activités, objectifs...">{{ bible_class.description|default:'' }}</textarea>
-                            <div class="form-text">Optionnel - Maximum 500 caractères</div>
+                            <label for="room" class="form-label">Salle</label>
+                            <input type="text"
+                                   class="form-control"
+                                   id="room"
+                                   name="room"
+                                   value="{{ bible_class.room|default:'' }}"
+                                   maxlength="50"
+                                   placeholder="Ex: Salle B">
+                            <div class="form-text">Optionnel - Permet d'avoir plusieurs classes pour une même tranche d'âge.</div>
                         </div>
 
                         <div class="mb-3">
@@ -70,11 +58,11 @@
                                    class="form-control" 
                                    id="max_capacity" 
                                    name="max_capacity" 
-                                   value="{{ bible_class.max_capacity|default:'' }}"
+                                   value="{{ bible_class.max_capacity|default:15 }}"
                                    min="1"
                                    max="100"
                                    placeholder="Ex: 15">
-                            <div class="form-text">Optionnel - Nombre maximum d'enfants dans cette classe.</div>
+                            <div class="form-text">15 par défaut si le champ est laissé vide.</div>
                         </div>
 
                         {% if bible_class %}

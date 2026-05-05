@@ -21,7 +21,7 @@
                 {% for message in messages %}
                     <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
                         {{ message }}
-                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Fermer"></button>
                     </div>
                 {% endfor %}
             {% endif %}
@@ -106,18 +106,15 @@
                                             <td>
                                                 {% if monitor.bible_class %}
                                                     <span class="badge bg-primary">
-                                                        {{ monitor.bible_class.name }}
+                                                        {{ monitor.bible_class }}
                                                     </span>
-                                                    {% if monitor.bible_class.age_group %}
-                                                        <br><small class="text-muted">{{ monitor.bible_class.age_group.name }}</small>
-                                                    {% endif %}
                                                 {% else %}
                                                     <span class="text-muted">Aucune classe</span>
                                                 {% endif %}
                                             </td>
                                             <td>
                                                 <span class="badge bg-secondary">
-                                                    {{ monitor.role|capfirst }}
+                                                    {{ monitor.role_label }}
                                                 </span>
                                             </td>
                                             <td>

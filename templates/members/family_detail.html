@@ -92,7 +92,7 @@
                         {{ child.first_name }} {{ child.last_name }}
                     </span>
                     {% if child.bible_class %}
-                    <small class="badge bg-primary-subtle text-primary">{{ child.bible_class.name|default:child.bible_class }}</small>
+                    <small class="badge bg-primary-subtle text-primary">{{ child.bible_class }}</small>
                     {% endif %}
                 </li>
                 {% endfor %}

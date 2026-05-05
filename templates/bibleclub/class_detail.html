@@ -40,8 +40,13 @@
         
         <!-- Monitors -->
         <div class="card">
-            <div class="card-header">
-                <h6 class="card-title"><i class="bi bi-person-badge me-2"></i>Moniteurs</h6>
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h6 class="card-title mb-0"><i class="bi bi-person-badge me-2"></i>Moniteurs ({{ monitors|length }})</h6>
+                {% if is_admin %}
+                <a href="{% url 'bibleclub:class_add_monitors' bible_class.pk %}" class="btn btn-primary btn-sm">
+                    <i class="bi bi-person-plus me-1"></i>Ajouter
+                </a>
+                {% endif %}
             </div>
             <div class="card-body">
                 {% for monitor in monitors %}
@@ -49,13 +54,18 @@
                     <div class="avatar me-3" style="width: 40px; height: 40px;">
                         {{ monitor.user.first_name|slice:":1"|upper }}{{ monitor.user.last_name|slice:":1"|upper }}
                     </div>
-                    <div>
+                    <div class="flex-grow-1">
                         <div class="fw-semibold">{{ monitor }}</div>
                         <small class="text-muted">
                             {% if monitor.is_lead %}<span class="badge bg-primary">Principal</span>{% endif %}
                             {{ monitor.phone }}
                         </small>
                     </div>
+                    {% if is_admin %}
+                    <a href="{% url 'bibleclub:monitor_update' monitor.pk %}" class="btn btn-sm btn-outline-light" title="Modifier">
+                        <i class="bi bi-pencil"></i>
+                    </a>
+                    {% endif %}
                 </div>
                 {% empty %}
                 <p class="text-muted mb-0">Aucun moniteur assigné</p>
@@ -101,7 +111,7 @@
                                     <small class="text-muted">{{ child.parent1_phone }}</small>
                                 </td>
                                 <td class="text-end">
-                                    <a href="{% url 'bibleclub:child_detail' child.pk %}" class="btn btn-sm btn-outline-light">
+                                    <a href="{% url 'bibleclub:child_detail' child.pk %}" class="btn btn-sm btn-outline-light" title="Voir l'enfant">
                                         <i class="bi bi-eye"></i>
                                     </a>
                                 </td>

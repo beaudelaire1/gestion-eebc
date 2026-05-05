@@ -11,6 +11,7 @@ urlpatterns = [
     path('classes/', views.class_list, name='class_list'),
     path('classes/create/', views.bible_class_create, name='bible_class_create'),
     path('classes/<int:pk>/', views.class_detail, name='class_detail'),
+    path('classes/<int:pk>/monitors/add/', views.class_add_monitors, name='class_add_monitors'),
     path('classes/<int:pk>/edit/', views.bible_class_update, name='bible_class_update'),
     path('classes/<int:pk>/delete/', views.bible_class_delete, name='bible_class_delete'),
     
