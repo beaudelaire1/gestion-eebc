@@ -265,6 +265,7 @@ class ExcelImportService:
             'genre': 'gender', 'nom_pere': 'father_name', 'telephone_pere': 'father_phone',
             'email_pere': 'father_email', 'nom_mere': 'mother_name',
             'telephone_mere': 'mother_phone', 'email_mere': 'mother_email',
+            'adresse': 'address', 'ville': 'city', 'code_postal': 'postal_code',
             'contact_urgence': 'emergency_contact', 'telephone_urgence': 'emergency_phone',
             'allergies': 'allergies', 'notes_medicales': 'medical_notes',
             'besoin_transport': 'needs_transport', 'adresse_ramassage': 'pickup_address',
@@ -348,6 +349,10 @@ class ExcelImportService:
                             value = validate_phone(value)
                         except ValidationError:
                             row_warnings.append(f"Téléphone douteux: {value}")
+
+                # ── Code postal ──
+                elif model_field == 'postal_code':
+                    value = validate_postal_code(value)
                 
                 elif isinstance(value, str):
                     value = value.strip()
@@ -627,6 +632,9 @@ def generate_template_excel(import_type):
             'nom_mere': ['Anne Dupont', 'Marie Martin'],
             'telephone_mere': ['0694123457', '0694654322'],
             'email_mere': ['anne.dupont@email.com', 'marie.martin@email.com'],
+            'adresse': ['123 Rue de la Paix', '45 Avenue de l\'Église'],
+            'ville': ['Cayenne', 'Rémire-Montjoly'],
+            'code_postal': ['97300', '97354'],
             'contact_urgence': ['Grand-mère Dupont', 'Oncle Martin'],
             'telephone_urgence': ['0694123458', '0694654323'],
             'allergies': ['Aucune', 'Arachides'],
@@ -716,6 +724,9 @@ def export_children_to_excel():
             'nom_mere': child.mother_name or '',
             'telephone_mere': child.mother_phone or '',
             'email_mere': child.mother_email or '',
+            'adresse': child.address or '',
+            'ville': child.city or '',
+            'code_postal': child.postal_code or '',
             'contact_urgence': child.emergency_contact or '',
             'telephone_urgence': child.emergency_phone or '',
             'allergies': child.allergies or '',

@@ -38,6 +38,18 @@
                                 {% endfor %}
                             </select>
                             <div class="form-text">La classe sera identifiée par sa tranche d'âge et sa salle.</div>
+                            {% if not age_groups %}
+                                <div class="alert alert-warning mt-2 mb-0">
+                                    Aucune tranche d'âge configurée.
+                                    <a href="{% url 'bibleclub:age_group_create' %}">Créer une tranche d'âge</a>.
+                                </div>
+                            {% else %}
+                                <div class="mt-2">
+                                    <a href="{% url 'bibleclub:age_group_create' %}" class="btn btn-sm btn-outline-primary">
+                                        <i class="bi bi-plus-lg me-1"></i>Ajouter une tranche d'âge
+                                    </a>
+                                </div>
+                            {% endif %}
                         </div>
 
                         <div class="mb-3">

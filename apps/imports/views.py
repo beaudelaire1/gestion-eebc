@@ -214,6 +214,7 @@ def _get_column_descriptions(import_type):
             'Prénom de l\'enfant', 'Nom de famille', 'Date de naissance (JJ/MM/AAAA)',
             'Genre (M ou F)', 'Nom complet du père', 'Téléphone du père', 'Email du père',
             'Nom complet de la mère', 'Téléphone de la mère', 'Email de la mère',
+            'Adresse postale', 'Ville', 'Code postal',
             'Nom du contact d\'urgence', 'Téléphone d\'urgence', 'Allergies connues',
             'Notes médicales', 'Besoin de transport (oui/non)', 'Adresse de ramassage',
             'Notes diverses'
@@ -240,7 +241,7 @@ def _get_required_columns(import_type):
                    'Non', 'Non', 'Non', 'Non', 'Non', 'Non']
     elif import_type == 'children':
         required = ['Oui', 'Oui', 'Oui', 'Oui', 'Oui', 'Oui', 'Non', 'Non', 'Non', 'Non',
-                   'Non', 'Non', 'Non', 'Non', 'Non', 'Non', 'Non']
+                   'Non', 'Non', 'Non', 'Non', 'Non', 'Non', 'Non', 'Non', 'Non', 'Non']
     elif import_type == 'young_members':
         required = ['Oui', 'Oui', 'Oui', 'Non', 'Non', 'Non',
                    'Non', 'Non', 'Non',
@@ -266,8 +267,8 @@ def _get_column_formats(import_type):
     elif import_type == 'children':
         return [
             'Texte', 'Texte', 'JJ/MM/AAAA', 'M ou F', 'Texte', 'Téléphone', 'Email',
-            'Texte', 'Téléphone', 'Email', 'Texte', 'Téléphone', 'Texte', 'Texte',
-            'oui/non', 'Texte', 'Texte'
+            'Texte', 'Téléphone', 'Email', 'Texte', 'Texte', 'Texte',
+            'Texte', 'Téléphone', 'Texte', 'Texte', 'oui/non', 'Texte', 'Texte'
         ]
     elif import_type == 'young_members':
         return [

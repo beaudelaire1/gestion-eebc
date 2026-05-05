@@ -249,6 +249,44 @@
                     </div>
                 </div>
             </div>
+
+            <!-- Adresse postale -->
+            <div class="form-section">
+                <h3 class="form-section-title">
+                    <i class="bi bi-geo-alt-fill"></i>
+                    Adresse postale
+                </h3>
+
+                <div class="row g-3">
+                    <div class="col-md-12">
+                        <div class="form-floating">
+                            {{ form.address }}
+                            <label for="{{ form.address.id_for_label }}">{{ form.address.label }}</label>
+                        </div>
+                        {% if form.address.errors %}
+                        <div class="text-danger small mt-1">{{ form.address.errors.0 }}</div>
+                        {% endif %}
+                    </div>
+                    <div class="col-md-8">
+                        <div class="form-floating">
+                            {{ form.city }}
+                            <label for="{{ form.city.id_for_label }}">{{ form.city.label }}</label>
+                        </div>
+                        {% if form.city.errors %}
+                        <div class="text-danger small mt-1">{{ form.city.errors.0 }}</div>
+                        {% endif %}
+                    </div>
+                    <div class="col-md-4">
+                        <div class="form-floating">
+                            {{ form.postal_code }}
+                            <label for="{{ form.postal_code.id_for_label }}">{{ form.postal_code.label }}</label>
+                        </div>
+                        {% if form.postal_code.errors %}
+                        <div class="text-danger small mt-1">{{ form.postal_code.errors.0 }}</div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
             
             <!-- Contact d'urgence -->
             <div class="form-section">

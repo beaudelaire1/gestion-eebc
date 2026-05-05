@@ -162,6 +162,11 @@ class Child(models.Model):
     mother_name = models.CharField(max_length=200, blank=True, verbose_name="Nom de la mère")
     mother_phone = models.CharField(max_length=20, blank=True, verbose_name="Téléphone de la mère")
     mother_email = models.EmailField(blank=True, verbose_name="Email de la mère")
+
+    # Adresse postale
+    address = models.CharField(max_length=255, blank=True, verbose_name="Adresse postale")
+    city = models.CharField(max_length=100, blank=True, verbose_name="Ville")
+    postal_code = models.CharField(max_length=20, blank=True, verbose_name="Code postal")
     
     # Contact d'urgence
     emergency_contact = models.CharField(max_length=200, blank=True, verbose_name="Contact d'urgence")

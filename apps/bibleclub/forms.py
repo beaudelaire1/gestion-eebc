@@ -15,6 +15,7 @@ class ChildForm(forms.ModelForm):
             'first_name', 'last_name', 'date_of_birth', 'gender', 'photo',
             'bible_class', 'father_name', 'father_phone', 'father_email',
             'mother_name', 'mother_phone', 'mother_email',
+            'address', 'city', 'postal_code',
             'emergency_contact', 'emergency_phone', 'allergies', 'medical_notes',
             'needs_transport', 'pickup_address', 'assigned_driver', 'notes'
         ]
@@ -66,6 +67,18 @@ class ChildForm(forms.ModelForm):
                 'class': 'form-control',
                 'placeholder': 'email@exemple.com'
             }),
+            'address': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'Adresse postale complète'
+            }),
+            'city': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'Ville'
+            }),
+            'postal_code': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'Code postal'
+            }),
             'emergency_contact': forms.TextInput(attrs={
                 'class': 'form-control',
                 'placeholder': 'Nom du contact d\'urgence'
@@ -115,6 +128,9 @@ class ChildForm(forms.ModelForm):
             'mother_name': 'Nom de la mère',
             'mother_phone': 'Téléphone de la mère',
             'mother_email': 'Email de la mère',
+            'address': 'Adresse postale',
+            'city': 'Ville',
+            'postal_code': 'Code postal',
             'emergency_contact': 'Contact d\'urgence',
             'emergency_phone': 'Téléphone d\'urgence',
             'allergies': 'Allergies',

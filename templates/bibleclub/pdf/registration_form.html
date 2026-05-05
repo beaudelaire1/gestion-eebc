@@ -65,6 +65,15 @@
 </div>
 
 <div class="section">
+    <h2 class="section-heading">Adresse postale</h2>
+    <div class="field-grid">
+        <div class="field full"><div class="field-box"><div class="field-label">Adresse</div><div class="field-value">{{ child.address|default:"Non renseignee" }}</div></div></div>
+        <div class="field half"><div class="field-box"><div class="field-label">Ville</div><div class="field-value">{{ child.city|default:"Non renseignee" }}</div></div></div>
+        <div class="field half"><div class="field-box"><div class="field-label">Code postal</div><div class="field-value">{{ child.postal_code|default:"Non renseigne" }}</div></div></div>
+    </div>
+</div>
+
+<div class="section">
     <h2 class="section-heading">Contact d'urgence</h2>
     <div class="field-grid">
         <div class="field half"><div class="field-box"><div class="field-label">Contact d'urgence</div><div class="field-value">{{ child.emergency_contact|default:"Non renseigne" }}</div></div></div>

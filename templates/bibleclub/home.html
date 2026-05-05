@@ -82,6 +82,18 @@
         </a>
     </div>
     <div class="col-6 col-md-3">
+        <a href="{% url 'bibleclub:age_group_list' %}" class="quick-link">
+            <i class="bi bi-diagram-3"></i>
+            <span>Tranches d'âge</span>
+        </a>
+    </div>
+    <div class="col-6 col-md-3">
+        <a href="{% url 'bibleclub:bible_class_create' %}" class="quick-link">
+            <i class="bi bi-plus-square"></i>
+            <span>Nouvelle classe</span>
+        </a>
+    </div>
+    <div class="col-6 col-md-3">
         <a href="{% url 'bibleclub:child_create' %}" class="quick-link">
             <i class="bi bi-person-plus"></i>
             <span>Inscrire un enfant</span>
@@ -267,7 +279,7 @@
                     <div class="col-12 text-center py-4 text-muted">
                         {% if is_admin %}
                         <p>Aucune classe configurée</p>
-                        <a href="{% url 'admin:bibleclub_bibleclass_add' %}" class="btn btn-primary">Créer une classe</a>
+                        <a href="{% url 'bibleclub:bible_class_create' %}" class="btn btn-primary">Créer une classe</a>
                         {% else %}
                         <p>Vous n'êtes assigné à aucune classe</p>
                         {% endif %}

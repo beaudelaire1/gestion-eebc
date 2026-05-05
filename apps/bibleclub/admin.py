@@ -99,6 +99,10 @@ class ChildAdmin(admin.ModelAdmin):
             'fields': ('mother_name', 'mother_phone', 'mother_email'),
             'classes': ('collapse',)
         }),
+        ('Adresse postale', {
+            'fields': ('address', 'city', 'postal_code'),
+            'classes': ('collapse',)
+        }),
         ('Contact d\'urgence', {
             'fields': ('emergency_contact', 'emergency_phone'),
             'classes': ('collapse',)
