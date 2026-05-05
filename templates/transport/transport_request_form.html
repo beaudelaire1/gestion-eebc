@@ -94,13 +94,47 @@
                             {{ form.pickup_address.label }} <span class="text-danger">*</span>
                         </label>
                         {{ form.pickup_address }}
+                        {% if form.pickup_address.help_text %}
+                            <div class="form-text">{{ form.pickup_address.help_text }}</div>
+                        {% endif %}
                         {% if form.pickup_address.errors %}
                             <div class="invalid-feedback d-block">
                                 {{ form.pickup_address.errors.0 }}
                             </div>
                         {% endif %}
                     </div>
-                    
+
+                    <div class="row">
+                        <div class="col-md-8 mb-3">
+                            <label for="{{ form.pickup_city.id_for_label }}" class="form-label">
+                                {{ form.pickup_city.label }}
+                            </label>
+                            {{ form.pickup_city }}
+                            {% if form.pickup_city.help_text %}
+                                <div class="form-text">{{ form.pickup_city.help_text }}</div>
+                            {% endif %}
+                            {% if form.pickup_city.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {{ form.pickup_city.errors.0 }}
+                                </div>
+                            {% endif %}
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label for="{{ form.pickup_postal_code.id_for_label }}" class="form-label">
+                                {{ form.pickup_postal_code.label }}
+                            </label>
+                            {{ form.pickup_postal_code }}
+                            {% if form.pickup_postal_code.help_text %}
+                                <div class="form-text">{{ form.pickup_postal_code.help_text }}</div>
+                            {% endif %}
+                            {% if form.pickup_postal_code.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {{ form.pickup_postal_code.errors.0 }}
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+
                     <div class="row">
                         <div class="col-md-4 mb-3">
                             <label for="{{ form.event_date.id_for_label }}" class="form-label">

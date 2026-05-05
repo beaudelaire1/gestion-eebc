@@ -4,7 +4,7 @@
  * Gère le cache et le mode offline
  */
 
-const CACHE_NAME = 'eebc-cache-v4';
+const CACHE_NAME = 'eebc-cache-v5';
 const OFFLINE_URL = '/offline/';
 
 // Ressources à mettre en cache immédiatement
@@ -12,10 +12,12 @@ const PRECACHE_URLS = [
     '/',
     '/offline/',
     '/static/manifest.json',
-    'https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css',
-    'https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css',
-    'https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap',
-    'https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js',
+    '/static/vendor/bootstrap/bootstrap.min.css',
+    '/static/vendor/bootstrap/bootstrap.bundle.min.js',
+    '/static/vendor/bootstrap-icons/bootstrap-icons.css',
+    '/static/css/public.css',
+    '/static/css/luxe-design.css',
+    '/static/css/animated-verse-banner.css',
 ];
 
 // Installation du Service Worker
@@ -80,7 +82,7 @@ self.addEventListener('fetch', event => {
 
     if (event.request.headers.get('accept')?.includes('text/html')) {
         event.respondWith(
-            fetch(event.request, { cache: 'no-store' })
+            fetch(event.request)
                 .then(response => {
                     if (response && response.status === 200 && response.type === 'basic') {
                         const responseToCache = response.clone();

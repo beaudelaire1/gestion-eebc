@@ -50,7 +50,8 @@ class TransportRequestForm(forms.ModelForm):
         model = TransportRequest
         fields = [
             'request_type', 'requester_member',
-            'requester_name', 'requester_phone', 'requester_email', 'pickup_address',
+            'requester_name', 'requester_phone', 'requester_email',
+            'pickup_address', 'pickup_city', 'pickup_postal_code',
             'event_date', 'event_time', 'event_name', 'passengers_count',
             'notes'
         ]
@@ -60,12 +61,29 @@ class TransportRequestForm(forms.ModelForm):
             'requester_name': forms.TextInput(attrs={'class': 'form-control'}),
             'requester_phone': forms.TextInput(attrs={'class': 'form-control'}),
             'requester_email': forms.EmailInput(attrs={'class': 'form-control'}),
-            'pickup_address': forms.Textarea(attrs={'class': 'form-control', 'rows': 3}),
+            'pickup_address': forms.Textarea(attrs={
+                'class': 'form-control',
+                'rows': 3,
+                'placeholder': 'Ex. 12 rue Schoelcher, lieu-dit / quartier',
+            }),
+            'pickup_city': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'Ex. Cayenne',
+            }),
+            'pickup_postal_code': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'Ex. 97300',
+            }),
             'event_date': forms.DateInput(format='%Y-%m-%d', attrs={'class': 'form-control', 'type': 'date'}),
             'event_time': forms.TimeInput(attrs={'class': 'form-control', 'type': 'time'}),
             'event_name': forms.TextInput(attrs={'class': 'form-control'}),
             'passengers_count': forms.NumberInput(attrs={'class': 'form-control', 'min': '1', 'max': '20'}),
             'notes': forms.Textarea(attrs={'class': 'form-control', 'rows': 3}),
+        }
+        help_texts = {
+            'pickup_address': "Numéro, rue, lieu-dit ou quartier — sans la ville ni le code postal.",
+            'pickup_city': "Permet une localisation précise sur la carte.",
+            'pickup_postal_code': "Code postal de la prise en charge (ex. 97300).",
         }
 
     def __init__(self, *args, current_user=None, **kwargs):
@@ -93,6 +111,10 @@ class TransportRequestForm(forms.ModelForm):
                     self.initial['requester_email'] = member.email
                 if not self.initial.get('pickup_address') and member.address:
                     self.initial['pickup_address'] = member.address
+                if not self.initial.get('pickup_city') and getattr(member, 'city', ''):
+                    self.initial['pickup_city'] = member.city
+                if not self.initial.get('pickup_postal_code') and getattr(member, 'postal_code', ''):
+                    self.initial['pickup_postal_code'] = member.postal_code
                 if not self.initial.get('request_type'):
                     self.initial['request_type'] = TransportRequest.RequestType.COVOITURAGE
 

@@ -64,6 +64,10 @@ class TransportRequest(models.Model):
         COVOITURAGE = 'covoiturage', 'Covoiturage entre membres'
         AUTRE = 'autre', 'Autre'
 
+    class PickupLocationSource(models.TextChoices):
+        POSTAL_ADDRESS = 'postal_address', 'Adresse postale'
+        REQUESTER_GPS = 'requester_gps', 'GPS demandeur'
+
     # Lien optionnel vers un membre demandeur (covoiturage / transport membre)
     requester_member = models.ForeignKey(
         'members.Member',
@@ -86,6 +90,41 @@ class TransportRequest(models.Model):
     requester_phone = models.CharField(max_length=20, verbose_name="Téléphone")
     requester_email = models.EmailField(blank=True, verbose_name="Email du demandeur")
     pickup_address = models.TextField(verbose_name="Adresse de prise en charge")
+    pickup_city = models.CharField(
+        max_length=100,
+        blank=True,
+        verbose_name="Ville de prise en charge",
+    )
+    pickup_postal_code = models.CharField(
+        max_length=10,
+        blank=True,
+        verbose_name="Code postal de prise en charge",
+    )
+    pickup_latitude = models.DecimalField(
+        max_digits=9,
+        decimal_places=6,
+        null=True,
+        blank=True,
+        verbose_name="Latitude prise en charge",
+    )
+    pickup_longitude = models.DecimalField(
+        max_digits=9,
+        decimal_places=6,
+        null=True,
+        blank=True,
+        verbose_name="Longitude prise en charge",
+    )
+    pickup_location_source = models.CharField(
+        max_length=20,
+        choices=PickupLocationSource.choices,
+        default=PickupLocationSource.POSTAL_ADDRESS,
+        verbose_name="Source position prise en charge",
+    )
+    pickup_location_updated_at = models.DateTimeField(
+        null=True,
+        blank=True,
+        verbose_name="Position prise en charge mise à jour le",
+    )
     
     event_date = models.DateField(verbose_name="Date")
     event_time = models.TimeField(verbose_name="Heure")

@@ -3,6 +3,11 @@
 {% block title %}Inscription - {{ settings.site_name|default:'EEBC' }}{% endblock %}
 {% block meta_description %}Inscrivez-vous auprès de {{ settings.site_name|default:'EEBC' }} pour recevoir nos actualités et rejoindre notre communauté.{% endblock %}
 {% block og_title %}Inscription{% endblock %}
+{% block extra_head_js %}
+{% if turnstile_site_key %}
+<script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
+{% endif %}
+{% endblock %}
 
 {% block content %}
 <section class="hero-section py-5">

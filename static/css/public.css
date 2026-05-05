@@ -25,6 +25,16 @@
     --public-shadow-lg: 0 1rem 3rem rgba(0, 0, 0, 0.175);
 }
 
+html,
+body {
+    overflow-x: hidden;
+    overflow-x: clip;
+}
+
+#main-content {
+    overflow-x: clip;
+}
+
 /* =============================================================================
    INFORMATIONS CLUB BIBLIQUE ET HORAIRES ORGANISÉS
    ============================================================================= */

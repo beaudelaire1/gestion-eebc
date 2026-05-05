@@ -145,6 +145,8 @@ def geocode_address_with_metadata(address, city="", postal_code="", country="Guy
                 'format': 'json',
                 'limit': 3,
                 'addressdetails': 1,
+                'countrycodes': 'gf',
+                'accept-language': 'fr',
             },
             headers={'User-Agent': USER_AGENT},
             timeout=10,

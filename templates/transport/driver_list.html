@@ -6,6 +6,9 @@
 
 {% block content %}
 <div class="d-flex justify-content-end mb-4 gap-2">
+    <a href="{% url 'transport:requests' %}" class="btn btn-outline-primary">
+        <i class="bi bi-broadcast-pin me-2"></i>Demandes transport
+    </a>
     <!-- Boutons d'export -->
     <div class="dropdown">
         <button class="btn btn-outline-secondary dropdown-toggle" type="button" 

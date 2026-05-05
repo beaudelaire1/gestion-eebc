@@ -1,15 +1,44 @@
 {% extends 'base.html' %}
 
-{% block title %}Demandes de transport - EEBC{% endblock %}
-{% block page_title %}Demandes de transport{% endblock %}
-{% block page_subtitle %}Gestion des demandes de transport{% endblock %}
+{% block title %}{{ transport_page_title|default:'Demandes de transport' }} - EEBC{% endblock %}
+{% block page_title %}{{ transport_page_title|default:'Demandes de transport' }}{% endblock %}
+{% block page_subtitle %}{{ transport_page_subtitle|default:'Gestion des demandes de transport' }}{% endblock %}
 
 {% block content %}
-<div class="d-flex justify-content-end mb-4">
+<div class="d-flex flex-column flex-lg-row justify-content-between align-items-lg-center gap-3 mb-4">
+    <div class="d-flex flex-wrap gap-2">
+        <a href="{% url 'transport:requests' %}" class="btn btn-sm {% if not transport_scope %}btn-primary{% else %}btn-outline-primary{% endif %}">
+            <i class="bi bi-list-ul me-2"></i>Toutes les demandes
+        </a>
+        <a href="{% url 'transport:requests' %}?scope=tracking" class="btn btn-sm {% if transport_scope == 'tracking' %}btn-primary{% else %}btn-outline-primary{% endif %}">
+            <i class="bi bi-broadcast-pin me-2"></i>Suivi chauffeur
+        </a>
+        <a href="{% url 'transport:requests' %}?scope=arrivals" class="btn btn-sm {% if transport_scope == 'arrivals' %}btn-primary{% else %}btn-outline-primary{% endif %}">
+            <i class="bi bi-geo-alt-fill me-2"></i>Arrivées du jour
+        </a>
+        <a href="{% url 'transport:requests' %}?scope=pending" class="btn btn-sm {% if transport_scope == 'pending' %}btn-primary{% else %}btn-outline-primary{% endif %}">
+            <i class="bi bi-hourglass-split me-2"></i>En attente
+        </a>
+        {% if is_driver_user or can_manage_transport_requests %}
+        <a href="{% url 'transport:requests' %}?scope=available" class="btn btn-sm {% if transport_scope == 'available' %}btn-primary{% else %}btn-outline-primary{% endif %}">
+            <i class="bi bi-hand-thumbs-up me-2"></i>Demandes disponibles
+        </a>
+        {% endif %}
+    </div>
     <a href="{% url 'transport:request_create' %}" class="btn btn-primary">
         <i class="bi bi-plus-lg me-2"></i>Nouvelle demande
     </a>
 </div>
+
+{% if transport_scope %}
+<div class="alert alert-info d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-2">
+    <div>
+        <strong>{{ transport_page_title }}</strong><br>
+        <span>{{ transport_page_subtitle }}</span>
+    </div>
+    <a href="{% url 'transport:requests' %}" class="btn btn-sm btn-outline-primary">Réinitialiser la vue</a>
+</div>
+{% endif %}
 
 <div class="card">
     <div class="card-body p-0">
@@ -50,6 +79,11 @@
                                 <a href="{% url 'transport:driver_detail' request.driver.pk %}" class="text-decoration-none">
                                     {{ request.driver.user.get_full_name }}
                                 </a>
+                                <div class="mt-1">
+                                    <a href="{% url 'transport:request_detail' request.pk %}#driver-live-tracking" class="small text-decoration-none">
+                                        <i class="bi bi-geo-alt-fill me-1"></i>Suivre l'arrivée
+                                    </a>
+                                </div>
                             {% else %}
                                 <span class="text-muted">-</span>
                             {% endif %}
@@ -61,34 +95,41 @@
                         </td>
                         <td class="text-end">
                             <div class="dropdown">
-                                <button class="btn btn-sm btn-outline-light dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                                <button class="btn btn-sm btn-outline-light dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-label="Actions de la demande" title="Actions de la demande">
                                     <i class="bi bi-three-dots"></i>
                                 </button>
-                                <ul class="dropdown-menu dropdown-menu-end">
-                                    <li>
-                                        <a class="dropdown-item" href="{% url 'transport:request_detail' request.pk %}">
-                                            <i class="bi bi-eye me-2"></i>Voir détails
-                                        </a>
-                                    </li>
-                                    <li>
-                                        <a class="dropdown-item" href="{% url 'transport:request_update' request.pk %}">
-                                            <i class="bi bi-pencil me-2"></i>Modifier
-                                        </a>
-                                    </li>
-                                    <li>
-                                        <a class="dropdown-item text-danger" href="{% url 'transport:request_delete' request.pk %}">
-                                            <i class="bi bi-trash me-2"></i>Supprimer
-                                        </a>
-                                    </li>
-                                    {% if user.role in 'admin,secretariat,responsable_groupe' and request.status == 'pending' %}
-                                    <li><hr class="dropdown-divider"></li>
-                                    <li>
-                                        <a class="dropdown-item" href="{% url 'transport:assign_driver' request.pk %}">
-                                            <i class="bi bi-person-plus me-2"></i>Assigner chauffeur
-                                        </a>
-                                    </li>
+                                <div class="dropdown-menu dropdown-menu-end">
+                                    <a class="dropdown-item" href="{% url 'transport:request_detail' request.pk %}">
+                                        <i class="bi bi-eye me-2"></i>Voir détails
+                                    </a>
+                                    {% if is_driver_user and request.status == 'pending' and not request.driver %}
+                                    <form method="post" action="{% url 'transport:request_accept' request.pk %}" class="px-2 py-1">
+                                        {% csrf_token %}
+                                        <button type="submit" class="dropdown-item text-success px-2">
+                                            <i class="bi bi-check2-circle me-2"></i>Accepter
+                                        </button>
+                                    </form>
                                     {% endif %}
-                                </ul>
+                                    {% if request.driver %}
+                                    <a class="dropdown-item" href="{% url 'transport:request_detail' request.pk %}#driver-live-tracking">
+                                        <i class="bi bi-geo-alt me-2"></i>Suivre l'arrivée
+                                    </a>
+                                    {% endif %}
+                                    {% if can_manage_transport_requests %}
+                                    <a class="dropdown-item" href="{% url 'transport:request_update' request.pk %}">
+                                        <i class="bi bi-pencil me-2"></i>Modifier
+                                    </a>
+                                    <a class="dropdown-item text-danger" href="{% url 'transport:request_delete' request.pk %}">
+                                        <i class="bi bi-trash me-2"></i>Supprimer
+                                    </a>
+                                    {% if request.status == 'pending' %}
+                                    <hr class="dropdown-divider">
+                                    <a class="dropdown-item" href="{% url 'transport:assign_driver' request.pk %}">
+                                        <i class="bi bi-person-plus me-2"></i>Assigner chauffeur
+                                    </a>
+                                    {% endif %}
+                                    {% endif %}
+                                </div>
                             </div>
                         </td>
                     </tr>

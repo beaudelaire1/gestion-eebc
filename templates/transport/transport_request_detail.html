@@ -12,23 +12,198 @@
         border-radius: 0.5rem;
         border: 1px solid rgba(0, 0, 0, 0.08);
     }
+
+    .live-tracking-panel {
+        display: grid;
+        gap: 0.75rem;
+    }
+
+    .arrival-summary {
+        display: grid;
+        grid-template-columns: auto 1fr;
+        gap: 0.75rem;
+        align-items: center;
+        padding: 0.85rem;
+        border: 1px solid rgba(13, 110, 253, 0.12);
+        border-radius: 0.75rem;
+        background: linear-gradient(135deg, rgba(13, 110, 253, 0.08), rgba(25, 135, 84, 0.08));
+    }
+
+    .arrival-summary__icon {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 2.75rem;
+        height: 2.75rem;
+        color: #ffffff;
+        background: #0d6efd;
+        border-radius: 999px;
+        box-shadow: 0 0.5rem 1.5rem rgba(13, 110, 253, 0.24);
+    }
+
+    .arrival-summary__eta {
+        font-size: 1.2rem;
+        font-weight: 700;
+        line-height: 1.1;
+    }
+
+    .arrival-summary__meta {
+        color: #6c757d;
+        font-size: 0.86rem;
+    }
+
+    .pickup-source-actions {
+        padding: 0.75rem;
+        border: 1px solid rgba(0, 0, 0, 0.08);
+        border-radius: 0.75rem;
+        background: #ffffff;
+    }
+
+    .pickup-source-actions .btn.active {
+        color: #ffffff;
+        background: #0d6efd;
+        border-color: #0d6efd;
+    }
+
+    .live-map-wrap {
+        position: relative;
+    }
+
+    .live-map-chip {
+        position: absolute;
+        right: 0.75rem;
+        bottom: 0.75rem;
+        z-index: 500;
+        max-width: calc(100% - 1.5rem);
+        padding: 0.45rem 0.65rem;
+        color: #212529;
+        background: rgba(255, 255, 255, 0.92);
+        border: 1px solid rgba(0, 0, 0, 0.08);
+        border-radius: 999px;
+        box-shadow: 0 0.5rem 1.5rem rgba(15, 23, 42, 0.12);
+        font-size: 0.78rem;
+        -webkit-backdrop-filter: blur(8px);
+        backdrop-filter: blur(8px);
+    }
+
+    .transport-live-icon {
+        position: relative;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 2.45rem;
+        height: 2.45rem;
+        flex: 0 0 2.45rem;
+        border: 3px solid #ffffff;
+        border-radius: 999px;
+        box-shadow: 0 0.45rem 1rem rgba(15, 23, 42, 0.22);
+        color: #ffffff;
+        font-size: 1.1rem;
+    }
+
+    .transport-live-icon > i {
+        position: relative;
+        z-index: 2;
+    }
+
+    .transport-live-marker {
+        overflow: visible;
+        border: 0;
+        background: transparent;
+    }
+
+    .leaflet-tooltip.transport-live-tooltip {
+        padding: 0.3rem 0.6rem;
+        color: #0d3d91;
+        background: rgba(255, 255, 255, 0.96);
+        border: 1px solid rgba(13, 110, 253, 0.22);
+        border-radius: 999px;
+        box-shadow: 0 0.35rem 0.9rem rgba(15, 23, 42, 0.14);
+        font-size: 0.76rem;
+        font-weight: 700;
+        white-space: nowrap;
+    }
+
+    .leaflet-tooltip.transport-live-tooltip--driver {
+        color: #0f5132;
+        border-color: rgba(25, 135, 84, 0.28);
+    }
+
+    .leaflet-tooltip.transport-live-tooltip::before {
+        display: none;
+    }
+
+    .pickup-empty-state {
+        display: grid;
+        grid-template-columns: auto 1fr;
+        gap: 0.65rem;
+        align-items: center;
+        padding: 0.75rem 0.9rem;
+        border: 1px dashed rgba(13, 110, 253, 0.35);
+        border-radius: 0.75rem;
+        background: rgba(13, 110, 253, 0.06);
+        color: #0d3d91;
+        font-size: 0.85rem;
+    }
+
+    .pickup-empty-state__icon {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 2.25rem;
+        height: 2.25rem;
+        color: #ffffff;
+        background: #0d6efd;
+        border-radius: 999px;
+    }
+
+    .transport-live-icon--driver {
+        background: #198754;
+    }
+
+    .transport-live-icon--waiting {
+        background: #0d6efd;
+        outline: 3px solid rgba(13, 110, 253, 0.14);
+    }
+
+    .waiting-pulse {
+        position: absolute;
+        inset: -0.45rem;
+        border: 2px solid rgba(13, 110, 253, 0.28);
+        border-radius: inherit;
+        animation: waitingPulse 1.8s ease-out infinite;
+    }
+
+    @keyframes waitingPulse {
+        0% { transform: scale(0.78); opacity: 0.9; }
+        100% { transform: scale(1.55); opacity: 0; }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+        .waiting-pulse {
+            animation: none;
+        }
+    }
 </style>
 {% endblock %}
 
 {% block content %}
+<form style="display:none">{% csrf_token %}</form>
 <div class="row">
     <div class="col-lg-8">
         <div class="card">
             <div class="card-header d-flex justify-content-between align-items-center">
                 <h5 class="mb-0">Détails de la demande</h5>
                 <div class="d-flex gap-2">
+                    {% if can_manage_transport_requests %}
                     <a href="{% url 'transport:request_update' transport_request.pk %}" class="btn btn-outline-primary btn-sm">
                         <i class="bi bi-pencil me-1"></i>Modifier
                     </a>
                     <a href="{% url 'transport:request_delete' transport_request.pk %}" class="btn btn-outline-danger btn-sm">
                         <i class="bi bi-trash me-1"></i>Supprimer
                     </a>
-                    {% if user.role in 'admin,secretariat,responsable_groupe' %}
+                    {% endif %}
+                    {% if can_assign_driver %}
                     <a href="{% url 'transport:assign_driver' transport_request.pk %}" class="btn btn-outline-success btn-sm">
                         <i class="bi bi-person-plus me-1"></i>Assigner chauffeur
                     </a>
@@ -103,14 +278,50 @@
     </div>
     
     <div class="col-lg-4">
-        {% if transport_request.driver %}
-        <div class="card mb-3">
+        {% if transport_request.driver or can_update_pickup_location %}
+        <div class="card mb-3" id="driver-live-tracking">
             <div class="card-header d-flex justify-content-between align-items-center">
-                <h6 class="mb-0">Suivi chauffeur en direct</h6>
+                <h6 class="mb-0">Position et arrivée</h6>
                 <span id="driverLiveBadge" class="badge bg-secondary">Hors ligne</span>
             </div>
             <div class="card-body">
-                <div id="driverLiveMap" class="mb-3"></div>
+                <div class="live-tracking-panel">
+                    <div class="arrival-summary" id="arrivalSummary">
+                        <div class="arrival-summary__icon">
+                            <i class="bi bi-person-fill"></i>
+                        </div>
+                        <div>
+                            <div class="arrival-summary__eta" id="arrivalEta">En attente du signal GPS</div>
+                            <div class="arrival-summary__meta" id="arrivalMeta">{{ transport_request.requester_name }} attend le chauffeur.</div>
+                        </div>
+                    </div>
+                    <div class="live-map-wrap">
+                        <div id="driverLiveMap"></div>
+                        <div class="live-map-chip" id="driverLiveChip">Position chauffeur indisponible</div>
+                    </div>
+                    <div class="pickup-empty-state d-none" id="pickupEmptyState">
+                        <div class="pickup-empty-state__icon">
+                            <i class="bi bi-person-fill"></i>
+                        </div>
+                        <div>
+                            <div class="fw-semibold">Position du demandeur introuvable</div>
+                            <div class="small">Choisissez <em>GPS actuel</em> ou <em>Adresse postale</em> pour la poser sur la carte.</div>
+                        </div>
+                    </div>
+                    <div class="pickup-source-actions">
+                        <div class="small text-muted" id="pickupSourceMeta">Position demandeur: adresse postale</div>
+                        {% if can_update_pickup_location %}
+                        <div class="d-grid d-sm-flex gap-2 mt-2">
+                            <button type="button" class="btn btn-outline-primary btn-sm flex-fill" id="useRequesterGpsBtn">
+                                <i class="bi bi-crosshair me-1"></i>GPS actuel
+                            </button>
+                            <button type="button" class="btn btn-outline-primary btn-sm flex-fill" id="usePostalAddressBtn">
+                                <i class="bi bi-house-door me-1"></i>Adresse postale
+                            </button>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
                 <div class="small text-muted" id="driverLiveMeta">
                     En attente de position GPS...
                 </div>
@@ -139,14 +350,24 @@
             <div class="card-body">
                 {% if transport_request.status == 'pending' %}
                 <div class="d-grid gap-2">
-                    {% if user.role in 'admin,secretariat,responsable_groupe' %}
+                    {% if can_accept_request %}
+                    <form method="post" action="{% url 'transport:request_accept' transport_request.pk %}" class="d-grid">
+                        {% csrf_token %}
+                        <button type="submit" class="btn btn-success btn-sm">
+                            <i class="bi bi-check2-circle me-2"></i>Accepter cette demande
+                        </button>
+                    </form>
+                    {% endif %}
+                    {% if can_assign_driver %}
                     <a href="{% url 'transport:assign_driver' transport_request.pk %}" class="btn btn-success btn-sm">
                         <i class="bi bi-person-plus me-2"></i>Assigner un chauffeur
                     </a>
                     {% endif %}
+                    {% if can_manage_transport_requests %}
                     <a href="{% url 'transport:request_update' transport_request.pk %}" class="btn btn-outline-primary btn-sm">
                         <i class="bi bi-pencil me-2"></i>Modifier la demande
                     </a>
+                    {% endif %}
                 </div>
                 {% elif transport_request.status == 'confirmed' %}
                 <div class="alert alert-success">
@@ -177,17 +398,28 @@
 {% endblock %}
 
 {% block extra_js %}
-{% if transport_request.driver %}
+{% if transport_request.driver or can_update_pickup_location %}
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script>
 (() => {
     const requestId = {{ transport_request.pk }};
     const statusUrl = "{% url 'transport:live_status' transport_request.pk %}";
     const updateUrl = "{% url 'transport:live_update' transport_request.pk %}";
+    const pickupUpdateUrl = "{% url 'transport:pickup_location_update' transport_request.pk %}";
     const canPushGps = {{ can_push_live_tracking|yesno:'true,false' }};
+    const canUpdatePickupLocation = {{ can_update_pickup_location|yesno:'true,false' }};
 
     const badge = document.getElementById('driverLiveBadge');
     const meta = document.getElementById('driverLiveMeta');
+    const requesterDisplayName = "{{ transport_request.requester_name|escapejs }}";
+    const driverDisplayName = "{{ transport_request.driver.user.get_full_name|default:''|escapejs }}";
+    const arrivalEta = document.getElementById('arrivalEta');
+    const arrivalMeta = document.getElementById('arrivalMeta');
+    const driverLiveChip = document.getElementById('driverLiveChip');
+    const pickupEmptyState = document.getElementById('pickupEmptyState');
+    const pickupSourceMeta = document.getElementById('pickupSourceMeta');
+    const useRequesterGpsBtn = document.getElementById('useRequesterGpsBtn');
+    const usePostalAddressBtn = document.getElementById('usePostalAddressBtn');
     const startBtn = document.getElementById('startLiveTrackingBtn');
     const stopBtn = document.getElementById('stopLiveTrackingBtn');
 
@@ -196,27 +428,208 @@
         attribution: '&copy; OpenStreetMap contributors'
     }).addTo(map);
 
-    const marker = L.marker([4.9225, -52.3058]).addTo(map);
+    const driverIcon = L.divIcon({
+        className: 'transport-live-marker',
+        html: '<div class="transport-live-icon transport-live-icon--driver"><i class="bi bi-car-front-fill"></i></div>',
+        iconSize: [40, 40],
+        iconAnchor: [20, 20]
+    });
+    const waitingIcon = L.divIcon({
+        className: 'transport-live-marker',
+        html: '<div class="transport-live-icon transport-live-icon--waiting"><span class="waiting-pulse"></span><i class="bi bi-person-fill"></i></div>',
+        iconSize: [40, 40],
+        iconAnchor: [20, 20],
+        popupAnchor: [0, -20]
+    });
+
+    const driverMarker = L.marker([4.9225, -52.3058], { icon: driverIcon })
+        .bindTooltip(driverDisplayName ? `Chauffeur: ${driverDisplayName}` : 'Chauffeur', {
+            permanent: true,
+            direction: 'top',
+            offset: [0, -22],
+            className: 'transport-live-tooltip transport-live-tooltip--driver'
+        });
+    let waitingMarker = null;
+    let routeLine = null;
+    let lastDriverPosition = null;
     let pollTimer = null;
     let pushTimer = null;
 
     function getCsrfToken() {
+        const input = document.querySelector('input[name="csrfmiddlewaretoken"]');
+        if (input && input.value) {
+            return input.value;
+        }
         const match = document.cookie.match(/csrftoken=([^;]+)/);
         return match ? match[1] : '';
     }
 
+    function setSmoothMarkerPosition(marker, nextLatLng) {
+        const current = marker.getLatLng ? marker.getLatLng() : null;
+        if (!current) {
+            marker.setLatLng(nextLatLng);
+            return;
+        }
+
+        const frames = 18;
+        let frame = 0;
+        const startLat = current.lat;
+        const startLng = current.lng;
+        const deltaLat = nextLatLng[0] - startLat;
+        const deltaLng = nextLatLng[1] - startLng;
+
+        function animate() {
+            frame += 1;
+            const progress = frame / frames;
+            const eased = 1 - Math.pow(1 - progress, 3);
+            marker.setLatLng([startLat + deltaLat * eased, startLng + deltaLng * eased]);
+            if (frame < frames) {
+                window.requestAnimationFrame(animate);
+            }
+        }
+
+        window.requestAnimationFrame(animate);
+    }
+
+    function updateWaitingMarker(pickupLocation) {
+        if (!pickupLocation || !pickupLocation.has_location) {
+            if (waitingMarker) {
+                map.removeLayer(waitingMarker);
+                waitingMarker = null;
+            }
+            return null;
+        }
+
+        const waitingLatLng = [pickupLocation.latitude, pickupLocation.longitude];
+        const tooltipLabel = `Demandeur: ${pickupLocation.label || requesterDisplayName || 'En attente'}`;
+        if (!waitingMarker) {
+            waitingMarker = L.marker(waitingLatLng, { icon: waitingIcon })
+                .bindTooltip(tooltipLabel, {
+                    permanent: true,
+                    direction: 'top',
+                    offset: [0, -22],
+                    className: 'transport-live-tooltip'
+                })
+                .bindPopup(`<strong>${pickupLocation.label || requesterDisplayName || 'Demandeur'}</strong><br>${pickupLocation.address || ''}`)
+                .addTo(map);
+        } else {
+            waitingMarker.setLatLng(waitingLatLng);
+            if (waitingMarker.getTooltip()) {
+                waitingMarker.setTooltipContent(tooltipLabel);
+            }
+        }
+        return waitingLatLng;
+    }
+
+    function updateEmptyState(pickupLocation) {
+        if (!pickupEmptyState) {
+            return;
+        }
+        const isEmpty = !pickupLocation || !pickupLocation.has_location;
+        pickupEmptyState.classList.toggle('d-none', !isEmpty);
+    }
+
+    function updateRoute(driverLatLng, waitingLatLng) {
+        if (!driverLatLng || !waitingLatLng) {
+            if (routeLine) {
+                map.removeLayer(routeLine);
+                routeLine = null;
+            }
+            return;
+        }
+
+        const latLngs = [driverLatLng, waitingLatLng];
+        if (!routeLine) {
+            routeLine = L.polyline(latLngs, {
+                color: '#0d6efd',
+                weight: 4,
+                opacity: 0.7,
+                dashArray: '8, 10',
+                lineCap: 'round'
+            }).addTo(map);
+        } else {
+            routeLine.setLatLngs(latLngs);
+        }
+    }
+
+    function fitLiveBounds(driverLatLng, waitingLatLng) {
+        if (!driverLatLng && !waitingLatLng) {
+            return;
+        }
+        if (driverLatLng && waitingLatLng) {
+            map.fitBounds(L.latLngBounds([driverLatLng, waitingLatLng]), {
+                padding: [42, 42],
+                maxZoom: 15,
+                animate: true,
+                duration: 0.55
+            });
+            return;
+        }
+        const focus = driverLatLng || waitingLatLng;
+        map.flyTo(focus, 14, { animate: true, duration: 0.55 });
+    }
+
+    function renderPickupSource(pickupLocation) {
+        if (!pickupSourceMeta) {
+            return;
+        }
+        const source = pickupLocation && pickupLocation.source ? pickupLocation.source : 'postal_address';
+        const sourceLabel = pickupLocation && pickupLocation.source_label ? pickupLocation.source_label : 'Adresse postale';
+        const locatedLabel = pickupLocation && pickupLocation.has_location ? 'localisée' : 'à localiser';
+        pickupSourceMeta.textContent = `Position demandeur: ${sourceLabel} (${locatedLabel})`;
+
+        if (useRequesterGpsBtn) {
+            useRequesterGpsBtn.classList.toggle('active', source === 'requester_gps');
+        }
+        if (usePostalAddressBtn) {
+            usePostalAddressBtn.classList.toggle('active', source !== 'requester_gps');
+        }
+    }
+
+    function setPickupButtonsBusy(isBusy) {
+        if (useRequesterGpsBtn) {
+            useRequesterGpsBtn.disabled = isBusy;
+        }
+        if (usePostalAddressBtn) {
+            usePostalAddressBtn.disabled = isBusy;
+        }
+    }
+
     function renderPayload(data) {
+        const pickupLocation = data && data.pickup_location ? data.pickup_location : null;
+        renderPickupSource(pickupLocation);
+        updateEmptyState(pickupLocation);
+        const waitingLatLng = updateWaitingMarker(pickupLocation);
+
         if (!data || !data.has_location) {
             badge.className = 'badge bg-secondary';
             badge.textContent = 'Hors ligne';
+            arrivalEta.textContent = data && data.eta_label ? data.eta_label : 'En attente du signal GPS';
+            arrivalMeta.textContent = pickupLocation && pickupLocation.has_location
+                ? `${pickupLocation.label || 'La personne'} attend le chauffeur.`
+                : 'L’adresse de prise en charge doit être localisée pour afficher l’arrivée.';
+            driverLiveChip.textContent = data && data.distance_label ? data.distance_label : 'Position chauffeur indisponible';
             meta.textContent = 'Aucune position GPS reçue pour le moment.';
+            updateRoute(null, waitingLatLng);
+            fitLiveBounds(null, waitingLatLng);
             return;
         }
 
         const lat = data.latitude;
         const lng = data.longitude;
-        marker.setLatLng([lat, lng]);
-        map.setView([lat, lng], 14);
+        const driverLatLng = [lat, lng];
+        if (!map.hasLayer(driverMarker)) {
+            driverMarker.setLatLng(driverLatLng).addTo(map);
+        } else {
+            setSmoothMarkerPosition(driverMarker, driverLatLng);
+        }
+        updateRoute(driverLatLng, waitingLatLng);
+
+        const shouldRefit = !lastDriverPosition || Math.abs(lastDriverPosition[0] - lat) > 0.001 || Math.abs(lastDriverPosition[1] - lng) > 0.001;
+        if (shouldRefit) {
+            fitLiveBounds(driverLatLng, waitingLatLng);
+        }
+        lastDriverPosition = driverLatLng;
 
         const stale = !!data.stale;
         badge.className = stale ? 'badge bg-warning text-dark' : 'badge bg-success';
@@ -224,7 +637,15 @@
 
         const speed = data.speed_kmh == null ? 'n/a' : `${data.speed_kmh.toFixed(1)} km/h`;
         const age = data.age_seconds == null ? '-' : `${data.age_seconds}s`;
-        meta.textContent = `Chauffeur: ${data.driver_name || '-'} | Vitesse: ${speed} | Dernière maj: ${age}`;
+        arrivalEta.textContent = data.eta_label || 'Arrivée en calcul';
+        arrivalMeta.textContent = data.eta_available
+            ? `${pickupLocation && pickupLocation.label ? pickupLocation.label : 'La personne'} attend le chauffeur à ${data.distance_label || 'distance inconnue'}.`
+            : 'L’arrivée sera estimée dès que l’adresse de prise en charge sera localisée.';
+        driverLiveChip.textContent = data.eta_available
+            ? `${data.distance_label} restant | ${data.eta_label}`
+            : (data.distance_label || 'ETA indisponible');
+        const etaSource = data.eta_mode === 'vitesse_live' ? 'vitesse live' : 'moyenne locale';
+        meta.textContent = `Chauffeur: ${data.driver_name || '-'} | Vitesse: ${speed} | ETA: ${data.eta_label || '-'} (${etaSource}) | Dernière maj: ${age}`;
     }
 
     async function fetchStatus() {
@@ -239,6 +660,56 @@
             badge.className = 'badge bg-secondary';
             badge.textContent = 'Indisponible';
         }
+    }
+
+    async function updatePickupLocation(payload) {
+        if (!canUpdatePickupLocation) {
+            return;
+        }
+        setPickupButtonsBusy(true);
+        try {
+            const response = await fetch(pickupUpdateUrl, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': getCsrfToken(),
+                    'X-Requested-With': 'XMLHttpRequest'
+                },
+                body: JSON.stringify(payload)
+            });
+            const data = await response.json();
+            if (!response.ok) {
+                alert(data.error || 'Impossible de mettre à jour la position de prise en charge.');
+                return;
+            }
+            renderPayload(data);
+        } catch (_) {
+            alert('Impossible de mettre à jour la position de prise en charge.');
+        } finally {
+            setPickupButtonsBusy(false);
+        }
+    }
+
+    function useRequesterGpsLocation() {
+        if (!navigator.geolocation) {
+            alert('La géolocalisation n\'est pas disponible sur cet appareil.');
+            return;
+        }
+        setPickupButtonsBusy(true);
+        navigator.geolocation.getCurrentPosition((pos) => {
+            updatePickupLocation({
+                source: 'gps',
+                latitude: pos.coords.latitude,
+                longitude: pos.coords.longitude
+            });
+        }, () => {
+            setPickupButtonsBusy(false);
+            alert('Impossible de récupérer la position GPS. Vérifiez les permissions.');
+        }, {
+            enableHighAccuracy: true,
+            timeout: 10000,
+            maximumAge: 5000,
+        });
     }
 
     async function pushPosition(isActive = true) {
@@ -326,6 +797,13 @@
     if (startBtn && stopBtn) {
         startBtn.addEventListener('click', startTracking);
         stopBtn.addEventListener('click', stopTracking);
+    }
+
+    if (useRequesterGpsBtn) {
+        useRequesterGpsBtn.addEventListener('click', useRequesterGpsLocation);
+    }
+    if (usePostalAddressBtn) {
+        usePostalAddressBtn.addEventListener('click', () => updatePickupLocation({ source: 'address' }));
     }
 
     startPolling();

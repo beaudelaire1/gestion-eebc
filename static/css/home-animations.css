@@ -11,6 +11,7 @@
     position: relative;
     min-height: 100vh;
     overflow: hidden;
+    overflow-x: clip;
     background: #0a0e27;
     display: flex;
     align-items: center;
@@ -1178,6 +1179,7 @@
     position: relative;
     padding: clamp(5rem, 9vw, 7.5rem) 0;
     overflow: visible;
+    overflow-x: clip;
     background:
         radial-gradient(circle at 15% 20%, rgba(59, 130, 246, 0.16), transparent 32%),
         radial-gradient(circle at 85% 15%, rgba(248, 181, 0, 0.14), transparent 26%),
@@ -1968,6 +1970,7 @@
     padding: 90px 0;
     position: relative;
     overflow: hidden;
+    overflow-x: clip;
     background: linear-gradient(135deg, var(--public-primary, #0A36FF), var(--public-secondary, #1e3a5f));
 }
 

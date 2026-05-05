@@ -18,6 +18,8 @@ urlpatterns = [
     path('requests/<int:pk>/edit/', views.transport_request_update, name='request_update'),
     path('requests/<int:pk>/delete/', views.transport_request_delete, name='request_delete'),
     path('requests/<int:pk>/assign/', views.assign_driver, name='assign_driver'),
+    path('requests/<int:pk>/accept/', views.transport_request_accept, name='request_accept'),
+    path('requests/<int:pk>/pickup-location/', views.transport_pickup_location_update, name='pickup_location_update'),
     path('requests/<int:pk>/live/status/', views.transport_live_status, name='live_status'),
     path('requests/<int:pk>/live/update/', views.transport_live_update, name='live_update'),
     
