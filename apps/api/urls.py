@@ -50,6 +50,11 @@ urlpatterns = [
     # BibleClub - For parents to see children's attendance
     path('bibleclub/my-children/', views.BibleClubMyChildrenView.as_view(), name='bibleclub_my_children'),
 
+    # Transport - Driver live tracking
+    path('transport/my-requests/', views.TransportMyRequestsView.as_view(), name='transport_my_requests'),
+    path('transport/requests/<int:pk>/live/status/', views.TransportApiLiveStatusView.as_view(), name='transport_api_live_status'),
+    path('transport/requests/<int:pk>/live/update/', views.TransportApiLiveUpdateView.as_view(), name='transport_api_live_update'),
+
     # Public website endpoints
     path('public/settings/', views.PublicSettingsView.as_view(), name='public_settings'),
     path('public/meta/', views.PublicMetaView.as_view(), name='public_meta'),

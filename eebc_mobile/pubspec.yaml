@@ -32,6 +32,8 @@ dependencies:
   firebase_core: ^2.25.4
   firebase_messaging: ^14.7.15
   flutter_local_notifications: ^17.0.0
+  # GPS Tracking
+  geolocator: ^13.0.0
 
 dev_dependencies:
   flutter_test:

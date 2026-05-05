@@ -882,3 +882,154 @@ class PublicInterestView(PublicRateLimitMixin, APIView):
             }
         }, status=status.HTTP_400_BAD_REQUEST)
 
+
+# =============================================================================
+# TRANSPORT – LIVE TRACKING API
+# =============================================================================
+
+class TransportMyRequestsView(APIView):
+    """
+    GET /api/v1/transport/my-requests/
+    Retourne les demandes de transport du chauffeur connecté (aujourd'hui et futur).
+    """
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        from apps.transport.models import DriverProfile, TransportRequest
+        from django.utils import timezone
+
+        try:
+            driver_profile = request.user.driver_profile
+        except DriverProfile.DoesNotExist:
+            return Response({'success': True, 'data': []})
+
+        today = timezone.localdate()
+        requests_qs = (
+            TransportRequest.objects
+            .filter(driver=driver_profile, event_date__gte=today, status__in=['confirmed', 'pending'])
+            .prefetch_related('live_location')
+            .order_by('event_date', 'event_time')
+        )
+
+        data = []
+        for req in requests_qs:
+            live = getattr(req, 'live_location', None)
+            data.append({
+                'id': req.id,
+                'requesterName': req.requester_name,
+                'requesterPhone': req.requester_phone,
+                'pickupAddress': req.pickup_address,
+                'eventDate': req.event_date.isoformat(),
+                'eventTime': req.event_time.strftime('%H:%M'),
+                'eventName': req.event_name,
+                'passengersCount': req.passengers_count,
+                'status': req.status,
+                'isTrackingActive': bool(live and live.is_active),
+            })
+
+        return Response({'success': True, 'data': data})
+
+
+class TransportApiLiveStatusView(APIView):
+    """
+    GET /api/v1/transport/requests/<pk>/live/status/
+    Position live d'une demande (accessible par chauffeur + admin + demandeur lié).
+    """
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, pk):
+        from apps.transport.models import TransportRequest
+        from apps.transport.views import _can_access_live_tracking, _build_live_payload
+
+        req = get_object_or_404(
+            TransportRequest.objects.select_related('driver__user', 'requester_member__user'),
+            pk=pk,
+        )
+
+        if not _can_access_live_tracking(request.user, req):
+            return Response({'error': 'Accès refusé'}, status=status.HTTP_403_FORBIDDEN)
+
+        payload = _build_live_payload(req)
+        return Response({'success': True, 'data': payload})
+
+
+class TransportApiLiveUpdateView(APIView):
+    """
+    POST /api/v1/transport/requests/<pk>/live/update/
+    Mise à jour de position GPS par le chauffeur.
+    """
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request, pk):
+        from apps.transport.models import TransportRequest, DriverLiveLocation
+        from apps.transport.views import _can_access_live_tracking, _build_live_payload
+        from decimal import Decimal, InvalidOperation
+
+        req = get_object_or_404(
+            TransportRequest.objects.select_related('driver__user'),
+            pk=pk,
+        )
+
+        if not req.driver:
+            return Response({'error': 'Aucun chauffeur assigné'}, status=status.HTTP_400_BAD_REQUEST)
+
+        if not _can_access_live_tracking(request.user, req, for_update=True):
+            return Response({'error': 'Accès refusé'}, status=status.HTTP_403_FORBIDDEN)
+
+        data = request.data
+
+        def safe_decimal(key, abs_max=None):
+            value = data.get(key)
+            if value in (None, ''):
+                return None
+            try:
+                dec = Decimal(str(value))
+                if abs_max is not None and abs(dec) > Decimal(str(abs_max)):
+                    raise ValueError()
+                return dec
+            except (InvalidOperation, ValueError):
+                return None
+
+        latitude = safe_decimal('latitude')
+        longitude = safe_decimal('longitude')
+
+        if latitude is None or longitude is None:
+            return Response({'error': 'latitude et longitude requis'}, status=status.HTTP_400_BAD_REQUEST)
+
+        if not (Decimal('-90') <= latitude <= Decimal('90')) or not (Decimal('-180') <= longitude <= Decimal('180')):
+            return Response({'error': 'Coordonnées hors limites'}, status=status.HTTP_400_BAD_REQUEST)
+
+        now = timezone.now()
+        is_active = bool(data.get('is_active', True))
+
+        live, created = DriverLiveLocation.objects.get_or_create(
+            transport_request=req,
+            defaults={
+                'driver': req.driver,
+                'latitude': latitude,
+                'longitude': longitude,
+                'speed_kmh': safe_decimal('speed_kmh', 500),
+                'accuracy_m': safe_decimal('accuracy_m', 10000),
+                'heading_deg': safe_decimal('heading_deg', 360),
+                'recorded_at': now,
+                'is_active': is_active,
+                'started_at': now,
+                'stopped_at': None if is_active else now,
+            },
+        )
+
+        if not created:
+            live.latitude = latitude
+            live.longitude = longitude
+            live.speed_kmh = safe_decimal('speed_kmh', 500)
+            live.accuracy_m = safe_decimal('accuracy_m', 10000)
+            live.heading_deg = safe_decimal('heading_deg', 360)
+            live.recorded_at = now
+            live.is_active = is_active
+            if is_active:
+                live.stopped_at = None
+            elif live.stopped_at is None:
+                live.stopped_at = now
+            live.save()
+
+        return Response({'success': True, 'data': _build_live_payload(req)})
