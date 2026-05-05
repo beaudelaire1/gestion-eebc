@@ -23,7 +23,7 @@
                 {% endif %}
                 
                 <div class="d-flex justify-content-center gap-2 mt-3 flex-wrap">
-                    <a href="{% url 'admin:bibleclub_child_change' child.pk %}" class="btn btn-primary">
+                    <a href="{% url 'bibleclub:child_edit' child.pk %}" class="btn btn-primary">
                         <i class="bi bi-pencil me-2"></i>Modifier
                     </a>
                     <a href="{% url 'bibleclub:child_print_registration' child.pk %}" class="btn btn-outline-success" title="Télécharger la fiche d'inscription en PDF">
