@@ -12,7 +12,7 @@ class WorshipServiceForm(forms.ModelForm):
         required=True,
         label='Date du service',
         initial=dt_date.today,
-        widget=forms.DateInput(attrs={'type': 'date', 'class': 'form-control'}),
+        widget=forms.DateInput(format='%Y-%m-%d', attrs={'type': 'date', 'class': 'form-control'}),
         help_text='Date à laquelle le service aura lieu.',
     )
 

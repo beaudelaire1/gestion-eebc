@@ -24,7 +24,7 @@ class TransactionForm(EnhancedModelForm):
                 'min': '0.01',
                 'placeholder': '0.00'
             }),
-            'transaction_date': forms.DateInput(attrs={'type': 'date'}),
+            'transaction_date': forms.DateInput(format='%Y-%m-%d', attrs={'type': 'date'}),
             'description': forms.Textarea(attrs={'rows': 3}),
             'notes': forms.Textarea(attrs={'rows': 2}),
         }
@@ -169,7 +169,7 @@ class DonationReceiptForm(forms.Form):
     )
     donation_date = forms.DateField(
         label='Date du don',
-        widget=forms.DateInput(attrs={'class': 'form-control', 'type': 'date'}),
+        widget=forms.DateInput(format='%Y-%m-%d', attrs={'class': 'form-control', 'type': 'date'}),
     )
 
     def __init__(self, *args, **kwargs):

@@ -206,7 +206,7 @@ class EmailLogFilterForm(forms.Form):
     )
     
     from_date = forms.DateField(
-        widget=forms.DateInput(attrs={
+        widget=forms.DateInput(format='%Y-%m-%d', attrs={
             'class': 'form-control',
             'type': 'date'
         }),
@@ -214,7 +214,7 @@ class EmailLogFilterForm(forms.Form):
     )
     
     to_date = forms.DateField(
-        widget=forms.DateInput(attrs={
+        widget=forms.DateInput(format='%Y-%m-%d', attrs={
             'class': 'form-control',
             'type': 'date'
         }),
@@ -242,7 +242,7 @@ class SMSLogFilterForm(forms.Form):
     )
     
     from_date = forms.DateField(
-        widget=forms.DateInput(attrs={
+        widget=forms.DateInput(format='%Y-%m-%d', attrs={
             'class': 'form-control',
             'type': 'date'
         }),
@@ -250,7 +250,7 @@ class SMSLogFilterForm(forms.Form):
     )
     
     to_date = forms.DateField(
-        widget=forms.DateInput(attrs={
+        widget=forms.DateInput(format='%Y-%m-%d', attrs={
             'class': 'form-control',
             'type': 'date'
         }),

@@ -104,7 +104,7 @@ class GroupMeetingForm(forms.ModelForm):
         model = GroupMeeting
         fields = ['date', 'time', 'location', 'topic', 'notes']
         widgets = {
-            'date': forms.DateInput(attrs={
+            'date': forms.DateInput(format='%Y-%m-%d', attrs={
                 'class': 'form-control',
                 'type': 'date'
             }),

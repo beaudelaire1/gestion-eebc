@@ -22,9 +22,9 @@ class YoungMemberForm(EnhancedModelForm):
             'status', 'notes',
         ]
         widgets = {
-            'date_of_birth': forms.DateInput(attrs={'type': 'date'}),
-            'baptism_date': forms.DateInput(attrs={'type': 'date'}),
-            'conversion_date': forms.DateInput(attrs={'type': 'date'}),
+            'date_of_birth': forms.DateInput(format='%Y-%m-%d', attrs={'type': 'date'}),
+            'baptism_date': forms.DateInput(format='%Y-%m-%d', attrs={'type': 'date'}),
+            'conversion_date': forms.DateInput(format='%Y-%m-%d', attrs={'type': 'date'}),
             'address': forms.Textarea(attrs={'rows': 2}),
             'pickup_address': forms.Textarea(attrs={'rows': 2}),
             'allergies': forms.Textarea(attrs={'rows': 2}),
@@ -82,7 +82,7 @@ class YouthEventForm(EnhancedModelForm):
             'location', 'description', 'site', 'is_cancelled',
         ]
         widgets = {
-            'date': forms.DateInput(attrs={'type': 'date'}),
+            'date': forms.DateInput(format='%Y-%m-%d', attrs={'type': 'date'}),
             'start_time': forms.TimeInput(attrs={'type': 'time'}),
             'end_time': forms.TimeInput(attrs={'type': 'time'}),
             'description': forms.Textarea(attrs={'rows': 3}),

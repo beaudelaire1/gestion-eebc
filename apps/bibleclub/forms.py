@@ -29,7 +29,7 @@ class ChildForm(forms.ModelForm):
                 'class': 'form-control',
                 'placeholder': 'Nom de famille'
             }),
-            'date_of_birth': forms.DateInput(attrs={
+            'date_of_birth': forms.DateInput(format='%Y-%m-%d', attrs={
                 'class': 'form-control',
                 'type': 'date',
                 'placeholder': ' '

@@ -13,8 +13,8 @@ class NewsArticleForm(forms.ModelForm):
         widgets = {
             'content': forms.Textarea(attrs={'rows': 10, 'class': 'tinymce-editor'}),
             'publish_date': forms.DateTimeInput(attrs={'type': 'datetime-local'}),
-            'display_start_date': forms.DateInput(attrs={'type': 'date'}),
-            'display_end_date': forms.DateInput(attrs={'type': 'date'}),
+            'display_start_date': forms.DateInput(format='%Y-%m-%d', attrs={'type': 'date'}),
+            'display_end_date': forms.DateInput(format='%Y-%m-%d', attrs={'type': 'date'}),
         }
 
     def __init__(self, *args, **kwargs):
@@ -55,7 +55,7 @@ class TestimonyForm(forms.ModelForm):
         ]
         widgets = {
             'content': forms.Textarea(attrs={'rows': 5}),
-            'publish_date': forms.DateInput(attrs={'type': 'date'}),
+            'publish_date': forms.DateInput(format='%Y-%m-%d', attrs={'type': 'date'}),
         }
 
 class WorshipScheduleForm(forms.ModelForm):
@@ -81,8 +81,8 @@ class PublicEventForm(forms.ModelForm):
         ]
         widgets = {
             'description': forms.Textarea(attrs={'rows': 5, 'class': 'tinymce-editor'}),
-            'start_date': forms.DateInput(attrs={'type': 'date'}),
-            'end_date': forms.DateInput(attrs={'type': 'date'}),
+            'start_date': forms.DateInput(format='%Y-%m-%d', attrs={'type': 'date'}),
+            'end_date': forms.DateInput(format='%Y-%m-%d', attrs={'type': 'date'}),
             'start_time': forms.TimeInput(attrs={'type': 'time'}),
             'end_time': forms.TimeInput(attrs={'type': 'time'}),
             'address': forms.Textarea(attrs={'rows': 2}),

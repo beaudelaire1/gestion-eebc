@@ -61,7 +61,7 @@ class TransportRequestForm(forms.ModelForm):
             'requester_phone': forms.TextInput(attrs={'class': 'form-control'}),
             'requester_email': forms.EmailInput(attrs={'class': 'form-control'}),
             'pickup_address': forms.Textarea(attrs={'class': 'form-control', 'rows': 3}),
-            'event_date': forms.DateInput(attrs={'class': 'form-control', 'type': 'date'}),
+            'event_date': forms.DateInput(format='%Y-%m-%d', attrs={'class': 'form-control', 'type': 'date'}),
             'event_time': forms.TimeInput(attrs={'class': 'form-control', 'type': 'time'}),
             'event_name': forms.TextInput(attrs={'class': 'form-control'}),
             'passengers_count': forms.NumberInput(attrs={'class': 'form-control', 'min': '1', 'max': '20'}),

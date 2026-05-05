@@ -29,7 +29,7 @@ class MemberForm(forms.ModelForm):
                 'class': 'form-control',
                 'placeholder': 'Nom de famille'
             }),
-            'date_of_birth': forms.DateInput(attrs={
+            'date_of_birth': forms.DateInput(format='%Y-%m-%d', attrs={
                 'class': 'form-control',
                 'type': 'date'
             }),
@@ -76,11 +76,11 @@ class MemberForm(forms.ModelForm):
             'status': forms.Select(attrs={
                 'class': 'form-select'
             }),
-            'baptism_date': forms.DateInput(attrs={
+            'baptism_date': forms.DateInput(format='%Y-%m-%d', attrs={
                 'class': 'form-control',
                 'type': 'date'
             }),
-            'wedding_date': forms.DateInput(attrs={
+            'wedding_date': forms.DateInput(format='%Y-%m-%d', attrs={
                 'class': 'form-control',
                 'type': 'date'
             }),
@@ -184,7 +184,7 @@ class LifeEventForm(forms.ModelForm):
         widgets = {
             'event_type': forms.Select(attrs={'class': 'form-select'}),
             'title': forms.TextInput(attrs={'class': 'form-control'}),
-            'event_date': forms.DateInput(attrs={'class': 'form-control', 'type': 'date'}),
+            'event_date': forms.DateInput(format='%Y-%m-%d', attrs={'class': 'form-control', 'type': 'date'}),
             'priority': forms.Select(attrs={'class': 'form-select'}),
             'primary_member': forms.Select(attrs={'class': 'form-select tom-select', 'data-placeholder': 'Rechercher un membre...'}),
             'related_members': forms.SelectMultiple(attrs={'class': 'form-select tom-select', 'data-placeholder': 'Rechercher des membres...'}),
@@ -220,8 +220,8 @@ class VisitationLogForm(forms.ModelForm):
             'visitor': forms.Select(attrs={'class': 'form-select tom-select', 'data-placeholder': 'Rechercher un visiteur...'}),
             'visit_type': forms.Select(attrs={'class': 'form-select'}),
             'status': forms.Select(attrs={'class': 'form-select'}),
-            'scheduled_date': forms.DateInput(attrs={'class': 'form-control', 'type': 'date'}),
-            'visit_date': forms.DateInput(attrs={'class': 'form-control', 'type': 'date'}),
+            'scheduled_date': forms.DateInput(format='%Y-%m-%d', attrs={'class': 'form-control', 'type': 'date'}),
+            'visit_date': forms.DateInput(format='%Y-%m-%d', attrs={'class': 'form-control', 'type': 'date'}),
             'duration_minutes': forms.NumberInput(attrs={'class': 'form-control'}),
             'life_event': forms.Select(attrs={'class': 'form-select tom-select', 'data-placeholder': "Filtrer par événement de vie..."}),
             'summary': forms.Textarea(attrs={'class': 'form-control', 'rows': 4}),

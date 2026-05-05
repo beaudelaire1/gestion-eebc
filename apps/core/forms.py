@@ -78,6 +78,8 @@ class HTML5ValidationMixin:
             
             elif isinstance(field, forms.DateField):
                 widget.attrs['type'] = 'date'
+                if isinstance(widget, forms.DateInput):
+                    widget.format = '%Y-%m-%d'
             
             elif isinstance(field, forms.TimeField):
                 widget.attrs['type'] = 'time'

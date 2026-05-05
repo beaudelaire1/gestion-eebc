@@ -170,7 +170,7 @@ class GeneratedDocumentForm(forms.ModelForm):
             'title': forms.TextInput(attrs={'class': 'form-control', 'placeholder': "Titre du document"}),
             'kind': forms.Select(attrs={'class': 'form-select'}),
             'reference': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Auto si vide (ex. EEBC/CR/2026/01)'}),
-            'document_date': forms.DateInput(attrs={'class': 'form-control', 'type': 'date'}),
+            'document_date': forms.DateInput(format='%Y-%m-%d', attrs={'class': 'form-control', 'type': 'date'}),
             'recipient_name': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Nom du destinataire (optionnel)'}),
             'recipient_address': forms.Textarea(attrs={'class': 'form-control', 'rows': 2, 'placeholder': 'Adresse complète (optionnel)'}),
             'subject': forms.TextInput(attrs={'class': 'form-control', 'placeholder': "Objet du document"}),
