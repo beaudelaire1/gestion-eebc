@@ -283,6 +283,13 @@
                         <i class="bi bi-clipboard-check-fill nav-link__icon"></i>
                         <span>Sessions & Appels</span>
                     </a>
+                    {% if user.is_responsable_club %}
+                    <a class="nav-link {% if 'age-groups' in request.path %}nav-link--active{% endif %}"
+                        href="{% url 'bibleclub:age_group_list' %}">
+                        <i class="bi bi-tags-fill nav-link__icon"></i>
+                        <span>Tranches d'âge</span>
+                    </a>
+                    {% endif %}
                 </nav>
             </div>
 
