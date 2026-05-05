@@ -31,7 +31,8 @@ class ChildForm(forms.ModelForm):
             }),
             'date_of_birth': forms.DateInput(attrs={
                 'class': 'form-control',
-                'type': 'date'
+                'type': 'date',
+                'placeholder': ' '
             }),
             'gender': forms.Select(attrs={
                 'class': 'form-select'
@@ -144,8 +145,12 @@ class ChildForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         
-        # Filtrer les classes actives
-        self.fields['bible_class'].queryset = BibleClass.objects.filter(is_active=True)
+        # Filtrer les classes actives + inclure la classe actuelle si inactive
+        current_class = getattr(self.instance, 'bible_class', None) if self.instance and self.instance.pk else None
+        qs = BibleClass.objects.filter(is_active=True)
+        if current_class and not current_class.is_active:
+            qs = (qs | BibleClass.objects.filter(pk=current_class.pk)).distinct()
+        self.fields['bible_class'].queryset = qs
         self.fields['bible_class'].empty_label = "Sélectionner une classe"
         
         # Filtrer les chauffeurs actifs
