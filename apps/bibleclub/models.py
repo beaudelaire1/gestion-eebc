@@ -155,8 +155,8 @@ class Child(models.Model):
     )
 
     # Contacts parents
-    father_name = models.CharField(max_length=200, verbose_name="Nom du père")
-    father_phone = models.CharField(max_length=20, verbose_name="Téléphone du père")
+    father_name = models.CharField(max_length=200, blank=True, verbose_name="Nom du père")
+    father_phone = models.CharField(max_length=20, blank=True, verbose_name="Téléphone du père")
     father_email = models.EmailField(blank=True, verbose_name="Email du père")
     
     mother_name = models.CharField(max_length=200, blank=True, verbose_name="Nom de la mère")

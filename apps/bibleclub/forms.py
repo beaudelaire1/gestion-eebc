@@ -157,7 +157,7 @@ class ChildForm(forms.ModelForm):
             self.fields['assigned_driver'].widget = forms.HiddenInput()
         
         # Champs obligatoires
-        required_fields = ['first_name', 'last_name', 'date_of_birth', 'gender', 'father_name', 'father_phone']
+        required_fields = ['first_name', 'last_name', 'date_of_birth', 'gender']
         for field_name in required_fields:
             if field_name in self.fields:
                 self.fields[field_name].required = True
@@ -165,6 +165,20 @@ class ChildForm(forms.ModelForm):
     
     def clean(self):
         cleaned_data = super().clean()
+        
+        # Au moins un parent (père ou mère) doit être renseigné avec nom + téléphone
+        father_name = cleaned_data.get('father_name', '').strip()
+        father_phone = cleaned_data.get('father_phone', '').strip()
+        mother_name = cleaned_data.get('mother_name', '').strip()
+        mother_phone = cleaned_data.get('mother_phone', '').strip()
+        
+        has_father = bool(father_name and father_phone)
+        has_mother = bool(mother_name and mother_phone)
+        
+        if not has_father and not has_mother:
+            raise ValidationError(
+                "Veuillez renseigner au moins un parent (nom + téléphone du père ou de la mère)."
+            )
         
         # Validation du transport
         needs_transport = cleaned_data.get('needs_transport')
