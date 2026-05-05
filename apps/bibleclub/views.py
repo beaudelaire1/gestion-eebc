@@ -1043,11 +1043,13 @@ def age_group_create(request):
         
         if not name or not min_age or not max_age:
             messages.error(request, 'Veuillez remplir les champs obligatoires.')
+        elif int(min_age) >= int(max_age):
+            messages.error(request, "L'âge minimum doit être inférieur à l'âge maximum.")
         else:
             AgeGroup.objects.create(
                 name=name,
-                min_age=min_age,
-                max_age=max_age,
+                min_age=int(min_age),
+                max_age=int(max_age),
                 description=description,
                 color=color
             )
@@ -1064,15 +1066,25 @@ def age_group_update(request, pk):
     age_group = get_object_or_404(AgeGroup, pk=pk)
     
     if request.method == 'POST':
-        age_group.name = request.POST.get('name')
-        age_group.min_age = request.POST.get('min_age')
-        age_group.max_age = request.POST.get('max_age')
-        age_group.description = request.POST.get('description', '')
-        age_group.color = request.POST.get('color')
-        age_group.save()
-        
-        messages.success(request, 'Tranche d\'âge mise à jour.')
-        return redirect('bibleclub:age_group_list')
+        name = request.POST.get('name')
+        min_age = request.POST.get('min_age')
+        max_age = request.POST.get('max_age')
+        description = request.POST.get('description', '')
+        color = request.POST.get('color')
+
+        if not name or not min_age or not max_age:
+            messages.error(request, 'Veuillez remplir les champs obligatoires.')
+        elif int(min_age) >= int(max_age):
+            messages.error(request, "L'âge minimum doit être inférieur à l'âge maximum.")
+        else:
+            age_group.name = name
+            age_group.min_age = int(min_age)
+            age_group.max_age = int(max_age)
+            age_group.description = description
+            age_group.color = color
+            age_group.save()
+            messages.success(request, 'Tranche d\'âge mise à jour.')
+            return redirect('bibleclub:age_group_list')
         
     return render(request, 'bibleclub/age_group_form.html', {
         'age_group': age_group, 
