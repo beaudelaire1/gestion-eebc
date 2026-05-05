@@ -4,6 +4,17 @@
 {% block page_title %}Demande de transport{% endblock %}
 {% block page_subtitle %}{{ transport_request.requester_name }} - {{ transport_request.event_date|date:"d/m/Y" }}{% endblock %}
 
+{% block extra_css %}
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<style>
+    #driverLiveMap {
+        height: 320px;
+        border-radius: 0.5rem;
+        border: 1px solid rgba(0, 0, 0, 0.08);
+    }
+</style>
+{% endblock %}
+
 {% block content %}
 <div class="row">
     <div class="col-lg-8">
@@ -92,6 +103,35 @@
     </div>
     
     <div class="col-lg-4">
+        {% if transport_request.driver %}
+        <div class="card mb-3">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h6 class="mb-0">Suivi chauffeur en direct</h6>
+                <span id="driverLiveBadge" class="badge bg-secondary">Hors ligne</span>
+            </div>
+            <div class="card-body">
+                <div id="driverLiveMap" class="mb-3"></div>
+                <div class="small text-muted" id="driverLiveMeta">
+                    En attente de position GPS...
+                </div>
+                {% if can_push_live_tracking %}
+                <hr>
+                <div class="d-flex gap-2">
+                    <button type="button" class="btn btn-success btn-sm" id="startLiveTrackingBtn">
+                        <i class="bi bi-play-circle me-1"></i>Démarrer mon suivi
+                    </button>
+                    <button type="button" class="btn btn-outline-danger btn-sm" id="stopLiveTrackingBtn" disabled>
+                        <i class="bi bi-stop-circle me-1"></i>Arrêter
+                    </button>
+                </div>
+                <div class="small text-muted mt-2">
+                    Le suivi envoie votre position toutes les 10 secondes.
+                </div>
+                {% endif %}
+            </div>
+        </div>
+        {% endif %}
+
         <div class="card">
             <div class="card-header">
                 <h6 class="mb-0">Actions rapides</h6>
@@ -134,4 +174,162 @@
         <i class="bi bi-arrow-left me-2"></i>Retour à la liste
     </a>
 </div>
+{% endblock %}
+
+{% block extra_js %}
+{% if transport_request.driver %}
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+(() => {
+    const requestId = {{ transport_request.pk }};
+    const statusUrl = "{% url 'transport:live_status' transport_request.pk %}";
+    const updateUrl = "{% url 'transport:live_update' transport_request.pk %}";
+    const canPushGps = {{ can_push_live_tracking|yesno:'true,false' }};
+
+    const badge = document.getElementById('driverLiveBadge');
+    const meta = document.getElementById('driverLiveMeta');
+    const startBtn = document.getElementById('startLiveTrackingBtn');
+    const stopBtn = document.getElementById('stopLiveTrackingBtn');
+
+    const map = L.map('driverLiveMap').setView([4.9225, -52.3058], 12);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '&copy; OpenStreetMap contributors'
+    }).addTo(map);
+
+    const marker = L.marker([4.9225, -52.3058]).addTo(map);
+    let pollTimer = null;
+    let pushTimer = null;
+
+    function getCsrfToken() {
+        const match = document.cookie.match(/csrftoken=([^;]+)/);
+        return match ? match[1] : '';
+    }
+
+    function renderPayload(data) {
+        if (!data || !data.has_location) {
+            badge.className = 'badge bg-secondary';
+            badge.textContent = 'Hors ligne';
+            meta.textContent = 'Aucune position GPS reçue pour le moment.';
+            return;
+        }
+
+        const lat = data.latitude;
+        const lng = data.longitude;
+        marker.setLatLng([lat, lng]);
+        map.setView([lat, lng], 14);
+
+        const stale = !!data.stale;
+        badge.className = stale ? 'badge bg-warning text-dark' : 'badge bg-success';
+        badge.textContent = stale ? 'Signal ancien' : 'En direct';
+
+        const speed = data.speed_kmh == null ? 'n/a' : `${data.speed_kmh.toFixed(1)} km/h`;
+        const age = data.age_seconds == null ? '-' : `${data.age_seconds}s`;
+        meta.textContent = `Chauffeur: ${data.driver_name || '-'} | Vitesse: ${speed} | Dernière maj: ${age}`;
+    }
+
+    async function fetchStatus() {
+        try {
+            const response = await fetch(statusUrl, { headers: { 'X-Requested-With': 'XMLHttpRequest' } });
+            if (!response.ok) {
+                return;
+            }
+            const data = await response.json();
+            renderPayload(data);
+        } catch (_) {
+            badge.className = 'badge bg-secondary';
+            badge.textContent = 'Indisponible';
+        }
+    }
+
+    async function pushPosition(isActive = true) {
+        if (!navigator.geolocation) {
+            alert('La géolocalisation n\'est pas disponible sur cet appareil.');
+            return;
+        }
+
+        navigator.geolocation.getCurrentPosition(async (pos) => {
+            const payload = {
+                latitude: pos.coords.latitude,
+                longitude: pos.coords.longitude,
+                speed_kmh: pos.coords.speed == null ? null : (pos.coords.speed * 3.6),
+                accuracy_m: pos.coords.accuracy,
+                heading_deg: pos.coords.heading,
+                is_active: isActive
+            };
+
+            try {
+                const response = await fetch(updateUrl, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': getCsrfToken(),
+                        'X-Requested-With': 'XMLHttpRequest'
+                    },
+                    body: JSON.stringify(payload)
+                });
+                if (!response.ok) {
+                    return;
+                }
+                const data = await response.json();
+                renderPayload(data);
+            } catch (_) {
+                // on garde le polling en fallback
+            }
+        }, () => {
+            alert('Impossible de récupérer votre position GPS. Vérifiez les permissions.');
+        }, {
+            enableHighAccuracy: true,
+            timeout: 10000,
+            maximumAge: 5000,
+        });
+    }
+
+    function startPolling() {
+        if (pollTimer) {
+            window.clearInterval(pollTimer);
+        }
+        fetchStatus();
+        pollTimer = window.setInterval(fetchStatus, 10000);
+    }
+
+    function startTracking() {
+        if (!canPushGps) {
+            return;
+        }
+        pushPosition(true);
+        if (pushTimer) {
+            window.clearInterval(pushTimer);
+        }
+        pushTimer = window.setInterval(() => pushPosition(true), 10000);
+        if (startBtn) {
+            startBtn.disabled = true;
+        }
+        if (stopBtn) {
+            stopBtn.disabled = false;
+        }
+    }
+
+    function stopTracking() {
+        if (pushTimer) {
+            window.clearInterval(pushTimer);
+            pushTimer = null;
+        }
+        pushPosition(false);
+        if (startBtn) {
+            startBtn.disabled = false;
+        }
+        if (stopBtn) {
+            stopBtn.disabled = true;
+        }
+    }
+
+    if (startBtn && stopBtn) {
+        startBtn.addEventListener('click', startTracking);
+        stopBtn.addEventListener('click', stopTracking);
+    }
+
+    startPolling();
+})();
+</script>
+{% endif %}
 {% endblock %}

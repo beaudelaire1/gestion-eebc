@@ -1,5 +1,6 @@
 from django.db import models
 from django.conf import settings
+from django.utils import timezone
 
 
 class DriverProfile(models.Model):
@@ -122,4 +123,60 @@ class TransportRequest(models.Model):
     
     def __str__(self):
         return f"{self.requester_name} - {self.event_date}"
+
+
+class DriverLiveLocation(models.Model):
+    """Dernière position GPS connue d'un chauffeur pour une demande donnée."""
+
+    transport_request = models.OneToOneField(
+        TransportRequest,
+        on_delete=models.CASCADE,
+        related_name='live_location',
+        verbose_name="Demande de transport",
+    )
+    driver = models.ForeignKey(
+        DriverProfile,
+        on_delete=models.CASCADE,
+        related_name='live_locations',
+        verbose_name="Chauffeur",
+    )
+    latitude = models.DecimalField(max_digits=9, decimal_places=6, verbose_name="Latitude")
+    longitude = models.DecimalField(max_digits=9, decimal_places=6, verbose_name="Longitude")
+    speed_kmh = models.DecimalField(
+        max_digits=6,
+        decimal_places=2,
+        null=True,
+        blank=True,
+        verbose_name="Vitesse (km/h)",
+    )
+    accuracy_m = models.DecimalField(
+        max_digits=6,
+        decimal_places=2,
+        null=True,
+        blank=True,
+        verbose_name="Précision (m)",
+    )
+    heading_deg = models.DecimalField(
+        max_digits=6,
+        decimal_places=2,
+        null=True,
+        blank=True,
+        verbose_name="Cap (degrés)",
+    )
+    recorded_at = models.DateTimeField(default=timezone.now, verbose_name="Horodatage GPS")
+    is_active = models.BooleanField(default=True, verbose_name="Suivi actif")
+    started_at = models.DateTimeField(default=timezone.now, verbose_name="Suivi démarré")
+    stopped_at = models.DateTimeField(null=True, blank=True, verbose_name="Suivi arrêté")
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        verbose_name = "Position live chauffeur"
+        verbose_name_plural = "Positions live chauffeurs"
+        indexes = [
+            models.Index(fields=['driver', 'updated_at'], name='driver_live_driver_upd_idx'),
+            models.Index(fields=['transport_request', 'is_active'], name='driver_live_req_active_idx'),
+        ]
+
+    def __str__(self):
+        return f"Live {self.driver.user.get_full_name()} - demande #{self.transport_request_id}"
 

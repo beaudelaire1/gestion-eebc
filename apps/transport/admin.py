@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import DriverProfile, TransportRequest
+from .models import DriverProfile, TransportRequest, DriverLiveLocation
 
 
 @admin.register(DriverProfile)
@@ -17,4 +17,11 @@ class TransportRequestAdmin(admin.ModelAdmin):
     date_hierarchy = 'event_date'
     
     autocomplete_fields = ['driver']
+
+
+@admin.register(DriverLiveLocation)
+class DriverLiveLocationAdmin(admin.ModelAdmin):
+    list_display = ['transport_request', 'driver', 'latitude', 'longitude', 'is_active', 'recorded_at', 'updated_at']
+    list_filter = ['is_active', 'recorded_at']
+    search_fields = ['transport_request__requester_name', 'driver__user__first_name', 'driver__user__last_name']
 

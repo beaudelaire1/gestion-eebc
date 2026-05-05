@@ -5,9 +5,14 @@ from django.core.paginator import Paginator
 from django.core.mail import send_mail
 from django.conf import settings
 from django.template.loader import render_to_string
+from django.http import JsonResponse
+from django.views.decorators.http import require_GET, require_POST
+from django.utils import timezone
 from datetime import date
+from decimal import Decimal, InvalidOperation
+import json
 from apps.core.permissions import role_required
-from .models import DriverProfile, TransportRequest
+from .models import DriverProfile, TransportRequest, DriverLiveLocation
 from .forms import DriverProfileForm, TransportRequestForm, DriverAssignmentForm
 import logging
 
@@ -137,9 +142,171 @@ def transport_request_detail(request, pk):
         pk=pk
     )
     
+    can_manage_live_tracking = (
+        request.user.is_admin
+        or request.user.has_any_role('admin', 'secretariat', 'responsable_groupe')
+    )
+    can_push_live_tracking = bool(
+        transport_request.driver
+        and (transport_request.driver.user_id == request.user.id or can_manage_live_tracking)
+    )
+
     return render(request, 'transport/transport_request_detail.html', {
-        'transport_request': transport_request
+        'transport_request': transport_request,
+        'can_manage_live_tracking': can_manage_live_tracking,
+        'can_push_live_tracking': can_push_live_tracking,
     })
+
+
+def _can_access_live_tracking(user, transport_request, for_update=False):
+    if not user.is_authenticated:
+        return False
+
+    if user.is_admin or user.has_any_role('admin', 'secretariat', 'responsable_groupe'):
+        return True
+
+    if transport_request.driver and transport_request.driver.user_id == user.id:
+        return True
+
+    if for_update:
+        return False
+
+    requester_member = transport_request.requester_member
+    if requester_member and requester_member.user_id == user.id:
+        return True
+
+    return False
+
+
+def _build_live_payload(transport_request):
+    live_location = getattr(transport_request, 'live_location', None)
+    if not live_location:
+        return {
+            'tracking_available': bool(transport_request.driver_id),
+            'is_active': False,
+            'has_location': False,
+            'driver_name': transport_request.driver.user.get_full_name() if transport_request.driver else '',
+        }
+
+    now = timezone.now()
+    age_seconds = max(int((now - live_location.recorded_at).total_seconds()), 0)
+
+    return {
+        'tracking_available': True,
+        'is_active': live_location.is_active,
+        'has_location': True,
+        'driver_name': transport_request.driver.user.get_full_name() if transport_request.driver else '',
+        'latitude': float(live_location.latitude),
+        'longitude': float(live_location.longitude),
+        'speed_kmh': float(live_location.speed_kmh) if live_location.speed_kmh is not None else None,
+        'accuracy_m': float(live_location.accuracy_m) if live_location.accuracy_m is not None else None,
+        'heading_deg': float(live_location.heading_deg) if live_location.heading_deg is not None else None,
+        'recorded_at': live_location.recorded_at.isoformat(),
+        'age_seconds': age_seconds,
+        'stale': age_seconds > 60,
+    }
+
+
+@login_required
+@require_GET
+def transport_live_status(request, pk):
+    """Retourne la position live d'une demande de transport (JSON)."""
+    transport_request = get_object_or_404(
+        TransportRequest.objects.select_related('driver__user', 'requester_member__user'),
+        pk=pk,
+    )
+
+    if not _can_access_live_tracking(request.user, transport_request):
+        return JsonResponse({'error': 'Accès refusé'}, status=403)
+
+    return JsonResponse(_build_live_payload(transport_request))
+
+
+@login_required
+@require_POST
+def transport_live_update(request, pk):
+    """Met à jour la position GPS live d'un chauffeur (JSON)."""
+    transport_request = get_object_or_404(
+        TransportRequest.objects.select_related('driver__user'),
+        pk=pk,
+    )
+
+    if not transport_request.driver:
+        return JsonResponse({'error': 'Aucun chauffeur assigné'}, status=400)
+
+    if not _can_access_live_tracking(request.user, transport_request, for_update=True):
+        return JsonResponse({'error': 'Accès refusé'}, status=403)
+
+    try:
+        payload = json.loads(request.body.decode('utf-8') or '{}')
+    except json.JSONDecodeError:
+        return JsonResponse({'error': 'JSON invalide'}, status=400)
+
+    try:
+        latitude = Decimal(str(payload.get('latitude')))
+        longitude = Decimal(str(payload.get('longitude')))
+    except (InvalidOperation, TypeError, ValueError):
+        return JsonResponse({'error': 'Latitude/longitude invalides'}, status=400)
+
+    if latitude < Decimal('-90') or latitude > Decimal('90'):
+        return JsonResponse({'error': 'Latitude hors limites'}, status=400)
+    if longitude < Decimal('-180') or longitude > Decimal('180'):
+        return JsonResponse({'error': 'Longitude hors limites'}, status=400)
+
+    def optional_decimal(name, max_abs=None):
+        value = payload.get(name)
+        if value in (None, ''):
+            return None
+        dec = Decimal(str(value))
+        if max_abs is not None and (dec < -max_abs or dec > max_abs):
+            raise InvalidOperation()
+        return dec
+
+    try:
+        speed_kmh = optional_decimal('speed_kmh', Decimal('500'))
+        accuracy_m = optional_decimal('accuracy_m', Decimal('10000'))
+        heading_deg = optional_decimal('heading_deg', Decimal('360'))
+    except (InvalidOperation, TypeError, ValueError):
+        return JsonResponse({'error': 'Valeurs numériques invalides'}, status=400)
+
+    is_active = bool(payload.get('is_active', True))
+    now = timezone.now()
+
+    live_location, created = DriverLiveLocation.objects.get_or_create(
+        transport_request=transport_request,
+        defaults={
+            'driver': transport_request.driver,
+            'latitude': latitude,
+            'longitude': longitude,
+            'speed_kmh': speed_kmh,
+            'accuracy_m': accuracy_m,
+            'heading_deg': heading_deg,
+            'recorded_at': now,
+            'is_active': is_active,
+            'started_at': now,
+            'stopped_at': None if is_active else now,
+        },
+    )
+
+    if not created:
+        if live_location.driver_id != transport_request.driver_id:
+            live_location.driver = transport_request.driver
+        live_location.latitude = latitude
+        live_location.longitude = longitude
+        live_location.speed_kmh = speed_kmh
+        live_location.accuracy_m = accuracy_m
+        live_location.heading_deg = heading_deg
+        live_location.recorded_at = now
+        live_location.is_active = is_active
+        if is_active and live_location.started_at is None:
+            live_location.started_at = now
+        if not is_active and live_location.stopped_at is None:
+            live_location.stopped_at = now
+        if is_active:
+            live_location.stopped_at = None
+        live_location.save()
+
+    return JsonResponse({'ok': True, **_build_live_payload(transport_request)})
 
 
 @login_required
@@ -219,7 +386,6 @@ def transport_calendar(request):
 @role_required('admin', 'secretariat', 'responsable_groupe')
 def transport_calendar_data(request):
     """API JSON pour les données du calendrier."""
-    from django.http import JsonResponse
     from datetime import datetime, timedelta
     # Récupérer les paramètres de date
     start = request.GET.get('start')

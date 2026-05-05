@@ -5,7 +5,7 @@ import pytest
 from datetime import date, time
 
 from apps.accounts.models import User
-from apps.transport.models import DriverProfile, TransportRequest
+from apps.transport.models import DriverProfile, TransportRequest, DriverLiveLocation
 
 
 @pytest.fixture
@@ -69,3 +69,30 @@ class TestTransportRequest:
             status='pending',
         )
         assert req.driver is None
+
+
+@pytest.mark.django_db
+class TestDriverLiveLocation:
+
+    def test_create_live_location(self, driver_profile):
+        req = TransportRequest.objects.create(
+            requester_name='Pauline Test',
+            requester_phone='0694000000',
+            pickup_address='15 rue des Fleurs',
+            event_date=date.today(),
+            event_time=time(10, 30),
+            passengers_count=1,
+            driver=driver_profile,
+            status='confirmed',
+        )
+        live = DriverLiveLocation.objects.create(
+            transport_request=req,
+            driver=driver_profile,
+            latitude='4.922500',
+            longitude='-52.305800',
+            is_active=True,
+        )
+
+        assert live.pk is not None
+        assert live.transport_request == req
+        assert live.driver == driver_profile
