@@ -32,7 +32,7 @@
                                 <option value="">Choisir une tranche d'âge...</option>
                                 {% for age_group in age_groups %}
                                     <option value="{{ age_group.pk }}" 
-                                            {% if bible_class.age_group_id == age_group.pk %}selected{% endif %}>
+                                            {% if selected_age_group_id == age_group.pk|stringformat:'s' %}selected{% endif %}>
                                         {{ age_group.name }} ({{ age_group.min_age }}-{{ age_group.max_age }} ans)
                                     </option>
                                 {% endfor %}
@@ -58,7 +58,7 @@
                                    class="form-control"
                                    id="room"
                                    name="room"
-                                   value="{{ bible_class.room|default:'' }}"
+                                   value="{{ submitted_room|default:'' }}"
                                    maxlength="50"
                                    placeholder="Ex: Salle B">
                             <div class="form-text">Optionnel - Permet d'avoir plusieurs classes pour une même tranche d'âge.</div>
@@ -70,7 +70,7 @@
                                    class="form-control" 
                                    id="max_capacity" 
                                    name="max_capacity" 
-                                   value="{{ bible_class.max_capacity|default:15 }}"
+                                   value="{{ submitted_capacity|default:15 }}"
                                    min="1"
                                    max="100"
                                    placeholder="Ex: 15">

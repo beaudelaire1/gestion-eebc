@@ -744,16 +744,16 @@ def bible_class_create(request):
         age_group_id = request.POST.get('age_group')
         room = request.POST.get('room', '').strip()
         max_capacity = request.POST.get('max_capacity')
-        
+
         if not age_group_id:
-            messages.error(request, "La tranche d'âge est requise.")
+            messages.error(request, "La tranche d'\u00e2ge est requise.")
         else:
             try:
                 age_group = AgeGroup.objects.get(pk=age_group_id)
                 capacity = _parse_bible_class_capacity(max_capacity)
 
                 if _bible_class_duplicate_exists(age_group, room):
-                    messages.error(request, f'Une classe "{_format_bible_class_label(age_group, room)}" existe déjà.')
+                    messages.error(request, f'Une classe "{_format_bible_class_label(age_group, room)}" existe d\u00e9j\u00e0.')
                 else:
                     bible_class = BibleClass.objects.create(
                         age_group=age_group,
@@ -761,22 +761,23 @@ def bible_class_create(request):
                         max_capacity=capacity,
                         is_active=True
                     )
-
-                    messages.success(request, f'Classe "{bible_class}" créée avec succès.')
+                    messages.success(request, f'Classe "{bible_class}" cr\u00e9\u00e9e avec succ\u00e8s.')
                     return redirect('bibleclub:class_detail', pk=bible_class.pk)
             except AgeGroup.DoesNotExist:
-                messages.error(request, "La tranche d'âge sélectionnée est invalide.")
+                messages.error(request, "La tranche d'\u00e2ge s\u00e9lectionn\u00e9e est invalide.")
             except ValueError as e:
                 messages.error(request, str(e))
             except Exception as e:
-                messages.error(request, f'Erreur lors de la création : {e}')
-    
+                messages.error(request, f'Erreur lors de la cr\u00e9ation\u00a0: {e}')
+
     age_groups = AgeGroup.objects.all().order_by('min_age')
-    
     context = {
         'age_groups': age_groups,
         'title': 'Nouvelle classe biblique',
-        'submit_text': 'Créer la classe'
+        'submit_text': 'Cr\u00e9er la classe',
+        'selected_age_group_id': request.POST.get('age_group') if request.method == 'POST' else None,
+        'submitted_room': request.POST.get('room', '') if request.method == 'POST' else '',
+        'submitted_capacity': request.POST.get('max_capacity', '') if request.method == 'POST' else '',
     }
     return render(request, 'bibleclub/bible_class_form.html', context)
 
@@ -786,45 +787,46 @@ def bible_class_create(request):
 def bible_class_update(request, pk):
     """Modifier une classe biblique."""
     bible_class = get_object_or_404(BibleClass, pk=pk)
-    
+
     if request.method == 'POST':
         age_group_id = request.POST.get('age_group')
         room = request.POST.get('room', '').strip()
         max_capacity = request.POST.get('max_capacity')
         is_active = 'is_active' in request.POST
-        
+
         if not age_group_id:
-            messages.error(request, "La tranche d'âge est requise.")
+            messages.error(request, "La tranche d'\u00e2ge est requise.")
         else:
             try:
                 age_group = AgeGroup.objects.get(pk=age_group_id)
                 capacity = _parse_bible_class_capacity(max_capacity)
 
                 if _bible_class_duplicate_exists(age_group, room, exclude_pk=pk):
-                    messages.error(request, f'Une classe "{_format_bible_class_label(age_group, room)}" existe déjà.')
+                    messages.error(request, f'Une classe "{_format_bible_class_label(age_group, room)}" existe d\u00e9j\u00e0.')
                 else:
                     bible_class.age_group = age_group
                     bible_class.room = room
                     bible_class.max_capacity = capacity
                     bible_class.is_active = is_active
                     bible_class.save()
-
-                    messages.success(request, f'Classe "{bible_class}" modifiée avec succès.')
+                    messages.success(request, f'Classe "{bible_class}" modifi\u00e9e avec succ\u00e8s.')
                     return redirect('bibleclub:class_detail', pk=bible_class.pk)
             except AgeGroup.DoesNotExist:
-                messages.error(request, "La tranche d'âge sélectionnée est invalide.")
+                messages.error(request, "La tranche d'\u00e2ge s\u00e9lectionn\u00e9e est invalide.")
             except ValueError as e:
                 messages.error(request, str(e))
             except Exception as e:
-                messages.error(request, f'Erreur lors de la modification : {e}')
-    
+                messages.error(request, f'Erreur lors de la modification\u00a0: {e}')
+
     age_groups = AgeGroup.objects.all().order_by('min_age')
-    
     context = {
         'bible_class': bible_class,
         'age_groups': age_groups,
         'title': f'Modifier {bible_class}',
-        'submit_text': 'Enregistrer les modifications'
+        'submit_text': 'Enregistrer les modifications',
+        'selected_age_group_id': request.POST.get('age_group', str(bible_class.age_group_id)) if request.method == 'POST' else str(bible_class.age_group_id),
+        'submitted_room': request.POST.get('room', bible_class.room) if request.method == 'POST' else bible_class.room,
+        'submitted_capacity': request.POST.get('max_capacity', bible_class.max_capacity) if request.method == 'POST' else bible_class.max_capacity,
     }
     return render(request, 'bibleclub/bible_class_form.html', context)
 
@@ -1034,29 +1036,37 @@ def age_group_list(request):
 @club_admin_required
 def age_group_create(request):
     """Créer une tranche d'âge."""
+    age_group = None  # objet temporaire pour pré-remplir le formulaire en cas d'erreur
     if request.method == 'POST':
-        name = request.POST.get('name')
-        min_age = request.POST.get('min_age')
-        max_age = request.POST.get('max_age')
+        name = request.POST.get('name', '').strip()
+        min_age = request.POST.get('min_age', '').strip()
+        max_age = request.POST.get('max_age', '').strip()
         description = request.POST.get('description', '')
         color = request.POST.get('color', '#0d6efd')
-        
+
+        error = None
         if not name or not min_age or not max_age:
-            messages.error(request, 'Veuillez remplir les champs obligatoires.')
+            error = 'Veuillez remplir les champs obligatoires.'
         elif int(min_age) >= int(max_age):
-            messages.error(request, "L'âge minimum doit être inférieur à l'âge maximum.")
+            error = "L'\u00e2ge minimum doit \u00eatre inf\u00e9rieur \u00e0 l'\u00e2ge maximum."
+
+        if error:
+            messages.error(request, error)
+            from types import SimpleNamespace
+            age_group = SimpleNamespace(name=name, min_age=min_age, max_age=max_age,
+                                       description=description, color=color)
         else:
             AgeGroup.objects.create(
-                name=name,
-                min_age=int(min_age),
-                max_age=int(max_age),
-                description=description,
-                color=color
+                name=name, min_age=int(min_age), max_age=int(max_age),
+                description=description, color=color
             )
-            messages.success(request, 'Tranche d\'âge créée avec succès.')
+            messages.success(request, 'Tranche d\'\u00e2ge cr\u00e9\u00e9e avec succ\u00e8s.')
             return redirect('bibleclub:age_group_list')
-            
-    return render(request, 'bibleclub/age_group_form.html', {'title': 'Nouvelle tranche d\'âge'})
+
+    return render(request, 'bibleclub/age_group_form.html', {
+        'title': 'Nouvelle tranche d\'\u00e2ge',
+        'age_group': age_group,
+    })
 
 
 @login_required
@@ -1064,30 +1074,34 @@ def age_group_create(request):
 def age_group_update(request, pk):
     """Modifier une tranche d'âge."""
     age_group = get_object_or_404(AgeGroup, pk=pk)
-    
+
     if request.method == 'POST':
-        name = request.POST.get('name')
-        min_age = request.POST.get('min_age')
-        max_age = request.POST.get('max_age')
+        name = request.POST.get('name', '').strip()
+        min_age = request.POST.get('min_age', '').strip()
+        max_age = request.POST.get('max_age', '').strip()
         description = request.POST.get('description', '')
-        color = request.POST.get('color')
+        color = request.POST.get('color', age_group.color)
+
+        # Mettre à jour en mémoire pour pré-remplir le template en cas d'erreur
+        age_group.name = name
+        age_group.description = description
+        age_group.color = color
+        if min_age:
+            age_group.min_age = int(min_age)
+        if max_age:
+            age_group.max_age = int(max_age)
 
         if not name or not min_age or not max_age:
             messages.error(request, 'Veuillez remplir les champs obligatoires.')
         elif int(min_age) >= int(max_age):
-            messages.error(request, "L'âge minimum doit être inférieur à l'âge maximum.")
+            messages.error(request, "L'\u00e2ge minimum doit \u00eatre inf\u00e9rieur \u00e0 l'\u00e2ge maximum.")
         else:
-            age_group.name = name
-            age_group.min_age = int(min_age)
-            age_group.max_age = int(max_age)
-            age_group.description = description
-            age_group.color = color
             age_group.save()
-            messages.success(request, 'Tranche d\'âge mise à jour.')
+            messages.success(request, 'Tranche d\'\u00e2ge mise \u00e0 jour.')
             return redirect('bibleclub:age_group_list')
-        
+
     return render(request, 'bibleclub/age_group_form.html', {
-        'age_group': age_group, 
+        'age_group': age_group,
         'title': f'Modifier {age_group.name}'
     })
 
