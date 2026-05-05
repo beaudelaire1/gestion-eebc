@@ -55,7 +55,7 @@
                         <td class="text-muted small text-truncate" style="max-width: 200px;">
                             {{ group.description }}
                         </td>
-                        <div class="text-nowrap text-end">
+                        <td class="text-nowrap text-end">
                             <a href="{% url 'bibleclub:age_group_update' group.pk %}"
                                 class="btn btn-sm btn-outline-primary" title="Modifier">
                                 <i class="bi bi-pencil"></i>
@@ -64,7 +64,6 @@
                                 class="btn btn-sm btn-outline-danger" title="Supprimer">
                                 <i class="bi bi-trash"></i>
                             </a>
-                        </div>
                         </td>
                     </tr>
                     {% empty %}
