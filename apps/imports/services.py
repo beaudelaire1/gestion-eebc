@@ -77,7 +77,7 @@ class ExcelImportService:
         try:
             self.import_log.status = ImportLog.Status.PROCESSING
             self.import_log.save()
-            
+
             if self.import_log.import_type == ImportLog.ImportType.MEMBERS:
                 self._import_members()
             elif self.import_log.import_type == ImportLog.ImportType.CHILDREN:
@@ -96,7 +96,8 @@ class ExcelImportService:
     
     def _import_members(self):
         """Importe les membres depuis un fichier Excel."""
-        df = pd.read_excel(self.import_log.file_path.path)
+        with self.import_log.file_path.open('rb') as file_obj:
+            df = pd.read_excel(file_obj)
         
         expected_columns = {
             'prenom': 'first_name', 'nom': 'last_name', 'email': 'email',
@@ -256,7 +257,8 @@ class ExcelImportService:
     
     def _import_children(self):
         """Importe les enfants depuis un fichier Excel."""
-        df = pd.read_excel(self.import_log.file_path.path)
+        with self.import_log.file_path.open('rb') as file_obj:
+            df = pd.read_excel(file_obj)
         
         expected_columns = {
             'prenom': 'first_name', 'nom': 'last_name', 'date_naissance': 'date_of_birth',
@@ -386,7 +388,8 @@ class ExcelImportService:
     
     def _import_young_members(self):
         """Importe les jeunes depuis un fichier Excel."""
-        df = pd.read_excel(self.import_log.file_path.path)
+        with self.import_log.file_path.open('rb') as file_obj:
+            df = pd.read_excel(file_obj)
         
         expected_columns = {
             'prenom': 'first_name', 'nom': 'last_name', 'date_naissance': 'date_of_birth',

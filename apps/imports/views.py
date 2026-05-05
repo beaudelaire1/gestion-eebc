@@ -72,7 +72,8 @@ def import_create(request):
     if request.method == 'POST':
         form = ImportForm(request.POST, request.FILES)
         if form.is_valid():
-            uploaded_file = request.FILES.get('file')
+            # Le champ du formulaire est file_path (on garde un fallback legacy sur file).
+            uploaded_file = request.FILES.get('file_path') or request.FILES.get('file')
             if uploaded_file:
                 import os
                 ext = os.path.splitext(uploaded_file.name)[1].lower()

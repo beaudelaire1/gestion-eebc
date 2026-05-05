@@ -1,5 +1,6 @@
 from django.db import models
 from django.conf import settings
+from django.core.files.storage import FileSystemStorage
 
 
 class ImportLog(models.Model):
@@ -34,7 +35,12 @@ class ImportLog(models.Model):
     )
     
     file_name = models.CharField(max_length=255, verbose_name="Nom du fichier")
-    file_path = models.FileField(upload_to='imports/', verbose_name="Fichier")
+    # Les fichiers d'import (Excel) doivent rester sur filesystem pour traitement local.
+    file_path = models.FileField(
+        upload_to='imports/',
+        storage=FileSystemStorage(),
+        verbose_name="Fichier"
+    )
     
     # Statistiques
     total_rows = models.PositiveIntegerField(default=0, verbose_name="Lignes totales")
