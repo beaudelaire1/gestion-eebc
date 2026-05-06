@@ -1022,3 +1022,86 @@ L'équipe transport de l'EEBC
         fail_silently=False
     )
 
+
+# ===== ACTIONS CHAUFFEUR (SPRINT 1) =====
+
+@login_required
+@require_POST
+def transport_request_start(request, pk):
+    """
+    Chauffeur signale qu'il part (CONFIRMED → EN_ROUTE).
+    """
+    transport_request = get_object_or_404(TransportRequest, pk=pk)
+    
+    # Vérifications
+    if transport_request.status != TransportRequest.Status.CONFIRMED:
+        messages.error(request, 'Seules les demandes confirmées peuvent être démarrées.')
+        return redirect('transport:request_detail', pk=pk)
+    
+    if not transport_request.driver or transport_request.driver.user_id != request.user.id:
+        messages.error(request, 'Vous devez être le chauffeur assigné.')
+        return redirect('transport:requests')
+    
+    # Transition
+    transport_request.status = TransportRequest.Status.EN_ROUTE
+    transport_request.save(update_fields=['status', 'updated_at'])
+    
+    messages.success(request, f'Trajet démarré pour {transport_request.requester_name}.')
+    
+    # TODO Sprint 2: Envoyer notification passager
+    return redirect('transport:request_detail', pk=pk)
+
+
+@login_required
+@require_POST
+def transport_request_arriving(request, pk):
+    """
+    Chauffeur signale qu'il arrive (EN_ROUTE → ARRIVING).
+    """
+    transport_request = get_object_or_404(TransportRequest, pk=pk)
+    
+    # Vérifications
+    if transport_request.status != TransportRequest.Status.EN_ROUTE:
+        messages.error(request, 'Seuls les trajets en route peuvent signaler une arrivée.')
+        return redirect('transport:request_detail', pk=pk)
+    
+    if not transport_request.driver or transport_request.driver.user_id != request.user.id:
+        messages.error(request, 'Vous devez être le chauffeur assigné.')
+        return redirect('transport:requests')
+    
+    # Transition
+    transport_request.status = TransportRequest.Status.ARRIVING
+    transport_request.save(update_fields=['status', 'updated_at'])
+    
+    messages.success(request, f'Arrivée signalée pour {transport_request.requester_name}.')
+    
+    # TODO Sprint 2: Envoyer notification passager "j'arrive dans 2 min"
+    return redirect('transport:request_detail', pk=pk)
+
+
+@login_required
+@require_POST
+def transport_request_complete(request, pk):
+    """
+    Chauffeur signale que le trajet est effectué (ARRIVING → COMPLETED).
+    """
+    transport_request = get_object_or_404(TransportRequest, pk=pk)
+    
+    # Vérifications
+    if transport_request.status not in [TransportRequest.Status.ARRIVING, TransportRequest.Status.EN_ROUTE]:
+        messages.error(request, 'Seuls les trajets en route ou "en arrivée" peuvent être complétés.')
+        return redirect('transport:request_detail', pk=pk)
+    
+    if not transport_request.driver or transport_request.driver.user_id != request.user.id:
+        messages.error(request, 'Vous devez être le chauffeur assigné.')
+        return redirect('transport:requests')
+    
+    # Transition
+    transport_request.status = TransportRequest.Status.COMPLETED
+    transport_request.save(update_fields=['status', 'updated_at'])
+    
+    messages.success(request, f'Trajet effectué pour {transport_request.requester_name}.')
+    
+    # TODO Sprint 2: Envoyer notification passager "trajet complété"
+    return redirect('transport:request_detail', pk=pk)
+

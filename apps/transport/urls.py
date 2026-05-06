@@ -18,6 +18,11 @@ urlpatterns = [
     path('requests/<int:pk>/edit/', views.transport_request_update, name='request_update'),
     path('requests/<int:pk>/delete/', views.transport_request_delete, name='request_delete'),
     path('requests/<int:pk>/assign/', views.assign_driver, name='assign_driver'),
+    
+    # Driver actions (Sprint 1)
+    path('requests/<int:pk>/start/', views.transport_request_start, name='request_start'),
+    path('requests/<int:pk>/arriving/', views.transport_request_arriving, name='request_arriving'),
+    path('requests/<int:pk>/complete/', views.transport_request_complete, name='request_complete'),
     path('requests/<int:pk>/accept/', views.transport_request_accept, name='request_accept'),
     path('requests/<int:pk>/pickup-location/', views.transport_pickup_location_update, name='pickup_location_update'),
     path('requests/<int:pk>/live/status/', views.transport_live_status, name='live_status'),

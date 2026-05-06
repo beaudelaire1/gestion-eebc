@@ -54,6 +54,8 @@ class TransportRequest(models.Model):
     class Status(models.TextChoices):
         PENDING = 'pending', 'En attente'
         CONFIRMED = 'confirmed', 'Confirmé'
+        EN_ROUTE = 'en_route', 'En route'
+        ARRIVING = 'arriving', 'Arrive bientôt'
         COMPLETED = 'completed', 'Effectué'
         CANCELLED = 'cancelled', 'Annulé'
 
