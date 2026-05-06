@@ -1,5 +1,5 @@
 from django.urls import path
-from . import views
+from . import views, api_public
 
 app_name = 'transport'
 
@@ -31,5 +31,9 @@ urlpatterns = [
     # Calendar URLs
     path('calendar/', views.transport_calendar, name='calendar'),
     path('calendar/data/', views.transport_calendar_data, name='calendar_data'),
+    
+    # Public tracking (Sprint 3) - No authentication required
+    path('public/track/<str:tracking_token>/', api_public.tracking_page_html, name='public_track'),
+    path('public/track/<str:tracking_token>/api/', api_public.tracking_api_json, name='public_track_api'),
 ]
 
