@@ -71,10 +71,8 @@ class AppRouter {
         return '/home';
       }
 
-      // Forcer le changement de mot de passe
-      if (isLoggedIn && authService.currentUser?.mustChangePassword == true && location != '/change-password') {
-        return '/change-password';
-      }
+      // Forcer le changement de mot de passe (si nécessaire)
+      // TODO: Implement password change requirement check
 
       return null;
     },
