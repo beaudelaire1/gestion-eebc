@@ -145,7 +145,6 @@ def geocode_address_with_metadata(address, city="", postal_code="", country="Guy
                 'format': 'json',
                 'limit': 3,
                 'addressdetails': 1,
-                'countrycodes': 'gf',
                 'accept-language': 'fr',
             },
             headers={'User-Agent': USER_AGENT},
@@ -166,8 +165,16 @@ def geocode_address_with_metadata(address, city="", postal_code="", country="Guy
             }
 
         results = response.json()
-        if not results:
-            logger.info("geocode_no_result key=%s", canonical['address_key'][:12])
+        
+        # Filter out obviously wrong results (outside Guyana bounds)
+        # Guyana: ~1°N-8°N, ~52°W-61°W
+        valid_results = [
+            r for r in results
+            if 0.5 <= float(r.get('lat', 0)) <= 9 and -62 <= float(r.get('lon', 0)) <= -51
+        ]
+        
+        if not valid_results:
+            logger.info("geocode_no_valid_result key=%s", canonical['address_key'][:12])
             return {
                 'coords': None,
                 'address_key': canonical['address_key'],
@@ -175,9 +182,23 @@ def geocode_address_with_metadata(address, city="", postal_code="", country="Guy
                 'provider': 'nominatim',
             }
 
-        best = _pick_best_result(results)
+        best = _pick_best_result(valid_results)
         lat = _round_coord(float(best['lat']))
         lon = _round_coord(float(best['lon']))
+        
+        # Final validation: reject sea coordinates
+        if lat < 1.0 or lat > 8.0 or lon < -62 or lon > -51:
+            logger.warning(
+                "geocode_invalid_coords lat=%s lon=%s key=%s",
+                lat, lon,
+                canonical['address_key'][:12],
+            )
+            return {
+                'coords': None,
+                'address_key': canonical['address_key'],
+                'from_cache': False,
+                'provider': 'nominatim',
+            }
         expires_at = now + timedelta(days=GEOCODE_TTL_DAYS)
 
         defaults = {
