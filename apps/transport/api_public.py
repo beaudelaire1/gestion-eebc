@@ -1,14 +1,85 @@
-"""
-API Publique pour le suivi tracking passager (sans authentification).
-Accessible via token UUID unique par demande.
-"""
-from django.http import JsonResponse, HttpResponse
-from django.shortcuts import get_object_or_404
+"""API publique de suivi passager, accessible par token UUID."""
+from datetime import timedelta
+from uuid import UUID
+
+from django.core.cache import cache
+from django.http import JsonResponse
+from django.shortcuts import render
+from django.urls import reverse
 from django.views.decorators.http import require_http_methods
 from django.utils import timezone
-import json
 
-from .models import TransportRequest, DriverLiveLocation
+from .models import TransportRequest
+
+
+TRACKABLE_STATUSES = {
+    TransportRequest.Status.CONFIRMED,
+    TransportRequest.Status.EN_ROUTE,
+    TransportRequest.Status.ARRIVING,
+}
+PUBLIC_API_RATE_LIMIT = 120
+PUBLIC_PAGE_RATE_LIMIT = 30
+RATE_LIMIT_WINDOW_SECONDS = 60
+
+
+def _parse_tracking_token(tracking_token):
+    try:
+        return UUID(str(tracking_token))
+    except (TypeError, ValueError):
+        return None
+
+
+def _client_ip(request):
+    forwarded_for = request.META.get('HTTP_X_FORWARDED_FOR')
+    if forwarded_for:
+        return forwarded_for.split(',')[0].strip()
+    return request.META.get('REMOTE_ADDR', 'unknown')
+
+
+def _is_rate_limited(request, tracking_token, scope, limit):
+    cache_key = (
+        f"transport:public-tracking:{scope}:"
+        f"{tracking_token}:{_client_ip(request)}"
+    )
+    if cache.add(cache_key, 1, RATE_LIMIT_WINDOW_SECONDS):
+        return False
+    try:
+        return cache.incr(cache_key) > limit
+    except ValueError:
+        cache.set(cache_key, 1, RATE_LIMIT_WINDOW_SECONDS)
+        return False
+
+
+def _transport_request_for_token(tracking_token):
+    parsed_token = _parse_tracking_token(tracking_token)
+    if parsed_token is None:
+        return None
+
+    return TransportRequest.objects.select_related(
+        'driver__user',
+        'live_location',
+    ).filter(tracking_token=parsed_token).first()
+
+
+def _tracking_link_expired(transport_request):
+    return transport_request.event_date < timezone.localdate() - timedelta(days=1)
+
+
+def _can_track(transport_request):
+    return transport_request.status in TRACKABLE_STATUSES
+
+
+def _driver_phone(driver):
+    if not driver or not hasattr(driver.user, 'profile'):
+        return None
+    return getattr(driver.user.profile, 'phone', None)
+
+
+def _masked_phone(phone):
+    if not phone:
+        return None
+    visible_digits = ''.join(char for char in phone if char.isdigit())[-2:]
+    return f"••••••{visible_digits}" if visible_digits else None
 
 
 @require_http_methods(["GET"])
@@ -46,25 +117,22 @@ def tracking_api_json(request, tracking_token):
         "last_update": "2026-05-06T16:46:00Z"
     }
     """
-    try:
-        transport_request = TransportRequest.objects.select_related(
-            'driver__user',
-            'live_location'
-        ).get(tracking_token=tracking_token)
-    except TransportRequest.DoesNotExist:
+    if _is_rate_limited(request, tracking_token, 'api', PUBLIC_API_RATE_LIMIT):
+        return JsonResponse(
+            {"error": "Trop de requêtes, veuillez réessayer dans une minute"},
+            status=429,
+        )
+
+    transport_request = _transport_request_for_token(tracking_token)
+    if transport_request is None or _tracking_link_expired(transport_request):
         return JsonResponse(
             {"error": "Lien de suivi invalide ou expiré"},
             status=404
         )
-    
-    # Vérifier si le suivi est disponible
-    can_track = transport_request.status not in [
-        TransportRequest.Status.PENDING,
-        TransportRequest.Status.COMPLETED,
-        TransportRequest.Status.CANCELLED,
-    ]
-    
-    # Construire la réponse
+
+    can_track = _can_track(transport_request)
+    live_location = getattr(transport_request, 'live_location', None)
+
     data = {
         "request_id": transport_request.pk,
         "status": transport_request.status,
@@ -78,26 +146,20 @@ def tracking_api_json(request, tracking_token):
         "tracking_status": "not_started",
         "last_update": None,
     }
-    
-    # Ajouter infos chauffeur si assigné
+
     if transport_request.driver:
         data["driver"] = {
             "name": transport_request.driver.user.get_full_name(),
-            "phone": getattr(
-                transport_request.driver.user.profile,
-                'phone',
-                None
-            ) if hasattr(transport_request.driver.user, 'profile') else None,
+            "phone": _masked_phone(_driver_phone(transport_request.driver)),
             "vehicle": {
                 "type": transport_request.driver.vehicle_type,
                 "capacity": transport_request.driver.capacity,
                 "model": transport_request.driver.vehicle_model or None,
             }
         }
-    
-    # Ajouter position si disponible
-    if hasattr(transport_request, 'live_location') and transport_request.live_location:
-        live = transport_request.live_location
+
+    if live_location:
+        live = live_location
         data["position"] = {
             "latitude": float(live.latitude),
             "longitude": float(live.longitude),
@@ -108,19 +170,15 @@ def tracking_api_json(request, tracking_token):
         }
         data["last_update"] = live.updated_at.isoformat()
         data["tracking_status"] = "active" if live.is_active else "paused"
-    
-    # Ajouter ETA si applicable
+
     if can_track and transport_request.status in [
         TransportRequest.Status.EN_ROUTE,
         TransportRequest.Status.ARRIVING,
-    ]:
-        # TODO: Calculer ETA basé sur distance + vitesse moyenne
-        # Pour maintenant, afficher position_update + message
-        if transport_request.live_location:
-            if transport_request.status == TransportRequest.Status.ARRIVING:
-                data["eta_minutes"] = "~2-5"
-            else:
-                data["eta_minutes"] = "~10-15"
+    ] and live_location:
+        if transport_request.status == TransportRequest.Status.ARRIVING:
+            data["eta_minutes"] = "~2-5"
+        else:
+            data["eta_minutes"] = "~10-15"
     
     return JsonResponse(data)
 
@@ -140,325 +198,43 @@ def tracking_page_html(request, tracking_token):
     - Statut trajet
     - Polling auto toutes les 5 secondes
     """
-    try:
-        transport_request = TransportRequest.objects.select_related(
-            'driver__user',
-            'live_location'
-        ).get(tracking_token=tracking_token)
-    except TransportRequest.DoesNotExist:
-        return HttpResponse("""
-        <!DOCTYPE html>
-        <html lang="fr">
-        <head>
-            <meta charset="UTF-8">
-            <meta name="viewport" content="width=device-width, initial-scale=1.0">
-            <title>Lien expiré - EEBC Transport</title>
-            <style>
-                body { font-family: Poppins, sans-serif; margin: 0; padding: 20px; background: #f5f5f5; }
-                .container { max-width: 600px; margin: 0 auto; background: white; padding: 30px; border-radius: 10px; }
-                h1 { color: #d32f2f; }
-            </style>
-        </head>
-        <body>
-            <div class="container">
-                <h1>❌ Lien expiré</h1>
-                <p>Désolé, ce lien de suivi n'est plus valide ou a expiré.</p>
-                <p>Si vous avez besoin d'aide, contactez EEBC Transport.</p>
-            </div>
-        </body>
-        </html>
-        """, status=404, content_type='text/html')
-    
-    # Vérifier disponibilité suivi
-    can_track = transport_request.status not in [
-        TransportRequest.Status.PENDING,
-        TransportRequest.Status.COMPLETED,
-        TransportRequest.Status.CANCELLED,
-    ]
-    
-    # Déterminer position initiale sur carte
+    if _is_rate_limited(request, tracking_token, 'page', PUBLIC_PAGE_RATE_LIMIT):
+        return render(
+            request,
+            'transport/public_tracking_invalid.html',
+            {'message': 'Trop de requêtes, veuillez réessayer dans une minute.'},
+            status=429,
+        )
+
+    transport_request = _transport_request_for_token(tracking_token)
+    if transport_request is None or _tracking_link_expired(transport_request):
+        return render(
+            request,
+            'transport/public_tracking_invalid.html',
+            {'message': "Désolé, ce lien de suivi n'est plus valide ou a expiré."},
+            status=404,
+        )
+
     initial_lat = 4.9
     initial_lng = -52.3
     zoom = 10
-    
+
     if transport_request.pickup_latitude and transport_request.pickup_longitude:
         initial_lat = float(transport_request.pickup_latitude)
         initial_lng = float(transport_request.pickup_longitude)
         zoom = 13
-    
-    driver_info = ""
-    if transport_request.driver:
-        driver_name = transport_request.driver.user.get_full_name()
-        driver_phone = getattr(
-            transport_request.driver.user.profile,
-            'phone',
-            'N/A'
-        ) if hasattr(transport_request.driver.user, 'profile') else 'N/A'
-        driver_vehicle = transport_request.driver.vehicle_type
-        driver_info = f"""
-        <div class="driver-info">
-            <h3>👤 Votre chauffeur</h3>
-            <p><strong>{driver_name}</strong></p>
-            <p>Véhicule: {driver_vehicle}</p>
-            <p>Tél: <a href="tel:{driver_phone}">{driver_phone}</a></p>
-        </div>
-        """
-    
-    html = f"""
-    <!DOCTYPE html>
-    <html lang="fr">
-    <head>
-        <meta charset="UTF-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>Suivi trajet - EEBC Transport</title>
-        <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
-        <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" rel="stylesheet">
-        <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-        <style>
-            body {{
-                font-family: 'Poppins', sans-serif;
-                background: linear-gradient(135deg, #0a0e27 0%, #0d1535 100%);
-                min-height: 100vh;
-                color: #fff;
-                padding: 20px;
-            }}
-            .tracking-container {{
-                max-width: 700px;
-                margin: 0 auto;
-            }}
-            .card {{
-                background: rgba(255,255,255,0.05);
-                border: 1px solid rgba(255,255,255,0.1);
-                border-radius: 15px;
-                margin-bottom: 20px;
-            }}
-            #map {{
-                height: 400px;
-                border-radius: 12px;
-                margin-bottom: 20px;
-                border: 1px solid rgba(255,255,255,0.2);
-            }}
-            .status-badge {{
-                padding: 8px 16px;
-                border-radius: 50px;
-                font-weight: 600;
-                font-size: 14px;
-                display: inline-block;
-                margin-bottom: 15px;
-            }}
-            .status-badge.pending {{
-                background: rgba(255, 152, 0, 0.2);
-                color: #FFB74D;
-            }}
-            .status-badge.confirmed {{
-                background: rgba(33, 150, 243, 0.2);
-                color: #64B5F6;
-            }}
-            .status-badge.en_route {{
-                background: rgba(76, 175, 80, 0.2);
-                color: #81C784;
-            }}
-            .status-badge.arriving {{
-                background: rgba(255, 193, 7, 0.2);
-                color: #FFD54F;
-            }}
-            .status-badge.completed {{
-                background: rgba(76, 175, 80, 0.2);
-                color: #81C784;
-            }}
-            .info-row {{
-                display: flex;
-                justify-content: space-between;
-                padding: 12px 0;
-                border-bottom: 1px solid rgba(255,255,255,0.1);
-            }}
-            .info-row:last-child {{
-                border-bottom: none;
-            }}
-            .info-label {{
-                color: rgba(255,255,255,0.6);
-                font-size: 13px;
-                text-transform: uppercase;
-                letter-spacing: 0.5px;
-            }}
-            .info-value {{
-                font-weight: 600;
-                font-size: 14px;
-            }}
-            .driver-info {{
-                background: rgba(255,165,0,0.1);
-                border: 1px solid rgba(255,165,0,0.3);
-                padding: 15px;
-                border-radius: 10px;
-                margin-top: 15px;
-            }}
-            .driver-info h3 {{
-                font-size: 16px;
-                margin-bottom: 10px;
-                color: #FFB74D;
-            }}
-            .driver-info p {{
-                margin: 6px 0;
-                font-size: 14px;
-            }}
-            .driver-info a {{
-                color: #64B5F6;
-                text-decoration: none;
-            }}
-            .spinner {{
-                display: inline-block;
-                width: 16px;
-                height: 16px;
-                border: 2px solid rgba(255,255,255,0.3);
-                border-radius: 50%;
-                border-top-color: #0A36FF;
-                animation: spin 0.8s linear infinite;
-            }}
-            @keyframes spin {{
-                to {{ transform: rotate(360deg); }}
-            }}
-            .updated-at {{
-                font-size: 12px;
-                color: rgba(255,255,255,0.5);
-                margin-top: 10px;
-            }}
-        </style>
-    </head>
-    <body>
-        <div class="tracking-container">
-            <div class="mb-4">
-                <h2 style="margin-bottom: 10px;">🚗 Suivi de votre trajet</h2>
-                <p style="color: rgba(255,255,255,0.7);">Suivez votre chauffeur en temps réel</p>
-            </div>
-            
-            <div class="card p-4">
-                <!-- Statut Badge -->
-                <div id="status-container">
-                    <span class="status-badge pending">
-                        <i class="bi bi-clock spinner"></i>
-                        Chargement...
-                    </span>
-                </div>
-                
-                <!-- Carte -->
-                <div id="map"></div>
-                
-                <!-- Infos trajet -->
-                <div style="background: rgba(255,255,255,0.03); padding: 15px; border-radius: 10px;">
-                    <div class="info-row">
-                        <span class="info-label">📍 Lieu de prise en charge</span>
-                    </div>
-                    <p style="font-size: 14px; line-height: 1.5;">{transport_request.pickup_address}</p>
-                    
-                    <div class="info-row" style="margin-top: 15px;">
-                        <span class="info-label">👥 Passagers</span>
-                        <span class="info-value">{transport_request.passengers_count}</span>
-                    </div>
-                    
-                    <div class="info-row">
-                        <span class="info-label">⏱️ ETA</span>
-                        <span class="info-value" id="eta">--</span>
-                    </div>
-                </div>
-                
-                {driver_info}
-                
-                <div class="updated-at">
-                    Dernière mise à jour: <span id="last-update">--</span>
-                </div>
-            </div>
-        </div>
-        
-        <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-        <script>
-        const TRACKING_TOKEN = '{tracking_token}';
-        const API_URL = `/transport/public/track/${{TRACKING_TOKEN}}/api/`;
-        let map, driverMarker;
-        
-        // Initialiser la carte
-        function initMap() {{
-            map = L.map('map').setView([{initial_lat}, {initial_lng}], {zoom});
-            L.tileLayer('https://{{s}}.tile.openstreetmap.org/{{z}}/{{x}}/{{y}}.png', {{
-                attribution: '© OpenStreetMap',
-                maxZoom: 19,
-            }}).addTo(map);
-        }}
-        
-        // Mettre à jour le suivi
-        async function updateTracking() {{
-            try {{
-                const response = await fetch(API_URL);
-                if (!response.ok) {{
-                    console.error('API error:', response.status);
-                    return;
-                }}
-                
-                const data = await response.json();
-                
-                // Statut
-                const statusBadge = document.getElementById('status-container');
-                const statusText = {{
-                    'pending': '⏳ En attente',
-                    'confirmed': '✅ Confirmé',
-                    'en_route': '🚗 En route',
-                    'arriving': '🔔 Arrive bientôt',
-                    'completed': '✅ Effectué',
-                    'cancelled': '❌ Annulé',
-                }}[data.status] || 'Chargement...';
-                
-                statusBadge.innerHTML = `<span class="status-badge ${{data.status}}">${{statusText}}</span>`;
-                
-                // ETA
-                if (data.eta_minutes !== null) {{
-                    const etaText = typeof data.eta_minutes === 'string' ? 
-                        data.eta_minutes + ' min' : 
-                        data.eta_minutes + ' min';
-                    document.getElementById('eta').textContent = etaText;
-                }} else {{
-                    document.getElementById('eta').textContent = 'Calcul...';
-                }}
-                
-                // Position sur carte
-                if (data.position && data.can_track) {{
-                    const lat = data.position.latitude;
-                    const lng = data.position.longitude;
-                    
-                    if (!driverMarker) {{
-                        driverMarker = L.circleMarker([lat, lng], {{
-                            radius: 8,
-                            fillColor: '#0A36FF',
-                            color: '#fff',
-                            weight: 2,
-                            opacity: 1,
-                            fillOpacity: 0.8
-                        }}).addTo(map);
-                        map.setView([lat, lng], 15);
-                    }} else {{
-                        driverMarker.setLatLng([lat, lng]);
-                    }}
-                }}
-                
-                // Mise à jour
-                const lastUpdate = new Date(data.last_update || data.position?.recorded_at);
-                const now = new Date();
-                const diff = Math.floor((now - lastUpdate) / 1000);
-                const timeStr = diff < 60 ? 'À l\'instant' : 
-                                 diff < 3600 ? Math.floor(diff / 60) + ' min ago' :
-                                 lastUpdate.toLocaleTimeString('fr-FR');
-                document.getElementById('last-update').textContent = timeStr;
-                
-            }} catch (error) {{
-                console.error('Tracking error:', error);
-            }}
-        }}
-        
-        // Initialiser et mettre à jour
-        initMap();
-        updateTracking();
-        setInterval(updateTracking, 5000);  // Mise à jour toutes les 5 secondes
-        </script>
-    </body>
-    </html>
-    """
-    
-    return HttpResponse(html, content_type='text/html')
+
+    return render(
+        request,
+        'transport/public_tracking.html',
+        {
+            'transport_request': transport_request,
+            'driver_phone_display': _masked_phone(_driver_phone(transport_request.driver)),
+            'tracking_config': {
+                'apiUrl': reverse('transport:public_track_api', args=[transport_request.tracking_token]),
+                'initialLat': initial_lat,
+                'initialLng': initial_lng,
+                'zoom': zoom,
+            },
+        },
+    )

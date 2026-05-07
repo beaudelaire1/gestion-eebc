@@ -1,3 +1,5 @@
+import uuid
+
 from django.db import models
 from django.conf import settings
 from django.utils import timezone
@@ -151,6 +153,14 @@ class TransportRequest(models.Model):
     )
     
     notes = models.TextField(blank=True, verbose_name="Notes")
+    tracking_token = models.UUIDField(
+        default=uuid.uuid4,
+        editable=False,
+        unique=True,
+        db_index=True,
+        verbose_name="Token de suivi public",
+        help_text="Identifiant UUID utilisé pour le lien de suivi passager (sans authentification).",
+    )
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     

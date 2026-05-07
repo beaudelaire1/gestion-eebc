@@ -56,6 +56,7 @@ test_email.py
 .vscode/
 *.swp
 *.swo
+*.tmp
 *~
 .project
 .pydevproject

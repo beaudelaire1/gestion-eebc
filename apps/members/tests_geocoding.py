@@ -1,11 +1,12 @@
 from unittest.mock import patch
+import math
 
 from django.contrib.auth import get_user_model
 from django.test import Client, TestCase
 from django.urls import reverse
 
 from apps.core.models import Site
-from apps.members.geocoding import build_address_key, geocode_address
+from apps.members.geocoding import build_address_key, geocode_address, geocode_address_with_metadata
 from apps.members.models import GeocodedAddress, Member
 
 
@@ -69,3 +70,52 @@ class GeocodingConsistencyTests(TestCase):
 
         self.assertEqual(len(keys), 1)
         self.assertEqual(len(coords), 1)
+
+    @patch('apps.members.geocoding.requests.get')
+    def test_neighboring_numbers_use_same_street_anchor(self, mock_get):
+        mock_get.side_effect = [
+            MockResponse({
+                'features': [{
+                    'geometry': {'coordinates': [-52.305371, 4.919905]},
+                    'properties': {
+                        'score': 0.92,
+                        'type': 'housenumber',
+                        'city': 'Cayenne',
+                        'postcode': '97300',
+                        'label': '1482 Route de Troubiran 97300 Cayenne',
+                    },
+                }]
+            }),
+            MockResponse({
+                'features': [{
+                    'geometry': {'coordinates': [-52.305903, 4.922092]},
+                    'properties': {
+                        'score': 0.72,
+                        'type': 'street',
+                        'city': 'Cayenne',
+                        'postcode': '97300',
+                        'label': 'Route de Troubiran 97300 Cayenne',
+                    },
+                }]
+            }),
+        ]
+
+        first = geocode_address_with_metadata('1482 ROUTE DE TROUBIRAN', 'Cayenne', '97300')
+        second = geocode_address_with_metadata('1483 ROUTE DE TROUBIRAN', 'Cayenne', '97300')
+
+        self.assertEqual(first['precision'], 'housenumber')
+        self.assertEqual(second['precision'], 'same-street-anchor')
+        self.assertLess(_distance_meters(first['coords'], second['coords']), 10)
+
+
+def _distance_meters(coords_a, coords_b):
+    radius_meters = 6371000
+    lat_a, lon_a = map(math.radians, coords_a)
+    lat_b, lon_b = map(math.radians, coords_b)
+    delta_lat = lat_b - lat_a
+    delta_lon = lon_b - lon_a
+    haversine = (
+        math.sin(delta_lat / 2) ** 2
+        + math.cos(lat_a) * math.cos(lat_b) * math.sin(delta_lon / 2) ** 2
+    )
+    return 2 * radius_meters * math.atan2(math.sqrt(haversine), math.sqrt(1 - haversine))

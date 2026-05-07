@@ -3,6 +3,7 @@ Tests de validation du géocodage — Adresses réelles Cayenne/Guyane.
 Objectif: 100% certitude que les coordonnées sont correctes.
 """
 import pytest
+import json
 from decimal import Decimal
 from django.utils import timezone
 from unittest.mock import patch, MagicMock
@@ -63,6 +64,13 @@ CAYENNE_BOUNDS = {
     "lon_min": -52.4,
     "lon_max": -52.3,
 }
+
+
+def assert_cayenne_coordinates(latitude, longitude):
+    assert latitude is not None
+    assert longitude is not None
+    assert CAYENNE_BOUNDS["lat_min"] <= float(latitude) <= CAYENNE_BOUNDS["lat_max"]
+    assert CAYENNE_BOUNDS["lon_min"] <= float(longitude) <= CAYENNE_BOUNDS["lon_max"]
 
 
 @pytest.mark.django_db
@@ -308,10 +316,7 @@ class TestFallbacks:
         )
         
         # Vérifier que la ville a des coordonnées
-        assert city.latitude is not None
-        assert city.longitude is not None
-        assert 4.8 <= float(city.latitude) <= 5.1
-        assert -52.4 <= float(city.longitude) <= -52.3
+        assert_cayenne_coordinates(city.latitude, city.longitude)
 
     def test_site_coordinates_available(self):
         """Églises (sites) ont des coordonnées."""
@@ -323,10 +328,7 @@ class TestFallbacks:
             longitude=Decimal("-52.330"),
         )
         
-        assert site.latitude is not None
-        assert site.longitude is not None
-        assert 4.8 <= float(site.latitude) <= 5.1
-        assert -52.4 <= float(site.longitude) <= -52.3
+        assert_cayenne_coordinates(site.latitude, site.longitude)
 
 
 @pytest.mark.django_db
@@ -337,9 +339,10 @@ class TestMapData:
         """API /map/data/ retourne seulement coordonnées valides."""
         from apps.members.admin_views import members_map_data
         from django.test import RequestFactory
-        from django.contrib.auth.models import User
+        from django.contrib.auth import get_user_model
 
         # Créer admin user
+        User = get_user_model()
         admin = User.objects.create_user(
             username="admin",
             is_staff=True,
@@ -356,7 +359,7 @@ class TestMapData:
         assert response.status_code == 200
 
         # Vérifier les données
-        data = response.json()
+        data = json.loads(response.content)
         
         # Tous les markers doivent être dans Guyane
         for marker in data.get("markers", []):

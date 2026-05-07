@@ -1,19 +1,25 @@
-"""
-Signaux pour le module Transport.
-Déclenche les notifications lors des changements de statut.
-"""
-from django.db.models.signals import post_save
-from django.dispatch import receiver
-from .models import TransportRequest
-from .notifications import (
-    send_driver_accepted_notification,
-    send_driver_en_route_notification,
-    send_driver_arriving_notification,
-    send_driver_completed_notification,
-)
+"""Signaux pour le module Transport."""
 import logging
 
+from django.db.models.signals import post_save, pre_save
+from django.dispatch import receiver
+
+from . import notifications
+from .models import TransportRequest
+
 logger = logging.getLogger(__name__)
+
+
+@receiver(pre_save, sender=TransportRequest)
+def store_previous_status(sender, instance, **kwargs):
+    """Mémorise l'ancien statut avant sauvegarde pour le signal post_save."""
+    if not instance.pk:
+        instance._previous_status = None
+        return
+
+    instance._previous_status = sender.objects.filter(pk=instance.pk).values_list(
+        'status', flat=True
+    ).first()
 
 
 @receiver(post_save, sender=TransportRequest)
@@ -28,52 +34,39 @@ def notify_on_status_change(sender, instance, created, **kwargs):
     - ARRIVING/EN_ROUTE → COMPLETED: Trajet effectué
     """
     if created:
-        # Nouvelle demande, pas de notification
         return
-    
-    # Récupérer le statut précédent (pas directement disponible dans le signal)
-    # On va devoir vérifier en comparant avec la DB
-    try:
-        previous = TransportRequest.objects.get(pk=instance.pk)
-    except TransportRequest.DoesNotExist:
-        return
-    
-    # Vérifier si le statut a changé
-    previous_status = previous.status
+
+    previous_status = getattr(instance, '_previous_status', None)
     current_status = instance.status
-    
+
     if previous_status == current_status:
-        # Pas de changement de statut
         return
-    
-    # Notifier selon la transition
-    if current_status == TransportRequest.Status.CONFIRMED and previous_status == TransportRequest.Status.PENDING:
-        # Chauffeur a accepté
-        try:
-            send_driver_accepted_notification(instance)
-        except Exception as e:
-            logger.error(f"Error sending accepted notification: {e}")
-    
-    elif current_status == TransportRequest.Status.EN_ROUTE and previous_status == TransportRequest.Status.CONFIRMED:
-        # Chauffeur a démarré
-        try:
-            send_driver_en_route_notification(instance)
-        except Exception as e:
-            logger.error(f"Error sending en_route notification: {e}")
-    
-    elif current_status == TransportRequest.Status.ARRIVING and previous_status == TransportRequest.Status.EN_ROUTE:
-        # Chauffeur arrive bientôt
-        try:
-            send_driver_arriving_notification(instance)
-        except Exception as e:
-            logger.error(f"Error sending arriving notification: {e}")
-    
-    elif current_status == TransportRequest.Status.COMPLETED and previous_status in [
-        TransportRequest.Status.ARRIVING, 
-        TransportRequest.Status.EN_ROUTE
-    ]:
-        # Trajet effectué
-        try:
-            send_driver_completed_notification(instance)
-        except Exception as e:
-            logger.error(f"Error sending completed notification: {e}")
+
+    try:
+        if (
+            previous_status == TransportRequest.Status.PENDING
+            and current_status == TransportRequest.Status.CONFIRMED
+        ):
+            notifications.send_driver_accepted_notification(instance)
+        elif (
+            previous_status == TransportRequest.Status.CONFIRMED
+            and current_status == TransportRequest.Status.EN_ROUTE
+        ):
+            notifications.send_driver_en_route_notification(instance)
+        elif (
+            previous_status == TransportRequest.Status.EN_ROUTE
+            and current_status == TransportRequest.Status.ARRIVING
+        ):
+            notifications.send_driver_arriving_notification(instance)
+        elif (
+            previous_status in [TransportRequest.Status.ARRIVING, TransportRequest.Status.EN_ROUTE]
+            and current_status == TransportRequest.Status.COMPLETED
+        ):
+            notifications.send_driver_completed_notification(instance)
+    except Exception:
+        logger.exception(
+            "Error sending transport notification for request %s (%s -> %s)",
+            instance.pk,
+            previous_status,
+            current_status,
+        )

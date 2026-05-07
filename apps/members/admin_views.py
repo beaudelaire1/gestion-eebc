@@ -16,7 +16,11 @@ from .models import Member
 from .geocoding import (
     geocode_address_with_metadata,
     build_canonical_address,
+    deterministic_offset_coords as stable_offset_coords,
+    house_number_offset_coords,
+    is_valid_geocoded_coords,
     normalize_address_component,
+    street_key_from_address,
 )
 from apps.core.models import Site, Neighborhood, Family, City
 from apps.core.permissions import role_required, has_role
@@ -64,19 +68,11 @@ def should_obfuscate_for_user(user):
         - Les admins et superusers voient les coordonnées exactes
         - Tous les autres utilisateurs voient des coordonnées obfusquées
     """
-    if not user or not user.is_authenticated:
-        return True
-    
-    # Les superusers voient les coordonnées exactes
-    if user.is_superuser:
-        return False
-    
-    # Les admins voient les coordonnées exactes
-    if user.has_role('admin'):
-        return False
-    
-    # Tous les autres utilisateurs voient des coordonnées obfusquées
-    return True
+    return not (
+        user
+        and user.is_authenticated
+        and (user.is_superuser or user.has_role('admin'))
+    )
 
 
 @login_required
@@ -188,6 +184,32 @@ def members_map_data(request):
         lng_offset = (distance_meters * math.sin(angle)) / meters_per_degree_lng if meters_per_degree_lng > 0.01 else 0
 
         return (base_lat + lat_offset, base_lng + lng_offset)
+
+    def street_fallback_coords(base_lat, base_lng, city_seed, base_address, address_key):
+        street_key = street_key_from_address(base_address)
+        if not street_key:
+            return deterministic_offset_coords(
+                base_lat,
+                base_lng,
+                f"city:{city_seed}:addr:{address_key}",
+                min_offset_meters=80,
+                max_offset_meters=220,
+            )
+
+        street_anchor = stable_offset_coords(
+            base_lat,
+            base_lng,
+            f"city:{city_seed}:street:{street_key}",
+            min_offset_meters=80,
+            max_offset_meters=700,
+        )
+        return house_number_offset_coords(
+            street_anchor[0],
+            street_anchor[1],
+            base_address,
+            min_offset_meters=2,
+            max_offset_meters=90,
+        )
     
     for member in members_qs:
         base_address = (member.address or '').strip() or ((member.family.address or '').strip() if member.family else '')
@@ -210,6 +232,14 @@ def members_map_data(request):
                 postal_code=base_postal_code,
             )
             coords = geocode_result['coords']
+            if coords and not is_valid_geocoded_coords(coords[0], coords[1], base_city):
+                logger.warning(
+                    "members_map_reject_invalid_geocode member=%s key=%s coords=%s",
+                    member.id,
+                    address_key[:12],
+                    coords,
+                )
+                coords = None
             geocode_cache[address_key] = coords
             logger.info(
                 "members_map_geocode member=%s key=%s from_cache=%s",
@@ -219,7 +249,9 @@ def members_map_data(request):
             )
 
         if not coords and member.family and member.family.latitude is not None and member.family.longitude is not None:
-            coords = (float(member.family.latitude), float(member.family.longitude))
+            family_coords = (float(member.family.latitude), float(member.family.longitude))
+            if is_valid_geocoded_coords(family_coords[0], family_coords[1], base_city):
+                coords = family_coords
 
         # NE PAS utiliser les coordonnées du site comme fallback
         # (sinon le membre apparaît à l'église au lieu de chez lui)
@@ -227,16 +259,28 @@ def members_map_data(request):
         if not coords and member.family and member.family.neighborhood and member.family.neighborhood.city:
             city_obj = member.family.neighborhood.city
             if city_obj.latitude is not None and city_obj.longitude is not None:
-                coords = deterministic_offset_coords(float(city_obj.latitude), float(city_obj.longitude), f"cityobj:{city_obj.id}:addr:{address_key}")
+                coords = street_fallback_coords(
+                    float(city_obj.latitude),
+                    float(city_obj.longitude),
+                    f"cityobj:{city_obj.id}",
+                    base_address,
+                    address_key,
+                )
 
         if not coords and base_city:
             city_key = normalize_address_component(base_city)
             if city_key in city_coords:
-                coords = deterministic_offset_coords(city_coords[city_key][0], city_coords[city_key][1], f"cityname:{city_key}:addr:{address_key}")
+                coords = street_fallback_coords(
+                    city_coords[city_key][0],
+                    city_coords[city_key][1],
+                    f"cityname:{city_key}",
+                    base_address,
+                    address_key,
+                )
 
         # Pas de fallback par défaut : si on ne peut pas géolocaliser, on n'affiche pas
         
-        if coords:
+        if coords and is_valid_geocoded_coords(coords[0], coords[1], base_city):
             # Appliquer l'obfuscation si nécessaire (déterministe : même adresse = même position)
             if obfuscate:
                 display_lat, display_lng = obfuscate_coordinates(
