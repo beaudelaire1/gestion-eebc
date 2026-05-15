@@ -71,7 +71,7 @@
             {% if d.subject %}<div class="small text-muted mb-2"><strong>Objet :</strong> {{ d.subject|truncatechars:60 }}</div>{% endif %}
             <div class="d-flex gap-1 flex-wrap">
                 <a href="{% url 'documents:generated_preview' d.pk %}" class="btn btn-outline-primary btn-sm"><i class="bi bi-eye"></i> Aperçu</a>
-                <a href="{% url 'documents:generated_pdf' d.pk %}" class="btn btn-outline-danger btn-sm" target="_blank"><i class="bi bi-file-pdf"></i> PDF</a>
+                <a href="{% url 'documents:generated_pdf' d.pk %}" class="btn btn-outline-danger btn-sm"><i class="bi bi-file-pdf"></i> PDF</a>
                 {% if d.status != 'finalized' or request.user.is_superuser or request.user.is_admin %}
                 <a href="{% url 'documents:generated_edit' d.pk %}" class="btn btn-outline-secondary btn-sm"><i class="bi bi-pencil"></i></a>
                 {% endif %}

@@ -48,7 +48,7 @@
     {% if doc %}
     <div class="d-flex gap-2">
         <a href="{% url 'documents:generated_preview' doc.pk %}" class="btn btn-outline-primary btn-sm" target="_blank"><i class="bi bi-eye"></i> Aperçu</a>
-        <a href="{% url 'documents:generated_pdf' doc.pk %}" class="btn btn-outline-danger btn-sm" target="_blank"><i class="bi bi-file-pdf"></i> PDF</a>
+        <a href="{% url 'documents:generated_pdf' doc.pk %}" class="btn btn-outline-danger btn-sm"><i class="bi bi-file-pdf"></i> PDF</a>
     </div>
     {% endif %}
 </div>

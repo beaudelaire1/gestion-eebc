@@ -1,6 +1,7 @@
 from datetime import date
 
 import pytest
+from bs4 import BeautifulSoup
 from django.template.loader import render_to_string
 from django.urls import reverse
 
@@ -33,6 +34,33 @@ class TestGeneratedDocumentsPremium:
         assert 'document-page--meeting-minutes' in content
         assert 'premium' not in content.lower()
         assert 'institutionnel' not in content.lower()
+
+    def test_generated_pdf_links_keep_mobile_session_context(self, authenticated_client, admin_user):
+        from apps.documents.models import GeneratedDocument
+
+        doc = GeneratedDocument.objects.create(
+            title='Courrier mobile',
+            kind=GeneratedDocument.Kind.COURRIER,
+            document_date=date(2026, 4, 18),
+            body_html='<p>Contenu PDF.</p>',
+            created_by=admin_user,
+        )
+
+        pdf_url = reverse('documents:generated_pdf', args=[doc.pk])
+        checked_pages = [
+            reverse('documents:generated_preview', args=[doc.pk]),
+            reverse('documents:generated_edit', args=[doc.pk]),
+            reverse('documents:generated_list'),
+        ]
+
+        for page_url in checked_pages:
+            response = authenticated_client.get(page_url)
+            assert response.status_code == 200
+
+            soup = BeautifulSoup(response.content.decode(), 'html.parser')
+            links = soup.find_all('a', href=pdf_url)
+            assert links, f"Lien PDF absent de {page_url}"
+            assert all(link.get('target') != '_blank' for link in links)
 
     def test_document_kinds_expose_distinct_visual_variants(self, authenticated_client, admin_user):
         from apps.documents.generation import build_generated_document_context

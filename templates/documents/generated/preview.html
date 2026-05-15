@@ -1031,7 +1031,7 @@
         {% if doc.status != 'finalized' or request.user.is_superuser or request.user.is_admin %}
         <a href="{% url 'documents:generated_edit' doc.pk %}" class="btn btn-outline-secondary btn-sm"><i class="bi bi-pencil"></i> Modifier</a>
         {% endif %}
-        <a href="{% url 'documents:generated_pdf' doc.pk %}" class="btn btn-outline-danger btn-sm" target="_blank"><i class="bi bi-file-pdf"></i> Voir le PDF</a>
+        <a href="{% url 'documents:generated_pdf' doc.pk %}" class="btn btn-outline-danger btn-sm"><i class="bi bi-file-pdf"></i> Voir le PDF</a>
         {% if doc.status != 'finalized' %}
         <form method="post" action="{% url 'documents:generated_finalize' doc.pk %}" class="d-inline">
             {% csrf_token %}
