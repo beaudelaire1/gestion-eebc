@@ -16,7 +16,7 @@ class Command(BaseCommand):
             code='CAB',
             defaults={
                 'name': 'EEBC Cabassou',
-                'address': '5 rue Calimbés 2, Route de Cabassou',
+                'address': '11 lot Calimbé 2, rte de Cabassou',
                 'city': 'Cayenne',
                 'postal_code': '97300',
                 'phone': '',
