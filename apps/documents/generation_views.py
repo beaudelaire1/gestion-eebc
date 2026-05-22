@@ -256,6 +256,15 @@ KIND_TEMPLATES = {
 <h2>Ordre du jour</h2>
 <ol><li>...</li></ol>
 <p>Votre présence est attendue. En cas d'empêchement, merci d'en informer le secrétariat.</p>""",
+    'invitation': """<blockquote><strong>Invitation :</strong> vous êtes cordialement invité(e) à prendre part à l'événement ci-dessous.</blockquote>
+<p><strong>Date :</strong> ___________</p>
+<p><strong>Heure :</strong> ___________</p>
+<p><strong>Lieu :</strong> ___________</p>
+<p><strong>Adresse :</strong> ___________</p>
+<h2>Programme</h2>
+<ul><li>Accueil</li><li>Temps principal</li><li>Échanges fraternels</li></ul>
+<p>Nous serions honorés de votre présence à cette rencontre.</p>
+<p><strong>Confirmation souhaitée avant le :</strong> ___________</p>""",
     'attestation': """<p>Je soussigné(e), <strong>___________</strong>, agissant en qualité de <strong>___________</strong> au sein de l'Église Évangélique Baptiste de Cabassou, atteste par la présente que <strong>___________</strong> ___________.</p>
 <p><strong>Période ou référence utile :</strong> ___________</p>
 <blockquote>La présente attestation est délivrée à la demande de l'intéressé(e) pour servir et valoir ce que de droit.</blockquote>

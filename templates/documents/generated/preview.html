@@ -26,6 +26,9 @@
     .preview-stage--internal-memo {
         background: linear-gradient(180deg, #e4e8ff 0%, #f7f8fe 44%, #e9edff 100%);
     }
+    .preview-stage--official-invitation {
+        background: linear-gradient(180deg, #dbe7ff 0%, #f7faff 44%, #e2ecff 100%);
+    }
     .preview-stage--editorial-report {
         background: linear-gradient(180deg, #f7edd1 0%, #fffaf0 44%, #f9eed7 100%);
     }
@@ -854,6 +857,99 @@
     .document-page--internal-memo .page-footer {
         background-image: linear-gradient(90deg, var(--doc-accent-dark) 0%, var(--doc-accent) 45%, #111827 100%);
     }
+    .document-page--official-invitation {
+        background: radial-gradient(circle at top right, rgba(10, 54, 255, 0.13) 0%, transparent 32%), linear-gradient(180deg, rgba(10, 54, 255, 0.045) 0%, #ffffff 22%);
+        border-top: 0.55rem solid var(--doc-accent);
+    }
+    .document-page--official-invitation .page-header {
+        padding: 1.25rem 1.35rem 1.15rem;
+        border: none;
+        border-radius: 18px;
+        background: linear-gradient(120deg, #061E8A 0%, #0A36FF 58%, #3D5FFF 100%);
+        box-shadow: 0 18px 38px rgba(10, 54, 255, 0.18);
+    }
+    .document-page--official-invitation .page-header::before,
+    .document-page--official-invitation .page-header::after {
+        display: none;
+    }
+    .document-page--official-invitation .brand-overline,
+    .document-page--official-invitation .brand-title,
+    .document-page--official-invitation .brand-motto {
+        color: #ffffff;
+    }
+    .document-page--official-invitation .brand-overline,
+    .document-page--official-invitation .brand-motto {
+        opacity: 0.86;
+    }
+    .document-page--official-invitation .page-header__logo {
+        border-color: rgba(255, 255, 255, 0.36);
+        background: rgba(255, 255, 255, 0.14);
+        box-shadow: none;
+    }
+    .document-page--official-invitation .page-header__side {
+        width: auto;
+        float: none;
+        margin: 1.1rem 0 1.2rem;
+    }
+    .document-page--official-invitation .classification-card {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 0.85rem;
+        padding: 1rem 1.15rem;
+        border: 1px solid rgba(10, 54, 255, 0.18);
+        border-top: 4px solid var(--doc-accent);
+        border-radius: 16px;
+        background: linear-gradient(135deg, #EEF4FF 0%, #ffffff 78%);
+        box-shadow: 0 16px 34px rgba(10, 54, 255, 0.1);
+    }
+    .document-page--official-invitation .classification-row {
+        display: block;
+        padding: 0;
+        border-bottom: none;
+    }
+    .document-page--official-invitation .classification-row strong {
+        display: block;
+        margin-top: 0.22rem;
+        text-align: left;
+        color: var(--doc-accent-dark);
+    }
+    .document-page--official-invitation .recipient-card,
+    .document-page--official-invitation .title-panel {
+        border-width: 1px;
+        border-radius: 16px;
+        background: linear-gradient(135deg, #EEF4FF 0%, #ffffff 82%);
+        box-shadow: 0 12px 26px rgba(10, 54, 255, 0.08);
+    }
+    .document-page--official-invitation .recipient-card {
+        max-width: none;
+        border-left: 6px solid var(--doc-accent);
+    }
+    .document-page--official-invitation .title-panel {
+        padding: 1.2rem 1.25rem 1.05rem;
+        border-left: 6px solid var(--doc-accent-dark);
+    }
+    .document-page--official-invitation .document-title {
+        font-size: 1.85rem;
+        line-height: 1.08;
+        color: var(--doc-accent-dark);
+    }
+    .document-page--official-invitation .body h2 {
+        border-bottom: none;
+        padding: 0.75rem 0.95rem;
+        border-radius: 12px;
+        background: var(--doc-accent-soft);
+        color: var(--doc-accent-dark);
+    }
+    .document-page--official-invitation .body blockquote {
+        border-left: 5px solid var(--doc-accent);
+        background: linear-gradient(90deg, #EEF4FF 0%, #ffffff 100%);
+    }
+    .document-page--official-invitation .signature-card {
+        border-top-color: var(--doc-accent);
+    }
+    .document-page--official-invitation .page-footer {
+        background-image: linear-gradient(90deg, #061E8A 0%, #0A36FF 55%, #111827 100%);
+    }
     .document-page--editorial-report {
         background: linear-gradient(145deg, rgba(210, 154, 31, 0.07) 0%, transparent 20%), #ffffff;
     }
@@ -961,12 +1057,14 @@
         }
         .document-page--meeting-minutes .classification-card,
         .document-page--ceremonial-call .classification-card,
-        .document-page--certificate .classification-card {
+        .document-page--certificate .classification-card,
+        .document-page--official-invitation .classification-card {
             display: block;
         }
         .document-page--meeting-minutes .classification-row,
         .document-page--ceremonial-call .classification-row,
-        .document-page--certificate .classification-row {
+        .document-page--certificate .classification-row,
+        .document-page--official-invitation .classification-row {
             width: auto;
             display: block;
             padding: 0.45rem 0;
@@ -974,7 +1072,8 @@
         }
         .document-page--meeting-minutes .classification-row:last-child,
         .document-page--ceremonial-call .classification-row:last-child,
-        .document-page--certificate .classification-row:last-child {
+        .document-page--certificate .classification-row:last-child,
+        .document-page--official-invitation .classification-row:last-child {
             border-bottom: none;
         }
         .document-page--ceremonial-call .classification-row .classification-label,

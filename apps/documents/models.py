@@ -238,6 +238,7 @@ class GeneratedDocument(models.Model):
         COMPTE_RENDU = 'compte_rendu', 'Compte-rendu de réunion'
         COURRIER = 'courrier', 'Courrier officiel'
         CONVOCATION = 'convocation', 'Convocation'
+        INVITATION = 'invitation', 'Invitation'
         ATTESTATION = 'attestation', 'Attestation'
         NOTE_SERVICE = 'note_service', 'Note de service'
         RAPPORT = 'rapport', 'Rapport'
@@ -338,6 +339,7 @@ class GeneratedDocument(models.Model):
             self.Kind.COMPTE_RENDU: 'CR',
             self.Kind.COURRIER: 'COU',
             self.Kind.CONVOCATION: 'CONV',
+            self.Kind.INVITATION: 'INV',
             self.Kind.ATTESTATION: 'ATT',
             self.Kind.NOTE_SERVICE: 'NS',
             self.Kind.RAPPORT: 'RAP',

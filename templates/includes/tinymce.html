@@ -128,13 +128,29 @@ document.addEventListener('DOMContentLoaded', function() {
                 max-width: 100%;
                 height: auto;
             }
+            iframe, video {
+                display: block;
+                width: 100%;
+                max-width: 100%;
+                margin: 1rem 0;
+                border: 0;
+                border-radius: 12px;
+                background: #0B0F19;
+            }
+            iframe {
+                aspect-ratio: 16 / 9;
+                height: auto;
+                min-height: 220px;
+            }
+            video { height: auto; }
         `,
         
         // Encodage UTF-8 pour caractères spéciaux (é, è, ê, ç, œ, etc.)
         entity_encoding: 'raw',
         
         // Éléments HTML valides
-        extended_valid_elements: 'span[*],i[*],em[*],strong[*],a[*],p[*],br,ul,ol,li,h1,h2,h3,h4,h5,h6,blockquote,pre,code,img[*],table[*],tr[*],td[*],th[*],thead,tbody,tfoot,figure,figcaption,video[*],audio[*],source[*]',
+        extended_valid_elements: 'span[*],i[*],em[*],strong[*],a[*],p[*],br,ul,ol,li,h1,h2,h3,h4,h5,h6,blockquote,pre,code,img[*],table[*],tr[*],td[*],th[*],thead,tbody,tfoot,figure,figcaption,iframe[*],video[*],audio[*],source[*]',
+        media_live_embeds: true,
         
         // Configuration des images
         image_advtab: true,

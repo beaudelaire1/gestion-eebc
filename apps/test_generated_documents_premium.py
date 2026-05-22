@@ -115,6 +115,40 @@ class TestGeneratedDocumentsPremium:
         assert 'CONVOC' in convocation_pdf_html
         assert 'ATTESTE' in attestation_pdf_html
 
+    def test_invitation_kind_uses_eebc_blue_and_no_generic_subtitle(self, authenticated_client, admin_user):
+        from apps.documents.generation import build_generated_document_context
+        from apps.documents.models import GeneratedDocument
+
+        doc = GeneratedDocument.objects.create(
+            title='Invitation au culte spécial',
+            kind=GeneratedDocument.Kind.INVITATION,
+            document_date=date(2026, 5, 22),
+            recipient_name='Assemblée EEBC',
+            subject='Culte spécial',
+            body_html='<p>Vous êtes cordialement invité.</p>',
+            created_by=admin_user,
+        )
+
+        response = authenticated_client.get(reverse('documents:generated_preview', args=[doc.pk]))
+
+        assert response.status_code == 200
+        content = response.content.decode()
+        assert 'Invitation officielle' in content
+        assert 'document-page--official-invitation' in content
+        assert '#0A36FF' in content
+        assert 'Invité(s)' in content
+        assert 'Support rédigé pour diffusion' not in content
+        assert doc.generate_reference().startswith('EEBC/INV/')
+
+        pdf_html = render_to_string(
+            'documents/generated/pdf_template.html',
+            build_generated_document_context(doc),
+        )
+
+        assert 'document-page--official-invitation' in pdf_html
+        assert '#0A36FF' in pdf_html
+        assert 'Support rédigé pour diffusion' not in pdf_html
+
     def test_courrier_preview_avoids_marketing_labels_and_keeps_subject_inline(self, authenticated_client, admin_user):
         from apps.documents.models import GeneratedDocument
 
@@ -148,6 +182,15 @@ class TestGeneratedDocumentsPremium:
         payload = response.json()
         assert 'Convocation officielle' in payload['html']
         assert 'Ordre du jour' in payload['html']
+
+    def test_template_endpoint_returns_invitation_model(self, authenticated_client):
+        response = authenticated_client.get(reverse('documents:generated_template'), {'kind': 'invitation'})
+
+        assert response.status_code == 200
+        payload = response.json()
+        assert 'Invitation' in payload['html']
+        assert 'Programme' in payload['html']
+        assert 'Confirmation souhaitée' in payload['html']
 
     def test_pdf_generation_keeps_premium_template(self, admin_user):
         from apps.documents.generation import render_generated_document_pdf

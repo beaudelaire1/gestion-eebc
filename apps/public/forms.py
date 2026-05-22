@@ -21,7 +21,9 @@ class NewsArticleForm(forms.ModelForm):
         super().__init__(*args, **kwargs)
         self.fields['content'].required = False
         self.fields['content'].help_text = (
-            "Optionnel pour une actualité courte : si vide, le résumé sera utilisé automatiquement."
+            "Optionnel pour une actualité courte : si vide, le résumé sera utilisé automatiquement. "
+            "Pour ajouter une vidéo, utilisez Insertion > Média avec un lien YouTube, Vimeo, "
+            "Dailymotion ou Facebook."
         )
 
     def clean_content(self):
