@@ -86,7 +86,7 @@ KIND_THEMES = {
         'accent_dark': '#061E8A',
         'accent_soft': '#EEF4FF',
         'accent_border': '#B8CCFF',
-        'paper_style': 'official-invitation',
+        'paper_style': 'classic-letter',
         'display_font': 'Cambria, Times New Roman, serif',
         'body_font': 'Aptos, Segoe UI, Arial, sans-serif',
         'meta_font': 'Segoe UI, Arial, sans-serif',

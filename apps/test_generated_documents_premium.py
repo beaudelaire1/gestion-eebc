@@ -134,7 +134,7 @@ class TestGeneratedDocumentsPremium:
         assert response.status_code == 200
         content = response.content.decode()
         assert 'Invitation officielle' in content
-        assert 'document-page--official-invitation' in content
+        assert 'document-page--classic-letter' in content
         assert '#0A36FF' in content
         assert 'Invité(s)' in content
         assert 'Support rédigé pour diffusion' not in content
@@ -145,7 +145,7 @@ class TestGeneratedDocumentsPremium:
             build_generated_document_context(doc),
         )
 
-        assert 'document-page--official-invitation' in pdf_html
+        assert 'document-page--classic-letter' in pdf_html
         assert '#0A36FF' in pdf_html
         assert 'Support rédigé pour diffusion' not in pdf_html
 
