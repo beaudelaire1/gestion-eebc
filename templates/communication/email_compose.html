@@ -1,0 +1,71 @@
+{% extends 'base.html' %}
+{% load form_tags %}
+
+{% block title %}Composer un e-mail{% endblock %}
+{% block page_title %}Éditeur d'e-mails{% endblock %}
+{% block page_subtitle %}Envoi aux équipes avec signature de département{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-10">
+        <div class="card border-0 shadow-sm">
+            <div class="card-body p-4">
+                <form method="post" enctype="multipart/form-data" novalidate>
+                    {% csrf_token %}
+                    
+                    {% if form.non_field_errors %}
+                    <div class="alert alert-danger" role="alert">
+                        {{ form.non_field_errors }}
+                    </div>
+                    {% endif %}
+                    
+                    <div class="row mb-2">
+                        <div class="col-md-6">
+                            {% render_field form.department %}
+                        </div>
+                        <div class="col-md-6">
+                            {% render_field form.subject %}
+                        </div>
+                    </div>
+                    
+                    <div class="row mb-2">
+                        <div class="col-md-6">
+                            {% render_field form.recipients %}
+                            <small class="text-muted">Maintenez Ctrl (ou Cmd) pour sélectionner plusieurs destinataires.</small>
+                        </div>
+                        <div class="col-md-6">
+                            {% render_field form.external_recipients %}
+                        </div>
+                    </div>
+                    
+                    <div class="mb-4">
+                        {% render_field form.body %}
+                    </div>
+                    
+                    <div class="mb-4">
+                        {% render_field form.attachments %}
+                    </div>
+                    
+                    <div class="alert alert-light border d-flex align-items-center gap-2" role="note">
+                        <i class="bi bi-pen text-primary" aria-hidden="true"></i>
+                        <small>Votre message est habillé automatiquement avec la charte graphique EEBC (en-tête, liseré or, signature du département, pied de page), avec une version texte brut pour la compatibilité.</small>
+                    </div>
+                    
+                    <div class="d-grid gap-2">
+                        <button type="submit" class="btn btn-primary btn-lg">
+                            <i class="bi bi-send me-2" aria-hidden="true"></i> Envoyer l'e-mail
+                        </button>
+                        <a href="{% url 'communication:email_logs' %}" class="btn btn-outline-secondary">
+                            Annuler
+                        </a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+{{ form.media }}
+{% endblock %}

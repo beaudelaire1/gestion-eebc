@@ -557,8 +557,9 @@ def _get_member_address_line(member):
     return ', '.join(p for p in parts if p.strip())
 
 
-def _build_donation_receipt_context(online_donation, receipt_number):
+def _build_donation_receipt_context(online_donation, receipt_number, generated_by=None):
     """Prepare le contexte du recu de don pour Jinja2."""
+    from apps.core.utils.user_codes import format_user_public_code
     issue_date = timezone.now()
     donation_date = online_donation.created_at
     member_name = online_donation.member.get_full_name() if online_donation.member else ''
@@ -618,6 +619,7 @@ def _build_donation_receipt_context(online_donation, receipt_number):
         'amount_words': _amount_to_words(online_donation.amount),
         'recurring_note': recurring_note,
         'generation_date_display': _format_datetime_fr(issue_date),
+        'operator_code': format_user_public_code(generated_by),
     }
 
 

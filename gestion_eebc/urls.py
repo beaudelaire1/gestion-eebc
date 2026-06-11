@@ -28,7 +28,7 @@ urlpatterns = [
     
     # Health checks (avant tout le reste)
     path('health/', include('apps.core.health_urls')),
-    path('healthz/', include('apps.core.health_urls')),
+    path('healthz/', include('apps.core.health_urls', namespace='core_healthz')),
     
     # API REST pour application mobile
     path('api/v1/', include('apps.api.urls')),

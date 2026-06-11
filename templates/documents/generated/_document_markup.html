@@ -1,3 +1,5 @@
+{% load sanitize_tags %}
+
 <div class="document-watermark">{{ theme.watermark_text }}</div>
 
 <div class="document-top document-top--{{ theme.paper_style }}">
@@ -88,7 +90,7 @@
 </div>
 
 <article class="body">
-    {{ body_html_rendered|default:doc.body_html|safe }}
+    {{ body_html_rendered|default:doc.body_html|sanitize }}
 </article>
 
 {% if doc.signature_name %}

@@ -48,7 +48,7 @@ class DashboardService:
         }
         
         stats = {
-            'total_members': members_qs.count(),
+            'total_members': sum(members_by_status.values()),
             'members_actif': members_by_status.get('actif', 0),
             'members_visiteur': members_by_status.get('visiteur', 0),
             'members_inactif': members_by_status.get('inactif', 0),
@@ -118,13 +118,13 @@ class DashboardService:
                 ]
                 fallback_label = f"{MOIS[fb_date.month]} {fb_date.year}"
         
+        month_totals = month_transactions.aggregate(
+            income=Sum('amount', filter=Q(transaction_type__in=['don', 'dime', 'offrande'])),
+            expenses=Sum('amount', filter=Q(transaction_type='depense')),
+        )
         finance_stats = {
-            'month_income': month_transactions.filter(
-                transaction_type__in=['don', 'dime', 'offrande']
-            ).aggregate(total=Sum('amount'))['total'] or 0,
-            'month_expenses': month_transactions.filter(
-                transaction_type='depense'
-            ).aggregate(total=Sum('amount'))['total'] or 0,
+            'month_income': month_totals['income'] or 0,
+            'month_expenses': month_totals['expenses'] or 0,
             'pending_transactions': FinancialTransaction.objects.filter(
                 status='en_attente'
             ).count(),
@@ -220,11 +220,16 @@ class DashboardService:
         if not last_session:
             return None
         
-        attendances = last_session.attendances.all()
-        present = attendances.filter(status='present').count()
-        late = attendances.filter(status='late').count()
-        absent = attendances.filter(status='absent').count()
-        total = attendances.count()
+        attendance_stats = last_session.attendances.aggregate(
+            total=Count('id'),
+            present=Count('id', filter=Q(status='present')),
+            late=Count('id', filter=Q(status='late')),
+            absent=Count('id', filter=Q(status='absent')),
+        )
+        present = attendance_stats['present']
+        late = attendance_stats['late']
+        absent = attendance_stats['absent']
+        total = attendance_stats['total']
         
         return {
             'session': last_session,
@@ -238,15 +243,17 @@ class DashboardService:
     @staticmethod
     def get_active_announcements(request) -> List:
         """Get active announcements."""
+        from django.utils import timezone
+
         from apps.communication.models import Announcement
         
-        today = date.today()
+        now = timezone.now()
         announcements = Announcement.objects.filter(
             is_active=True
         ).filter(
-            Q(start_date__isnull=True) | Q(start_date__lte=today)
+            Q(start_date__isnull=True) | Q(start_date__lte=now)
         ).filter(
-            Q(end_date__isnull=True) | Q(end_date__gte=today)
+            Q(end_date__isnull=True) | Q(end_date__gte=now)
         ).order_by('-is_pinned', '-created_at')[:4]
         
         return list(announcements)

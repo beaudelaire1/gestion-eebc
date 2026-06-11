@@ -4,6 +4,29 @@
 {% block title %}{{ article.title }} - {{ settings.site_name|default:'EEBC' }}{% endblock %}
 {% block meta_description %}{{ article.excerpt|truncatewords:25 }}{% endblock %}
 
+{% block json_ld %}
+{{ block.super }}
+<script type="application/ld+json">
+{
+    "@context": "https://schema.org",
+    "@type": "NewsArticle",
+    "headline": "{{ article.title|escapejs }}",
+    "description": "{{ article.excerpt|truncatewords:25|escapejs }}",
+    "datePublished": "{{ article.publish_date|date:'c' }}",
+    {% if article.featured_image %}"image": "{{ request.scheme }}://{{ request.get_host }}{{ article.featured_image.url }}",{% endif %}
+    "author": {
+        "@type": "Person",
+        "name": "{{ article.display_author|default:settings.site_name|default:'EEBC'|escapejs }}"
+    },
+    "publisher": {
+        "@type": "Organization",
+        "name": "{{ settings.site_name|default:'EEBC'|escapejs }}"
+    },
+    "mainEntityOfPage": "{{ request.scheme }}://{{ request.get_host }}{{ request.path }}"
+}
+</script>
+{% endblock %}
+
 {% block extra_css %}
 <style>
     .news-detail-actions {

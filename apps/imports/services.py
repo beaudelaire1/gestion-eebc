@@ -933,10 +933,12 @@ class GenericExportService:
     def export_communication_logs():
         """Exporte les logs de communication."""
         from apps.communication.models import EmailLog, SMSLog
-        from datetime import datetime, timedelta
-        
+        from datetime import timedelta
+
+        from django.utils import timezone
+
         # Logs des 3 derniers mois seulement
-        three_months_ago = datetime.now() - timedelta(days=90)
+        three_months_ago = timezone.now() - timedelta(days=90)
         
         export_data = []
         

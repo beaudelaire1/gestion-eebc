@@ -54,6 +54,7 @@ class EmailLog(models.Model):
         ordering = ['-created_at']
         indexes = [
             models.Index(fields=['status'], name='comm_emaillog_status_idx'),
+            models.Index(fields=['sent_at'], name='comm_emaillog_sent_at_idx'),
         ]
     
     def __str__(self):
@@ -158,6 +159,9 @@ class Announcement(models.Model):
         verbose_name = "Annonce"
         verbose_name_plural = "Annonces"
         ordering = ['-is_pinned', '-created_at']
+        indexes = [
+            models.Index(fields=['is_active', 'start_date', 'end_date'], name='comm_annonce_active_idx'),
+        ]
     
     def __str__(self):
         return self.title
@@ -310,6 +314,57 @@ class EmailTemplate(models.Model):
             ).exclude(pk=self.pk).update(is_default=False)
         
         super().save(*args, **kwargs)
+
+
+class EmailSenderDepartment(models.Model):
+    """
+    Département expéditeur pour l'éditeur d'e-mails.
+    Détermine l'adresse d'envoi et la signature dynamique.
+    """
+    
+    name = models.CharField(max_length=100, unique=True, verbose_name="Nom du département")
+    from_email = models.EmailField(verbose_name="Adresse d'envoi")
+    phone = models.CharField(max_length=30, blank=True, verbose_name="Téléphone")
+    is_active = models.BooleanField(default=True, verbose_name="Actif")
+    order = models.PositiveSmallIntegerField(default=0, verbose_name="Ordre d'affichage")
+    
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    
+    class Meta:
+        verbose_name = "Département expéditeur"
+        verbose_name_plural = "Départements expéditeurs"
+        ordering = ['order', 'name']
+    
+    def __str__(self):
+        return f"{self.name} <{self.from_email}>"
+    
+    @property
+    def sender_header(self):
+        """En-tête expéditeur formaté pour l'envoi SMTP."""
+        return f'"{self.name} — EEBC" <{self.from_email}>'
+    
+    @property
+    def smtp_password_env_name(self):
+        """Nom de la variable d'environnement contenant le mot de passe de la boîte.
+        Ex.: secretariat@eglise-ebc.org -> EMAIL_PASSWORD_SECRETARIAT
+        """
+        local_part = self.from_email.split('@')[0]
+        normalized = ''.join(c if c.isalnum() else '_' for c in local_part).upper()
+        return f'EMAIL_PASSWORD_{normalized}'
+    
+    def get_smtp_connection(self):
+        """Connexion SMTP authentifiée avec la boîte du département.
+        Retourne None si le mot de passe n'est pas configuré (fallback boîte par défaut).
+        """
+        import os
+
+        from django.core.mail import get_connection
+        
+        password = os.environ.get(self.smtp_password_env_name, '')
+        if not password:
+            return None
+        return get_connection(username=self.from_email, password=password)
 
 
 class SMSLog(models.Model):

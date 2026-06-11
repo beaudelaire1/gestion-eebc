@@ -233,6 +233,9 @@ class YouthEvent(models.Model):
         verbose_name = "Activité jeunesse"
         verbose_name_plural = "Activités jeunesse"
         ordering = ['-date']
+        indexes = [
+            models.Index(fields=['date'], name='youth_event_date_idx'),
+        ]
 
     def __str__(self):
         status = " (Annulé)" if self.is_cancelled else ""

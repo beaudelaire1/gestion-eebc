@@ -3,6 +3,7 @@ Django settings - Production (Render)
 """
 
 import os
+import secrets
 import dj_database_url
 from .base import *
 
@@ -11,6 +12,11 @@ from .base import *
 # =============================================================================
 DEBUG = False
 ALLOWED_HOSTS = os.environ.get('ALLOWED_HOSTS', '').split(',')
+
+_env_secret = os.environ.get('SECRET_KEY', '')
+if not _env_secret or _env_secret.startswith('django-insecure-') or len(set(_env_secret)) < 5 or len(_env_secret) < 50:
+    # Evite l'utilisation d'une cle faible en production.
+    SECRET_KEY = secrets.token_urlsafe(64)
 
 # Render specific
 RENDER_EXTERNAL_HOSTNAME = os.environ.get('RENDER_EXTERNAL_HOSTNAME')
@@ -25,9 +31,10 @@ CSRF_TRUSTED_ORIGINS = [
 ]
 
 # HTTPS
-# SECURE_SSL_REDIRECT = False : Render gère le SSL à son edge proxy.
-# Un redirect ici bloque les health checks HTTP internes de Render.
-SECURE_SSL_REDIRECT = False
+# Render gère SSL en edge, mais on force tout de meme la redirection HTTPS
+# pour le trafic applicatif, en exemptant les endpoints de health check.
+SECURE_SSL_REDIRECT = True
+SECURE_REDIRECT_EXEMPT = [r'^health/?$', r'^health/lite/?$', r'^healthz/?$', r'^healthz/lite/?$']
 SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
 SESSION_COOKIE_SECURE = True
 CSRF_COOKIE_SECURE = True

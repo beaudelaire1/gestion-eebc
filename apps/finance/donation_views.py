@@ -57,7 +57,7 @@ class DonationPageView(TemplateView):
         # Campagne sélectionnée via token signé (partage mobile sécurisé)
         token = self.request.GET.get('c')
         selected_campaign = None
-        if token:
+        if isinstance(token, str) and token:
             try:
                 payload = signing.loads(token, salt='campaign-donation', max_age=60 * 60 * 24 * 365)
                 campaign_id = payload.get('campaign_id')
@@ -69,7 +69,7 @@ class DonationPageView(TemplateView):
 
         context['selected_campaign'] = selected_campaign
         context['campaign_token'] = token if selected_campaign else ''
-        
+
         return context
 
 

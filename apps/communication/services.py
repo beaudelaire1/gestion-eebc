@@ -164,7 +164,9 @@ class EmailService:
         context: Optional[Dict] = None,
         recipient_name: str = '',
         from_email: Optional[str] = None,
-        fail_silently: bool = False
+        fail_silently: bool = False,
+        connection=None,
+        attachments: Optional[List[tuple]] = None
     ) -> EmailLog:
         """
         Envoie un email avec template HTML et logging automatique.
@@ -177,6 +179,8 @@ class EmailService:
             recipient_name: Nom du destinataire (optionnel)
             from_email: Email expéditeur (utilise DEFAULT_FROM_EMAIL si non fourni)
             fail_silently: Ne pas lever d'exception en cas d'erreur
+            connection: Connexion email dédiée (ex: boîte d'un département)
+            attachments: Pièces jointes [(nom, contenu, mimetype), ...]
             
         Returns:
             EmailLog: Instance du log créé
@@ -220,9 +224,13 @@ class EmailService:
                 subject=subject,
                 body=text_content,
                 from_email=from_email,
-                to=[recipient_email]
+                to=[recipient_email],
+                connection=connection
             )
             email.attach_alternative(html_content, "text/html")
+            
+            for attachment in attachments or []:
+                email.attach(*attachment)
             
             # Envoyer l'email
             email.send(fail_silently=False)

@@ -19,10 +19,8 @@
                         <label class="form-label fw-semibold">Mois</label>
                         <select name="month" class="form-select">
                             <option value="">Année complète</option>
-                            {% for m_num, m_name in "1:Janvier,2:Février,3:Mars,4:Avril,5:Mai,6:Juin,7:Juillet,8:Août,9:Septembre,10:Octobre,11:Novembre,12:Décembre"|split:"," %}
-                            {% with parts=m_num|split:":" %}
-                            <option value="{{ parts.0 }}" {% if month == parts.0 %}selected{% endif %}>{{ parts.1 }}</option>
-                            {% endwith %}
+                            {% for m_num, m_name in month_choices %}
+                            <option value="{{ m_num }}" {% if month == m_num %}selected{% endif %}>{{ m_name }}</option>
                             {% endfor %}
                         </select>
                     </div>

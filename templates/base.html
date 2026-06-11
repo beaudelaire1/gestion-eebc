@@ -24,10 +24,10 @@
     <link href="https://cdn.jsdelivr.net/npm/tom-select@2.3.1/dist/css/tom-select.bootstrap5.min.css" rel="stylesheet">
 
     <!-- HTMX -->
-    <script src="https://unpkg.com/htmx.org@1.9.10"></script>
+    <script src="https://unpkg.com/htmx.org@1.9.10" defer></script>
 
     <!-- Chart.js -->
-    <script src="{% static 'vendor/chart.umd.min.js' %}"></script>
+    <script src="{% static 'vendor/chart.umd.min.js' %}" defer></script>
 
     <!-- Skeleton Loaders -->
     <link rel="stylesheet" href="{% static 'css/skeletons.css' %}">
@@ -62,16 +62,16 @@
     </script>
 
     <!-- Theme Fix Script (temporary) -->
-    <script src="{% static 'js/theme-fix.js' %}"></script>
+    <script src="{% static 'js/theme-fix.js' %}" defer></script>
 </head>
 
 <body>
     <!-- Sidebar Overlay (mobile) -->
-    <div class="sidebar-overlay" id="sidebarOverlay" onclick="closeSidebar()"></div>
+    <div class="sidebar-overlay" id="sidebarOverlay" onclick="closeSidebar()" aria-hidden="true"></div>
 
     <!-- Sidebar -->
     <nav class="sidebar" id="sidebar">
-        <button class="sidebar-close" onclick="closeSidebar()">
+        <button class="sidebar-close" type="button" onclick="closeSidebar()" aria-label="Fermer le menu latéral">
             <i class="bi bi-x-lg"></i>
         </button>
         <div class="sidebar__brand">
@@ -396,6 +396,11 @@
                         <i class="bi bi-megaphone-fill nav-link__icon"></i>
                         <span>Annonces</span>
                     </a>
+                    <a class="nav-link {% if 'compose' in request.path %}nav-link--active{% endif %}"
+                        href="{% url 'communication:email_compose' %}">
+                        <i class="bi bi-pencil-square nav-link__icon"></i>
+                        <span>Composer un e-mail</span>
+                    </a>
                     <a class="nav-link {% if 'email-logs' in request.path %}nav-link--active{% endif %}"
                         href="{% url 'communication:email_logs' %}">
                         <i class="bi bi-envelope-fill nav-link__icon"></i>
@@ -460,8 +465,8 @@
         <!-- Top Bar -->
         <div class="top-bar">
             <div class="d-flex align-items-center">
-                <button class="sidebar-toggle" id="sidebarToggle" onclick="toggleSidebar()">
-                    <i class="bi bi-list"></i>
+                <button class="sidebar-toggle" id="sidebarToggle" type="button" onclick="toggleSidebar()" aria-label="Ouvrir le menu latéral" aria-controls="sidebar" aria-expanded="false">
+                    <i class="bi bi-list" aria-hidden="true"></i>
                 </button>
                 <div class="page-header">
                     <h5 class="mb-0 fw-bold page-title">{% block page_title %}Tableau de bord{% endblock %}</h5>
@@ -488,8 +493,8 @@
                 <!-- Notifications -->
                 <div class="position-relative">
                     <a href="{% url 'communication:notifications' %}"
-                        class="btn btn-outline-secondary position-relative">
-                        <i class="bi bi-bell"></i>
+                        class="btn btn-outline-secondary position-relative" aria-label="Notifications">
+                        <i class="bi bi-bell" aria-hidden="true"></i>
                     </a>
                 </div>
 
@@ -595,6 +600,19 @@
             event.detail.headers['X-CSRFToken'] = '{{ csrf_token }}';
         });
 
+        // Accessibilité : aria-current sur la navigation active, aria-busy pendant les requêtes HTMX
+        document.addEventListener('DOMContentLoaded', () => {
+            document.querySelectorAll('.nav-link--active').forEach(link => {
+                link.setAttribute('aria-current', 'page');
+            });
+        });
+        document.body.addEventListener('htmx:beforeRequest', (event) => {
+            event.detail.target?.setAttribute('aria-busy', 'true');
+        });
+        document.body.addEventListener('htmx:afterRequest', (event) => {
+            event.detail.target?.removeAttribute('aria-busy');
+        });
+
         // Détection mobile
         function isMobile() {
             return window.innerWidth < 992;
@@ -608,6 +626,7 @@
             sidebar.classList.add('sidebar--show');
             overlay.classList.add('sidebar-overlay--show');
             document.body.style.overflow = 'hidden';
+            document.getElementById('sidebarToggle')?.setAttribute('aria-expanded', 'true');
         }
 
         // Fermer le sidebar (mobile)
@@ -618,6 +637,7 @@
             sidebar.classList.remove('sidebar--show');
             overlay.classList.remove('sidebar-overlay--show');
             document.body.style.overflow = '';
+            document.getElementById('sidebarToggle')?.setAttribute('aria-expanded', 'false');
         }
 
         // Toggle sidebar (desktop: collapse, mobile: show/hide)

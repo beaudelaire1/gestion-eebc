@@ -32,11 +32,16 @@ YOUNG_ROLES = ('admin', 'secretariat', 'responsable_groupe', 'pasteur')
 @role_required(*YOUNG_ROLES)
 def young_home(request):
     """Page d'accueil du module jeunesse."""
+    young_stats = YoungMember.objects.filter(is_active=True).aggregate(
+        total=Count('id'),
+        baptized=Count('id', filter=Q(is_baptized=True)),
+        transport=Count('id', filter=Q(needs_transport=True)),
+    )
     stats = {
-        'total_young': YoungMember.objects.filter(is_active=True).count(),
+        'total_young': young_stats['total'],
         'total_groups': YouthGroup.objects.filter(is_active=True).count(),
-        'total_baptized': YoungMember.objects.filter(is_active=True, is_baptized=True).count(),
-        'total_transport': YoungMember.objects.filter(is_active=True, needs_transport=True).count(),
+        'total_baptized': young_stats['baptized'],
+        'total_transport': young_stats['transport'],
     }
 
     recent_events = YouthEvent.objects.filter(
@@ -316,6 +321,7 @@ def event_list(request):
     if upcoming == '1':
         events = events.filter(date__gte=timezone.now().date())
 
+    events = events.order_by('-date', '-id')
     paginator = Paginator(events, 20)
     page_obj = paginator.get_page(request.GET.get('page'))
 

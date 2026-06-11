@@ -38,16 +38,22 @@ class UserFactory(DjangoModelFactory):
     
     class Meta:
         model = User
+        skip_postgeneration_save = True
     
     username = factory.Sequence(lambda n: f'user{n}')
     email = factory.Faker('email')
     first_name = factory.Faker('first_name')
     last_name = factory.Faker('last_name')
     is_active = True
-    password = factory.PostGenerationMethodCall('set_password', 'password123')
     role = 'membre'
     is_staff = False
     is_superuser = False
+
+    @factory.post_generation
+    def password(obj, create, extracted, **kwargs):
+        obj.set_password(extracted or 'password123')
+        if create:
+            obj.save()
 
 
 class MemberFactory(DjangoModelFactory):

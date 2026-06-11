@@ -1,7 +1,15 @@
 from django.contrib import admin
 from django import forms
-from .models import Notification, EmailLog, SMSLog, Announcement, EmailTemplate
+from .models import Notification, EmailLog, SMSLog, Announcement, EmailSenderDepartment, EmailTemplate
 from apps.core.widgets import TinyMCEWidget
+
+
+@admin.register(EmailSenderDepartment)
+class EmailSenderDepartmentAdmin(admin.ModelAdmin):
+    """Admin des départements expéditeurs de l'éditeur d'e-mails."""
+    list_display = ['name', 'from_email', 'phone', 'is_active', 'order']
+    list_editable = ['is_active', 'order']
+    search_fields = ['name', 'from_email']
 
 
 class AnnouncementAdminForm(forms.ModelForm):

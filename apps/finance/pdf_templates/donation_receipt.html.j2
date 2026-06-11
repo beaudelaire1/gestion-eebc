@@ -110,6 +110,7 @@
                 <div class="footer-secondary">
                     <div>Document généré le {{ generation_date_display }}</div>
                     <div>Réf. {{ receipt_number }}</div>
+                    {% if operator_code %}<div>Code utilisateur {{ operator_code }}</div>{% endif %}
                 </div>
             </footer>
         </section>

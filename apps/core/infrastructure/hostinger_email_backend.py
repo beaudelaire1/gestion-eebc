@@ -279,13 +279,17 @@ class HostingerEmailBackend(BaseEmailBackend):
         
         try:
             # Forcer l'expéditeur au compte authentifié Hostinger
-            # Hostinger rejette les emails envoyés depuis une adresse différente
-            email_message.from_email = self.username
+            # Hostinger rejette les emails envoyés depuis une adresse différente.
+            # On préserve le nom d'affichage si l'adresse correspond au compte.
+            from email.utils import parseaddr
+            display_name, from_address = parseaddr(email_message.from_email or '')
+            if from_address.lower() != self.username.lower():
+                email_message.from_email = self.username
             
             # Préparer le message MIME
             msg = self._prepare_mime_message(email_message)
             
-            # Envoyer via SMTP
+            # Envoyer via SMTP (enveloppe = compte authentifié)
             from_email = self.username
             recipients = email_message.recipients()
             
@@ -345,7 +349,8 @@ class HostingerEmailBackend(BaseEmailBackend):
             msg['Reply-To'] = ', '.join(email_message.reply_to)
         
         # Pièces jointes
-        if hasattr(email_message, 'attachments') and email_message.attachments:
+        attachments = getattr(email_message, 'attachments', None)
+        if isinstance(attachments, (list, tuple)) and attachments:
             if not isinstance(msg, MIMEMultipart):
                 # Convertir en multipart pour les pièces jointes
                 original_msg = msg
@@ -356,7 +361,7 @@ class HostingerEmailBackend(BaseEmailBackend):
                 for key, value in original_msg.items():
                     msg[key] = value
             
-            for attachment in email_message.attachments:
+            for attachment in attachments:
                 self._attach_file(msg, attachment)
         
         return msg

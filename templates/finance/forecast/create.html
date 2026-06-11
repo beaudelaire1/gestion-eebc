@@ -109,8 +109,9 @@
     </form>
 </div>
 
+{{ month_fields|json_script:"forecast-month-fields" }}
 <script>
-const monthFields = {{ month_fields|safe }};
+const monthFields = JSON.parse(document.getElementById('forecast-month-fields').textContent);
 const categories = [
     {id: '', name: '-- Aucune --'},
     {% for cat in categories %}

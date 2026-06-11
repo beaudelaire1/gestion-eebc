@@ -2,7 +2,7 @@ from django.shortcuts import render, get_object_or_404, redirect
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.core.paginator import Paginator
-from django.db.models import Q
+from django.db.models import Q, Count
 from django.http import HttpResponse
 from datetime import date, timedelta
 from .models import Member, LifeEvent, VisitationLog
@@ -19,12 +19,19 @@ def member_list(request):
     # Optimiser les requêtes avec select_related
     members_qs = Member.objects.select_related('site', 'family').all()
     
-    # Statistiques
-    total_count = members_qs.count()
-    actifs_count = members_qs.filter(status='actif').count()
-    baptises_count = members_qs.filter(is_baptized=True).count()
-    hommes_count = members_qs.filter(gender='M').count()
-    femmes_count = members_qs.filter(gender='F').count()
+    # Statistiques (une seule requête d'agrégation)
+    member_stats = members_qs.aggregate(
+        total=Count('id'),
+        actifs=Count('id', filter=Q(status='actif')),
+        baptises=Count('id', filter=Q(is_baptized=True)),
+        hommes=Count('id', filter=Q(gender='M')),
+        femmes=Count('id', filter=Q(gender='F')),
+    )
+    total_count = member_stats['total']
+    actifs_count = member_stats['actifs']
+    baptises_count = member_stats['baptises']
+    hommes_count = member_stats['hommes']
+    femmes_count = member_stats['femmes']
     
     # Recherche
     search = request.GET.get('search', '')

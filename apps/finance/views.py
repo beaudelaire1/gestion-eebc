@@ -404,7 +404,13 @@ def reports(request):
     
     from apps.core.models import Site
     sites = Site.objects.filter(is_active=True)
-    
+
+    french_month_names = [
+        'Janvier', 'Février', 'Mars', 'Avril', 'Mai', 'Juin',
+        'Juillet', 'Août', 'Septembre', 'Octobre', 'Novembre', 'Décembre',
+    ]
+    month_choices = [(str(i), name) for i, name in enumerate(french_month_names, start=1)]
+
     context = {
         'year': year,
         'month': month,
@@ -420,6 +426,7 @@ def reports(request):
         'monthly': monthly,
         'by_method': by_method,
         'transaction_count': qs.count(),
+        'month_choices': month_choices,
     }
     
     # Export PDF

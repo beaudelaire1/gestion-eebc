@@ -7,14 +7,13 @@ from django.utils import timezone
 from django.db.models import Q
 from django.conf import settings
 from django.views.decorators.csrf import csrf_exempt
-from datetime import date
 import hashlib
 import hmac
 import json
 import logging
 
 from .models import Notification, Announcement, EmailLog, SMSLog
-from .forms import AnnouncementForm, EmailLogFilterForm, SMSLogFilterForm
+from .forms import AnnouncementForm, ComposeEmailForm, EmailLogFilterForm, SMSLogFilterForm
 from .services import send_whatsapp_announcement
 
 logger = logging.getLogger(__name__)
@@ -23,6 +22,72 @@ logger = logging.getLogger(__name__)
 def _is_comm_admin(user):
     """Vérifie si l'utilisateur a les droits d'administration communication."""
     return user.is_admin or user.has_any_role('admin', 'secretariat', 'pasteur')
+
+
+@login_required
+def email_compose(request):
+    """Éditeur d'e-mails : composition et envoi avec département expéditeur."""
+    if not _is_comm_admin(request.user):
+        messages.error(request, "Vous n'avez pas accès à l'éditeur d'e-mails.")
+        return redirect('dashboard:home')
+    
+    if request.method == 'POST':
+        form = ComposeEmailForm(request.POST, request.FILES)
+        if form.is_valid():
+            from apps.core.templatetags.sanitize_tags import sanitize_html
+            from .services import EmailService
+            
+            department = form.cleaned_data['department']
+            subject = form.cleaned_data['subject']
+            body_html = sanitize_html(form.cleaned_data['body'])
+            # Connexion SMTP de la boîte du département (None = boîte par défaut)
+            connection = department.get_smtp_connection()
+            
+            # Pièces jointes lues une seule fois, partagées entre les envois
+            attachments = [
+                (f.name, f.read(), f.content_type or 'application/octet-stream')
+                for f in form.cleaned_data['attachments']
+            ]
+            
+            # Destinataires : comptes d'équipe + adresses externes
+            targets = [
+                (user.email, user.get_full_name() or user.username)
+                for user in form.cleaned_data['recipients']
+            ]
+            targets += [(email, '') for email in form.cleaned_data['external_recipients']]
+            
+            sent, failed = 0, 0
+            for email_address, full_name in targets:
+                email_log = EmailService.send_email(
+                    recipient_email=email_address,
+                    subject=subject,
+                    template_name='emails/composed_message.html',
+                    context={
+                        'body_html': body_html,
+                        'department': department,
+                        'recipient_name': full_name,
+                        'subject': subject,
+                    },
+                    recipient_name=full_name,
+                    from_email=department.sender_header,
+                    fail_silently=True,
+                    connection=connection,
+                    attachments=attachments,
+                )
+                if email_log.status == EmailLog.Status.SENT:
+                    sent += 1
+                else:
+                    failed += 1
+            
+            if sent:
+                messages.success(request, f"{sent} e-mail(s) envoyé(s) depuis « {department.name} ».")
+            if failed:
+                messages.error(request, f"{failed} envoi(s) en échec — voir l'historique des e-mails.")
+            return redirect('communication:email_logs')
+    else:
+        form = ComposeEmailForm()
+    
+    return render(request, 'communication/email_compose.html', {'form': form})
 
 
 @login_required
@@ -98,15 +163,15 @@ def notifications_count(request):
 def announcements_list(request):
     """Liste des annonces."""
     from django.db.models import Q
-    today = date.today()
+    now = timezone.now()
     
     # Annonces actives
     active_announcements = Announcement.objects.filter(
         is_active=True
     ).filter(
-        Q(start_date__isnull=True) | Q(start_date__lte=today)
+        Q(start_date__isnull=True) | Q(start_date__lte=now)
     ).filter(
-        Q(end_date__isnull=True) | Q(end_date__gte=today)
+        Q(end_date__isnull=True) | Q(end_date__gte=now)
     ).order_by('-is_pinned', '-created_at')
     
     # Toutes les annonces pour les admins

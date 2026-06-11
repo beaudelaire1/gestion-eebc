@@ -4,6 +4,9 @@ from . import views
 app_name = 'communication'
 
 urlpatterns = [
+    # Éditeur d'e-mails
+    path('compose/', views.email_compose, name='email_compose'),
+    
     # Notifications
     path('notifications/', views.notifications_list, name='notifications'),
     path('notifications/<int:pk>/', views.notification_detail, name='notification_detail'),

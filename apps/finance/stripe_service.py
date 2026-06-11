@@ -16,6 +16,9 @@ from django.conf import settings
 from django.urls import reverse
 from django.utils import timezone
 
+from .pdf_service import generate_donation_receipt_pdf
+from .tasks import send_donation_receipt_email_task
+
 logger = logging.getLogger(__name__)
 
 
@@ -492,7 +495,6 @@ class StripeService:
     def _enqueue_donation_receipt_email(self, online_donation_id):
         """Planifie l'envoi du reçu et bascule en fallback synchrone si le broker est indisponible."""
         from .models import OnlineDonation
-        from .tasks import send_donation_receipt_email_task
 
         try:
             send_donation_receipt_email_task.delay(online_donation_id)
@@ -551,7 +553,6 @@ class StripeService:
         from django.core.mail import EmailMessage
         from django.template.loader import render_to_string
         from apps.communication.models import EmailLog
-        from .pdf_service import generate_donation_receipt_pdf
 
         if not online_donation.donor_email:
             logger.warning("Donation #%s has no donor email, receipt cannot be sent.", online_donation.id)
