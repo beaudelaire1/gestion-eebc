@@ -347,15 +347,31 @@ class EmailSenderDepartment(models.Model):
     @property
     def smtp_password_env_name(self):
         """Nom de la variable d'environnement contenant le mot de passe de la boîte.
-        Ex.: secretariat@eglise-ebc.org -> EMAIL_PASSWORD_SECRETARIAT
+        
+        Convention : EMAIL_BACKEND_<LOCALPART_EN_MAJUSCULES>
+        Exemples :
+          communication@eglise-ebc.org  -> EMAIL_BACKEND_COMMUNICATION
+          secretariat@eglise-ebc.org    -> EMAIL_BACKEND_SECRETARIAT
+          contact@eglise-ebc.org        -> EMAIL_BACKEND_CONTACT
+          multimedia@eglise-ebc.org     -> EMAIL_BACKEND_MULTIMEDIA
+        
+        Si la variable est absente, l'envoi utilise le backend SMTP
+        par défaut (contact@) défini dans les settings.
         """
         local_part = self.from_email.split('@')[0]
         normalized = ''.join(c if c.isalnum() else '_' for c in local_part).upper()
-        return f'EMAIL_PASSWORD_{normalized}'
+        return f'EMAIL_BACKEND_{normalized}'
     
     def get_smtp_connection(self):
-        """Connexion SMTP authentifiée avec la boîte du département.
-        Retourne None si le mot de passe n'est pas configuré (fallback boîte par défaut).
+        """Retourne une connexion SMTP dédiée à la boîte du département.
+        
+        Logique de sélection :
+          1. Lecture de EMAIL_BACKEND_<LOCALPART> dans l'environnement.
+          2. Si présente  → connexion authentifiée sur la boite du département
+             (from_email/password) : le mail part depuis la vraie boîte.
+          3. Si absente   → None, la vue utilise la connexion par défaut
+             (contact@ via settings) ; le From: conserve le nom d'affichage
+             du département et un Reply-To pointe vers la vraie boîte.
         """
         import os
 
