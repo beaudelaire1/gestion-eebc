@@ -168,7 +168,8 @@ class EmailService:
         connection=None,
         attachments: Optional[List[tuple]] = None,
         cc: Optional[List[str]] = None,
-        bcc: Optional[List[str]] = None
+        bcc: Optional[List[str]] = None,
+        reply_to: Optional[List[str]] = None
     ) -> EmailLog:
         """
         Envoie un email avec template HTML et logging automatique.
@@ -229,7 +230,8 @@ class EmailService:
                 to=[recipient_email],
                 cc=cc or [],
                 bcc=bcc or [],
-                connection=connection
+                connection=connection,
+                reply_to=reply_to or []
             )
             email.attach_alternative(html_content, "text/html")
             

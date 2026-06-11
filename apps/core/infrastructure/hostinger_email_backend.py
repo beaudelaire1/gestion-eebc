@@ -278,13 +278,14 @@ class HostingerEmailBackend(BaseEmailBackend):
         log = self._create_email_log(email_message)
         
         try:
-            # Forcer l'expéditeur au compte authentifié Hostinger
-            # Hostinger rejette les emails envoyés depuis une adresse différente.
-            # On préserve le nom d'affichage si l'adresse correspond au compte.
-            from email.utils import parseaddr
+            # Hostinger impose que l'enveloppe SMTP (MAIL FROM) soit le compte authentifié.
+            # Si l'adresse From du message ne correspond pas, on remplace l'adresse
+            # mais on CONSERVE le nom d'affichage du département afin que le destinataire
+            # voit bien "Communication — EEBC <contact@...>" et non juste contact@.
+            from email.utils import formataddr, parseaddr
             display_name, from_address = parseaddr(email_message.from_email or '')
             if from_address.lower() != self.username.lower():
-                email_message.from_email = self.username
+                email_message.from_email = formataddr((display_name, self.username)) if display_name else self.username
             
             # Préparer le message MIME
             msg = self._prepare_mime_message(email_message)

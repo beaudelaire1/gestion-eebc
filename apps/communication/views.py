@@ -50,6 +50,11 @@ def email_compose(request):
             ]
             cc = form.cleaned_data['cc']
             bcc = form.cleaned_data['bcc']
+            # Reply-To pointe toujours vers la vraie boîte du département.
+            # Indispensable quand le fallback contact@ est utilisé :
+            # les réponses arrivent au bon département même si l'envoi
+            # transite par la boîte par défaut.
+            reply_to = [department.from_email]
             
             # Destinataires : comptes d'équipe + adresses externes
             targets = [
@@ -77,6 +82,7 @@ def email_compose(request):
                     attachments=attachments,
                     cc=cc,
                     bcc=bcc,
+                    reply_to=reply_to,
                 )
                 if email_log.status == EmailLog.Status.SENT:
                     sent += 1
