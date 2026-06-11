@@ -48,6 +48,8 @@ def email_compose(request):
                 (f.name, f.read(), f.content_type or 'application/octet-stream')
                 for f in form.cleaned_data['attachments']
             ]
+            cc = form.cleaned_data['cc']
+            bcc = form.cleaned_data['bcc']
             
             # Destinataires : comptes d'équipe + adresses externes
             targets = [
@@ -73,6 +75,8 @@ def email_compose(request):
                     fail_silently=True,
                     connection=connection,
                     attachments=attachments,
+                    cc=cc,
+                    bcc=bcc,
                 )
                 if email_log.status == EmailLog.Status.SENT:
                     sent += 1

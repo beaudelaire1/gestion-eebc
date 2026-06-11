@@ -268,12 +268,32 @@ class ComposeEmailForm(forms.Form):
     
     external_recipients = forms.CharField(
         required=False,
-        label="Destinataires externes",
+        label="Destinataires (À)",
         help_text="Adresses externes (mairie, partenaires...), séparées par des virgules ou des retours à la ligne.",
         widget=forms.Textarea(attrs={
             'class': 'form-control',
             'rows': 2,
             'placeholder': 'mairie@ville-cayenne.fr, partenaire@example.org'
+        })
+    )
+    
+    cc = forms.CharField(
+        required=False,
+        label="CC (Copie)",
+        help_text="Adresses en copie, visibles de tous les destinataires.",
+        widget=forms.TextInput(attrs={
+            'class': 'form-control',
+            'placeholder': 'copie1@example.org, copie2@example.org'
+        })
+    )
+    
+    bcc = forms.CharField(
+        required=False,
+        label="CCI (Copie cachée)",
+        help_text="Adresses en copie cachée, invisibles des autres destinataires.",
+        widget=forms.TextInput(attrs={
+            'class': 'form-control',
+            'placeholder': 'archive@eglise-ebc.org'
         })
     )
     
@@ -336,6 +356,27 @@ class ComposeEmailForm(forms.Form):
             except ValidationError:
                 raise ValidationError(f"Adresse invalide : {email}")
         return emails
+    
+    def _clean_email_list(self, field_name):
+        """Valide une liste d'adresses CC ou CCI."""
+        import re
+
+        from django.core.validators import validate_email
+        
+        raw = self.cleaned_data.get(field_name, '')
+        emails = [e.strip() for e in re.split(r'[,;\n]+', raw) if e.strip()]
+        for email in emails:
+            try:
+                validate_email(email)
+            except ValidationError:
+                raise ValidationError(f"Adresse invalide : {email}")
+        return emails
+    
+    def clean_cc(self):
+        return self._clean_email_list('cc')
+    
+    def clean_bcc(self):
+        return self._clean_email_list('bcc')
     
     def clean_attachments(self):
         """Vérifie extensions et taille totale des pièces jointes."""
