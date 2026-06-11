@@ -348,19 +348,19 @@ class EmailSenderDepartment(models.Model):
     def smtp_password_env_name(self):
         """Nom de la variable d'environnement contenant le mot de passe de la boîte.
         
-        Convention : EMAIL_BACKEND_<LOCALPART_EN_MAJUSCULES>
+        Convention : EMAIL_PASSWORD_<LOCALPART_EN_MAJUSCULES>
         Exemples :
-          communication@eglise-ebc.org  -> EMAIL_BACKEND_COMMUNICATION
-          secretariat@eglise-ebc.org    -> EMAIL_BACKEND_SECRETARIAT
-          contact@eglise-ebc.org        -> EMAIL_BACKEND_CONTACT
-          multimedia@eglise-ebc.org     -> EMAIL_BACKEND_MULTIMEDIA
+          communication@eglise-ebc.org  -> EMAIL_PASSWORD_COMMUNICATION
+          secretariat@eglise-ebc.org    -> EMAIL_PASSWORD_SECRETARIAT
+          contact@eglise-ebc.org        -> EMAIL_PASSWORD_CONTACT
+          multimedia@eglise-ebc.org     -> EMAIL_PASSWORD_MULTIMEDIA
         
         Si la variable est absente, l'envoi utilise le backend SMTP
         par défaut (contact@) défini dans les settings.
         """
         local_part = self.from_email.split('@')[0]
         normalized = ''.join(c if c.isalnum() else '_' for c in local_part).upper()
-        return f'EMAIL_BACKEND_{normalized}'
+        return f'EMAIL_PASSWORD_{normalized}'
     
     def get_smtp_connection(self):
         """Retourne une connexion SMTP dédiée à la boîte du département.

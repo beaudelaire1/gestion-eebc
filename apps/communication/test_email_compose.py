@@ -174,13 +174,13 @@ class TestDepartmentSmtpMailbox:
     """Chaque département dispose d'une vraie boîte SMTP dédiée."""
     
     def test_nom_variable_environnement(self, department):
-        assert department.smtp_password_env_name == 'EMAIL_BACKEND_SECRETARIAT'
+        assert department.smtp_password_env_name == 'EMAIL_PASSWORD_SECRETARIAT'
     
     def test_connexion_dediee_si_mot_de_passe_configure(self, department, monkeypatch):
-        monkeypatch.setenv('EMAIL_BACKEND_SECRETARIAT', 'mot-de-passe-test')
+        monkeypatch.setenv('EMAIL_PASSWORD_SECRETARIAT', 'mot-de-passe-test')
         connection = department.get_smtp_connection()
         assert connection is not None
     
     def test_fallback_sans_mot_de_passe(self, department, monkeypatch):
-        monkeypatch.delenv('EMAIL_BACKEND_SECRETARIAT', raising=False)
+        monkeypatch.delenv('EMAIL_PASSWORD_SECRETARIAT', raising=False)
         assert department.get_smtp_connection() is None
