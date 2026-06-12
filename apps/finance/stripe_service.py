@@ -493,20 +493,37 @@ class StripeService:
         return {'status': 'acknowledged'}
 
     def _enqueue_donation_receipt_email(self, online_donation_id):
-        """Planifie l'envoi du reçu et bascule en fallback synchrone si le broker est indisponible."""
+        """Planifie l'envoi du reçu et garantit un fallback synchrone fiable.
+
+        En production, il arrive que la file Celery accepte la tâche mais que
+        le worker soit indisponible/mal configuré. On conserve l'enqueue pour
+        les retries, puis on fait un envoi immédiat de secours.
+        """
         from .models import OnlineDonation
 
+        enqueued = False
         try:
             send_donation_receipt_email_task.delay(online_donation_id)
+            enqueued = True
         except Exception as exc:
             logger.warning(
                 "Failed to enqueue receipt email task for donation #%s, fallback to immediate send: %s",
                 online_donation_id,
                 exc,
             )
-            donation = OnlineDonation.objects.filter(pk=online_donation_id).first()
-            if donation:
-                self._send_donation_receipt(donation)
+
+        donation = OnlineDonation.objects.filter(pk=online_donation_id).first()
+        if not donation or donation.receipt_email_sent_at:
+            return
+
+        sync_backup_enabled = getattr(settings, 'DONATION_RECEIPT_SYNC_BACKUP', True)
+        if sync_backup_enabled:
+            if enqueued:
+                logger.info(
+                    "Donation #%s queued; running immediate sync backup send to avoid silent worker failures.",
+                    online_donation_id,
+                )
+            self._send_donation_receipt(donation)
     
     def _notify_finance_team(self, online_donation, transaction):
         """Notifie l'équipe finance qu'un don en ligne a été reçu."""
