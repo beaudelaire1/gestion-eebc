@@ -17,7 +17,6 @@ from django.urls import reverse
 from django.utils import timezone
 
 from .pdf_service import generate_donation_receipt_pdf
-from .tasks import send_donation_receipt_email_task
 
 logger = logging.getLogger(__name__)
 
@@ -316,7 +315,7 @@ class StripeService:
                 existing_donation.save(update_fields=['status', 'completed_at'])
 
             if existing_donation.donor_email and not existing_donation.receipt_email_sent_at:
-                self._enqueue_donation_receipt_email(existing_donation.id)
+                self._send_donation_receipt(existing_donation)
 
             if existing_donation.transaction:
                 return {
@@ -371,9 +370,11 @@ class StripeService:
             except Exception as e:
                 logger.warning(f"Campaign donation link failed for campaign_id={campaign_id}: {e}")
         
-        # Envoyer un reçu par email (file de retry + fallback immédiat).
+        # Envoyer le reçu par email de façon synchrone dans le process web.
+        # Cohérent avec le reste de l'application (communication, notifications)
+        # qui n'utilise pas de worker Celery pour les emails transactionnels.
         if online_donation.donor_email:
-            self._enqueue_donation_receipt_email(online_donation.id)
+            self._send_donation_receipt(online_donation)
         
         logger.info(f"Donation processed: {transaction.reference} - {amount}€")
         
@@ -492,39 +493,6 @@ class StripeService:
         logger.info(f"Subscription cancelled: {subscription['id']}")
         return {'status': 'acknowledged'}
 
-    def _enqueue_donation_receipt_email(self, online_donation_id):
-        """Planifie l'envoi du reçu et garantit un fallback synchrone fiable.
-
-        En production, il arrive que la file Celery accepte la tâche mais que
-        le worker soit indisponible/mal configuré. On conserve l'enqueue pour
-        les retries, puis on fait un envoi immédiat de secours.
-        """
-        from .models import OnlineDonation
-
-        enqueued = False
-        try:
-            send_donation_receipt_email_task.delay(online_donation_id)
-            enqueued = True
-        except Exception as exc:
-            logger.warning(
-                "Failed to enqueue receipt email task for donation #%s, fallback to immediate send: %s",
-                online_donation_id,
-                exc,
-            )
-
-        donation = OnlineDonation.objects.filter(pk=online_donation_id).first()
-        if not donation or donation.receipt_email_sent_at:
-            return
-
-        sync_backup_enabled = getattr(settings, 'DONATION_RECEIPT_SYNC_BACKUP', True)
-        if sync_backup_enabled:
-            if enqueued:
-                logger.info(
-                    "Donation #%s queued; running immediate sync backup send to avoid silent worker failures.",
-                    online_donation_id,
-                )
-            self._send_donation_receipt(donation)
-    
     def _notify_finance_team(self, online_donation, transaction):
         """Notifie l'équipe finance qu'un don en ligne a été reçu."""
         try:

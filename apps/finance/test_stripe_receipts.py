@@ -136,32 +136,27 @@ def test_send_donation_receipt_updates_delivery_tracking(monkeypatch):
 
 
 @pytest.mark.django_db
-def test_enqueue_receipt_email_fallbacks_to_sync_when_queue_is_unavailable(monkeypatch):
-    """Si Celery/Broker tombe, le service bascule en envoi immédiat."""
-    donation = OnlineDonation.objects.create(
-        stripe_session_id='cs_test_fallback_001',
-        amount='15.00',
-        donation_type='don',
-        donor_email='donateur@example.com',
-        status='completed',
-    )
-
-    class FakeTask:
-        @staticmethod
-        def delay(_donation_id):
-            raise RuntimeError('broker down')
-
+def test_webhook_sends_receipt_synchronously(monkeypatch):
+    """Le webhook envoie le reçu de façon synchrone dans le process web."""
     called = {'sync': False}
 
-    def fake_send_sync(d):
+    def fake_send_sync(donation):
         called['sync'] = True
         return True
 
-    monkeypatch.setattr('apps.finance.tasks.send_donation_receipt_email_task', FakeTask)
     monkeypatch.setattr(stripe_service, '_send_donation_receipt', fake_send_sync)
 
-    stripe_service._enqueue_donation_receipt_email(donation.id)
+    session = {
+        'id': 'cs_test_sync_send_001',
+        'amount_total': 1500,
+        'payment_intent': 'pi_test_sync_001',
+        'customer_details': {'name': 'Donateur Sync', 'email': 'donateur@example.com'},
+        'metadata': {'donation_type': 'don', 'site_id': '', 'member_id': '', 'campaign_id': ''},
+    }
 
+    result = stripe_service._handle_checkout_completed(session)
+
+    assert result['status'] == 'success'
     assert called['sync'] is True
 
 

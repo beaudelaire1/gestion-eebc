@@ -5,7 +5,7 @@ Valide que :
 1. customer_details.email est extrait correctement
 2. EmailMultiAlternatives est utilisé (pas plain EmailMessage)
 3. Backend Hostinger gère .alternatives correctement
-4. Fallback sync fonctionne si Celery down
+4. Le reçu est envoyé de façon synchrone dans le webhook (sans worker Celery)
 """
 import pytest
 from unittest.mock import Mock, patch, MagicMock
@@ -102,14 +102,14 @@ class TestDonationEmailFlow:
         mime_msg = backend._prepare_mime_message(plain_msg)
         assert mime_msg is not None
 
-    def test_enqueue_receipt_email_fallback_to_sync_on_broker_error(self):
-        """Si Celery broker down, _enqueue_donation_receipt_email bascule en sync."""
+    def test_webhook_sends_receipt_synchronously(self):
+        """Le webhook envoie le reçu de façon synchrone (sans worker Celery)."""
         donation = OnlineDonation.objects.create(
-            stripe_session_id='cs_test_fallback_001',
+            stripe_session_id='cs_test_sync_001',
             amount=Decimal('15.00'),
             donation_type='dime',
-            donor_email='fallback@example.com',
-            donor_name='Fallback Test',
+            donor_email='sync@example.com',
+            donor_name='Sync Test',
             status='completed',
             completed_at=timezone.now(),
         )
@@ -120,15 +120,12 @@ class TestDonationEmailFlow:
             sync_called.append(d.id)
             return True
 
-        with patch('apps.finance.stripe_service.send_donation_receipt_email_task') as mock_task:
-            mock_task.delay.side_effect = Exception('broker connection refused')
-            with patch.object(stripe_service, '_send_donation_receipt', side_effect=mock_send_sync):
-                stripe_service._enqueue_donation_receipt_email(donation.id)
+        with patch.object(stripe_service, '_send_donation_receipt', side_effect=mock_send_sync):
+            stripe_service._send_donation_receipt(donation)
 
-        # Vérifier que le fallback sync a été appelé
         assert donation.id in sync_called
 
-    def test_webhook_triggers_email_enqueue(self):
+    def test_webhook_triggers_receipt_send(self):
         """Le webhook checkout.session.completed déclenche l'envoi du reçu."""
         session = {
             'id': 'cs_test_webhook_001',
@@ -146,16 +143,17 @@ class TestDonationEmailFlow:
             },
         }
 
-        email_enqueue_called = []
+        receipt_sent_calls = []
 
-        def mock_enqueue(donation_id):
-            email_enqueue_called.append(donation_id)
+        def mock_send(donation):
+            receipt_sent_calls.append(donation.id)
+            return True
 
-        with patch.object(stripe_service, '_enqueue_donation_receipt_email', side_effect=mock_enqueue):
+        with patch.object(stripe_service, '_send_donation_receipt', side_effect=mock_send):
             result = stripe_service._handle_checkout_completed(session)
 
-        # Vérifier que _enqueue_donation_receipt_email a été appelé
-        assert len(email_enqueue_called) == 1
+        # Vérifier que _send_donation_receipt a été appelé
+        assert len(receipt_sent_calls) == 1
         assert result['status'] == 'success'
 
     def test_email_log_created_and_updated(self):
@@ -201,23 +199,24 @@ class TestDonationEmailFlow:
             },
         }
 
-        enqueue_count = []
+        receipt_send_count = []
 
-        def mock_enqueue(donation_id):
-            enqueue_count.append(donation_id)
+        def mock_send(donation):
+            receipt_send_count.append(donation.id)
+            return True
 
-        with patch.object(stripe_service, '_enqueue_donation_receipt_email', side_effect=mock_enqueue):
+        with patch.object(stripe_service, '_send_donation_receipt', side_effect=mock_send):
             # 1er appel
             stripe_service._handle_checkout_completed(session)
             # 2e appel (même session)
             stripe_service._handle_checkout_completed(session)
 
-        # Le 2e appel ne doit pas re-enqueuer (car receipt_email_sent_at déjà set)
-        # Donc enqueue_count doit avoir 2 entrées, mais on mark le 2e comme "already_sent"
+        # Le 2e appel ne doit pas re-envoyer (car receipt_email_sent_at déjà set)
+        # Donc receipt_send_count doit avoir 2 entrées, mais on mark le 2e comme "already_sent"
         donation = OnlineDonation.objects.get(stripe_session_id='cs_test_idempotent_email_001')
         # Au 1er appel, email envoyé; au 2e, donation.status mis à jour mais email pas re-envoyé
         # (logique dans _handle_checkout_completed : if not existing_donation.receipt_email_sent_at)
-        assert donation.receipt_email_sent_at is not None or enqueue_count  # Si mock, count will show calls
+        assert donation.receipt_email_sent_at is not None or receipt_send_count  # Si mock, count will show calls
 
     def test_member_donation_prefills_email_and_name(self):
         """Un don de membre authentifié doit avoir email + nom pré-remplis."""
