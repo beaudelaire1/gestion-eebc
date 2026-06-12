@@ -361,15 +361,23 @@ class EmailSenderDepartment(models.Model):
         local_part = self.from_email.split('@')[0]
         normalized = ''.join(c if c.isalnum() else '_' for c in local_part).upper()
         return f'EMAIL_PASSWORD_{normalized}'
+
+    @property
+    def smtp_password_legacy_env_name(self):
+        """Alias legacy demandé: EMAIL_BACKEND_<LOCALPART>."""
+        local_part = self.from_email.split('@')[0]
+        normalized = ''.join(c if c.isalnum() else '_' for c in local_part).upper()
+        return f'EMAIL_BACKEND_{normalized}'
     
     def get_smtp_connection(self):
         """Retourne une connexion SMTP dédiée à la boîte du département.
         
         Logique de sélection :
-          1. Lecture de EMAIL_BACKEND_<LOCALPART> dans l'environnement.
-          2. Si présente  → connexion authentifiée sur la boite du département
+             1. Lecture de EMAIL_PASSWORD_<LOCALPART> dans l'environnement.
+             2. Si absente, fallback sur EMAIL_BACKEND_<LOCALPART> (alias legacy).
+             3. Si présente  → connexion authentifiée sur la boite du département
              (from_email/password) : le mail part depuis la vraie boîte.
-          3. Si absente   → None, la vue utilise la connexion par défaut
+             4. Si absente   → None, la vue utilise la connexion par défaut
              (contact@ via settings) ; le From: conserve le nom d'affichage
              du département et un Reply-To pointe vers la vraie boîte.
         """
@@ -378,6 +386,8 @@ class EmailSenderDepartment(models.Model):
         from django.core.mail import get_connection
         
         password = os.environ.get(self.smtp_password_env_name, '')
+        if not password:
+            password = os.environ.get(self.smtp_password_legacy_env_name, '')
         if not password:
             return None
         return get_connection(username=self.from_email, password=password)

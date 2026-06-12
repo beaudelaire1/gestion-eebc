@@ -175,6 +175,7 @@ class TestDepartmentSmtpMailbox:
     
     def test_nom_variable_environnement(self, department):
         assert department.smtp_password_env_name == 'EMAIL_PASSWORD_SECRETARIAT'
+        assert department.smtp_password_legacy_env_name == 'EMAIL_BACKEND_SECRETARIAT'
     
     def test_connexion_dediee_si_mot_de_passe_configure(self, department, monkeypatch):
         monkeypatch.setenv('EMAIL_PASSWORD_SECRETARIAT', 'mot-de-passe-test')
@@ -183,4 +184,11 @@ class TestDepartmentSmtpMailbox:
     
     def test_fallback_sans_mot_de_passe(self, department, monkeypatch):
         monkeypatch.delenv('EMAIL_PASSWORD_SECRETARIAT', raising=False)
+        monkeypatch.delenv('EMAIL_BACKEND_SECRETARIAT', raising=False)
         assert department.get_smtp_connection() is None
+
+    def test_alias_legacy_email_backend(self, department, monkeypatch):
+        monkeypatch.delenv('EMAIL_PASSWORD_SECRETARIAT', raising=False)
+        monkeypatch.setenv('EMAIL_BACKEND_SECRETARIAT', 'mot-de-passe-test-legacy')
+        connection = department.get_smtp_connection()
+        assert connection is not None
