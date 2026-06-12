@@ -617,6 +617,7 @@ L'Équipe de Finance EEBC
                 from_email=None,
                 to=[online_donation.donor_email],
             )
+            email._eebc_email_log_id = email_log.id
             
             # Ajouter le contenu HTML
             email.attach_alternative(html_body, 'text/html')

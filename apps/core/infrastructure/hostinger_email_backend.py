@@ -387,6 +387,12 @@ class HostingerEmailBackend(BaseEmailBackend):
         """
         Crée un log pour l'email avant l'envoi.
         """
+        existing_log_id = getattr(email_message, '_eebc_email_log_id', None)
+        if existing_log_id:
+            existing_log = EmailLog.objects.filter(pk=existing_log_id).first()
+            if existing_log:
+                return existing_log
+
         recipients = email_message.recipients()
         recipient_email = recipients[0] if recipients else ''
         
@@ -463,6 +469,7 @@ class HostingerEmailService:
             from_email=from_email,
             to=[recipient_email]
         )
+        email._eebc_email_log_id = log.id
         
         # Ajouter le contenu HTML
         if html_content:

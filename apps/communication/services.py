@@ -233,6 +233,7 @@ class EmailService:
                 connection=connection,
                 reply_to=reply_to or []
             )
+            email._eebc_email_log_id = email_log.id
             email.attach_alternative(html_content, "text/html")
             
             for attachment in attachments or []:

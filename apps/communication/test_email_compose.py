@@ -106,6 +106,22 @@ class TestEmailCompose:
         assert len(mail.outbox) == 2
         destinataires = {m.to[0] for m in mail.outbox}
         assert destinataires == {'mairie@ville-cayenne.fr', 'partenaire@example.org'}
+
+    def test_dedoublonne_destinataire_interne_et_externe_identiques(self, client, comm_admin, department, team_recipient):
+        """Même email saisi en interne + externe => un seul envoi effectif."""
+        client.force_login(comm_admin)
+        response = client.post(reverse('communication:email_compose'), {
+            'department': department.pk,
+            'recipients': [team_recipient.pk],
+            'external_recipients': team_recipient.email,
+            'subject': 'Message unique',
+            'body': '<p>Ce message doit partir une seule fois.</p>',
+        })
+
+        assert response.status_code == 302
+        assert len(mail.outbox) == 1
+        assert mail.outbox[0].to == [team_recipient.email]
+        assert EmailLog.objects.filter(recipient_email=team_recipient.email).count() == 1
     
     def test_adresse_externe_invalide_rejetee(self, client, comm_admin, department):
         client.force_login(comm_admin)

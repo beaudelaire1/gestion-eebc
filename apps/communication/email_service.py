@@ -75,6 +75,7 @@ class EmailService:
                 from_email=from_email,
                 to=[recipient_email]
             )
+            email._eebc_email_log_id = log.id
             email.attach_alternative(html_content, "text/html")
             email.send(fail_silently=False)
             

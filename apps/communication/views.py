@@ -181,15 +181,62 @@ def email_compose(request):
             reply_to = [department.from_email]
             
             # Destinataires : comptes d'équipe + adresses externes
-            targets = [
+            raw_targets = [
                 (user.email, user.get_full_name() or user.username)
                 for user in form.cleaned_data['recipients']
             ]
-            targets += [(email, '') for email in form.cleaned_data['external_recipients']]
+            raw_targets += [(email, '') for email in form.cleaned_data['external_recipients']]
+
+            # Dédoublonnage strict (insensible à la casse) pour éviter les doubles
+            # envois quand la même adresse est saisie en interne + externe.
+            targets = []
+            seen_targets = {}
+            duplicate_targets = 0
+            for email_address, full_name in raw_targets:
+                normalized_email = (email_address or '').strip().lower()
+                if not normalized_email:
+                    continue
+
+                if normalized_email in seen_targets:
+                    duplicate_targets += 1
+                    existing_idx = seen_targets[normalized_email]
+                    existing_email, existing_name = targets[existing_idx]
+                    # Conserver le nom le plus informatif quand possible.
+                    if not existing_name and full_name:
+                        targets[existing_idx] = (existing_email, full_name)
+                    continue
+
+                seen_targets[normalized_email] = len(targets)
+                targets.append(((email_address or '').strip(), full_name))
+
+            if not targets:
+                messages.error(request, "Aucun destinataire valide après normalisation.")
+                return render(request, 'communication/email_compose.html', {'form': form})
+
+            # Dédoublonnage CC/CCI et exclusion de la même adresse que le TO.
+            # (sinon certains clients affichent des doublons de réception)
+            dedup_cc = []
+            dedup_bcc = []
+            seen_cc = set()
+            seen_bcc = set()
+            for cc_email in cc:
+                cc_norm = cc_email.strip().lower()
+                if cc_norm and cc_norm not in seen_cc:
+                    seen_cc.add(cc_norm)
+                    dedup_cc.append(cc_email.strip())
+            for bcc_email in bcc:
+                bcc_norm = bcc_email.strip().lower()
+                if bcc_norm and bcc_norm not in seen_bcc:
+                    seen_bcc.add(bcc_norm)
+                    dedup_bcc.append(bcc_email.strip())
             
             sent, failed = 0, 0
             last_error = ''
             for email_address, full_name in targets:
+                recipient_norm = email_address.strip().lower()
+                filtered_cc = [item for item in dedup_cc if item.strip().lower() != recipient_norm]
+                filtered_bcc = [item for item in dedup_bcc if item.strip().lower() != recipient_norm]
+
                 email_log = EmailService.send_email(
                     recipient_email=email_address,
                     subject=subject,
@@ -205,8 +252,8 @@ def email_compose(request):
                     fail_silently=True,
                     connection=connection,
                     attachments=attachments,
-                    cc=cc,
-                    bcc=bcc,
+                    cc=filtered_cc,
+                    bcc=filtered_bcc,
                     reply_to=reply_to,
                 )
                 if email_log.status == EmailLog.Status.SENT:
@@ -218,6 +265,11 @@ def email_compose(request):
             
             if sent:
                 messages.success(request, f"{sent} e-mail(s) envoyé(s) depuis « {department.name} ».")
+            if duplicate_targets:
+                messages.info(
+                    request,
+                    f"{duplicate_targets} destinataire(s) en doublon ignoré(s) (même adresse saisie plusieurs fois).",
+                )
             if failed:
                 detail = f" Cause : {last_error}" if last_error else ''
                 messages.error(
