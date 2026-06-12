@@ -64,6 +64,7 @@ def email_compose(request):
             targets += [(email, '') for email in form.cleaned_data['external_recipients']]
             
             sent, failed = 0, 0
+            last_error = ''
             for email_address, full_name in targets:
                 email_log = EmailService.send_email(
                     recipient_email=email_address,
@@ -88,11 +89,17 @@ def email_compose(request):
                     sent += 1
                 else:
                     failed += 1
+                    if email_log.error_message:
+                        last_error = email_log.error_message
             
             if sent:
                 messages.success(request, f"{sent} e-mail(s) envoyé(s) depuis « {department.name} ».")
             if failed:
-                messages.error(request, f"{failed} envoi(s) en échec — voir l'historique des e-mails.")
+                detail = f" Cause : {last_error}" if last_error else ''
+                messages.error(
+                    request,
+                    f"{failed} envoi(s) en échec — voir l'historique des e-mails.{detail}",
+                )
             return redirect('communication:email_logs')
     else:
         form = ComposeEmailForm()
