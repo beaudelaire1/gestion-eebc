@@ -6,6 +6,7 @@ app_name = 'communication'
 urlpatterns = [
     # Éditeur d'e-mails
     path('compose/', views.email_compose, name='email_compose'),
+    path('compose/diagnostic/', views.email_smtp_diagnostic, name='email_smtp_diagnostic'),
     
     # Notifications
     path('notifications/', views.notifications_list, name='notifications'),

@@ -25,6 +25,130 @@ def _is_comm_admin(user):
 
 
 @login_required
+def email_smtp_diagnostic(request):
+    """Diagnostic SMTP : teste la connexion et l'authentification de chaque boîte.
+    
+    N'envoie aucun e-mail. Pour chaque département actif :
+      1. Vérifie la présence du mot de passe en variable d'environnement.
+      2. Teste la connexion TCP + STARTTLS vers le serveur SMTP.
+      3. Teste l'authentification (login) avec les identifiants de la boîte.
+    Affiche le verdict exact renvoyé par le serveur (utile en production
+    où aucun shell n'est disponible).
+    """
+    import os
+    import smtplib
+
+    from .models import EmailSenderDepartment
+
+    if not _is_comm_admin(request.user):
+        messages.error(request, "Vous n'avez pas accès au diagnostic e-mail.")
+        return redirect('dashboard:home')
+    
+    host = getattr(settings, 'HOSTINGER_EMAIL_HOST', 'smtp.hostinger.com')
+    port = getattr(settings, 'HOSTINGER_EMAIL_PORT', 587)
+    use_tls = getattr(settings, 'HOSTINGER_EMAIL_USE_TLS', True)
+    use_ssl = getattr(settings, 'HOSTINGER_EMAIL_USE_SSL', False)
+    
+    backend_env = os.environ.get('EMAIL_BACKEND', 'console')
+    results = []
+    
+    for dept in EmailSenderDepartment.objects.filter(is_active=True).order_by('order'):
+        entry = {
+            'department': dept,
+            'env_var': dept.smtp_password_env_name,
+            'password_found': False,
+            'connection_ok': False,
+            'auth_ok': False,
+            'error': '',
+        }
+        password = os.environ.get(dept.smtp_password_env_name, '') or \
+            os.environ.get(dept.smtp_password_legacy_env_name, '')
+        entry['password_found'] = bool(password)
+        
+        if password:
+            try:
+                if use_ssl:
+                    smtp = smtplib.SMTP_SSL(host, port, timeout=15)
+                else:
+                    smtp = smtplib.SMTP(host, port, timeout=15)
+                    if use_tls:
+                        smtp.starttls()
+                entry['connection_ok'] = True
+                try:
+                    smtp.login(dept.from_email, password)
+                    entry['auth_ok'] = True
+                except smtplib.SMTPAuthenticationError as e:
+                    entry['error'] = f"Authentification refusée ({e.smtp_code}) : {e.smtp_error.decode(errors='replace') if isinstance(e.smtp_error, bytes) else e.smtp_error}"
+                except Exception as e:
+                    entry['error'] = f"Erreur login : {e}"
+                finally:
+                    try:
+                        smtp.quit()
+                    except Exception:
+                        pass
+            except Exception as e:
+                entry['error'] = f"Connexion impossible à {host}:{port} : {e}"
+        else:
+            entry['error'] = (
+                f"Variable {dept.smtp_password_env_name} absente — "
+                "fallback sur la boîte par défaut (contact@)."
+            )
+        
+        results.append(entry)
+    
+    # Test de la boîte par défaut (settings Hostinger)
+    default_entry = {
+        'department': None,
+        'env_var': 'HOSTINGER_EMAIL_HOST_USER / HOSTINGER_EMAIL_HOST_PASSWORD',
+        'username': getattr(settings, 'HOSTINGER_EMAIL_HOST_USER', ''),
+        'password_found': bool(getattr(settings, 'HOSTINGER_EMAIL_HOST_PASSWORD', '')),
+        'connection_ok': False,
+        'auth_ok': False,
+        'error': '',
+    }
+    if default_entry['username'] and default_entry['password_found']:
+        try:
+            if use_ssl:
+                smtp = smtplib.SMTP_SSL(host, port, timeout=15)
+            else:
+                smtp = smtplib.SMTP(host, port, timeout=15)
+                if use_tls:
+                    smtp.starttls()
+            default_entry['connection_ok'] = True
+            try:
+                smtp.login(
+                    settings.HOSTINGER_EMAIL_HOST_USER,
+                    settings.HOSTINGER_EMAIL_HOST_PASSWORD,
+                )
+                default_entry['auth_ok'] = True
+            except smtplib.SMTPAuthenticationError as e:
+                default_entry['error'] = f"Authentification refusée ({e.smtp_code}) : {e.smtp_error.decode(errors='replace') if isinstance(e.smtp_error, bytes) else e.smtp_error}"
+            except Exception as e:
+                default_entry['error'] = f"Erreur login : {e}"
+            finally:
+                try:
+                    smtp.quit()
+                except Exception:
+                    pass
+        except Exception as e:
+            default_entry['error'] = f"Connexion impossible à {host}:{port} : {e}"
+    else:
+        default_entry['error'] = "HOSTINGER_EMAIL_HOST_USER ou HOSTINGER_EMAIL_HOST_PASSWORD manquant."
+    
+    context = {
+        'results': results,
+        'default_entry': default_entry,
+        'smtp_host': host,
+        'smtp_port': port,
+        'use_tls': use_tls,
+        'use_ssl': use_ssl,
+        'backend_env': backend_env,
+        'email_backend': settings.EMAIL_BACKEND,
+    }
+    return render(request, 'communication/email_smtp_diagnostic.html', context)
+
+
+@login_required
 def email_compose(request):
     """Éditeur d'e-mails : composition et envoi avec département expéditeur."""
     if not _is_comm_admin(request.user):
