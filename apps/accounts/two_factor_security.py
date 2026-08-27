@@ -6,9 +6,12 @@ import os
 
 from cryptography.fernet import Fernet, InvalidToken
 from django.conf import settings
+from django.core.cache import cache
 from django.core.exceptions import ImproperlyConfigured
 
 ENCRYPTED_PREFIX = "enc:v1:"
+MAX_MFA_ATTEMPTS = 5
+MFA_LOCK_SECONDS = 10 * 60
 DEFAULT_REQUIRED_ROLES = {
     "admin",
     "pasteur",
@@ -44,6 +47,41 @@ def requires_two_factor(user):
 
 def needs_two_factor_verification(user):
     return requires_two_factor(user) or bool(getattr(user, "two_factor_enabled", False))
+
+
+def _mfa_attempts_key(user_id):
+    return f"eebc:2fa:attempts:{user_id}"
+
+
+def _mfa_lock_key(user_id):
+    return f"eebc:2fa:lock:{user_id}"
+
+
+def is_mfa_locked(user_id):
+    return bool(cache.get(_mfa_lock_key(user_id)))
+
+
+def record_mfa_failure(user_id):
+    """Atomically register a failed MFA attempt and return (locked, remaining)."""
+    attempts_key = _mfa_attempts_key(user_id)
+    if cache.add(attempts_key, 1, MFA_LOCK_SECONDS):
+        attempts = 1
+    else:
+        try:
+            attempts = cache.incr(attempts_key)
+        except ValueError:
+            # The key may have expired between add() and incr(). Recreate it.
+            cache.add(attempts_key, 1, MFA_LOCK_SECONDS)
+            attempts = int(cache.get(attempts_key, 1))
+
+    if attempts >= MAX_MFA_ATTEMPTS:
+        cache.set(_mfa_lock_key(user_id), True, MFA_LOCK_SECONDS)
+        return True, 0
+    return False, MAX_MFA_ATTEMPTS - attempts
+
+
+def clear_mfa_failures(user_id):
+    cache.delete_many([_mfa_attempts_key(user_id), _mfa_lock_key(user_id)])
 
 
 def _fernet_key():
