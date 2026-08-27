@@ -2,95 +2,87 @@
 
 {% block title %}Configuration 2FA - EEBC{% endblock %}
 {% block page_title %}Double authentification{% endblock %}
-{% block page_subtitle %}Configuration de la vérification en deux étapes{% endblock %}
+{% block page_subtitle %}Sécurisez votre compte avec une vérification en deux étapes{% endblock %}
 
 {% block content %}
 <div class="container py-4">
     <div class="row justify-content-center">
         <div class="col-lg-8">
-            
-            <h2 class="mb-4">
-                <i class="bi bi-shield-lock me-2"></i>
-                Double Authentification (2FA)
-            </h2>
-            
+            <h2 class="mb-4"><i class="bi bi-shield-lock me-2"></i>Double authentification (2FA)</h2>
+
+            {% if is_required %}
+            <div class="alert alert-warning">
+                <i class="bi bi-shield-exclamation me-2"></i>
+                La double authentification est obligatoire pour les responsabilités associées à ce compte.
+            </div>
+            {% endif %}
+
             {% if is_enabled %}
             <div class="alert alert-success">
                 <i class="bi bi-check-circle me-2"></i>
                 La double authentification est <strong>activée</strong> sur votre compte.
             </div>
-            
+
             <div class="card">
                 <div class="card-body">
+                    <div class="d-flex flex-wrap gap-2">
+                        <a class="btn btn-outline-primary" href="{% url 'accounts:two_factor_backup_codes' %}">
+                            <i class="bi bi-key me-2"></i>Gérer les codes de secours
+                        </a>
+                    </div>
+
+                    {% if not is_required %}
+                    <hr>
                     <h5 class="card-title">Désactiver la 2FA</h5>
-                    <p class="text-muted">
-                        Pour désactiver la double authentification, entrez un code de vérification.
-                    </p>
+                    <p class="text-muted">Confirmez avec un code TOTP ou un code de secours valide.</p>
                     <form method="post" action="{% url 'accounts:two_factor_disable' %}">
                         {% csrf_token %}
                         <div class="mb-3">
-                            <input type="text" class="form-control" name="code" 
-                                   placeholder="Code à 6 chiffres" maxlength="6" required
-                                   pattern="[0-9]{6}" inputmode="numeric">
+                            <input type="text" class="form-control" name="code"
+                                   placeholder="Code de vérification" maxlength="9" required
+                                   autocomplete="one-time-code">
                         </div>
                         <button type="submit" class="btn btn-danger">
                             <i class="bi bi-shield-x me-2"></i>Désactiver
                         </button>
                     </form>
+                    {% else %}
+                    <p class="text-muted mb-0 mt-3">
+                        La désactivation n'est pas disponible tant que ce compte conserve un rôle soumis à la 2FA.
+                    </p>
+                    {% endif %}
                 </div>
             </div>
-            
+
             {% else %}
-            
             <div class="alert alert-info">
-                <i class="bi bi-info-circle me-2"></i>
-                La double authentification ajoute une couche de sécurité supplémentaire à votre compte.
+                Installez une application compatible TOTP (Google Authenticator, Microsoft Authenticator, Authy ou équivalent),
+                puis scannez le QR code ci-dessous.
             </div>
-            
+
             <div class="row">
-                <!-- Étape 1 : QR Code -->
                 <div class="col-md-6 mb-4">
                     <div class="card h-100">
-                        <div class="card-header">
-                            <h5 class="mb-0">1. Scanner le QR Code</h5>
-                        </div>
+                        <div class="card-header"><h5 class="mb-0">1. Enregistrer le compte</h5></div>
                         <div class="card-body text-center">
                             {% if qr_code %}
-                            <img src="{{ qr_code }}" alt="QR Code 2FA" class="img-fluid mb-3" style="max-width: 200px;">
+                            <img src="{{ qr_code }}" alt="QR Code de configuration 2FA" class="img-fluid mb-3" style="max-width: 200px;">
                             {% endif %}
-                            
-                            <p class="text-muted small">
-                                Scannez ce code avec une application d'authentification :
-                            </p>
-                            <ul class="list-unstyled small text-muted">
-                                <li>Google Authenticator</li>
-                                <li>Microsoft Authenticator</li>
-                                <li>Authy</li>
-                            </ul>
-                            
-                            <hr>
-                            
-                            <p class="small text-muted mb-1">Ou entrez manuellement :</p>
-                            <code class="user-select-all">{{ secret }}</code>
+                            <p class="small text-muted mb-1">Saisie manuelle si nécessaire :</p>
+                            <code class="user-select-all text-break">{{ secret }}</code>
                         </div>
                     </div>
                 </div>
-                
-                <!-- Étape 2 : Vérification -->
+
                 <div class="col-md-6 mb-4">
                     <div class="card h-100">
-                        <div class="card-header">
-                            <h5 class="mb-0">2. Vérifier le code</h5>
-                        </div>
+                        <div class="card-header"><h5 class="mb-0">2. Confirmer</h5></div>
                         <div class="card-body">
-                            <p class="text-muted">
-                                Entrez le code à 6 chiffres affiché dans votre application.
-                            </p>
-                            
+                            <p class="text-muted">Entrez le code à 6 chiffres généré par l'application.</p>
                             <form method="post">
                                 {% csrf_token %}
                                 <div class="mb-3">
-                                    <input type="text" class="form-control form-control-lg text-center" 
+                                    <input type="text" class="form-control form-control-lg text-center"
                                            name="code" placeholder="000000" maxlength="6" required
                                            pattern="[0-9]{6}" inputmode="numeric" autocomplete="one-time-code">
                                 </div>
@@ -104,24 +96,14 @@
                     </div>
                 </div>
             </div>
-            
+
             {% if show_backup_codes and backup_codes %}
-            <!-- Codes de secours -->
             <div class="card border-warning">
                 <div class="card-header bg-warning text-dark">
-                    <h5 class="mb-0">
-                        <i class="bi bi-exclamation-triangle me-2"></i>
-                        Codes de secours - À SAUVEGARDER
-                    </h5>
+                    <h5 class="mb-0"><i class="bi bi-exclamation-triangle me-2"></i>Codes de secours</h5>
                 </div>
                 <div class="card-body">
-                    <p class="text-danger fw-bold">
-                        Ces codes ne seront affichés qu'une seule fois. Conservez-les en lieu sûr !
-                    </p>
-                    <p class="text-muted">
-                        Utilisez ces codes si vous perdez l'accès à votre application d'authentification.
-                    </p>
-                    
+                    <p class="fw-bold">Enregistrez ces codes avant de confirmer la 2FA. Ils ne sont stockés qu'en version hashée.</p>
                     <div class="row">
                         {% for code in backup_codes %}
                         <div class="col-6 col-md-4 mb-2">
@@ -129,18 +111,13 @@
                         </div>
                         {% endfor %}
                     </div>
-                    
-                    <div class="mt-3">
-                        <button class="btn btn-outline-secondary" onclick="window.print()">
-                            <i class="bi bi-printer me-2"></i>Imprimer
-                        </button>
-                    </div>
+                    <button type="button" class="btn btn-outline-secondary mt-3" onclick="window.print()">
+                        <i class="bi bi-printer me-2"></i>Imprimer
+                    </button>
                 </div>
             </div>
             {% endif %}
-            
             {% endif %}
-            
         </div>
     </div>
 </div>
