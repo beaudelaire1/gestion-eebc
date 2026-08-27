@@ -1,6 +1,5 @@
 """MFA-aware authentication endpoints for the EEBC mobile API."""
 
-from django.core.cache import cache
 from django.urls import reverse
 from rest_framework import status
 from rest_framework.permissions import AllowAny, IsAuthenticated
@@ -14,14 +13,15 @@ from rest_framework_simplejwt.views import TokenRefreshView
 from apps.accounts.models import User
 from apps.accounts.services import AuthenticationService
 from apps.accounts.two_factor_security import (
+    clear_mfa_failures,
+    is_mfa_locked,
     needs_two_factor_verification,
+    record_mfa_failure,
     requires_two_factor,
+    verify_second_factor,
 )
 
 from .serializers import ChangePasswordSerializer, UserSerializer
-
-MAX_MFA_ATTEMPTS = 5
-MFA_LOCK_SECONDS = 10 * 60
 
 
 def _issue_tokens(user, *, mfa_verified=False, password_change_only=False):
@@ -43,22 +43,15 @@ def _setup_url(request):
 
 
 def _verify_mfa_with_rate_limit(user, code):
-    lock_key = f'eebc:api:2fa:lock:{user.pk}'
-    attempts_key = f'eebc:api:2fa:attempts:{user.pk}'
-    if cache.get(lock_key):
-        return False, 'locked'
+    if is_mfa_locked(user.pk):
+        return False, 'locked', 0
 
-    if user.verify_two_factor_code(code):
-        cache.delete(lock_key)
-        cache.delete(attempts_key)
-        return True, None
+    if verify_second_factor(user, code):
+        clear_mfa_failures(user.pk)
+        return True, None, 0
 
-    attempts = int(cache.get(attempts_key, 0)) + 1
-    cache.set(attempts_key, attempts, MFA_LOCK_SECONDS)
-    if attempts >= MAX_MFA_ATTEMPTS:
-        cache.set(lock_key, True, MFA_LOCK_SECONDS)
-        return False, 'locked'
-    return False, 'invalid'
+    locked, remaining = record_mfa_failure(user.pk)
+    return False, 'locked' if locked else 'invalid', remaining
 
 
 class SecureTokenObtainPairView(APIView):
@@ -89,7 +82,10 @@ class SecureTokenObtainPairView(APIView):
             return Response(
                 {
                     'success': False,
-                    'error': {'code': 401, 'message': error_message or 'Identifiants invalides.'},
+                    'error': {
+                        'code': 401,
+                        'message': error_message or 'Identifiants invalides.',
+                    },
                 },
                 status=status.HTTP_401_UNAUTHORIZED,
             )
@@ -108,29 +104,27 @@ class SecureTokenObtainPairView(APIView):
                     },
                     status=status.HTTP_401_UNAUTHORIZED,
                 )
-            valid, reason = _verify_mfa_with_rate_limit(user, otp)
+            valid, reason, remaining = _verify_mfa_with_rate_limit(user, otp)
             if not valid:
-                code = 429 if reason == 'locked' else 401
+                response_code = 429 if reason == 'locked' else 401
                 message = (
                     'Trop de codes invalides. Réessayez dans 10 minutes.'
                     if reason == 'locked'
-                    else 'Code de double authentification invalide.'
+                    else f'Code invalide. {remaining} tentative(s) restante(s).'
                 )
                 return Response(
                     {
                         'success': False,
                         'error': {
-                            'code': code,
+                            'code': response_code,
                             'message': message,
                             'two_factor_required': True,
                         },
                     },
-                    status=code,
+                    status=response_code,
                 )
             mfa_verified = True
 
-        # Le mot de passe temporaire n'accorde qu'un jeton limité au changement
-        # de mot de passe. L'enrôlement 2FA obligatoire intervient ensuite.
         if user.must_change_password:
             tokens = _issue_tokens(
                 user,
@@ -231,7 +225,10 @@ class SecureTokenRefreshView(TokenRefreshView):
 
         if needs_two_factor_verification(user) and token.get('mfa') is not True:
             return Response(
-                {'detail': 'Réauthentification avec 2FA requise.', 'two_factor_required': True},
+                {
+                    'detail': 'Réauthentification avec 2FA requise.',
+                    'two_factor_required': True,
+                },
                 status=401,
             )
         return super().post(request, *args, **kwargs)
@@ -262,7 +259,6 @@ class SecureChangePasswordView(APIView):
         user.must_change_password = False
         user.save(update_fields=['password', 'must_change_password'])
 
-        # Suppression seule != révocation JWT. Chaque refresh encore connu est blacklisté.
         for outstanding in OutstandingToken.objects.filter(user=user):
             BlacklistedToken.objects.get_or_create(token=outstanding)
 
