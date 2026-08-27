@@ -44,7 +44,12 @@ ROLE_PERMISSIONS = {
         'actions': ['*'],
     },
     'secretariat': {
-        'modules': ['members', 'accounts', 'events', 'groups'],
+        # Aligné sur les vues develop qui autorisent déjà explicitement ces
+        # domaines au secrétariat.
+        'modules': [
+            'members', 'accounts', 'events', 'groups', 'transport',
+            'inventory', 'departments', 'imports',
+        ],
         'actions': ['view', 'create', 'update', 'export'],
     },
     'finance': {
@@ -66,7 +71,7 @@ ROLE_PERMISSIONS = {
         'scope': 'driver_workqueue',
     },
     'responsable_groupe': {
-        'modules': ['groups', 'worship'],
+        'modules': ['groups', 'worship', 'transport'],
         'actions': ['view', 'update'],
         'scope': 'own_group',
     },
