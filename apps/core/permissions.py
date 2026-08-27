@@ -43,40 +43,52 @@ ROLE_PERMISSIONS = {
         'modules': ['*'],
         'actions': ['*'],
     },
+    'pasteur': {
+        'modules': ['young', 'cms', 'documents'],
+        'actions': ['view', 'create', 'update'],
+    },
+    'ancien': {
+        'modules': ['documents'],
+        'actions': ['view'],
+    },
+    'diacre': {
+        'modules': ['documents'],
+        'actions': ['view'],
+    },
     'secretariat': {
         # Aligné sur les vues develop qui autorisent déjà explicitement ces
         # domaines au secrétariat.
         'modules': [
             'members', 'accounts', 'events', 'groups', 'transport',
-            'inventory', 'departments', 'imports',
+            'inventory', 'departments', 'imports', 'young', 'cms', 'documents',
         ],
         'actions': ['view', 'create', 'update', 'export'],
     },
     'finance': {
-        'modules': ['finance', 'campaigns'],
+        'modules': ['finance', 'campaigns', 'documents'],
         'actions': ['view', 'create', 'update', 'export', 'validate'],
     },
     'responsable_club': {
-        'modules': ['bibleclub'],
+        'modules': ['bibleclub', 'documents'],
         'actions': ['view', 'create', 'update', 'export'],
     },
     'moniteur': {
-        'modules': ['bibleclub'],
+        'modules': ['bibleclub', 'documents'],
         'actions': ['view', 'update'],
         'scope': 'own_class',
     },
     'chauffeur': {
-        'modules': ['transport'],
+        'modules': ['transport', 'documents'],
         'actions': ['view', 'update'],
         'scope': 'driver_workqueue',
     },
     'responsable_groupe': {
-        'modules': ['groups', 'worship', 'transport'],
+        'modules': ['groups', 'worship', 'transport', 'young', 'documents'],
         'actions': ['view', 'update'],
         'scope': 'own_group',
     },
     'encadrant': {
-        'modules': ['members'],
+        'modules': ['members', 'documents'],
         'actions': ['view'],
         'scope': 'pastoral_data',
     },
