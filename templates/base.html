@@ -7,52 +7,26 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}EEBC{% endblock %}</title>
 
-    <!-- Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link
-        href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap"
-        rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 
-    <!-- Bootstrap 5 -->
     <link rel="stylesheet" href="{% static 'vendor/bootstrap/bootstrap.min.css' %}">
-
-    <!-- Bootstrap Icons -->
     <link rel="stylesheet" href="{% static 'vendor/bootstrap-icons/bootstrap-icons.css' %}">
-
-    <!-- Tom Select (recherche dans les listes déroulantes) -->
     <link href="https://cdn.jsdelivr.net/npm/tom-select@2.3.1/dist/css/tom-select.bootstrap5.min.css" rel="stylesheet">
-
-    <!-- HTMX -->
     <script src="https://unpkg.com/htmx.org@1.9.10" defer></script>
-
-    <!-- Chart.js -->
     <script src="{% static 'vendor/chart.umd.min.js' %}" defer></script>
 
-    <!-- Skeleton Loaders -->
     <link rel="stylesheet" href="{% static 'css/skeletons.css' %}">
-
-    <!-- Components CSS -->
     <link rel="stylesheet" href="{% static 'css/components.css' %}">
-
-    <!-- Themes CSS -->
     <link rel="stylesheet" href="{% static 'css/themes.css' %}">
-
-    <!-- Theme Selector CSS -->
     <link rel="stylesheet" href="{% static 'css/theme-selector.css' %}">
-
-    <!-- Animated Verse Banner CSS -->
     <link rel="stylesheet" href="{% static 'css/animated-verse-banner.css' %}">
-
-    <!-- Dark Mode CSS (Legacy support) -->
     <link rel="stylesheet" href="{% static 'css/dark-mode.css' %}">
-
-    <!-- Theme Overrides CSS (Force theme application) -->
     <link rel="stylesheet" href="{% static 'css/theme-overrides.css' %}">
 
     {% block extra_css %}{% endblock %}
 
-    <!-- Theme initialization (prevent flash) -->
     <script>
         (function () {
             const theme = localStorage.getItem('eebc-theme') ||
@@ -60,409 +34,15 @@
             document.documentElement.setAttribute('data-theme', theme);
         })();
     </script>
-
-    <!-- Theme Fix Script (temporary) -->
     <script src="{% static 'js/theme-fix.js' %}" defer></script>
 </head>
 
 <body>
-    <!-- Sidebar Overlay (mobile) -->
     <div class="sidebar-overlay" id="sidebarOverlay" onclick="closeSidebar()" aria-hidden="true"></div>
 
-    <!-- Sidebar -->
-    <nav class="sidebar" id="sidebar">
-        <button class="sidebar-close" type="button" onclick="closeSidebar()" aria-label="Fermer le menu latéral">
-            <i class="bi bi-x-lg"></i>
-        </button>
-        <div class="sidebar__brand">
-            <h4 class="sidebar__brand-title" style="color:#ffffff !important;"><i class="bi bi-book-half me-2" style="color:#ffffff !important;"></i>EEBC</h4>
-            <small class="sidebar__brand-subtitle" style="color:#ffffff !important;">Système de Gestion</small>
-        </div>
+    {% include 'includes/internal_sidebar.html' %}
 
-        <!-- Scrollable Sidebar Content -->
-        <div class="sidebar__content">
-            <div class="nav-section">
-                <div class="nav-section__title">Principal</div>
-                <nav class="nav flex-column">
-                    <a class="nav-link {% if request.resolver_match.url_name == 'home' %}nav-link--active{% endif %}"
-                        href="{% url 'dashboard:home' %}">
-                        <i class="bi bi-grid-1x2-fill nav-link__icon"></i>
-                        <span>Tableau de bord</span>
-                    </a>
-                    <a class="nav-link {% if 'events' in request.path %}nav-link--active{% endif %}"
-                        href="{% url 'events:calendar' %}">
-                        <i class="bi bi-calendar3 nav-link__icon"></i>
-                        <span>Calendrier</span>
-                    </a>
-                    <a class="nav-link" href="{% url 'public:home' %}" target="_blank">
-                        <i class="bi bi-globe nav-link__icon"></i>
-                        <span>Site public <i class="bi bi-box-arrow-up-right ms-1" style="font-size: 0.8em;"></i></span>
-                    </a>
-                </nav>
-            </div>
-
-            <div class="nav-section">
-                <div class="nav-section__title">Vie d'Église</div>
-                <nav class="nav flex-column">
-                    <a class="nav-link {% if 'worship' in request.path and 'planning' not in request.path %}nav-link--active{% endif %}"
-                        href="{% url 'worship:service_list' %}">
-                        <i class="bi bi-calendar-check-fill nav-link__icon"></i>
-                        <span>Cultes</span>
-                    </a>
-                    <a class="nav-link {% if 'planning' in request.path %}nav-link--active{% endif %}"
-                        href="{% url 'worship:schedule_list' %}">
-                        <i class="bi bi-calendar-month nav-link__icon"></i>
-                        <span>Planning mensuel</span>
-                    </a>
-                </nav>
-            </div>
-
-            <div class="nav-section">
-                <div class="nav-section__title">Finances</div>
-                <nav class="nav flex-column">
-                    <a class="nav-link {% if request.path == '/app/finance/' %}nav-link--active{% endif %}"
-                        href="{% url 'finance:dashboard' %}">
-                        <i class="bi bi-cash-coin nav-link__icon"></i>
-                        <span>Trésorerie</span>
-                    </a>
-                    <!-- Recettes -->
-                    <a class="nav-link {% if request.GET.type == 'dime' %}nav-link--active{% endif %}"
-                        href="{% url 'finance:transaction_list' %}?type=dime" style="padding-left:2.2rem;">
-                        <i class="bi bi-percent nav-link__icon" style="font-size:0.85em;"></i>
-                        <span>Dîmes</span>
-                    </a>
-                    <a class="nav-link {% if request.GET.type == 'don' %}nav-link--active{% endif %}"
-                        href="{% url 'finance:transaction_list' %}?type=don" style="padding-left:2.2rem;">
-                        <i class="bi bi-gift nav-link__icon" style="font-size:0.85em;"></i>
-                        <span>Dons</span>
-                    </a>
-                    <a class="nav-link {% if request.GET.type == 'offrande' %}nav-link--active{% endif %}"
-                        href="{% url 'finance:transaction_list' %}?type=offrande" style="padding-left:2.2rem;">
-                        <i class="bi bi-flower1 nav-link__icon" style="font-size:0.85em;"></i>
-                        <span>Offrandes</span>
-                    </a>
-                    <a class="nav-link {% if request.GET.type == 'depense' %}nav-link--active{% endif %}"
-                        href="{% url 'finance:transaction_list' %}?type=depense" style="padding-left:2.2rem;">
-                        <i class="bi bi-cart-dash nav-link__icon" style="font-size:0.85em;"></i>
-                        <span>Dépenses</span>
-                    </a>
-                    <a class="nav-link {% if 'online-donations' in request.path %}nav-link--active{% endif %}"
-                        href="{% url 'finance:online_donation_list' %}">
-                        <i class="bi bi-credit-card nav-link__icon"></i>
-                        <span>Dons en ligne</span>
-                    </a>
-                    <a class="nav-link {% if 'campaigns' in request.path %}nav-link--active{% endif %}"
-                        href="{% url 'campaigns:list' %}">
-                        <i class="bi bi-megaphone nav-link__icon"></i>
-                        <span>Campagnes</span>
-                    </a>
-                    <a class="nav-link {% if 'member-summary' in request.path %}nav-link--active{% endif %}"
-                        href="{% url 'finance:member_annual_summary' %}">
-                        <i class="bi bi-person-lines-fill nav-link__icon"></i>
-                        <span>Récap. par membre</span>
-                    </a>
-                    <a class="nav-link {% if 'reports' in request.path and 'finance' in request.path %}nav-link--active{% endif %}"
-                        href="{% url 'finance:reports' %}">
-                        <i class="bi bi-file-earmark-bar-graph nav-link__icon"></i>
-                        <span>Rapports</span>
-                    </a>
-                    <a class="nav-link {% if 'comparison' in request.path %}nav-link--active{% endif %}"
-                        href="{% url 'finance:yearly_comparison' %}">
-                        <i class="bi bi-bar-chart-line nav-link__icon"></i>
-                        <span>Comparatif N/N-1</span>
-                    </a>
-                    <a class="nav-link {% if 'tax-receipts' in request.path %}nav-link--active{% endif %}"
-                        href="{% url 'finance:tax_receipt_list' %}">
-                        <i class="bi bi-receipt nav-link__icon"></i>
-                        <span>Reçus fiscaux</span>
-                    </a>
-                    <a class="nav-link {% if 'budgets' in request.path %}nav-link--active{% endif %}"
-                        href="{% url 'finance:budget_dashboard' %}">
-                        <i class="bi bi-pie-chart nav-link__icon"></i>
-                        <span>Budgets</span>
-                    </a>
-                    <a class="nav-link {% if 'forecasts' in request.path %}nav-link--active{% endif %}"
-                        href="{% url 'finance:forecast_list' %}">
-                        <i class="bi bi-graph-up-arrow nav-link__icon"></i>
-                        <span>Prévisionnel</span>
-                    </a>
-                    <a class="nav-link" href="{% url 'public:donation' %}" target="_blank">
-                        <i class="bi bi-heart-fill nav-link__icon" style="color: #EC4899;"></i>
-                        <span>Faire un don <i class="bi bi-box-arrow-up-right ms-1" style="font-size: 0.7em;"></i></span>
-                    </a>
-                </nav>
-            </div>
-
-            <div class="nav-section">
-                <div class="nav-section__title">Gestion</div>
-                <nav class="nav flex-column">
-                    <a class="nav-link {% if request.path == '/app/members/' %}nav-link--active{% endif %}"
-                        href="{% url 'members:list' %}">
-                        <i class="bi bi-person-badge-fill nav-link__icon"></i>
-                        <span>Membres</span>
-                    </a>
-                    <a class="nav-link {% if 'families' in request.path %}nav-link--active{% endif %}"
-                        href="{% url 'members:family_list' %}">
-                        <i class="bi bi-house-heart nav-link__icon"></i>
-                        <span>Familles</span>
-                    </a>
-                    <a class="nav-link {% if 'members/map' in request.path %}nav-link--active{% endif %}"
-                        href="{% url 'members:map' %}">
-                        <i class="bi bi-geo-alt-fill nav-link__icon"></i>
-                        <span>Carte des membres</span>
-                    </a>
-                    <a class="nav-link {% if 'groups' in request.path %}nav-link--active{% endif %}"
-                        href="{% url 'groups:list' %}">
-                        <i class="bi bi-diagram-3-fill nav-link__icon"></i>
-                        <span>Groupes</span>
-                    </a>
-                    <a class="nav-link {% if 'departments' in request.path %}nav-link--active{% endif %}"
-                        href="{% url 'departments:list' %}">
-                        <i class="bi bi-building nav-link__icon"></i>
-                        <span>Départements</span>
-                    </a>
-                    <a class="nav-link {% if 'life-events' in request.path %}nav-link--active{% endif %}"
-                        href="{% url 'members:life_events' %}">
-                        <i class="bi bi-heart-fill nav-link__icon"></i>
-                        <span>Événements de vie</span>
-                    </a>
-                    <a class="nav-link {% if 'visits' in request.path %}nav-link--active{% endif %}"
-                        href="{% url 'members:visits' %}">
-                        <i class="bi bi-house-heart-fill nav-link__icon"></i>
-                        <span>Visites pastorales</span>
-                    </a>
-                </nav>
-            </div>
-
-            <div class="nav-section">
-                <div class="nav-section__title">Jeunesse</div>
-                <nav class="nav flex-column">
-                    <a class="nav-link {% if request.path == '/app/young/' %}nav-link--active{% endif %}"
-                        href="{% url 'young:home' %}">
-                        <i class="bi bi-mortarboard nav-link__icon"></i>
-                        <span>Vue d'ensemble</span>
-                    </a>
-                    <a class="nav-link {% if '/young/members' in request.path %}nav-link--active{% endif %}"
-                        href="{% url 'young:member_list' %}">
-                        <i class="bi bi-people-fill nav-link__icon"></i>
-                        <span>Jeunes</span>
-                    </a>
-                    <a class="nav-link {% if '/young/groups' in request.path %}nav-link--active{% endif %}"
-                        href="{% url 'young:group_list' %}">
-                        <i class="bi bi-collection-fill nav-link__icon"></i>
-                        <span>Groupes</span>
-                    </a>
-                    <a class="nav-link {% if '/young/events' in request.path %}nav-link--active{% endif %}"
-                        href="{% url 'young:event_list' %}">
-                        <i class="bi bi-calendar-event-fill nav-link__icon"></i>
-                        <span>Activités & Appels</span>
-                    </a>
-                </nav>
-            </div>
-
-            <div class="nav-section">
-                <div class="nav-section__title">Club Biblique</div>
-                <nav class="nav flex-column">
-                    <a class="nav-link {% if request.path == '/bibleclub/' %}nav-link--active{% endif %}"
-                        href="{% url 'bibleclub:home' %}">
-                        <i class="bi bi-mortarboard-fill nav-link__icon"></i>
-                        <span>Vue d'ensemble</span>
-                    </a>
-                    <a class="nav-link {% if 'children' in request.path %}nav-link--active{% endif %}"
-                        href="{% url 'bibleclub:children_list' %}">
-                        <i class="bi bi-people-fill nav-link__icon"></i>
-                        <span>Enfants</span>
-                    </a>
-                    <a class="nav-link {% if 'classes' in request.path %}nav-link--active{% endif %}"
-                        href="{% url 'bibleclub:class_list' %}">
-                        <i class="bi bi-collection-fill nav-link__icon"></i>
-                        <span>Classes</span>
-                    </a>
-                    <a class="nav-link {% if 'sessions' in request.path %}nav-link--active{% endif %}"
-                        href="{% url 'bibleclub:session_list' %}">
-                        <i class="bi bi-clipboard-check-fill nav-link__icon"></i>
-                        <span>Sessions & Appels</span>
-                    </a>
-                    {% if user.is_responsable_club %}
-                    <a class="nav-link {% if 'age-groups' in request.path %}nav-link--active{% endif %}"
-                        href="{% url 'bibleclub:age_group_list' %}">
-                        <i class="bi bi-tags-fill nav-link__icon"></i>
-                        <span>Tranches d'âge</span>
-                    </a>
-                    {% endif %}
-                </nav>
-            </div>
-
-            <div class="nav-section">
-                <div class="nav-section__title">Transport</div>
-                <nav class="nav flex-column">
-                    <a class="nav-link {% if 'transport/requests' in request.path and 'transport/requests/create/' not in request.path and request.GET.scope != 'tracking' and request.GET.scope != 'arrivals' and request.GET.scope != 'pending' %}nav-link--active{% endif %}"
-                        href="{% url 'transport:requests' %}">
-                        <i class="bi bi-truck nav-link__icon"></i>
-                        <span>Demandes</span>
-                    </a>
-                    <a class="nav-link {% if 'transport/requests/create/' in request.path %}nav-link--active{% endif %}"
-                        href="{% url 'transport:request_create' %}">
-                        <i class="bi bi-plus-circle nav-link__icon"></i>
-                        <span>Nouvelle demande</span>
-                    </a>
-                    <a class="nav-link {% if 'transport/requests' in request.path and request.GET.scope == 'tracking' %}nav-link--active{% endif %}"
-                        href="{% url 'transport:requests' %}?scope=tracking">
-                        <i class="bi bi-broadcast-pin nav-link__icon"></i>
-                        <span>Suivi chauffeur</span>
-                    </a>
-                    <a class="nav-link {% if 'transport/requests' in request.path and request.GET.scope == 'arrivals' %}nav-link--active{% endif %}"
-                        href="{% url 'transport:requests' %}?scope=arrivals">
-                        <i class="bi bi-geo-alt-fill nav-link__icon"></i>
-                        <span>Arrivées du jour</span>
-                    </a>
-                    <a class="nav-link {% if 'transport/requests' in request.path and request.GET.scope == 'pending' %}nav-link--active{% endif %}"
-                        href="{% url 'transport:requests' %}?scope=pending">
-                        <i class="bi bi-hourglass-split nav-link__icon"></i>
-                        <span>Demandes en attente</span>
-                    </a>
-                    <a class="nav-link {% if 'transport/calendar' in request.path %}nav-link--active{% endif %}"
-                        href="{% url 'transport:calendar' %}">
-                        <i class="bi bi-calendar3 nav-link__icon"></i>
-                        <span>Calendrier transport</span>
-                    </a>
-                    {% if request.user.is_admin or request.user.role == 'admin' or request.user.role == 'secretariat' or request.user.role == 'responsable_groupe' %}
-                    <a class="nav-link {% if 'transport/drivers/' in request.path and 'transport/drivers/create/' not in request.path %}nav-link--active{% endif %}"
-                        href="{% url 'transport:drivers' %}">
-                        <i class="bi bi-person-badge nav-link__icon"></i>
-                        <span>Chauffeurs</span>
-                    </a>
-                    <a class="nav-link {% if 'transport/drivers/create/' in request.path %}nav-link--active{% endif %}"
-                        href="{% url 'transport:driver_create' %}">
-                        <i class="bi bi-person-plus nav-link__icon"></i>
-                        <span>Nouveau chauffeur</span>
-                    </a>
-                    {% endif %}
-                </nav>
-            </div>
-
-            <div class="nav-section">
-                <div class="nav-section__title">Ressources</div>
-                <nav class="nav flex-column">
-                    <a class="nav-link {% if 'inventory' in request.path %}nav-link--active{% endif %}"
-                        href="{% url 'inventory:list' %}">
-                        <i class="bi bi-box-seam-fill nav-link__icon"></i>
-                        <span>Inventaire</span>
-                    </a>
-                </nav>
-            </div>
-
-            <div class="nav-section">
-                <div class="nav-section__title">Documents</div>
-                <nav class="nav flex-column">
-                    <a class="nav-link {% if 'documents' in request.path and 'upload' not in request.path and 'categories' not in request.path and 'stats' not in request.path and 'generated' not in request.path %}nav-link--active{% endif %}"
-                        href="{% url 'documents:list' %}">
-                        <i class="bi bi-archive nav-link__icon"></i>
-                        <span>Documents</span>
-                    </a>
-                    <a class="nav-link {% if 'documents/generated' in request.path %}nav-link--active{% endif %}"
-                        href="{% url 'documents:generated_list' %}">
-                        <i class="bi bi-pencil-square nav-link__icon"></i>
-                        <span>Éditeur de documents</span>
-                    </a>
-                    <a class="nav-link {% if 'documents/upload' in request.path %}nav-link--active{% endif %}"
-                        href="{% url 'documents:upload' %}">
-                        <i class="bi bi-cloud-arrow-up nav-link__icon"></i>
-                        <span>Importer</span>
-                    </a>
-                    <a class="nav-link {% if 'documents/categories' in request.path %}nav-link--active{% endif %}"
-                        href="{% url 'documents:categories' %}">
-                        <i class="bi bi-tags nav-link__icon"></i>
-                        <span>Catégories</span>
-                    </a>
-                    <a class="nav-link {% if 'documents/stats' in request.path %}nav-link--active{% endif %}"
-                        href="{% url 'documents:stats' %}">
-                        <i class="bi bi-bar-chart nav-link__icon"></i>
-                        <span>Statistiques</span>
-                    </a>
-                </nav>
-            </div>
-
-            <div class="nav-section">
-                <div class="nav-section__title">Communication</div>
-                <nav class="nav flex-column">
-                    <a class="nav-link {% if 'notifications' in request.path %}nav-link--active{% endif %}"
-                        href="{% url 'communication:notifications' %}">
-                        <i class="bi bi-bell-fill nav-link__icon"></i>
-                        <span>Notifications</span>
-                    </a>
-                    <a class="nav-link {% if 'announcements' in request.path %}nav-link--active{% endif %}"
-                        href="{% url 'communication:announcements' %}">
-                        <i class="bi bi-megaphone-fill nav-link__icon"></i>
-                        <span>Annonces</span>
-                    </a>
-                    <a class="nav-link {% if 'compose' in request.path %}nav-link--active{% endif %}"
-                        href="{% url 'communication:email_compose' %}">
-                        <i class="bi bi-pencil-square nav-link__icon"></i>
-                        <span>Composer un e-mail</span>
-                    </a>
-                    <a class="nav-link {% if 'email-logs' in request.path %}nav-link--active{% endif %}"
-                        href="{% url 'communication:email_logs' %}">
-                        <i class="bi bi-envelope-fill nav-link__icon"></i>
-                        <span>Historique emails</span>
-                    </a>
-                </nav>
-            </div>
-
-            <div class="nav-section">
-                <div class="nav-section__title">Site Web (CMS)</div>
-                <nav class="nav flex-column">
-                    <a class="nav-link {% if 'cms/news' in request.path %}nav-link--active{% endif %}"
-                        href="{% url 'public_cms:news_list' %}">
-                        <i class="bi bi-newspaper nav-link__icon"></i>
-                        <span>Actualités</span>
-                    </a>
-                    <a class="nav-link {% if 'cms/pages' in request.path %}nav-link--active{% endif %}"
-                        href="{% url 'public_cms:page_list' %}">
-                        <i class="bi bi-file-earmark-text nav-link__icon"></i>
-                        <span>Pages</span>
-                    </a>
-                    <a class="nav-link {% if 'cms/testimonies' in request.path %}nav-link--active{% endif %}"
-                        href="{% url 'public_cms:testimony_list' %}">
-                        <i class="bi bi-chat-quote nav-link__icon"></i>
-                        <span>Témoignages</span>
-                    </a>
-                    <a class="nav-link {% if 'cms/schedules' in request.path %}nav-link--active{% endif %}"
-                        href="{% url 'public_cms:schedule_list' %}">
-                        <i class="bi bi-clock nav-link__icon"></i>
-                        <span>Horaires</span>
-                    </a>
-                    <a class="nav-link {% if 'cms/events' in request.path %}nav-link--active{% endif %}"
-                        href="{% url 'public_cms:event_list' %}">
-                        <i class="bi bi-calendar-event nav-link__icon"></i>
-                        <span>Événements</span>
-                    </a>
-                </nav>
-            </div>
-
-            <div class="nav-section">
-                <div class="nav-section__title">Administration</div>
-                <nav class="nav flex-column">
-                    <a class="nav-link {% if 'imports' in request.path %}nav-link--active{% endif %}"
-                        href="{% url 'imports:hub' %}">
-                        <i class="bi bi-upload nav-link__icon"></i>
-                        <span>Imports & Exports</span>
-                    </a>
-                    {% if request.user.is_admin or request.user.role == 'admin' or request.user.role == 'secretariat' %}
-                    <a class="nav-link {% if 'accounts/users' in request.path %}nav-link--active{% endif %}"
-                        href="{% url 'accounts:user_list' %}">
-                        <i class="bi bi-people nav-link__icon"></i>
-                        <span>Utilisateurs</span>
-                    </a>
-                    {% endif %}
-                </nav>
-            </div>
-        </div>
-    </nav>
-
-    <!-- Main Content -->
     <main class="main-content">
-        <!-- Top Bar -->
         <div class="top-bar">
             <div class="d-flex align-items-center">
                 <button class="sidebar-toggle" id="sidebarToggle" type="button" onclick="toggleSidebar()" aria-label="Ouvrir le menu latéral" aria-controls="sidebar" aria-expanded="false">
@@ -473,35 +53,31 @@
                     <small class="text-muted page-subtitle">{% block page_subtitle %}{% endblock %}</small>
                 </div>
                 <div class="ms-auto d-flex align-items-center gap-2">
-                    <!-- Recherche globale -->
+                    {% if request.user.is_admin %}
                     <form action="{% url 'dashboard:search' %}" method="get" class="d-none d-md-block" style="min-width:250px;">
                         <div class="input-group input-group-sm">
                             <span class="input-group-text bg-transparent border-end-0"><i class="bi bi-search text-muted"></i></span>
                             <input type="text" name="q" class="form-control border-start-0" placeholder="Rechercher..." value="{{ request.GET.q }}">
                         </div>
                     </form>
+                    {% endif %}
                     {% block page_actions %}{% endblock %}
                 </div>
             </div>
 
             <div class="d-flex align-items-center gap-3">
-                <!-- Theme Selector -->
                 <button class="theme-toggle" id="themeToggle" onclick="toggleThemeSelector()" title="Choisir un thème">
                     <i class="bi bi-sun"></i>
                 </button>
 
-                <!-- Notifications -->
                 <div class="position-relative">
-                    <a href="{% url 'communication:notifications' %}"
-                        class="btn btn-outline-secondary position-relative" aria-label="Notifications">
+                    <a href="{% url 'communication:notifications' %}" class="btn btn-outline-secondary position-relative" aria-label="Notifications">
                         <i class="bi bi-bell" aria-hidden="true"></i>
                     </a>
                 </div>
 
-                <!-- User Menu -->
                 <div class="dropdown">
-                    <button class="btn user-btn dropdown-toggle d-flex align-items-center gap-2" type="button"
-                        data-bs-toggle="dropdown">
+                    <button class="btn user-btn dropdown-toggle d-flex align-items-center gap-2" type="button" data-bs-toggle="dropdown">
                         <div class="avatar avatar--sm">
                             {{ request.user.first_name|slice:":1"|upper }}{{ request.user.last_name|slice:":1"|upper }}
                         </div>
@@ -509,22 +85,21 @@
                     </button>
                     <ul class="dropdown-menu dropdown-menu-end">
                         <li><a class="dropdown-item" href="{% url 'accounts:profile' %}">
-                                <i class="bi bi-person me-2"></i>Mon profil
-                            </a></li>
-                        <li><a class="dropdown-item" href="{% url 'public:home' %}" target="_blank">
-                                <i class="bi bi-globe me-2"></i>Site public
-                            </a></li>
+                            <i class="bi bi-person me-2"></i>Mon profil
+                        </a></li>
+                        <li><a class="dropdown-item" href="{% url 'public:home' %}" target="_blank" rel="noopener">
+                            <i class="bi bi-globe me-2"></i>Site public
+                        </a></li>
+                        {% if request.user.is_staff or request.user.is_superuser %}
                         <li><a class="dropdown-item" href="{% url 'admin:index' %}">
-                                <i class="bi bi-gear me-2"></i>Administration
-                            </a></li>
-                        <li>
-                            <hr class="dropdown-divider">
-                        </li>
+                            <i class="bi bi-gear me-2"></i>Administration
+                        </a></li>
+                        {% endif %}
+                        <li><hr class="dropdown-divider"></li>
                         <li>
                             <form method="post" action="{% url 'accounts:logout' %}" class="d-inline m-0">
                                 {% csrf_token %}
-                                <button type="submit" class="dropdown-item text-danger"
-                                    style="border: none; background: none; width: 100%; text-align: left; padding: 0.375rem 1rem;">
+                                <button type="submit" class="dropdown-item text-danger" style="border:none; background:none; width:100%; text-align:left; padding:0.375rem 1rem;">
                                     <i class="bi bi-box-arrow-right me-2"></i>Déconnexion
                                 </button>
                             </form>
@@ -534,29 +109,22 @@
             </div>
         </div>
 
-        <!-- Content -->
         <div class="p-4">
             {% block content %}{% endblock %}
         </div>
     </main>
 
-    <!-- Toast Container -->
     {% include 'components/toast_container.html' %}
 
-    <!-- Bootstrap JS -->
     <script src="{% static 'vendor/bootstrap/bootstrap.bundle.min.js' %}"></script>
 
-    <!-- Theme Toggle Script -->
     <script>
         function toggleTheme() {
             const html = document.documentElement;
             const currentTheme = html.getAttribute('data-theme');
             const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
-
             html.setAttribute('data-theme', newTheme);
             localStorage.setItem('theme', newTheme);
-
-            // Update Chart.js colors if charts exist
             updateChartsTheme(newTheme);
         }
 
@@ -564,11 +132,8 @@
             if (typeof Chart !== 'undefined') {
                 const textColor = theme === 'dark' ? '#f1f5f9' : '#333';
                 const gridColor = theme === 'dark' ? '#334155' : '#e5e7eb';
-
                 Chart.defaults.color = textColor;
                 Chart.defaults.borderColor = gridColor;
-
-                // Update all existing charts
                 Object.values(Chart.instances).forEach(chart => {
                     if (chart.options.scales) {
                         Object.values(chart.options.scales).forEach(scale => {
@@ -584,7 +149,6 @@
             }
         }
 
-        // Listen for system theme changes
         window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', (e) => {
             if (!localStorage.getItem('theme')) {
                 const newTheme = e.matches ? 'dark' : 'light';
@@ -594,13 +158,11 @@
         });
     </script>
 
-    <!-- HTMX Config -->
     <script>
         document.body.addEventListener('htmx:configRequest', (event) => {
             event.detail.headers['X-CSRFToken'] = '{{ csrf_token }}';
         });
 
-        // Accessibilité : aria-current sur la navigation active, aria-busy pendant les requêtes HTMX
         document.addEventListener('DOMContentLoaded', () => {
             document.querySelectorAll('.nav-link--active').forEach(link => {
                 link.setAttribute('aria-current', 'page');
@@ -613,51 +175,42 @@
             event.detail.target?.removeAttribute('aria-busy');
         });
 
-        // Détection mobile
         function isMobile() {
             return window.innerWidth < 992;
         }
 
-        // Ouvrir le sidebar (mobile)
         function openSidebar() {
             const sidebar = document.getElementById('sidebar');
             const overlay = document.getElementById('sidebarOverlay');
-
             sidebar.classList.add('sidebar--show');
             overlay.classList.add('sidebar-overlay--show');
             document.body.style.overflow = 'hidden';
             document.getElementById('sidebarToggle')?.setAttribute('aria-expanded', 'true');
         }
 
-        // Fermer le sidebar (mobile)
         function closeSidebar() {
             const sidebar = document.getElementById('sidebar');
             const overlay = document.getElementById('sidebarOverlay');
-
             sidebar.classList.remove('sidebar--show');
             overlay.classList.remove('sidebar-overlay--show');
             document.body.style.overflow = '';
             document.getElementById('sidebarToggle')?.setAttribute('aria-expanded', 'false');
         }
 
-        // Toggle sidebar (desktop: collapse, mobile: show/hide)
         function toggleSidebar() {
             const sidebar = document.getElementById('sidebar');
             const mainContent = document.querySelector('.main-content');
             const toggleBtn = document.getElementById('sidebarToggle');
 
             if (isMobile()) {
-                // Mobile: ouvrir/fermer
                 if (sidebar.classList.contains('sidebar--show')) {
                     closeSidebar();
                 } else {
                     openSidebar();
                 }
             } else {
-                // Desktop: collapse/expand
                 sidebar.classList.toggle('sidebar--collapsed');
                 mainContent.classList.toggle('main-content--expanded');
-
                 const icon = toggleBtn.querySelector('i');
                 if (sidebar.classList.contains('sidebar--collapsed')) {
                     icon.className = 'bi bi-layout-sidebar-inset';
@@ -669,16 +222,13 @@
             }
         }
 
-        // Restaurer l'état du sidebar au chargement
         document.addEventListener('DOMContentLoaded', function () {
-            // Desktop: restaurer l'état collapsed
             if (!isMobile()) {
                 const isCollapsed = localStorage.getItem('sidebarCollapsed') === 'true';
                 if (isCollapsed) {
                     const sidebar = document.getElementById('sidebar');
                     const mainContent = document.querySelector('.main-content');
                     const toggleBtn = document.getElementById('sidebarToggle');
-
                     sidebar.classList.add('sidebar--collapsed');
                     mainContent.classList.add('main-content--expanded');
                     if (toggleBtn) {
@@ -687,14 +237,12 @@
                 }
             }
 
-            // Restaurer la position de scroll du sidebar
             const sidebarContent = document.querySelector('.sidebar__content');
             if (sidebarContent) {
                 const savedScroll = sessionStorage.getItem('sidebarScrollPos');
                 if (savedScroll) {
                     sidebarContent.scrollTop = parseInt(savedScroll, 10);
                 }
-                // Sauvegarder la position avant chaque navigation
                 document.querySelectorAll('.sidebar a[href]').forEach(function (link) {
                     link.addEventListener('click', function () {
                         sessionStorage.setItem('sidebarScrollPos', sidebarContent.scrollTop);
@@ -702,38 +250,25 @@
                 });
             }
 
-            // Fermer le sidebar mobile lors du redimensionnement vers desktop
             window.addEventListener('resize', function () {
-                if (!isMobile()) {
-                    closeSidebar();
-                }
+                if (!isMobile()) closeSidebar();
             });
         });
     </script>
 
-    <!-- Toast Notification System -->
     <script src="{% static 'js/toasts.js' %}"></script>
-
-    <!-- Form Validation System -->
     <script src="{% static 'js/form-validation.js' %}"></script>
-
-    <!-- Theme Manager System -->
     <script src="{% static 'js/theme-manager.js' %}"></script>
-
-    <!-- Animated Verse Banner System -->
     <script src="{% static 'js/animated-verse-banner.js' %}"></script>
 
-    <!-- Theme Test System (Development only) -->
     {% if debug %}
     <script src="{% static 'js/theme-test.js' %}"></script>
     {% endif %}
 
     {% block extra_js %}{% endblock %}
 
-    <!-- Tom Select JS -->
     <script src="https://cdn.jsdelivr.net/npm/tom-select@2.3.1/dist/js/tom-select.complete.min.js"></script>
     <script>
-    // Initialisation automatique de tous les selects avec classe tom-select
     document.addEventListener('DOMContentLoaded', function () {
         document.querySelectorAll('select.tom-select').forEach(function (el) {
             new TomSelect(el, {
@@ -754,23 +289,17 @@
     });
     </script>
 
-    <!-- Toast Container -->
-    <div id="toast-container" class="toast-container position-fixed top-0 end-0 p-3" style="z-index: 9999;"></div>
+    <div id="toast-container" class="toast-container position-fixed top-0 end-0 p-3" style="z-index:9999;"></div>
 
-    <!-- Django Messages Container (hidden, converted to toasts) -->
-    <div class="django-messages" style="display: none;">
+    <div class="django-messages" style="display:none;">
         {% if messages %}
         {% for message in messages %}
-        <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
-            {{ message }}
-        </div>
+        <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">{{ message }}</div>
         {% endfor %}
         {% endif %}
     </div>
 
-    <!-- Bannière RGPD - Consentement cookies -->
-    <div id="cookie-banner" style="display:none; position:fixed; bottom:0; left:0; right:0; z-index:99999;
-         background:#1a1a2e; color:#fff; padding:1rem 1.5rem; box-shadow:0 -4px 20px rgba(0,0,0,0.3);">
+    <div id="cookie-banner" style="display:none; position:fixed; bottom:0; left:0; right:0; z-index:99999; background:#1a1a2e; color:#fff; padding:1rem 1.5rem; box-shadow:0 -4px 20px rgba(0,0,0,0.3);">
         <div style="max-width:1200px; margin:0 auto; display:flex; align-items:center; gap:1rem; flex-wrap:wrap; justify-content:space-between;">
             <div style="flex:1; min-width:250px;">
                 <strong><i class="bi bi-shield-lock me-2"></i>Cookies &amp; Confidentialité</strong>
@@ -780,26 +309,15 @@
                 </p>
             </div>
             <div style="display:flex; gap:0.75rem; flex-shrink:0;">
-                <button onclick="setCookieConsent('refused')"
-                        style="background:transparent; border:1px solid rgba(255,255,255,0.4); color:#fff;
-                               padding:0.5rem 1rem; border-radius:6px; cursor:pointer; font-size:0.875rem;">
-                    Refuser
-                </button>
-                <button onclick="setCookieConsent('accepted')"
-                        style="background:#0A36FF; border:none; color:#fff;
-                               padding:0.5rem 1.25rem; border-radius:6px; cursor:pointer;
-                               font-size:0.875rem; font-weight:600;">
-                    Tout accepter
-                </button>
+                <button onclick="setCookieConsent('refused')" style="background:transparent; border:1px solid rgba(255,255,255,0.4); color:#fff; padding:0.5rem 1rem; border-radius:6px; cursor:pointer; font-size:0.875rem;">Refuser</button>
+                <button onclick="setCookieConsent('accepted')" style="background:#0A36FF; border:none; color:#fff; padding:0.5rem 1.25rem; border-radius:6px; cursor:pointer; font-size:0.875rem; font-weight:600;">Tout accepter</button>
             </div>
         </div>
     </div>
     <script>
     (function() {
         var consent = localStorage.getItem('eebc_cookie_consent');
-        if (!consent) {
-            document.getElementById('cookie-banner').style.display = 'block';
-        }
+        if (!consent) document.getElementById('cookie-banner').style.display = 'block';
     })();
     function setCookieConsent(value) {
         localStorage.setItem('eebc_cookie_consent', value);
