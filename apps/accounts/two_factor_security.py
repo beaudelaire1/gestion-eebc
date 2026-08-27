@@ -2,12 +2,14 @@
 
 import base64
 import hashlib
+import json
 import os
 
 from cryptography.fernet import Fernet, InvalidToken
 from django.conf import settings
 from django.core.cache import cache
 from django.core.exceptions import ImproperlyConfigured
+from django.db import transaction
 
 ENCRYPTED_PREFIX = "enc:v1:"
 MAX_MFA_ATTEMPTS = 5
@@ -70,7 +72,6 @@ def record_mfa_failure(user_id):
         try:
             attempts = cache.incr(attempts_key)
         except ValueError:
-            # The key may have expired between add() and incr(). Recreate it.
             cache.add(attempts_key, 1, MFA_LOCK_SECONDS)
             attempts = int(cache.get(attempts_key, 1))
 
@@ -84,6 +85,36 @@ def clear_mfa_failures(user_id):
     cache.delete_many([_mfa_attempts_key(user_id), _mfa_lock_key(user_id)])
 
 
+def verify_second_factor(user, code):
+    """Verify TOTP or atomically consume a single-use backup code."""
+    from .two_factor import hash_backup_code, verify_totp
+
+    if not user.two_factor_enabled or not code:
+        return False
+
+    secret = user.get_two_factor_secret()
+    if verify_totp(secret, code):
+        return True
+
+    hashed_input = hash_backup_code(code.upper().replace(" ", ""))
+    user_model = type(user)
+    with transaction.atomic():
+        locked_user = user_model.objects.select_for_update().get(pk=user.pk)
+        try:
+            backup_codes = json.loads(locked_user.two_factor_backup_codes or "[]")
+        except (TypeError, ValueError):
+            backup_codes = []
+
+        if hashed_input not in backup_codes:
+            return False
+
+        backup_codes.remove(hashed_input)
+        locked_user.two_factor_backup_codes = json.dumps(backup_codes)
+        locked_user.save(update_fields=["two_factor_backup_codes"])
+        user.two_factor_backup_codes = locked_user.two_factor_backup_codes
+        return True
+
+
 def _fernet_key():
     """Build a stable Fernet key from the dedicated application secret."""
     configured = getattr(settings, "TWO_FACTOR_ENCRYPTION_KEY", "")
@@ -93,7 +124,7 @@ def _fernet_key():
             raise ImproperlyConfigured(
                 "TWO_FACTOR_ENCRYPTION_KEY is required in production to protect TOTP secrets."
             )
-        raw_key = settings.SECRET_KEY  # development fallback only
+        raw_key = settings.SECRET_KEY
     digest = hashlib.sha256(raw_key.encode("utf-8")).digest()
     return base64.urlsafe_b64encode(digest)
 
