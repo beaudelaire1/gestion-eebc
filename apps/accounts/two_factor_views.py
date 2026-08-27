@@ -5,17 +5,19 @@ import json
 from django.contrib import messages
 from django.contrib.auth import login, logout
 from django.contrib.auth.mixins import LoginRequiredMixin
-from django.core.cache import cache
 from django.shortcuts import redirect, render
 from django.utils.http import url_has_allowed_host_and_scheme
 from django.views import View
 from django.views.generic import TemplateView
 
 from .models import User
-from .two_factor_security import requires_two_factor
-
-MAX_2FA_ATTEMPTS = 5
-TWO_FACTOR_LOCK_SECONDS = 10 * 60
+from .two_factor_security import (
+    clear_mfa_failures,
+    is_mfa_locked,
+    record_mfa_failure,
+    requires_two_factor,
+    verify_second_factor,
+)
 
 
 def _safe_next_url(request, fallback='dashboard:home'):
@@ -29,6 +31,10 @@ def _safe_next_url(request, fallback='dashboard:home'):
     return fallback
 
 
+def _locked_message(request):
+    messages.error(request, "Trop de codes invalides. Réessayez dans 10 minutes.")
+
+
 class TwoFactorSetupView(LoginRequiredMixin, TemplateView):
     """Enrôlement TOTP. Les comptes sensibles ne peuvent pas contourner cette étape."""
 
@@ -38,8 +44,6 @@ class TwoFactorSetupView(LoginRequiredMixin, TemplateView):
         context = super().get_context_data(**kwargs)
         user = self.request.user
 
-        # Générer le secret et les codes une seule fois. Un simple rafraîchissement
-        # ne doit jamais invalider le QR code déjà scanné par l'utilisateur.
         if not user.two_factor_enabled and not user.two_factor_secret:
             backup_codes = user.setup_two_factor()
             context['backup_codes'] = backup_codes
@@ -55,17 +59,26 @@ class TwoFactorSetupView(LoginRequiredMixin, TemplateView):
         user = request.user
         code = request.POST.get('code', '').strip()
 
+        if is_mfa_locked(user.pk):
+            _locked_message(request)
+            return redirect('accounts:two_factor_setup')
+
         if not code:
             messages.error(request, "Veuillez entrer le code de vérification.")
             return redirect('accounts:two_factor_setup')
 
         if user.confirm_two_factor(code):
+            clear_mfa_failures(user.pk)
             request.session['two_factor_verified_user_id'] = user.pk
             request.session.pop('two_factor_user_id', None)
             messages.success(request, "Double authentification activée.")
             return redirect(_safe_next_url(request, 'accounts:profile'))
 
-        messages.error(request, "Code invalide. Veuillez réessayer.")
+        locked, remaining = record_mfa_failure(user.pk)
+        if locked:
+            _locked_message(request)
+        else:
+            messages.error(request, f"Code invalide. {remaining} tentative(s) restante(s).")
         return redirect('accounts:two_factor_setup')
 
 
@@ -81,13 +94,30 @@ class TwoFactorDisableView(LoginRequiredMixin, View):
             )
             return redirect('accounts:two_factor_setup')
 
+        if request.session.get('two_factor_verified_user_id') != user.pk:
+            request.session['two_factor_user_id'] = user.pk
+            request.session['two_factor_next'] = request.path
+            return redirect('accounts:two_factor_verify')
+
+        if is_mfa_locked(user.pk):
+            _locked_message(request)
+            return redirect('accounts:two_factor_setup')
+
         code = request.POST.get('code', '').strip()
-        if user.verify_two_factor_code(code):
+        if verify_second_factor(user, code):
+            clear_mfa_failures(user.pk)
             user.disable_two_factor()
             request.session.pop('two_factor_verified_user_id', None)
             messages.success(request, "Double authentification désactivée.")
         else:
-            messages.error(request, "Code invalide.")
+            locked, remaining = record_mfa_failure(user.pk)
+            if locked:
+                _locked_message(request)
+            else:
+                messages.error(
+                    request,
+                    f"Code invalide. {remaining} tentative(s) restante(s).",
+                )
         return redirect('accounts:profile')
 
 
@@ -116,38 +146,32 @@ class TwoFactorVerifyView(TemplateView):
             request.session.pop('two_factor_user_id', None)
             return redirect('accounts:login')
 
-        lock_key = f'eebc:2fa:lock:{user.pk}'
-        attempts_key = f'eebc:2fa:attempts:{user.pk}'
-        if cache.get(lock_key):
-            messages.error(request, "Trop de codes invalides. Réessayez dans 10 minutes.")
+        if is_mfa_locked(user.pk):
+            _locked_message(request)
             return redirect('accounts:two_factor_verify')
 
-        if user.verify_two_factor_code(code):
-            cache.delete(attempts_key)
-            cache.delete(lock_key)
+        if verify_second_factor(user, code):
+            clear_mfa_failures(user.pk)
             if not request.user.is_authenticated:
                 login(request, user)
             request.session.pop('two_factor_user_id', None)
             request.session['two_factor_verified_user_id'] = user.pk
             return redirect(_safe_next_url(request))
 
-        attempts = int(cache.get(attempts_key, 0)) + 1
-        cache.set(attempts_key, attempts, TWO_FACTOR_LOCK_SECONDS)
-        if attempts >= MAX_2FA_ATTEMPTS:
-            cache.set(lock_key, True, TWO_FACTOR_LOCK_SECONDS)
+        locked, remaining = record_mfa_failure(user.pk)
+        if locked:
             if request.user.is_authenticated:
                 logout(request)
             request.session.pop('two_factor_user_id', None)
-            messages.error(request, "Trop de codes invalides. Reconnectez-vous dans 10 minutes.")
+            _locked_message(request)
             return redirect('accounts:login')
 
-        remaining = MAX_2FA_ATTEMPTS - attempts
         messages.error(request, f"Code invalide. {remaining} tentative(s) restante(s).")
         return redirect('accounts:two_factor_verify')
 
 
 class TwoFactorBackupCodesView(LoginRequiredMixin, TemplateView):
-    """Régénération des codes de secours après preuve TOTP/code de secours."""
+    """Régénération des codes de secours après une session MFA déjà vérifiée."""
 
     template_name = 'accounts/two_factor_backup_codes.html'
 
@@ -163,11 +187,28 @@ class TwoFactorBackupCodesView(LoginRequiredMixin, TemplateView):
 
     def post(self, request):
         user = request.user
-        code = request.POST.get('code', '').strip()
-        if not user.verify_two_factor_code(code):
-            messages.error(request, "Code invalide.")
+        if request.session.get('two_factor_verified_user_id') != user.pk:
+            request.session['two_factor_user_id'] = user.pk
+            request.session['two_factor_next'] = request.path
+            return redirect('accounts:two_factor_verify')
+
+        if is_mfa_locked(user.pk):
+            _locked_message(request)
             return redirect('accounts:two_factor_backup_codes')
 
+        code = request.POST.get('code', '').strip()
+        if not verify_second_factor(user, code):
+            locked, remaining = record_mfa_failure(user.pk)
+            if locked:
+                _locked_message(request)
+            else:
+                messages.error(
+                    request,
+                    f"Code invalide. {remaining} tentative(s) restante(s).",
+                )
+            return redirect('accounts:two_factor_backup_codes')
+
+        clear_mfa_failures(user.pk)
         from .two_factor import generate_backup_codes, hash_backup_code
 
         backup_codes = generate_backup_codes(10)
