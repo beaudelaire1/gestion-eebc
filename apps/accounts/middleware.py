@@ -2,6 +2,7 @@
 
 from urllib.parse import urlencode
 
+from django.conf import settings
 from django.contrib.auth import logout
 from django.http import JsonResponse
 from django.shortcuts import redirect
@@ -13,12 +14,6 @@ class ForcePasswordChangeMiddleware:
 
     WEB_PROTECTED_PREFIXES = ('/app/', '/gestion-eebc/')
     API_PREFIX = '/api/v1/'
-    API_TOKEN_EXEMPT_PATHS = {
-        '/api/v1/auth/login/',
-        '/api/v1/auth/refresh/',
-        '/api/v1/auth/logout/',
-        '/api/v1/auth/password/',
-    }
 
     def __init__(self, get_response):
         self.get_response = get_response
@@ -35,7 +30,6 @@ class ForcePasswordChangeMiddleware:
         return redirect(f"{url}?{urlencode({'token': token})}")
 
     def _enforce_api_token_mfa(self, request):
-        """Reject legacy or downgraded JWTs that do not carry an MFA proof."""
         if not request.path.startswith(self.API_PREFIX):
             return None
 
@@ -53,7 +47,7 @@ class ForcePasswordChangeMiddleware:
         try:
             token = AccessToken(raw_token)
         except TokenError:
-            return None  # DRF retourne déjà l'erreur d'authentification canonique.
+            return None
 
         user_id = token.get('user_id')
         if not user_id:
@@ -125,8 +119,7 @@ class ForcePasswordChangeMiddleware:
         logout_path = reverse('accounts:logout')
         backup_path = reverse('accounts:two_factor_backup_codes')
 
-        exempt_paths = {setup_path, verify_path, login_path, logout_path, backup_path}
-        if request.path in exempt_paths:
+        if request.path in {setup_path, verify_path, login_path, logout_path, backup_path}:
             return None
 
         user = request.user
@@ -147,9 +140,11 @@ class ForcePasswordChangeMiddleware:
         if self._is_asset(current_path):
             return self.get_response(request)
 
-        api_response = self._enforce_api_token_mfa(request)
-        if api_response is not None:
-            return api_response
+        enforce_mfa = getattr(settings, 'TWO_FACTOR_ENFORCEMENT_ENABLED', True)
+        if enforce_mfa:
+            api_response = self._enforce_api_token_mfa(request)
+            if api_response is not None:
+                return api_response
 
         if (
             request.user.is_authenticated
@@ -166,8 +161,9 @@ class ForcePasswordChangeMiddleware:
                 return self.get_response(request)
             return self._password_change_redirect(request.user)
 
-        mfa_response = self._enforce_web_mfa(request)
-        if mfa_response is not None:
-            return mfa_response
+        if enforce_mfa:
+            mfa_response = self._enforce_web_mfa(request)
+            if mfa_response is not None:
+                return mfa_response
 
         return self.get_response(request)
