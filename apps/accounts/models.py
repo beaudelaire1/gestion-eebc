@@ -55,7 +55,6 @@ class User(AbstractUser):
         help_text="Force l'utilisateur à changer son mot de passe à la prochaine connexion",
     )
 
-    # Rate limiting / verrouillage du compte.
     failed_login_attempts = models.PositiveIntegerField(
         default=0, verbose_name="Tentatives de connexion échouées"
     )
@@ -66,7 +65,6 @@ class User(AbstractUser):
         null=True, blank=True, verbose_name="Dernière IP de connexion"
     )
 
-    # Double authentification.
     two_factor_enabled = models.BooleanField(default=False, verbose_name="2FA activé")
     two_factor_secret = models.CharField(
         max_length=255,
@@ -171,9 +169,6 @@ class User(AbstractUser):
 
         return requires_two_factor(self)
 
-    # =========================================================================
-    # DOUBLE AUTHENTIFICATION (2FA)
-    # =========================================================================
     def get_two_factor_secret(self, migrate_plaintext=True):
         """Retourne le secret TOTP en clair et chiffre les anciennes valeurs au repos."""
         from .two_factor_security import (
@@ -225,29 +220,10 @@ class User(AbstractUser):
         return generate_qr_code(get_totp_uri(self, secret))
 
     def verify_two_factor_code(self, code):
-        """Vérifie un code TOTP ou un code de secours à usage unique."""
-        from .two_factor import hash_backup_code, verify_totp
+        """Compatibilité : délègue à la primitive MFA transactionnelle."""
+        from .two_factor_security import verify_second_factor
 
-        if not self.two_factor_enabled or not code:
-            return False
-
-        secret = self.get_two_factor_secret()
-        if verify_totp(secret, code):
-            return True
-
-        if self.two_factor_backup_codes:
-            hashed_input = hash_backup_code(code.upper().replace(' ', ''))
-            try:
-                backup_codes = json.loads(self.two_factor_backup_codes)
-            except (TypeError, ValueError):
-                backup_codes = []
-
-            if hashed_input in backup_codes:
-                backup_codes.remove(hashed_input)
-                self.two_factor_backup_codes = json.dumps(backup_codes)
-                self.save(update_fields=['two_factor_backup_codes'])
-                return True
-        return False
+        return verify_second_factor(self, code)
 
     def confirm_two_factor(self, code):
         """Confirme le premier TOTP et active la double authentification."""
