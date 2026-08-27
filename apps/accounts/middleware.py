@@ -117,9 +117,8 @@ class ForcePasswordChangeMiddleware:
         verify_path = reverse('accounts:two_factor_verify')
         login_path = reverse('accounts:login')
         logout_path = reverse('accounts:logout')
-        backup_path = reverse('accounts:two_factor_backup_codes')
 
-        if request.path in {setup_path, verify_path, login_path, logout_path, backup_path}:
+        if request.path in {setup_path, verify_path, login_path, logout_path}:
             return None
 
         user = request.user
