@@ -2,7 +2,7 @@
 
 {% block title %}Mon Profil - EEBC{% endblock %}
 {% block page_title %}Mon Profil{% endblock %}
-{% block page_subtitle %}Gérez vos informations personnelles{% endblock %}
+{% block page_subtitle %}Gérez vos informations personnelles et la sécurité du compte{% endblock %}
 
 {% block content %}
 <div class="row">
@@ -18,23 +18,41 @@
             </div>
         </div>
 
-        <div class="card">
+        <div class="card mb-4">
             <div class="card-header">
                 <h6 class="card-title"><i class="bi bi-info-circle me-2"></i>Informations</h6>
             </div>
             <div class="card-body">
-                <p class="mb-2">
-                    <i class="bi bi-envelope me-2 text-muted"></i>
-                    {{ request.user.email|default:"Non renseigné" }}
-                </p>
-                <p class="mb-2">
-                    <i class="bi bi-phone me-2 text-muted"></i>
-                    {{ request.user.phone|default:"Non renseigné" }}
-                </p>
-                <p class="mb-0">
-                    <i class="bi bi-calendar me-2 text-muted"></i>
-                    Membre depuis {{ request.user.date_joined|date:"F Y" }}
-                </p>
+                <p class="mb-2"><i class="bi bi-envelope me-2 text-muted"></i>{{ request.user.email|default:"Non renseigné" }}</p>
+                <p class="mb-2"><i class="bi bi-phone me-2 text-muted"></i>{{ request.user.phone|default:"Non renseigné" }}</p>
+                <p class="mb-0"><i class="bi bi-calendar me-2 text-muted"></i>Membre depuis {{ request.user.date_joined|date:"F Y" }}</p>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-header">
+                <h6 class="card-title"><i class="bi bi-shield-lock me-2"></i>Sécurité</h6>
+            </div>
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <span>Double authentification</span>
+                    {% if request.user.two_factor_enabled %}
+                    <span class="badge bg-success">Activée</span>
+                    {% elif request.user.is_two_factor_required %}
+                    <span class="badge bg-danger">Obligatoire</span>
+                    {% else %}
+                    <span class="badge bg-secondary">Désactivée</span>
+                    {% endif %}
+                </div>
+                <a class="btn btn-outline-primary w-100 mb-2" href="{% url 'accounts:two_factor_setup' %}">
+                    <i class="bi bi-shield-check me-2"></i>
+                    {% if request.user.two_factor_enabled %}Paramètres 2FA{% else %}Configurer la 2FA{% endif %}
+                </a>
+                {% if request.user.two_factor_enabled %}
+                <a class="btn btn-outline-secondary w-100" href="{% url 'accounts:two_factor_backup_codes' %}">
+                    <i class="bi bi-key me-2"></i>Codes de secours
+                </a>
+                {% endif %}
             </div>
         </div>
     </div>
@@ -47,20 +65,16 @@
             <div class="card-body">
                 <form method="post" enctype="multipart/form-data">
                     {% csrf_token %}
-
                     <div class="row mb-3">
                         <div class="col-md-6">
                             <label class="form-label">Prénom</label>
-                            <input type="text" class="form-control" name="first_name"
-                                value="{{ request.user.first_name }}">
+                            <input type="text" class="form-control" name="first_name" value="{{ request.user.first_name }}">
                         </div>
                         <div class="col-md-6">
                             <label class="form-label">Nom</label>
-                            <input type="text" class="form-control" name="last_name"
-                                value="{{ request.user.last_name }}">
+                            <input type="text" class="form-control" name="last_name" value="{{ request.user.last_name }}">
                         </div>
                     </div>
-
                     <div class="row mb-3">
                         <div class="col-md-6">
                             <label class="form-label">Email</label>
@@ -71,15 +85,11 @@
                             <input type="tel" class="form-control" name="phone" value="{{ request.user.phone }}">
                         </div>
                     </div>
-
                     <div class="mb-4">
                         <label class="form-label">Photo</label>
                         <input type="file" class="form-control" name="photo" accept="image/*">
                     </div>
-
-                    <button type="submit" class="btn btn-primary">
-                        <i class="bi bi-check-lg me-2"></i>Enregistrer
-                    </button>
+                    <button type="submit" class="btn btn-primary"><i class="bi bi-check-lg me-2"></i>Enregistrer</button>
                 </form>
             </div>
         </div>
