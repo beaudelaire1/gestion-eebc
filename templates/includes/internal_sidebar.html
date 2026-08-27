@@ -1,0 +1,263 @@
+{% load permission_tags %}
+{% module_access request.user 'events' as can_events %}
+{% module_access request.user 'worship' as can_worship %}
+{% module_access request.user 'finance' as can_finance %}
+{% module_access request.user 'campaigns' as can_campaigns %}
+{% module_access request.user 'members' as can_members %}
+{% module_access request.user 'groups' as can_groups %}
+{% module_access request.user 'bibleclub' as can_bibleclub %}
+{% module_access request.user 'transport' as can_transport %}
+{% module_access request.user 'inventory' as can_inventory %}
+{% module_access request.user 'departments' as can_departments %}
+{% module_access request.user 'imports' as can_imports %}
+{% module_access request.user 'accounts' as can_accounts %}
+{% module_access request.user 'young' as can_young %}
+{% module_access request.user 'documents' as can_documents %}
+{% module_access request.user 'cms' as can_cms %}
+
+<nav class="sidebar" id="sidebar">
+    <button class="sidebar-close" type="button" onclick="closeSidebar()" aria-label="Fermer le menu latéral">
+        <i class="bi bi-x-lg"></i>
+    </button>
+
+    <div class="sidebar__brand">
+        <h4 class="sidebar__brand-title" style="color:#ffffff !important;">
+            <i class="bi bi-book-half me-2" style="color:#ffffff !important;"></i>EEBC
+        </h4>
+        <small class="sidebar__brand-subtitle" style="color:#ffffff !important;">Système de Gestion</small>
+    </div>
+
+    <div class="sidebar__content">
+        <div class="nav-section">
+            <div class="nav-section__title">Principal</div>
+            <nav class="nav flex-column">
+                <a class="nav-link {% if request.resolver_match.namespace == 'dashboard' %}nav-link--active{% endif %}" href="{% url 'dashboard:home' %}">
+                    <i class="bi bi-grid-1x2-fill nav-link__icon"></i>
+                    <span>Accueil</span>
+                </a>
+                {% if can_events %}
+                <a class="nav-link {% if request.resolver_match.namespace == 'events' %}nav-link--active{% endif %}" href="{% url 'events:calendar' %}">
+                    <i class="bi bi-calendar3 nav-link__icon"></i>
+                    <span>Calendrier</span>
+                </a>
+                {% endif %}
+                <a class="nav-link" href="{% url 'public:home' %}" target="_blank" rel="noopener">
+                    <i class="bi bi-globe nav-link__icon"></i>
+                    <span>Site public <i class="bi bi-box-arrow-up-right ms-1" style="font-size:0.8em;"></i></span>
+                </a>
+            </nav>
+        </div>
+
+        {% if can_worship %}
+        <div class="nav-section">
+            <div class="nav-section__title">Vie d'Église</div>
+            <nav class="nav flex-column">
+                <a class="nav-link {% if 'worship' in request.path and 'planning' not in request.path %}nav-link--active{% endif %}" href="{% url 'worship:service_list' %}">
+                    <i class="bi bi-calendar-check-fill nav-link__icon"></i>
+                    <span>Cultes</span>
+                </a>
+                <a class="nav-link {% if 'planning' in request.path %}nav-link--active{% endif %}" href="{% url 'worship:schedule_list' %}">
+                    <i class="bi bi-calendar-month nav-link__icon"></i>
+                    <span>Planning mensuel</span>
+                </a>
+            </nav>
+        </div>
+        {% endif %}
+
+        {% if can_finance or can_campaigns %}
+        <div class="nav-section">
+            <div class="nav-section__title">Finances</div>
+            <nav class="nav flex-column">
+                {% if can_finance %}
+                <a class="nav-link {% if request.path == '/app/finance/' %}nav-link--active{% endif %}" href="{% url 'finance:dashboard' %}">
+                    <i class="bi bi-cash-coin nav-link__icon"></i>
+                    <span>Trésorerie</span>
+                </a>
+                <a class="nav-link {% if request.GET.type == 'dime' %}nav-link--active{% endif %}" href="{% url 'finance:transaction_list' %}?type=dime" style="padding-left:2.2rem;">
+                    <i class="bi bi-percent nav-link__icon" style="font-size:0.85em;"></i><span>Dîmes</span>
+                </a>
+                <a class="nav-link {% if request.GET.type == 'don' %}nav-link--active{% endif %}" href="{% url 'finance:transaction_list' %}?type=don" style="padding-left:2.2rem;">
+                    <i class="bi bi-gift nav-link__icon" style="font-size:0.85em;"></i><span>Dons</span>
+                </a>
+                <a class="nav-link {% if request.GET.type == 'offrande' %}nav-link--active{% endif %}" href="{% url 'finance:transaction_list' %}?type=offrande" style="padding-left:2.2rem;">
+                    <i class="bi bi-flower1 nav-link__icon" style="font-size:0.85em;"></i><span>Offrandes</span>
+                </a>
+                <a class="nav-link {% if request.GET.type == 'depense' %}nav-link--active{% endif %}" href="{% url 'finance:transaction_list' %}?type=depense" style="padding-left:2.2rem;">
+                    <i class="bi bi-cart-dash nav-link__icon" style="font-size:0.85em;"></i><span>Dépenses</span>
+                </a>
+                <a class="nav-link {% if 'online-donations' in request.path %}nav-link--active{% endif %}" href="{% url 'finance:online_donation_list' %}">
+                    <i class="bi bi-credit-card nav-link__icon"></i><span>Dons en ligne</span>
+                </a>
+                <a class="nav-link {% if 'member-summary' in request.path %}nav-link--active{% endif %}" href="{% url 'finance:member_annual_summary' %}">
+                    <i class="bi bi-person-lines-fill nav-link__icon"></i><span>Récap. par membre</span>
+                </a>
+                <a class="nav-link {% if 'reports' in request.path and 'finance' in request.path %}nav-link--active{% endif %}" href="{% url 'finance:reports' %}">
+                    <i class="bi bi-file-earmark-bar-graph nav-link__icon"></i><span>Rapports</span>
+                </a>
+                <a class="nav-link {% if 'comparison' in request.path %}nav-link--active{% endif %}" href="{% url 'finance:yearly_comparison' %}">
+                    <i class="bi bi-bar-chart-line nav-link__icon"></i><span>Comparatif N/N-1</span>
+                </a>
+                <a class="nav-link {% if 'tax-receipts' in request.path %}nav-link--active{% endif %}" href="{% url 'finance:tax_receipt_list' %}">
+                    <i class="bi bi-receipt nav-link__icon"></i><span>Reçus fiscaux</span>
+                </a>
+                <a class="nav-link {% if 'budgets' in request.path %}nav-link--active{% endif %}" href="{% url 'finance:budget_dashboard' %}">
+                    <i class="bi bi-pie-chart nav-link__icon"></i><span>Budgets</span>
+                </a>
+                <a class="nav-link {% if 'forecasts' in request.path %}nav-link--active{% endif %}" href="{% url 'finance:forecast_list' %}">
+                    <i class="bi bi-graph-up-arrow nav-link__icon"></i><span>Prévisionnel</span>
+                </a>
+                {% endif %}
+                {% if can_campaigns %}
+                <a class="nav-link {% if 'campaigns' in request.path %}nav-link--active{% endif %}" href="{% url 'campaigns:list' %}">
+                    <i class="bi bi-megaphone nav-link__icon"></i><span>Campagnes</span>
+                </a>
+                {% endif %}
+                <a class="nav-link" href="{% url 'public:donation' %}" target="_blank" rel="noopener">
+                    <i class="bi bi-heart-fill nav-link__icon" style="color:#EC4899;"></i><span>Faire un don</span>
+                </a>
+            </nav>
+        </div>
+        {% endif %}
+
+        {% if can_members or can_groups or can_departments %}
+        <div class="nav-section">
+            <div class="nav-section__title">Gestion</div>
+            <nav class="nav flex-column">
+                {% if can_members %}
+                <a class="nav-link {% if request.path == '/app/members/' %}nav-link--active{% endif %}" href="{% url 'members:list' %}">
+                    <i class="bi bi-person-badge-fill nav-link__icon"></i><span>Membres</span>
+                </a>
+                <a class="nav-link {% if 'families' in request.path %}nav-link--active{% endif %}" href="{% url 'members:family_list' %}">
+                    <i class="bi bi-house-heart nav-link__icon"></i><span>Familles</span>
+                </a>
+                {% if request.user.is_admin or request.user.has_role|default:False %}{% endif %}
+                {% if request.user.is_admin or request.user.role == 'secretariat' %}
+                <a class="nav-link {% if 'members/map' in request.path %}nav-link--active{% endif %}" href="{% url 'members:map' %}">
+                    <i class="bi bi-geo-alt-fill nav-link__icon"></i><span>Carte des membres</span>
+                </a>
+                {% endif %}
+                <a class="nav-link {% if 'life-events' in request.path %}nav-link--active{% endif %}" href="{% url 'members:life_events' %}">
+                    <i class="bi bi-heart-fill nav-link__icon"></i><span>Événements de vie</span>
+                </a>
+                <a class="nav-link {% if 'visits' in request.path %}nav-link--active{% endif %}" href="{% url 'members:visits' %}">
+                    <i class="bi bi-house-heart-fill nav-link__icon"></i><span>Visites pastorales</span>
+                </a>
+                {% endif %}
+                {% if can_groups %}
+                <a class="nav-link {% if 'groups' in request.path %}nav-link--active{% endif %}" href="{% url 'groups:list' %}">
+                    <i class="bi bi-diagram-3-fill nav-link__icon"></i><span>Groupes</span>
+                </a>
+                {% endif %}
+                {% if can_departments %}
+                <a class="nav-link {% if 'departments' in request.path %}nav-link--active{% endif %}" href="{% url 'departments:list' %}">
+                    <i class="bi bi-building nav-link__icon"></i><span>Départements</span>
+                </a>
+                {% endif %}
+            </nav>
+        </div>
+        {% endif %}
+
+        {% if can_young %}
+        <div class="nav-section">
+            <div class="nav-section__title">Jeunesse</div>
+            <nav class="nav flex-column">
+                <a class="nav-link {% if request.path == '/app/young/' %}nav-link--active{% endif %}" href="{% url 'young:home' %}"><i class="bi bi-mortarboard nav-link__icon"></i><span>Vue d'ensemble</span></a>
+                <a class="nav-link {% if '/young/members' in request.path %}nav-link--active{% endif %}" href="{% url 'young:member_list' %}"><i class="bi bi-people-fill nav-link__icon"></i><span>Jeunes</span></a>
+                <a class="nav-link {% if '/young/groups' in request.path %}nav-link--active{% endif %}" href="{% url 'young:group_list' %}"><i class="bi bi-collection-fill nav-link__icon"></i><span>Groupes</span></a>
+                <a class="nav-link {% if '/young/events' in request.path %}nav-link--active{% endif %}" href="{% url 'young:event_list' %}"><i class="bi bi-calendar-event-fill nav-link__icon"></i><span>Activités & Appels</span></a>
+            </nav>
+        </div>
+        {% endif %}
+
+        {% if can_bibleclub %}
+        <div class="nav-section">
+            <div class="nav-section__title">Club Biblique</div>
+            <nav class="nav flex-column">
+                <a class="nav-link {% if request.path == '/app/bibleclub/' %}nav-link--active{% endif %}" href="{% url 'bibleclub:home' %}"><i class="bi bi-mortarboard-fill nav-link__icon"></i><span>Vue d'ensemble</span></a>
+                <a class="nav-link {% if 'children' in request.path %}nav-link--active{% endif %}" href="{% url 'bibleclub:children_list' %}"><i class="bi bi-people-fill nav-link__icon"></i><span>Enfants</span></a>
+                <a class="nav-link {% if 'classes' in request.path %}nav-link--active{% endif %}" href="{% url 'bibleclub:class_list' %}"><i class="bi bi-collection-fill nav-link__icon"></i><span>Classes</span></a>
+                <a class="nav-link {% if 'sessions' in request.path %}nav-link--active{% endif %}" href="{% url 'bibleclub:session_list' %}"><i class="bi bi-clipboard-check-fill nav-link__icon"></i><span>Sessions & Appels</span></a>
+                {% if request.user.is_responsable_club %}
+                <a class="nav-link {% if 'age-groups' in request.path %}nav-link--active{% endif %}" href="{% url 'bibleclub:age_group_list' %}"><i class="bi bi-tags-fill nav-link__icon"></i><span>Tranches d'âge</span></a>
+                {% endif %}
+            </nav>
+        </div>
+        {% endif %}
+
+        {% if can_transport %}
+        <div class="nav-section">
+            <div class="nav-section__title">Transport</div>
+            <nav class="nav flex-column">
+                <a class="nav-link {% if 'transport/requests' in request.path and not request.GET.scope %}nav-link--active{% endif %}" href="{% url 'transport:requests' %}"><i class="bi bi-truck nav-link__icon"></i><span>Demandes</span></a>
+                <a class="nav-link {% if 'transport/requests/create/' in request.path %}nav-link--active{% endif %}" href="{% url 'transport:request_create' %}"><i class="bi bi-plus-circle nav-link__icon"></i><span>Nouvelle demande</span></a>
+                <a class="nav-link {% if request.GET.scope == 'tracking' %}nav-link--active{% endif %}" href="{% url 'transport:requests' %}?scope=tracking"><i class="bi bi-broadcast-pin nav-link__icon"></i><span>Suivi chauffeur</span></a>
+                <a class="nav-link {% if request.GET.scope == 'arrivals' %}nav-link--active{% endif %}" href="{% url 'transport:requests' %}?scope=arrivals"><i class="bi bi-geo-alt-fill nav-link__icon"></i><span>Arrivées du jour</span></a>
+                <a class="nav-link {% if request.GET.scope == 'pending' %}nav-link--active{% endif %}" href="{% url 'transport:requests' %}?scope=pending"><i class="bi bi-hourglass-split nav-link__icon"></i><span>Demandes en attente</span></a>
+                <a class="nav-link {% if request.GET.scope == 'available' %}nav-link--active{% endif %}" href="{% url 'transport:requests' %}?scope=available"><i class="bi bi-person-check nav-link__icon"></i><span>Demandes disponibles</span></a>
+                {% if request.user.is_admin or request.user.role == 'secretariat' or request.user.role == 'responsable_groupe' %}
+                <a class="nav-link {% if 'transport/calendar' in request.path %}nav-link--active{% endif %}" href="{% url 'transport:calendar' %}"><i class="bi bi-calendar3 nav-link__icon"></i><span>Calendrier transport</span></a>
+                <a class="nav-link {% if 'transport/drivers/' in request.path %}nav-link--active{% endif %}" href="{% url 'transport:drivers' %}"><i class="bi bi-person-badge nav-link__icon"></i><span>Chauffeurs</span></a>
+                {% endif %}
+            </nav>
+        </div>
+        {% endif %}
+
+        {% if can_inventory %}
+        <div class="nav-section">
+            <div class="nav-section__title">Ressources</div>
+            <nav class="nav flex-column">
+                <a class="nav-link {% if 'inventory' in request.path %}nav-link--active{% endif %}" href="{% url 'inventory:list' %}"><i class="bi bi-box-seam-fill nav-link__icon"></i><span>Inventaire</span></a>
+            </nav>
+        </div>
+        {% endif %}
+
+        {% if can_documents %}
+        <div class="nav-section">
+            <div class="nav-section__title">Documents</div>
+            <nav class="nav flex-column">
+                <a class="nav-link {% if 'documents' in request.path and 'generated' not in request.path %}nav-link--active{% endif %}" href="{% url 'documents:list' %}"><i class="bi bi-archive nav-link__icon"></i><span>Documents</span></a>
+                <a class="nav-link {% if 'documents/generated' in request.path %}nav-link--active{% endif %}" href="{% url 'documents:generated_list' %}"><i class="bi bi-pencil-square nav-link__icon"></i><span>Éditeur de documents</span></a>
+            </nav>
+        </div>
+        {% endif %}
+
+        <div class="nav-section">
+            <div class="nav-section__title">Communication</div>
+            <nav class="nav flex-column">
+                <a class="nav-link {% if 'notifications' in request.path %}nav-link--active{% endif %}" href="{% url 'communication:notifications' %}"><i class="bi bi-bell-fill nav-link__icon"></i><span>Notifications</span></a>
+                <a class="nav-link {% if 'announcements' in request.path %}nav-link--active{% endif %}" href="{% url 'communication:announcements' %}"><i class="bi bi-megaphone-fill nav-link__icon"></i><span>Annonces</span></a>
+                {% if request.user.is_staff or request.user.is_admin %}
+                <a class="nav-link {% if 'compose' in request.path %}nav-link--active{% endif %}" href="{% url 'communication:email_compose' %}"><i class="bi bi-pencil-square nav-link__icon"></i><span>Composer un e-mail</span></a>
+                <a class="nav-link {% if 'email-logs' in request.path %}nav-link--active{% endif %}" href="{% url 'communication:email_logs' %}"><i class="bi bi-envelope-fill nav-link__icon"></i><span>Historique emails</span></a>
+                {% endif %}
+            </nav>
+        </div>
+
+        {% if can_cms %}
+        <div class="nav-section">
+            <div class="nav-section__title">Site Web (CMS)</div>
+            <nav class="nav flex-column">
+                <a class="nav-link {% if 'cms/news' in request.path %}nav-link--active{% endif %}" href="{% url 'public_cms:news_list' %}"><i class="bi bi-newspaper nav-link__icon"></i><span>Actualités</span></a>
+                <a class="nav-link {% if 'cms/pages' in request.path %}nav-link--active{% endif %}" href="{% url 'public_cms:page_list' %}"><i class="bi bi-file-earmark-text nav-link__icon"></i><span>Pages</span></a>
+                <a class="nav-link {% if 'cms/testimonies' in request.path %}nav-link--active{% endif %}" href="{% url 'public_cms:testimony_list' %}"><i class="bi bi-chat-quote nav-link__icon"></i><span>Témoignages</span></a>
+                <a class="nav-link {% if 'cms/schedules' in request.path %}nav-link--active{% endif %}" href="{% url 'public_cms:schedule_list' %}"><i class="bi bi-clock nav-link__icon"></i><span>Horaires</span></a>
+                <a class="nav-link {% if 'cms/events' in request.path %}nav-link--active{% endif %}" href="{% url 'public_cms:event_list' %}"><i class="bi bi-calendar-event nav-link__icon"></i><span>Événements</span></a>
+            </nav>
+        </div>
+        {% endif %}
+
+        {% if can_imports or can_accounts %}
+        <div class="nav-section">
+            <div class="nav-section__title">Administration</div>
+            <nav class="nav flex-column">
+                {% if can_imports %}
+                <a class="nav-link {% if 'imports' in request.path %}nav-link--active{% endif %}" href="{% url 'imports:hub' %}"><i class="bi bi-upload nav-link__icon"></i><span>Imports & Exports</span></a>
+                {% endif %}
+                {% if can_accounts %}
+                <a class="nav-link {% if 'accounts/users' in request.path %}nav-link--active{% endif %}" href="{% url 'accounts:user_list' %}"><i class="bi bi-people nav-link__icon"></i><span>Utilisateurs</span></a>
+                {% endif %}
+            </nav>
+        </div>
+        {% endif %}
+    </div>
+</nav>
