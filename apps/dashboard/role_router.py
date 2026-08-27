@@ -13,6 +13,7 @@ ROLE_HOME_PRIORITY = (
     ('responsable_groupe', 'groups:list'),
     ('secretariat', 'members:list'),
     ('encadrant', 'members:list'),
+    ('diacre', 'documents:list'),
 )
 
 
