@@ -117,11 +117,16 @@ class ForcePasswordChangeMiddleware:
         verify_path = reverse('accounts:two_factor_verify')
         login_path = reverse('accounts:login')
         logout_path = reverse('accounts:logout')
+        user = request.user
 
-        if request.path in {setup_path, verify_path, login_path, logout_path}:
+        if request.path in {verify_path, login_path, logout_path}:
             return None
 
-        user = request.user
+        # L'écran de configuration est exempté uniquement pendant le premier enrôlement.
+        # Une fois la 2FA active, il requiert lui aussi une session ayant passé le MFA.
+        if request.path == setup_path and not user.two_factor_enabled:
+            return None
+
         if requires_two_factor(user) and not user.two_factor_enabled:
             request.session['two_factor_next'] = request.get_full_path()
             return redirect('accounts:two_factor_setup')
