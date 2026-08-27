@@ -25,7 +25,6 @@ DEFAULT_REQUIRED_ROLES = {
 
 
 def required_two_factor_roles():
-    """Return roles for which MFA is mandatory."""
     configured = getattr(settings, "TWO_FACTOR_REQUIRED_ROLES", None)
     if configured:
         if isinstance(configured, str):
@@ -35,7 +34,6 @@ def required_two_factor_roles():
 
 
 def requires_two_factor(user):
-    """Return True when the account must enroll in and use 2FA."""
     if not user or not getattr(user, "is_authenticated", False):
         return False
     if user.is_superuser or user.is_staff:
@@ -45,20 +43,19 @@ def requires_two_factor(user):
 
 
 def needs_two_factor_verification(user):
-    """Return True when this account must pass a second factor for access."""
     return requires_two_factor(user) or bool(getattr(user, "two_factor_enabled", False))
 
 
 def _fernet_key():
-    """Build a stable Fernet key from the dedicated environment secret."""
-    raw_key = os.environ.get("TWO_FACTOR_ENCRYPTION_KEY", "").strip()
+    """Build a stable Fernet key from the dedicated application secret."""
+    configured = getattr(settings, "TWO_FACTOR_ENCRYPTION_KEY", "")
+    raw_key = str(configured or os.environ.get("TWO_FACTOR_ENCRYPTION_KEY", "")).strip()
     if not raw_key:
         if not settings.DEBUG:
             raise ImproperlyConfigured(
                 "TWO_FACTOR_ENCRYPTION_KEY is required in production to protect TOTP secrets."
             )
-        # Development fallback only. Production must use a separate key.
-        raw_key = settings.SECRET_KEY
+        raw_key = settings.SECRET_KEY  # development fallback only
     digest = hashlib.sha256(raw_key.encode("utf-8")).digest()
     return base64.urlsafe_b64encode(digest)
 
@@ -72,7 +69,6 @@ def is_encrypted_secret(value):
 
 
 def encrypt_totp_secret(secret):
-    """Encrypt a plaintext TOTP secret for database storage."""
     if not secret:
         return ""
     if is_encrypted_secret(secret):
@@ -82,7 +78,6 @@ def encrypt_totp_secret(secret):
 
 
 def decrypt_totp_secret(value):
-    """Decrypt a stored secret while remaining compatible with legacy plaintext rows."""
     if not value:
         return ""
     if not is_encrypted_secret(value):
