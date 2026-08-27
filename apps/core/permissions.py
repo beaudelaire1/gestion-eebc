@@ -3,6 +3,7 @@ Module de permissions RBAC (Role-Based Access Control) pour Gestion EEBC.
 
 Ce module fournit:
 - Un décorateur @role_required pour les vues fonctionnelles
+- Un décorateur @module_required pour les modules internes
 - Un mixin RoleRequiredMixin pour les vues basées sur classes
 - Des fonctions utilitaires pour vérifier les rôles et l'accès aux modules
 - Logging des tentatives d'accès refusées (Requirement 8.4)
@@ -193,7 +194,7 @@ def can_access_module(user, module, *, internal=True):
 
 
 # =============================================================================
-# DÉCORATEUR @role_required
+# DÉCORATEURS D'ACCÈS
 # =============================================================================
 
 def role_required(*roles, redirect_url='dashboard:home', message=None):
@@ -205,6 +206,24 @@ def role_required(*roles, redirect_url='dashboard:home', message=None):
                 return view_func(request, *args, **kwargs)
 
             log_access_denied(request, roles, view_func.__name__)
+            error_message = message or "Vous n'avez pas les permissions nécessaires pour accéder à cette page."
+            messages.error(request, error_message)
+            return redirect(redirect_url)
+
+        return _wrapped_view
+
+    return decorator
+
+
+def module_required(module, redirect_url='dashboard:home', message=None):
+    """Décorateur pour restreindre une vue à un module interne autorisé."""
+    def decorator(view_func):
+        @wraps(view_func)
+        def _wrapped_view(request, *args, **kwargs):
+            if can_access_module(request.user, module, internal=True):
+                return view_func(request, *args, **kwargs)
+
+            log_access_denied(request, (f'module:{module}',), view_func.__name__)
             error_message = message or "Vous n'avez pas les permissions nécessaires pour accéder à cette page."
             messages.error(request, error_message)
             return redirect(redirect_url)
