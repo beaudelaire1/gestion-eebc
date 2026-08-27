@@ -38,9 +38,9 @@ class TwoFactorSetupView(LoginRequiredMixin, TemplateView):
         context = super().get_context_data(**kwargs)
         user = self.request.user
 
-        # Tant que l'enrôlement n'est pas confirmé, un GET émet un jeu cohérent
-        # secret + codes de secours afin que les codes ne deviennent pas invisibles.
-        if not user.two_factor_enabled:
+        # Générer le secret et les codes une seule fois. Un simple rafraîchissement
+        # ne doit jamais invalider le QR code déjà scanné par l'utilisateur.
+        if not user.two_factor_enabled and not user.two_factor_secret:
             backup_codes = user.setup_two_factor()
             context['backup_codes'] = backup_codes
             context['show_backup_codes'] = True
