@@ -1,9 +1,7 @@
 """Secure API variants for resources with object-level confidentiality."""
 from datetime import date, timedelta
 
-from django.db.models import Q
 from django.shortcuts import get_object_or_404
-from rest_framework import status
 from rest_framework.decorators import action
 from rest_framework.permissions import BasePermission
 from rest_framework.response import Response
@@ -14,6 +12,10 @@ from apps.worship.models import WorshipService
 
 from . import views as legacy_views
 from .serializers import EventListSerializer, WorshipServiceListSerializer
+
+
+def _visible_event_ids(user):
+    return Event.objects.filter(event_visibility_q(user)).values_list('pk', flat=True)
 
 
 class CanReadSensitiveMembers(BasePermission):
@@ -36,11 +38,11 @@ class SecureEventViewSet(legacy_views.EventViewSet):
 
     @action(detail=False, methods=['get'])
     def my_registrations(self, request):
-        visible = event_visibility_q(request.user)
         registrations = EventRegistration.objects.filter(
             user=request.user,
             event__start_date__gte=date.today(),
-        ).filter(visible).select_related('event')
+            event_id__in=_visible_event_ids(request.user),
+        ).select_related('event')
         serializer = EventListSerializer(
             [registration.event for registration in registrations],
             many=True,
@@ -71,9 +73,8 @@ class SecureWorshipServiceViewSet(legacy_views.WorshipServiceViewSet):
     def get_queryset(self):
         queryset = WorshipService.objects.filter(
             event__start_date__gte=date.today() - timedelta(days=7),
-        ).filter(event_visibility_q(self.request.user)).select_related(
-            'event', 'event__site'
-        ).prefetch_related('roles', 'roles__member')
+            event_id__in=_visible_event_ids(self.request.user),
+        ).select_related('event', 'event__site').prefetch_related('roles', 'roles__member')
         site_id = self.request.query_params.get('site')
         if site_id:
             queryset = queryset.filter(event__site_id=site_id)
@@ -85,7 +86,8 @@ class SecureWorshipServiceViewSet(legacy_views.WorshipServiceViewSet):
         queryset = WorshipService.objects.filter(
             event__start_date__gte=three_months_ago,
             event__start_date__lt=date.today(),
-        ).filter(event_visibility_q(request.user)).select_related('event', 'event__site').distinct()
+            event_id__in=_visible_event_ids(request.user),
+        ).select_related('event', 'event__site').distinct()
         serializer = WorshipServiceListSerializer(
             queryset, many=True, context={'request': request}
         )
