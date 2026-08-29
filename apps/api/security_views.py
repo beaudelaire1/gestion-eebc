@@ -2,12 +2,14 @@
 from datetime import date, timedelta
 
 from django.shortcuts import get_object_or_404
+from rest_framework import serializers
 from rest_framework.decorators import action
-from rest_framework.permissions import BasePermission
+from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 
 from apps.core.security import can_view_sensitive_member_data, event_visibility_q
 from apps.events.models import Event, EventRegistration
+from apps.members.models import Member
 from apps.worship.models import WorshipService
 
 from . import views as legacy_views
@@ -18,16 +20,25 @@ def _visible_event_ids(user):
     return Event.objects.filter(event_visibility_q(user)).values_list('pk', flat=True)
 
 
-class CanReadSensitiveMembers(BasePermission):
-    message = 'Accès aux données détaillées des membres non autorisé.'
+class SafeMemberDirectorySerializer(serializers.ModelSerializer):
+    """Non-sensitive member identity fields for the ordinary mobile directory."""
 
-    def has_permission(self, request, view):
-        return can_view_sensitive_member_data(request.user)
+    class Meta:
+        model = Member
+        fields = ('id', 'member_id', 'first_name', 'last_name', 'photo', 'site')
+        read_only_fields = fields
 
 
 class SecureMemberViewSet(legacy_views.MemberViewSet):
-    """The full member directory is staff data, not a generic authenticated API."""
-    permission_classes = [CanReadSensitiveMembers]
+    """Keep a useful directory while reserving personal details for staff."""
+    permission_classes = [IsAuthenticated]
+    # Never allow phone/email as a search oracle for ordinary API consumers.
+    search_fields = ['first_name', 'last_name']
+
+    def get_serializer_class(self):
+        if can_view_sensitive_member_data(self.request.user):
+            return super().get_serializer_class()
+        return SafeMemberDirectorySerializer
 
 
 class SecureEventViewSet(legacy_views.EventViewSet):
