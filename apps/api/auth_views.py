@@ -7,7 +7,6 @@ from django.contrib.auth import get_user_model
 from django.contrib.auth.password_validation import validate_password
 from django.core import signing
 from django.core.exceptions import ValidationError as DjangoValidationError
-from django.utils import timezone
 from rest_framework import status
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
@@ -75,7 +74,8 @@ class CustomTokenObtainPairView(APIView):
             }, status=status.HTTP_403_FORBIDDEN)
 
         if user.must_change_password:
-            # Never mint a normal access/refresh token for a temporary password.
+            # Compatibility: keep the existing 200/action-required response shape,
+            # but never mint access/refresh tokens for the temporary password.
             return Response({
                 'success': False,
                 'error': {
@@ -83,10 +83,11 @@ class CustomTokenObtainPairView(APIView):
                     'message': 'Le mot de passe temporaire doit être remplacé avant connexion.',
                 },
                 'data': {
+                    'must_change_password': True,
                     'password_change_required': True,
                     'password_change_challenge': _password_change_challenge(user),
                 },
-            }, status=status.HTTP_403_FORBIDDEN)
+            }, status=status.HTTP_200_OK)
 
         if user.two_factor_enabled:
             code = str(request.data.get('two_factor_code') or '').strip()
@@ -154,7 +155,6 @@ class InitialPasswordChangeView(APIView):
         user.save(update_fields=['password', 'must_change_password'])
         revoke_user_refresh_tokens(user)
 
-        # MFA accounts must authenticate again with password + TOTP. No token is minted here.
         if user.two_factor_enabled:
             return Response({
                 'success': True,
@@ -219,7 +219,6 @@ class ChangePasswordView(APIView):
         user.save(update_fields=['password', 'must_change_password'])
         revoke_user_refresh_tokens(user)
 
-        # New tokens are created only after all old refresh tokens were blacklisted.
         return Response({
             'success': True,
             'message': 'Mot de passe modifié avec succès',
