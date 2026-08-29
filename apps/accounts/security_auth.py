@@ -2,9 +2,11 @@
 from __future__ import annotations
 
 import hashlib
+from datetime import timedelta
 
 from django.contrib.auth import authenticate
 from django.core.cache import cache
+from django.utils import timezone
 
 from apps.core.security import get_trusted_client_ip
 from .models import User
@@ -12,6 +14,7 @@ from .models import User
 WINDOW_SECONDS = 15 * 60
 MAX_ACCOUNT_IP_FAILURES = 8
 MAX_IP_FAILURES = 30
+TELEMETRY_FAILURE_THRESHOLD = 5
 
 
 def _digest(value: str) -> str:
@@ -30,7 +33,6 @@ def _get_count(key: str) -> int:
 
 
 def _increment(key: str) -> int:
-    # cache.add + incr is atomic on Redis and degrades safely on supported caches.
     if cache.add(key, 1, timeout=WINDOW_SECONDS):
         return 1
     try:
@@ -44,9 +46,13 @@ def _increment(key: str) -> int:
 def secure_authenticate_user(cls, username: str, password: str, request=None):
     """Drop-in classmethod for AuthenticationService.authenticate_user.
 
-    Failures are scoped to source IP + account instead of writing a global lock
-    on the User row. An anonymous attacker can therefore throttle only their own
-    source, not disable a known pastor/admin account for everyone.
+    Effective throttling is scoped to source IP + account. The legacy
+    ``failed_login_attempts``/``locked_until`` fields are retained as operator
+    telemetry for automated abuse, but automated failures do not globally block
+    a legitimate login from another source.
+
+    A future ``locked_until`` with zero failed attempts is treated as an
+    explicit/manual account lock and remains globally effective.
     """
     username = (username or '').strip()
     ip = get_trusted_client_ip(request) if request is not None else 'unknown'
@@ -63,6 +69,15 @@ def secure_authenticate_user(cls, username: str, password: str, request=None):
         _increment(identity_key)
         return None, 'Nom d’utilisateur ou mot de passe incorrect.'
 
+    # Preserve the ability for an administrator/operator to explicitly lock an
+    # account without allowing anonymous failed attempts to create that lock.
+    if (
+        user.locked_until
+        and timezone.now() < user.locked_until
+        and user.failed_login_attempts == 0
+    ):
+        return None, 'Compte temporairement verrouillé.'
+
     authenticated_user = authenticate(
         request=request,
         username=username,
@@ -70,11 +85,17 @@ def secure_authenticate_user(cls, username: str, password: str, request=None):
     )
     if authenticated_user is None:
         _increment(ip_key)
-        _increment(identity_key)
+        scoped_failures = _increment(identity_key)
+
+        # Compatibility/telemetry only. This state is not consulted for
+        # automated lockout because failed_login_attempts > 0.
+        user.failed_login_attempts = min(scoped_failures, MAX_ACCOUNT_IP_FAILURES)
+        if scoped_failures >= TELEMETRY_FAILURE_THRESHOLD:
+            user.locked_until = timezone.now() + timedelta(seconds=WINDOW_SECONDS)
+        user.save(update_fields=['failed_login_attempts', 'locked_until'])
         return None, 'Nom d’utilisateur ou mot de passe incorrect.'
 
     cache.delete(identity_key)
-    # Remove legacy global locks/counters on a successful proof of password.
     if user.failed_login_attempts or user.locked_until:
         user.failed_login_attempts = 0
         user.locked_until = None
