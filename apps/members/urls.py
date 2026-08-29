@@ -1,7 +1,6 @@
 from django.urls import path
 from . import views
 from . import security_views as sv
-from . import family_views
 from . import admin_views
 
 app_name = 'members'
@@ -20,12 +19,12 @@ urlpatterns = [
     path('map/data/', admin_views.members_map_data, name='map_data'),
 
     # Familles
-    path('families/', family_views.family_list, name='family_list'),
-    path('families/create/', family_views.family_create, name='family_create'),
-    path('families/<int:pk>/', family_views.family_detail, name='family_detail'),
-    path('families/<int:pk>/edit/', family_views.family_edit, name='family_edit'),
-    path('families/<int:pk>/add-member/', family_views.family_add_member, name='family_add_member'),
-    path('api/member/<int:pk>/data/', family_views.member_api_data, name='member_api_data'),
+    path('families/', sv.family_list, name='family_list'),
+    path('families/create/', sv.family_create, name='family_create'),
+    path('families/<int:pk>/', sv.family_detail, name='family_detail'),
+    path('families/<int:pk>/edit/', sv.family_edit, name='family_edit'),
+    path('families/<int:pk>/add-member/', sv.family_add_member, name='family_add_member'),
+    path('api/member/<int:pk>/data/', sv.member_api_data, name='member_api_data'),
 
     # Événements de vie (Pastoral CRM)
     path('life-events/', views.life_event_list, name='life_events'),
