@@ -94,7 +94,7 @@
                         <i class="bi bi-calendar3 nav-link__icon"></i>
                         <span>Calendrier</span>
                     </a>
-                    <a class="nav-link" href="{% url 'public:home' %}" target="_blank">
+                    <a class="nav-link" href="{% url 'public:home' %}" target="_blank" rel="noopener noreferrer">
                         <i class="bi bi-globe nav-link__icon"></i>
                         <span>Site public <i class="bi bi-box-arrow-up-right ms-1" style="font-size: 0.8em;"></i></span>
                     </a>
@@ -186,7 +186,7 @@
                         <i class="bi bi-graph-up-arrow nav-link__icon"></i>
                         <span>Prévisionnel</span>
                     </a>
-                    <a class="nav-link" href="{% url 'public:donation' %}" target="_blank">
+                    <a class="nav-link" href="{% url 'public:donation' %}" target="_blank" rel="noopener noreferrer">
                         <i class="bi bi-heart-fill nav-link__icon" style="color: #EC4899;"></i>
                         <span>Faire un don <i class="bi bi-box-arrow-up-right ms-1" style="font-size: 0.7em;"></i></span>
                     </a>
@@ -511,7 +511,7 @@
                         <li><a class="dropdown-item" href="{% url 'accounts:profile' %}">
                                 <i class="bi bi-person me-2"></i>Mon profil
                             </a></li>
-                        <li><a class="dropdown-item" href="{% url 'public:home' %}" target="_blank">
+                        <li><a class="dropdown-item" href="{% url 'public:home' %}" target="_blank" rel="noopener noreferrer">
                                 <i class="bi bi-globe me-2"></i>Site public
                             </a></li>
                         <li><a class="dropdown-item" href="{% url 'admin:index' %}">
