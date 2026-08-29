@@ -15,16 +15,12 @@ from django.shortcuts import redirect, render
 from django.urls import reverse
 from django.views import View
 
-from apps.core.security import (
-    can_assign_role,
-    can_manage_account,
-    safe_next_url,
-    user_has_any_role,
-)
+from apps.core.security import can_assign_role, can_manage_account, safe_next_url
 from apps.core.utils.recaptcha import validate_recaptcha
 from apps.core.utils.turnstile import validate_turnstile_with_ip
 
 from . import views as legacy_views
+from .security_auth import verify_mfa_challenge
 from .services import AuthenticationService
 
 User = get_user_model()
@@ -54,18 +50,29 @@ def secure_login_view(request):
         if turnstile_site_key:
             captcha_valid, captcha_error = validate_turnstile_with_ip(request)
         elif getattr(settings, 'RECAPTCHA_PUBLIC_KEY', ''):
-            captcha_valid, captcha_error = validate_recaptcha(request.POST.get('recaptcha_token'))
+            captcha_valid, captcha_error = validate_recaptcha(
+                request.POST.get('recaptcha_token')
+            )
         elif settings.DEBUG:
             captcha_valid = True
         else:
             captcha_error = 'Configuration de sécurité manquante.'
 
         if not captcha_valid:
-            messages.error(request, captcha_error or 'Échec de validation de sécurité.')
-            return render(request, 'accounts/login.html', {
-                'recaptcha_site_key': getattr(settings, 'RECAPTCHA_PUBLIC_KEY', ''),
-                'turnstile_site_key': turnstile_site_key,
-            })
+            messages.error(
+                request,
+                captcha_error or 'Échec de validation de sécurité.',
+            )
+            return render(
+                request,
+                'accounts/login.html',
+                {
+                    'recaptcha_site_key': getattr(
+                        settings, 'RECAPTCHA_PUBLIC_KEY', ''
+                    ),
+                    'turnstile_site_key': turnstile_site_key,
+                },
+            )
 
         if username and password:
             user, error_message = AuthenticationService.authenticate_user(
@@ -76,7 +83,8 @@ def secure_login_view(request):
             if user is not None:
                 if user.must_change_password:
                     token = AuthenticationService.generate_password_change_token(user)
-                    return redirect(f"{reverse('accounts:first_login_password_change')}?token={token}")
+                    change_url = reverse('accounts:first_login_password_change')
+                    return redirect(f'{change_url}?token={token}')
 
                 requested_next = request.GET.get('next') or request.POST.get('next')
                 next_url = safe_next_url(
@@ -98,10 +106,14 @@ def secure_login_view(request):
 
             messages.error(request, error_message)
 
-    return render(request, 'accounts/login.html', {
-        'recaptcha_site_key': getattr(settings, 'RECAPTCHA_PUBLIC_KEY', ''),
-        'turnstile_site_key': getattr(settings, 'TURNSTILE_SITE_KEY', ''),
-    })
+    return render(
+        request,
+        'accounts/login.html',
+        {
+            'recaptcha_site_key': getattr(settings, 'RECAPTCHA_PUBLIC_KEY', ''),
+            'turnstile_site_key': getattr(settings, 'TURNSTILE_SITE_KEY', ''),
+        },
+    )
 
 
 class SecureTwoFactorVerifyView(View):
@@ -121,9 +133,16 @@ class SecureTwoFactorVerifyView(View):
         code = request.POST.get('code', '').strip()
         attempts = int(request.session.get('two_factor_attempts', 0))
         if attempts >= self.max_attempts:
-            for key in ('two_factor_user_id', 'two_factor_next', 'two_factor_attempts'):
+            for key in (
+                'two_factor_user_id',
+                'two_factor_next',
+                'two_factor_attempts',
+            ):
                 request.session.pop(key, None)
-            messages.error(request, 'Trop de tentatives de double authentification. Reconnectez-vous.')
+            messages.error(
+                request,
+                'Trop de tentatives de double authentification. Reconnectez-vous.',
+            )
             return redirect('accounts:login')
 
         try:
@@ -133,14 +152,18 @@ class SecureTwoFactorVerifyView(View):
             return redirect('accounts:login')
 
         if not user.two_factor_enabled:
-            # Security state changed while challenge was pending: restart authentication.
-            for key in ('two_factor_user_id', 'two_factor_next', 'two_factor_attempts'):
+            for key in (
+                'two_factor_user_id',
+                'two_factor_next',
+                'two_factor_attempts',
+            ):
                 request.session.pop(key, None)
             return redirect('accounts:login')
 
-        if not user.verify_two_factor_code(code):
+        valid, error_message = verify_mfa_challenge(user, code, request=request)
+        if not valid:
             request.session['two_factor_attempts'] = attempts + 1
-            messages.error(request, 'Code invalide. Veuillez réessayer.')
+            messages.error(request, error_message)
             return redirect('accounts:two_factor_verify')
 
         next_url = safe_next_url(
@@ -150,7 +173,10 @@ class SecureTwoFactorVerifyView(View):
         )
         request.session.pop('two_factor_user_id', None)
         request.session.pop('two_factor_attempts', None)
-        backend = settings.AUTHENTICATION_BACKENDS[0] if getattr(settings, 'AUTHENTICATION_BACKENDS', None) else 'django.contrib.auth.backends.ModelBackend'
+        if getattr(settings, 'AUTHENTICATION_BACKENDS', None):
+            backend = settings.AUTHENTICATION_BACKENDS[0]
+        else:
+            backend = 'django.contrib.auth.backends.ModelBackend'
         login(request, user, backend=backend)
         return redirect(next_url)
 
@@ -160,28 +186,25 @@ def secure_create_user_view(request):
     if request.method == 'POST':
         roles = _posted_roles(request)
         if any(not can_assign_role(request.user, role) for role in roles):
-            return _forbid("Seul un administrateur peut attribuer le rôle administrateur.")
+            return _forbid(
+                'Seul un administrateur peut attribuer un rôle privilégié.'
+            )
     return legacy_views.create_user_view(request)
-
-
-@login_required
-def secure_user_bulk_import_view(request):
-    # A spreadsheet can carry a per-row role column. Restrict this high-impact
-    # operation to administrators instead of trying to sanitize an opaque file.
-    if not user_has_any_role(request.user, 'admin'):
-        return _forbid("L'import de comptes est réservé aux administrateurs.")
-    return legacy_views.user_bulk_import_view(request)
 
 
 @login_required
 def secure_user_update_view(request, user_id):
     target = User.objects.filter(pk=user_id).first()
     if not can_manage_account(request.user, target):
-        return _forbid("Un compte non administrateur ne peut pas modifier un administrateur.")
+        return _forbid(
+            'Seul un administrateur peut modifier un compte privilégié.'
+        )
     if request.method == 'POST':
         roles = _posted_roles(request)
         if any(not can_assign_role(request.user, role) for role in roles):
-            return _forbid("Seul un administrateur peut attribuer le rôle administrateur.")
+            return _forbid(
+                'Seul un administrateur peut attribuer un rôle privilégié.'
+            )
     return legacy_views.user_update_view(request, user_id)
 
 
@@ -189,7 +212,9 @@ def secure_user_update_view(request, user_id):
 def secure_user_delete_view(request, user_id):
     target = User.objects.filter(pk=user_id).first()
     if not can_manage_account(request.user, target):
-        return _forbid("Seul un administrateur peut désactiver ou supprimer un administrateur.")
+        return _forbid(
+            'Seul un administrateur peut désactiver ou supprimer un compte privilégié.'
+        )
     return legacy_views.user_delete_view(request, user_id)
 
 
@@ -197,7 +222,9 @@ def secure_user_delete_view(request, user_id):
 def secure_user_activate_view(request, user_id):
     target = User.objects.filter(pk=user_id).first()
     if not can_manage_account(request.user, target):
-        return _forbid("Seul un administrateur peut réactiver un administrateur.")
+        return _forbid(
+            'Seul un administrateur peut réactiver un compte privilégié.'
+        )
     return legacy_views.user_activate_view(request, user_id)
 
 
@@ -205,7 +232,9 @@ def secure_user_activate_view(request, user_id):
 def secure_reset_user_password(request, user_id):
     target = User.objects.filter(pk=user_id).first()
     if not can_manage_account(request.user, target):
-        return _forbid("Seul un administrateur peut réinitialiser le mot de passe d'un administrateur.")
+        return _forbid(
+            'Seul un administrateur peut réinitialiser un compte privilégié.'
+        )
     return legacy_views.reset_user_password(request, user_id)
 
 
@@ -213,5 +242,7 @@ def secure_reset_user_password(request, user_id):
 def secure_resend_invitation(request, user_id):
     target = User.objects.filter(pk=user_id).first()
     if not can_manage_account(request.user, target):
-        return _forbid("Seul un administrateur peut agir sur un compte administrateur.")
+        return _forbid(
+            'Seul un administrateur peut agir sur un compte privilégié.'
+        )
     return legacy_views.resend_invitation(request, user_id)
