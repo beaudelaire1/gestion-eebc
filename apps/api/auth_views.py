@@ -13,6 +13,7 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework_simplejwt.tokens import RefreshToken
 
+from apps.accounts.security_auth import verify_mfa_challenge
 from apps.accounts.services import AuthenticationService
 from apps.core.security import revoke_user_refresh_tokens
 from .serializers import UserSerializer
@@ -45,16 +46,20 @@ def _password_change_challenge(user):
 
 class CustomTokenObtainPairView(APIView):
     """Secure login endpoint: password -> mandatory change -> MFA -> tokens."""
+
     permission_classes = [AllowAny]
 
     def post(self, request, *args, **kwargs):
         username = str(request.data.get('username') or '').strip()
         password = request.data.get('password') or ''
         if not username or not password:
-            return Response({
-                'success': False,
-                'error': {'code': 400, 'message': 'Identifiants requis'},
-            }, status=status.HTTP_400_BAD_REQUEST)
+            return Response(
+                {
+                    'success': False,
+                    'error': {'code': 400, 'message': 'Identifiants requis'},
+                },
+                status=status.HTTP_400_BAD_REQUEST,
+            )
 
         user, error_message = AuthenticationService.authenticate_user(
             username=username,
@@ -62,55 +67,84 @@ class CustomTokenObtainPairView(APIView):
             request=request,
         )
         if user is None:
-            return Response({
-                'success': False,
-                'error': {'code': 401, 'message': error_message or 'Identifiants invalides'},
-            }, status=status.HTTP_401_UNAUTHORIZED)
+            return Response(
+                {
+                    'success': False,
+                    'error': {
+                        'code': 401,
+                        'message': error_message or 'Identifiants invalides',
+                    },
+                },
+                status=status.HTTP_401_UNAUTHORIZED,
+            )
 
         if not user.is_active:
-            return Response({
-                'success': False,
-                'error': {'code': 403, 'message': 'Compte désactivé'},
-            }, status=status.HTTP_403_FORBIDDEN)
+            return Response(
+                {
+                    'success': False,
+                    'error': {'code': 403, 'message': 'Compte désactivé'},
+                },
+                status=status.HTTP_403_FORBIDDEN,
+            )
 
         if user.must_change_password:
-            # Compatibility: keep the existing 200/action-required response shape,
+            # Keep the existing action-required response shape for compatibility,
             # but never mint access/refresh tokens for the temporary password.
-            return Response({
-                'success': False,
-                'error': {
-                    'code': 'password_change_required',
-                    'message': 'Le mot de passe temporaire doit être remplacé avant connexion.',
+            return Response(
+                {
+                    'success': False,
+                    'error': {
+                        'code': 'password_change_required',
+                        'message': (
+                            'Le mot de passe temporaire doit être remplacé '
+                            'avant connexion.'
+                        ),
+                    },
+                    'data': {
+                        'must_change_password': True,
+                        'password_change_required': True,
+                        'password_change_challenge': _password_change_challenge(user),
+                    },
                 },
-                'data': {
-                    'must_change_password': True,
-                    'password_change_required': True,
-                    'password_change_challenge': _password_change_challenge(user),
-                },
-            }, status=status.HTTP_200_OK)
+                status=status.HTTP_200_OK,
+            )
 
         if user.two_factor_enabled:
             code = str(request.data.get('two_factor_code') or '').strip()
             if not code:
-                return Response({
-                    'success': False,
-                    'error': {
-                        'code': 'mfa_required',
-                        'message': 'Un code de double authentification est requis.',
+                return Response(
+                    {
+                        'success': False,
+                        'error': {
+                            'code': 'mfa_required',
+                            'message': (
+                                'Un code de double authentification est requis.'
+                            ),
+                        },
+                        'data': {'mfa_required': True},
                     },
-                    'data': {'mfa_required': True},
-                }, status=428)
-            if not user.verify_two_factor_code(code):
-                return Response({
-                    'success': False,
-                    'error': {'code': 'mfa_invalid', 'message': 'Code de double authentification invalide.'},
-                }, status=status.HTTP_401_UNAUTHORIZED)
+                    status=428,
+                )
+
+            valid, mfa_error = verify_mfa_challenge(user, code, request=request)
+            if not valid:
+                return Response(
+                    {
+                        'success': False,
+                        'error': {
+                            'code': 'mfa_invalid',
+                            'message': mfa_error,
+                        },
+                    },
+                    status=status.HTTP_401_UNAUTHORIZED,
+                )
 
         return Response({'success': True, 'data': _issue_tokens(user)})
 
 
 class InitialPasswordChangeView(APIView):
     """Replace a temporary password using a short-lived, password-bound challenge."""
+
     permission_classes = [AllowAny]
 
     def post(self, request):
@@ -118,10 +152,18 @@ class InitialPasswordChangeView(APIView):
         new_password = request.data.get('new_password') or ''
         confirm_password = request.data.get('confirm_password') or ''
         if not challenge or not new_password or new_password != confirm_password:
-            return Response({
-                'success': False,
-                'error': {'code': 400, 'message': 'Challenge ou confirmation de mot de passe invalide.'},
-            }, status=status.HTTP_400_BAD_REQUEST)
+            return Response(
+                {
+                    'success': False,
+                    'error': {
+                        'code': 400,
+                        'message': (
+                            'Challenge ou confirmation de mot de passe invalide.'
+                        ),
+                    },
+                },
+                status=status.HTTP_400_BAD_REQUEST,
+            )
 
         try:
             payload = signing.loads(
@@ -131,24 +173,43 @@ class InitialPasswordChangeView(APIView):
             )
             user = User.objects.get(pk=payload.get('user_id'), is_active=True)
         except (signing.BadSignature, signing.SignatureExpired, User.DoesNotExist):
-            return Response({
-                'success': False,
-                'error': {'code': 401, 'message': 'Challenge expiré ou invalide.'},
-            }, status=status.HTTP_401_UNAUTHORIZED)
+            return Response(
+                {
+                    'success': False,
+                    'error': {
+                        'code': 401,
+                        'message': 'Challenge expiré ou invalide.',
+                    },
+                },
+                status=status.HTTP_401_UNAUTHORIZED,
+            )
 
         if payload.get('password_hash') != user.password or not user.must_change_password:
-            return Response({
-                'success': False,
-                'error': {'code': 401, 'message': 'Challenge déjà utilisé ou invalide.'},
-            }, status=status.HTTP_401_UNAUTHORIZED)
+            return Response(
+                {
+                    'success': False,
+                    'error': {
+                        'code': 401,
+                        'message': 'Challenge déjà utilisé ou invalide.',
+                    },
+                },
+                status=status.HTTP_401_UNAUTHORIZED,
+            )
 
         try:
             validate_password(new_password, user=user)
         except DjangoValidationError as exc:
-            return Response({
-                'success': False,
-                'error': {'code': 400, 'message': 'Mot de passe insuffisant.', 'details': exc.messages},
-            }, status=status.HTTP_400_BAD_REQUEST)
+            return Response(
+                {
+                    'success': False,
+                    'error': {
+                        'code': 400,
+                        'message': 'Mot de passe insuffisant.',
+                        'details': exc.messages,
+                    },
+                },
+                status=status.HTTP_400_BAD_REQUEST,
+            )
 
         user.set_password(new_password)
         user.must_change_password = False
@@ -156,17 +217,24 @@ class InitialPasswordChangeView(APIView):
         revoke_user_refresh_tokens(user)
 
         if user.two_factor_enabled:
-            return Response({
-                'success': True,
-                'message': 'Mot de passe modifié. Double authentification requise pour terminer la connexion.',
-                'data': {'mfa_required': True},
-            })
+            return Response(
+                {
+                    'success': True,
+                    'message': (
+                        'Mot de passe modifié. Double authentification requise '
+                        'pour terminer la connexion.'
+                    ),
+                    'data': {'mfa_required': True},
+                }
+            )
 
-        return Response({
-            'success': True,
-            'message': 'Mot de passe modifié avec succès.',
-            'data': _issue_tokens(user),
-        })
+        return Response(
+            {
+                'success': True,
+                'message': 'Mot de passe modifié avec succès.',
+                'data': _issue_tokens(user),
+            }
+        )
 
 
 class LogoutView(APIView):
@@ -179,10 +247,13 @@ class LogoutView(APIView):
         try:
             RefreshToken(refresh_token).blacklist()
         except Exception:
-            return Response({
-                'success': False,
-                'error': {'code': 400, 'message': 'Token invalide'},
-            }, status=status.HTTP_400_BAD_REQUEST)
+            return Response(
+                {
+                    'success': False,
+                    'error': {'code': 400, 'message': 'Token invalide'},
+                },
+                status=status.HTTP_400_BAD_REQUEST,
+            )
         return Response({'success': True, 'message': 'Déconnexion réussie'})
 
 
@@ -196,31 +267,54 @@ class ChangePasswordView(APIView):
         confirm_password = request.data.get('confirm_password') or ''
 
         if not user.check_password(old_password):
-            return Response({
-                'success': False,
-                'error': {'code': 400, 'message': 'Mot de passe actuel incorrect.'},
-            }, status=status.HTTP_400_BAD_REQUEST)
+            return Response(
+                {
+                    'success': False,
+                    'error': {
+                        'code': 400,
+                        'message': 'Mot de passe actuel incorrect.',
+                    },
+                },
+                status=status.HTTP_400_BAD_REQUEST,
+            )
         if not new_password or new_password != confirm_password:
-            return Response({
-                'success': False,
-                'error': {'code': 400, 'message': 'Les nouveaux mots de passe ne correspondent pas.'},
-            }, status=status.HTTP_400_BAD_REQUEST)
+            return Response(
+                {
+                    'success': False,
+                    'error': {
+                        'code': 400,
+                        'message': (
+                            'Les nouveaux mots de passe ne correspondent pas.'
+                        ),
+                    },
+                },
+                status=status.HTTP_400_BAD_REQUEST,
+            )
 
         try:
             validate_password(new_password, user=user)
         except DjangoValidationError as exc:
-            return Response({
-                'success': False,
-                'error': {'code': 400, 'message': 'Mot de passe insuffisant.', 'details': exc.messages},
-            }, status=status.HTTP_400_BAD_REQUEST)
+            return Response(
+                {
+                    'success': False,
+                    'error': {
+                        'code': 400,
+                        'message': 'Mot de passe insuffisant.',
+                        'details': exc.messages,
+                    },
+                },
+                status=status.HTTP_400_BAD_REQUEST,
+            )
 
         user.set_password(new_password)
         user.must_change_password = False
         user.save(update_fields=['password', 'must_change_password'])
         revoke_user_refresh_tokens(user)
 
-        return Response({
-            'success': True,
-            'message': 'Mot de passe modifié avec succès',
-            'data': _issue_tokens(user),
-        })
+        return Response(
+            {
+                'success': True,
+                'message': 'Mot de passe modifié avec succès',
+                'data': _issue_tokens(user),
+            }
+        )
