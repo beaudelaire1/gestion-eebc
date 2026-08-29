@@ -1,6 +1,10 @@
 /**
- * Bande de verset animée avec texte défilant
- * Sélection aléatoire de versets bibliques
+ * Bande de verset biblique — version accessible
+ * ---------------------------------------------
+ * - Texte affiché intégralement dès le chargement (lisible par les lecteurs d'écran)
+ * - Rotation douce en fondu toutes les 30 secondes (pas de défilement type "marquee")
+ * - Désactivée si l'utilisateur préfère un mouvement réduit (prefers-reduced-motion)
+ * - Pas d'aria-live : le changement automatique ne doit pas interrompre la lecture
  */
 
 class AnimatedVerseBanner {
@@ -67,108 +71,92 @@ class AnimatedVerseBanner {
                 reference: "Apocalypse 3:20"
             }
         ];
-        
-        this.currentVerse = null;
+
+        this.rotationIntervalMs = 30000; // 30 s entre chaque verset
+        this.fadeDurationMs = 400;
+        this.timer = null;
         this.bannerElement = null;
+        this.reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
         this.init();
     }
 
     init() {
-        this.selectRandomVerse();
-        this.createBanner();
-        this.startAnimation();
-    }
-
-    selectRandomVerse() {
-        const randomIndex = Math.floor(Math.random() * this.verses.length);
-        this.currentVerse = this.verses[randomIndex];
-    }
-
-    createBanner() {
-        // Chercher la bannière existante dans le HTML
         this.bannerElement = document.querySelector('.animated-verse-banner');
-        
-        if (!this.bannerElement) {
-            // Si aucune bannière n'existe, en créer une (fallback)
-            this.bannerElement = document.createElement('div');
-            this.bannerElement.className = 'animated-verse-banner';
-            
-            // Insérer au début du premier formulaire trouvé
-            const form = document.querySelector('form[method="post"]');
-            if (form) {
-                form.parentNode.insertBefore(this.bannerElement, form);
-            }
-        }
-        
-        // Mettre à jour le contenu de la bannière existante avec le texte défilant
-        this.updateBannerContent();
-    }
-    
-    updateBannerContent() {
         if (!this.bannerElement) return;
-        
-        const fullText = `${this.currentVerse.text} — ${this.currentVerse.reference}`;
-        
-        this.bannerElement.innerHTML = `
-            <div class="verse-scroll-container">
-                <div class="verse-scroll-text">${fullText}</div>
-            </div>
-        `;
-    }
 
-    startAnimation() {
-        const scrollText = this.bannerElement.querySelector('.verse-scroll-text');
-        if (scrollText) {
-            // Calculer la largeur du texte pour l'animation
-            const textWidth = scrollText.scrollWidth;
-            const containerWidth = this.bannerElement.offsetWidth;
-            
-            // Définir la durée de l'animation basée sur la longueur du texte
-            const duration = Math.max(15, textWidth / 50); // Minimum 15s, ajusté selon la longueur
-            
-            scrollText.style.animationDuration = `${duration}s`;
-            scrollText.classList.add('scrolling');
+        // Conteneur texte : simple paragraphe, pas de zone défilante
+        this.bannerElement.innerHTML = '<p class="verse-banner-text"></p>';
+        this.textEl = this.bannerElement.querySelector('.verse-banner-text');
+
+        this.showVerse(this.randomVerse(), false);
+
+        // Rotation automatique seulement si le mouvement est accepté
+        if (!this.reducedMotion) {
+            this.startRotation();
+            // Pause quand l'onglet est masqué (économie + stabilité)
+            document.addEventListener('visibilitychange', () => {
+                if (document.hidden) {
+                    this.stopRotation();
+                } else {
+                    this.startRotation();
+                }
+            });
         }
     }
 
-    // Changer de verset (peut être appelé périodiquement)
+    randomVerse() {
+        return this.verses[Math.floor(Math.random() * this.verses.length)];
+    }
+
+    formatVerse(verse) {
+        return `\u00AB\u00A0${verse.text}\u00A0\u00BB — ${verse.reference}`;
+    }
+
+    showVerse(verse, withFade = true) {
+        if (!this.textEl) return;
+        if (!withFade || this.reducedMotion) {
+            this.textEl.textContent = this.formatVerse(verse);
+            return;
+        }
+        // Fondu sortant puis entrant
+        this.textEl.classList.add('verse-banner-text--hidden');
+        window.setTimeout(() => {
+            this.textEl.textContent = this.formatVerse(verse);
+            this.textEl.classList.remove('verse-banner-text--hidden');
+        }, this.fadeDurationMs);
+    }
+
+    startRotation() {
+        this.stopRotation();
+        this.timer = window.setInterval(() => this.showVerse(this.randomVerse()), this.rotationIntervalMs);
+    }
+
+    stopRotation() {
+        if (this.timer) {
+            window.clearInterval(this.timer);
+            this.timer = null;
+        }
+    }
+
+    // Compatibilité ascendante : changeVerse() était exposée pour les tests
     changeVerse() {
-        this.selectRandomVerse();
-        this.updateBannerContent();
-        
-        // Redémarrer l'animation
-        const scrollText = this.bannerElement.querySelector('.verse-scroll-text');
-        if (scrollText) {
-            scrollText.classList.remove('scrolling');
-            setTimeout(() => {
-                this.startAnimation();
-            }, 100);
-        }
+        this.showVerse(this.randomVerse());
     }
 
-    // Méthode pour changer de verset périodiquement
-    startPeriodicChange(intervalMinutes = 2) {
-        setInterval(() => {
-            this.changeVerse();
-        }, intervalMinutes * 60 * 1000);
+    startPeriodicChange() {
+        // Ancienne API (minutes) — déléguée à la rotation standard
+        this.startRotation();
     }
 }
 
-// Initialiser la bannière quand le DOM est chargé
-document.addEventListener('DOMContentLoaded', function() {
-    // Vérifier s'il y a une bannière de verset sur la page
+// Initialisation
+document.addEventListener('DOMContentLoaded', function () {
     if (document.querySelector('.animated-verse-banner')) {
-        const verseBanner = new AnimatedVerseBanner();
-        
-        // Changer de verset toutes les 2 minutes
-        verseBanner.startPeriodicChange(2);
-        
-        // Exposer globalement pour les tests
-        window.verseBanner = verseBanner;
+        window.verseBanner = new AnimatedVerseBanner();
     }
 });
 
-// Fonction pour changer manuellement de verset (pour les tests)
+// Fonction utilitaire conservée pour les tests existants
 function changeVerse() {
     if (window.verseBanner) {
         window.verseBanner.changeVerse();

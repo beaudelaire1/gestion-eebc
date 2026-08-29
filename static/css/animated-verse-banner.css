@@ -1,138 +1,61 @@
 /* =============================================================================
-   BANDE DE VERSET ANIMÉE - 25px de hauteur avec texte défilant
+   BANDE DE VERSET BIBLIQUE — sobre, lisible et accessible
+   - Pas de défilement (marquee) : le texte est affiché en entier
+   - Rotation en fondu gérée par animated-verse-banner.js
+   - Animations neutralisées si prefers-reduced-motion
    ============================================================================= */
 
 .animated-verse-banner {
-    height: 25px;
+    min-height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
     background: linear-gradient(90deg, #0A36FF 0%, #3D5FFF 50%, #0A36FF 100%);
-    background-size: 200% 100%;
-    animation: gradientShift 3s ease-in-out infinite;
-    overflow: hidden;
     position: relative;
     margin-bottom: 1rem;
-    border-radius: 2px;
-    box-shadow: 0 2px 8px rgba(10, 54, 255, 0.3);
+    border-radius: 6px;
+    box-shadow: 0 2px 8px rgba(10, 54, 255, 0.25);
+    padding: 0.5rem 1rem;
 }
 
-.verse-scroll-container {
-    height: 100%;
-    width: 100%;
-    position: relative;
-    overflow: hidden;
-}
-
-.verse-scroll-text {
-    position: absolute;
-    top: 50%;
-    left: 100%;
-    transform: translateY(-50%);
-    white-space: nowrap;
-    color: white;
-    font-size: 12px;
+.verse-banner-text {
+    margin: 0;
+    color: #ffffff;
+    font-size: 0.875rem;
     font-weight: 500;
     font-family: 'Poppins', sans-serif;
-    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
-    line-height: 1;
-    padding: 0 20px;
+    text-align: center;
+    line-height: 1.45;
+    /* Fondu doux lors de la rotation */
+    opacity: 1;
+    transition: opacity 0.4s ease;
 }
 
-.verse-scroll-text.scrolling {
-    animation: scrollText linear infinite;
+.verse-banner-text--hidden {
+    opacity: 0;
 }
 
-/* Animation du dégradé de fond */
-@keyframes gradientShift {
-    0%, 100% {
-        background-position: 0% 50%;
-    }
-    50% {
-        background-position: 100% 50%;
-    }
-}
-
-/* Animation du texte défilant */
-@keyframes scrollText {
-    0% {
-        left: 100%;
-    }
-    100% {
-        left: -100%;
-    }
-}
-
-/* Effet de brillance qui passe sur la bande */
-.animated-verse-banner::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: -100%;
-    width: 100%;
-    height: 100%;
-    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.4), transparent);
-    animation: shine 4s ease-in-out infinite;
-}
-
-@keyframes shine {
-    0% {
-        left: -100%;
-    }
-    50% {
-        left: 100%;
-    }
-    100% {
-        left: 100%;
-    }
-}
-
-/* Variations pour les thèmes sombres */
+/* Variantes pour les thèmes sombres de l'application */
 [data-theme="dark"] .animated-verse-banner,
-[data-theme="darky"] .animated-verse-banner,
 [data-theme="darkly"] .animated-verse-banner,
 [data-theme="cyborg"] .animated-verse-banner,
 [data-theme="slate"] .animated-verse-banner,
 [data-theme="solar"] .animated-verse-banner,
 [data-theme="superhero"] .animated-verse-banner {
     background: linear-gradient(90deg, #3b82f6 0%, #1d4ed8 50%, #3b82f6 100%);
-    box-shadow: 0 2px 8px rgba(59, 130, 246, 0.4);
+    box-shadow: 0 2px 8px rgba(59, 130, 246, 0.35);
 }
 
-/* Responsive - Ajustements pour mobile */
+/* Mouvement réduit : aucune transition */
+@media (prefers-reduced-motion: reduce) {
+    .verse-banner-text {
+        transition: none;
+    }
+}
+
+/* Mobile : taille confortable */
 @media (max-width: 768px) {
-    .verse-scroll-text {
-        font-size: 10px;
-        padding: 0 15px;
-    }
-}
-
-@media (max-width: 480px) {
-    .verse-scroll-text {
-        font-size: 9px;
-        padding: 0 10px;
-    }
-}
-
-/* Animation plus lente sur mobile pour une meilleure lisibilité */
-@media (max-width: 768px) {
-    .verse-scroll-text.scrolling {
-        animation-duration: 25s !important;
-    }
-}
-
-/* Pause de l'animation au survol */
-.animated-verse-banner:hover .verse-scroll-text.scrolling {
-    animation-play-state: paused;
-}
-
-/* Effet de pulsation subtile */
-.animated-verse-banner {
-    animation: gradientShift 3s ease-in-out infinite, pulse 2s ease-in-out infinite alternate;
-}
-
-@keyframes pulse {
-    0% {
-        box-shadow: 0 2px 8px rgba(10, 54, 255, 0.3);
-    }
-    100% {
-        box-shadow: 0 2px 12px rgba(10, 54, 255, 0.5);
+    .verse-banner-text {
+        font-size: 0.8rem;
     }
 }
