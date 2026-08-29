@@ -7,12 +7,13 @@
 (function () {
     'use strict';
 
-    // --- TYPEWRITER VERSE ---
+    // --- VERSET DU HERO — fondu accessible (remplace l'effet "machine à écrire") ---
+    // Le texte complet est présent dans le DOM dès le départ : lisible par les
+    // lecteurs d'écran, sans attente. La rotation se fait en fondu, toutes les 12 s,
+    // et est désactivée si l'utilisateur préfère un mouvement réduit.
     function initTypewriter() {
-        var el = document.querySelector('.verse-typewriter');
-        var textEl = el && el.querySelector('.verse-text');
-        var refEl = el && el.querySelector('.verse-ref');
-        if (!el || !textEl || !refEl) return;
+        var containers = document.querySelectorAll('.verse-typewriter');
+        if (!containers.length) return;
 
         var verses = [
             { text: '\u00ab Car Dieu a tant aim\u00e9 le monde qu\u2019il a donn\u00e9 son Fils unique, afin que quiconque croit en lui ne p\u00e9risse point, mais qu\u2019il ait la vie \u00e9ternelle. \u00bb', ref: '\u2014 Jean 3:16' },
@@ -22,44 +23,38 @@
             { text: '\u00ab Car je connais les projets que j\u2019ai form\u00e9s sur vous, dit l\u2019\u00c9ternel, projets de paix et non de malheur, afin de vous donner un avenir et de l\u2019esp\u00e9rance. \u00bb', ref: '\u2014 J\u00e9r\u00e9mie 29:11' }
         ];
 
+        var reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
         var currentVerse = 0;
 
-        function typeVerse(verse) {
-            textEl.textContent = '';
-            refEl.textContent = '';
-            refEl.style.opacity = '0';
-            var i = 0;
-            var cursor = document.createElement('span');
-            cursor.className = 'typewriter-cursor';
-            textEl.appendChild(cursor);
-
-            var interval = setInterval(function () {
-                if (i < verse.text.length) {
-                    cursor.before(document.createTextNode(verse.text[i]));
-                    i++;
-                } else {
-                    clearInterval(interval);
-                    refEl.textContent = verse.ref;
-                    refEl.style.opacity = '1';
-                    refEl.style.transition = 'opacity 0.6s ease';
-
-                    setTimeout(function () {
-                        cursor.remove();
-                        textEl.style.transition = 'opacity 0.5s ease';
-                        textEl.style.opacity = '0';
-                        refEl.style.opacity = '0';
-
-                        setTimeout(function () {
-                            textEl.style.opacity = '1';
-                            currentVerse = (currentVerse + 1) % verses.length;
-                            typeVerse(verses[currentVerse]);
-                        }, 600);
-                    }, 6000);
-                }
-            }, 40);
+        function render(container, verse) {
+            var textEl = container.querySelector('.verse-text');
+            var refEl = container.querySelector('.verse-ref');
+            if (!textEl || !refEl) return;
+            textEl.textContent = verse.text;
+            refEl.textContent = verse.ref;
         }
 
-        setTimeout(function () { typeVerse(verses[0]); }, 1500);
+        function fadeTo(container, verse) {
+            container.classList.add('verse-typewriter--fading');
+            window.setTimeout(function () {
+                render(container, verse);
+                container.classList.remove('verse-typewriter--fading');
+            }, 400);
+        }
+
+        containers.forEach(function (container) {
+            render(container, verses[0]);
+            container.classList.add('verse-typewriter--ready');
+        });
+
+        if (reducedMotion) return; // verset statique, aucune rotation
+
+        window.setInterval(function () {
+            currentVerse = (currentVerse + 1) % verses.length;
+            containers.forEach(function (container) {
+                fadeTo(container, verses[currentVerse]);
+            });
+        }, 12000);
     }
 
     // --- SCROLL REVEAL (IntersectionObserver — no library) ---
