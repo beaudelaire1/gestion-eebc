@@ -39,18 +39,44 @@ def test_secretariat_cannot_promote_account_to_admin(client):
     target = make_user('target')
     client.force_login(secretariat)
 
-    response = client.post(reverse('accounts:user_update', kwargs={'user_id': target.pk}), {
-        'first_name': 'Target',
-        'last_name': 'User',
-        'email': target.email,
-        'phone': '',
-        'roles': ['admin'],
-        'is_active': 'on',
-    })
+    response = client.post(
+        reverse('accounts:user_update', kwargs={'user_id': target.pk}),
+        {
+            'first_name': 'Target',
+            'last_name': 'User',
+            'email': target.email,
+            'phone': '',
+            'roles': ['admin'],
+            'is_active': 'on',
+        },
+    )
 
     target.refresh_from_db()
     assert response.status_code == 403
     assert 'admin' not in target.get_roles_list()
+
+
+@pytest.mark.parametrize('privileged_role', ['finance', 'pasteur', 'encadrant'])
+def test_secretariat_cannot_grant_other_privileged_roles(client, privileged_role):
+    secretariat = make_user(f'secretariat-{privileged_role}', role='secretariat')
+    target = make_user(f'target-{privileged_role}')
+    client.force_login(secretariat)
+
+    response = client.post(
+        reverse('accounts:user_update', kwargs={'user_id': target.pk}),
+        {
+            'first_name': 'Target',
+            'last_name': 'User',
+            'email': target.email,
+            'phone': '',
+            'roles': [privileged_role],
+            'is_active': 'on',
+        },
+    )
+
+    target.refresh_from_db()
+    assert response.status_code == 403
+    assert privileged_role not in target.get_roles_list()
 
 
 def test_secretariat_cannot_mutate_existing_admin(client):
@@ -58,18 +84,37 @@ def test_secretariat_cannot_mutate_existing_admin(client):
     admin = make_user('protected-admin', role='admin')
     client.force_login(secretariat)
 
-    response = client.post(reverse('accounts:user_update', kwargs={'user_id': admin.pk}), {
-        'first_name': 'Compromised',
-        'last_name': 'Admin',
-        'email': admin.email,
-        'roles': ['membre'],
-        'is_active': 'on',
-    })
+    response = client.post(
+        reverse('accounts:user_update', kwargs={'user_id': admin.pk}),
+        {
+            'first_name': 'Compromised',
+            'last_name': 'Admin',
+            'email': admin.email,
+            'roles': ['membre'],
+            'is_active': 'on',
+        },
+    )
 
     admin.refresh_from_db()
     assert response.status_code == 403
     assert admin.first_name != 'Compromised'
     assert admin.has_role('admin')
+
+
+@pytest.mark.parametrize('privileged_role', ['finance', 'pasteur', 'secretariat'])
+def test_secretariat_cannot_reset_privileged_account_password(client, privileged_role):
+    actor = make_user(f'account-manager-{privileged_role}', role='secretariat')
+    target = make_user(f'protected-{privileged_role}', role=privileged_role)
+    original_password = target.password
+    client.force_login(actor)
+
+    response = client.post(
+        reverse('accounts:reset_password', kwargs={'user_id': target.pk})
+    )
+
+    target.refresh_from_db()
+    assert response.status_code == 403
+    assert target.password == original_password
 
 
 def test_ordinary_member_cannot_bulk_export_children(client):
@@ -83,7 +128,9 @@ def test_ordinary_member_cannot_download_sensitive_member_pdf(client):
     user = make_user('ordinary-pdf')
     member = Member.objects.create(first_name='Jean', last_name='Secret')
     client.force_login(user)
-    response = client.get(reverse('members:print_registration', kwargs={'pk': member.pk}))
+    response = client.get(
+        reverse('members:print_registration', kwargs={'pk': member.pk})
+    )
     assert response.status_code in (302, 403)
 
 
@@ -104,6 +151,21 @@ def test_confidential_pastoral_visit_hidden_from_encadrant(client):
         summary='Information pastorale confidentielle',
     )
     client.force_login(encadrant)
+
+    response = client.get(reverse('members:visit_detail', kwargs={'pk': visit.pk}))
+    assert response.status_code == 404
+
+
+def test_confidential_pastoral_visit_hidden_from_generic_admin(client):
+    admin = make_user('admin-conf', role='admin')
+    member = Member.objects.create(first_name='Confidentiel', last_name='AdminHidden')
+    visit = VisitationLog.objects.create(
+        member=member,
+        visitor=admin,
+        is_confidential=True,
+        summary='Réservé au rôle pasteur',
+    )
+    client.force_login(admin)
 
     response = client.get(reverse('members:visit_detail', kwargs={'pk': visit.pk}))
     assert response.status_code == 404
@@ -176,7 +238,15 @@ def test_member_api_exposes_only_minimal_fields_to_ordinary_account():
     response = api.get(reverse('api:member-detail', kwargs={'pk': member.pk}))
     assert response.status_code == 200
     assert response.data['first_name'] == 'Marie'
-    for forbidden in ('email', 'phone', 'address', 'date_of_birth', 'marital_status', 'is_baptized', 'family'):
+    for forbidden in (
+        'email',
+        'phone',
+        'address',
+        'date_of_birth',
+        'marital_status',
+        'is_baptized',
+        'family',
+    ):
         assert forbidden not in response.data
 
 
@@ -199,10 +269,10 @@ def test_staff_member_api_keeps_authorized_detail():
 def test_temporary_password_never_mints_jwt():
     user = make_user('temporary-jwt', must_change_password=True)
     api = APIClient()
-    response = api.post(reverse('api:token_obtain_pair'), {
-        'username': user.username,
-        'password': 'SecurePass!2026',
-    })
+    response = api.post(
+        reverse('api:token_obtain_pair'),
+        {'username': user.username, 'password': 'SecurePass!2026'},
+    )
     assert response.status_code == 200
     assert response.data['data']['must_change_password'] is True
     assert 'password_change_challenge' in response.data['data']
@@ -218,10 +288,10 @@ def test_mfa_account_never_mints_jwt_without_second_factor():
         two_factor_secret='JBSWY3DPEHPK3PXP',
     )
     api = APIClient()
-    response = api.post(reverse('api:token_obtain_pair'), {
-        'username': user.username,
-        'password': 'SecurePass!2026',
-    })
+    response = api.post(
+        reverse('api:token_obtain_pair'),
+        {'username': user.username, 'password': 'SecurePass!2026'},
+    )
     assert response.status_code == 428
     assert response.data['data']['mfa_required'] is True
     assert 'access' not in response.data.get('data', {})
@@ -232,11 +302,14 @@ def test_api_password_change_uses_django_password_validation():
     user = make_user('password-policy')
     api = APIClient()
     api.force_authenticate(user)
-    response = api.put(reverse('api:change_password'), {
-        'old_password': 'SecurePass!2026',
-        'new_password': '12345678',
-        'confirm_password': '12345678',
-    })
+    response = api.put(
+        reverse('api:change_password'),
+        {
+            'old_password': 'SecurePass!2026',
+            'new_password': '12345678',
+            'confirm_password': '12345678',
+        },
+    )
     assert response.status_code == 400
     user.refresh_from_db()
     assert user.check_password('SecurePass!2026')
@@ -248,11 +321,14 @@ def test_password_change_revokes_previous_refresh_token():
     api = APIClient()
     api.force_authenticate(user)
 
-    changed = api.put(reverse('api:change_password'), {
-        'old_password': 'SecurePass!2026',
-        'new_password': 'An0ther!SecurePass-2026',
-        'confirm_password': 'An0ther!SecurePass-2026',
-    })
+    changed = api.put(
+        reverse('api:change_password'),
+        {
+            'old_password': 'SecurePass!2026',
+            'new_password': 'An0ther!SecurePass-2026',
+            'confirm_password': 'An0ther!SecurePass-2026',
+        },
+    )
     assert changed.status_code == 200
 
     anonymous = APIClient()
@@ -275,7 +351,7 @@ def test_failed_login_telemetry_does_not_globally_deny_other_ip():
         assert authenticated is None
 
     user.refresh_from_db()
-    assert user.is_locked() is True  # telemetry remains visible
+    assert user.is_locked() is True
 
     good_request = factory.post('/accounts/login/', REMOTE_ADDR='198.51.100.11')
     authenticated, error = AuthenticationService.authenticate_user(
@@ -332,12 +408,16 @@ def test_renamed_fake_xlsx_is_rejected_before_parser():
 def test_state_changing_endpoints_reject_get(client):
     finance = make_user('finance-method', role='finance')
     client.force_login(finance)
-    response = client.get(reverse('finance:transaction_validate', kwargs={'pk': 999999}))
+    response = client.get(
+        reverse('finance:transaction_validate', kwargs={'pk': 999999})
+    )
     assert response.status_code == 405
 
     encadrant = make_user('pastoral-method', role='encadrant')
     client.force_login(encadrant)
-    response = client.get(reverse('members:life_event_mark_visited', kwargs={'pk': 999999}))
+    response = client.get(
+        reverse('members:life_event_mark_visited', kwargs={'pk': 999999})
+    )
     assert response.status_code == 405
 
 
