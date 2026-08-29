@@ -1,154 +1,104 @@
-{% extends "base.html" %}
-{% load static %}
-
-{% block title %}Page non trouvée - Gestion EEBC{% endblock %}
-
-{% block content %}
-<div class="container-fluid">
-    <div class="row justify-content-center">
-        <div class="col-md-8 col-lg-6">
-            <div class="card shadow-sm border-0 mt-5">
-                <div class="card-body text-center p-5">
-                    <!-- Icône d'erreur -->
-                    <div class="mb-4">
-                        <i class="fas fa-search text-info" style="font-size: 4rem;"></i>
-                    </div>
-                    
-                    <!-- Titre principal -->
-                    <h1 class="display-4 text-dark mb-3">404</h1>
-                    <h2 class="h4 text-muted mb-4">Page non trouvée</h2>
-                    
-                    <!-- Message explicatif -->
-                    <div class="alert alert-info border-0 mb-4">
-                        <p class="mb-2">
-                            <strong>Oups ! La page que vous recherchez n'existe pas.</strong>
-                        </p>
-                        <p class="mb-0 text-muted">
-                            Il se peut que l'URL soit incorrecte ou que la page ait été déplacée ou supprimée.
-                        </p>
-                    </div>
-                    
-                    <!-- Suggestions de navigation -->
-                    <div class="mb-4">
-                        <h5 class="text-dark mb-3">Suggestions de navigation :</h5>
-                        <div class="row g-3">
-                            <div class="col-md-6">
-                                <div class="card bg-light border-0 h-100">
-                                    <div class="card-body text-center p-3">
-                                        <i class="fas fa-users text-primary mb-2" style="font-size: 1.5rem;"></i>
-                                        <h6 class="card-title">Membres</h6>
-                                        <a href="/app/members/" class="btn btn-sm btn-outline-primary">
-                                            Voir les membres
-                                        </a>
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="col-md-6">
-                                <div class="card bg-light border-0 h-100">
-                                    <div class="card-body text-center p-3">
-                                        <i class="fas fa-calendar text-success mb-2" style="font-size: 1.5rem;"></i>
-                                        <h6 class="card-title">Événements</h6>
-                                        <a href="/app/events/" class="btn btn-sm btn-outline-success">
-                                            Voir les événements
-                                        </a>
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="col-md-6">
-                                <div class="card bg-light border-0 h-100">
-                                    <div class="card-body text-center p-3">
-                                        <i class="fas fa-euro-sign text-warning mb-2" style="font-size: 1.5rem;"></i>
-                                        <h6 class="card-title">Finances</h6>
-                                        <a href="/app/finance/" class="btn btn-sm btn-outline-warning">
-                                            Tableau de bord
-                                        </a>
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="col-md-6">
-                                <div class="card bg-light border-0 h-100">
-                                    <div class="card-body text-center p-3">
-                                        <i class="fas fa-book text-info mb-2" style="font-size: 1.5rem;"></i>
-                                        <h6 class="card-title">Club Biblique</h6>
-                                        <a href="/app/bibleclub/" class="btn btn-sm btn-outline-info">
-                                            Accéder au club
-                                        </a>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <!-- Boutons d'action principaux -->
-                    <div class="d-flex flex-column flex-sm-row gap-3 justify-content-center mb-4">
-                        <button onclick="history.back()" class="btn btn-outline-primary">
-                            <i class="fas fa-arrow-left me-2"></i>
-                            Retour
-                        </button>
-                        <a href="/app/" class="btn btn-primary">
-                            <i class="fas fa-home me-2"></i>
-                            Accueil
-                        </a>
-                    </div>
-                    
-                    <!-- Barre de recherche -->
-                    <div class="mb-4">
-                        <p class="text-muted mb-2">Ou recherchez ce que vous cherchez :</p>
-                        <form method="get" action="/app/members/" class="d-flex gap-2">
-                            <input type="text" name="search" class="form-control" placeholder="Rechercher un membre, événement...">
-                            <button type="submit" class="btn btn-outline-secondary">
-                                <i class="fas fa-search"></i>
-                            </button>
-                        </form>
-                    </div>
-                    
-                    <!-- Informations de contact -->
-                    <div class="mt-4 pt-3 border-top">
-                        <small class="text-muted">
-                            Problème persistant ? Contactez le support à 
-                            <a href="mailto:support@eebc.org" class="text-decoration-none">support@eebc.org</a>
-                        </small>
-                    </div>
-                </div>
-            </div>
+{% load static %}<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Page non trouvée (404) - EEBC</title>
+    <style>
+        :root {
+            --primary: #0A36FF;
+            --primary-dark: #082acc;
+            --text: #1f2937;
+            --muted: #6b7280;
+            --bg: #f4f6fb;
+            --card: #ffffff;
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 1.5rem;
+            line-height: 1.6;
+        }
+        .error-card {
+            background: var(--card);
+            border-radius: 16px;
+            box-shadow: 0 10px 40px rgba(10, 54, 255, 0.08);
+            max-width: 560px;
+            width: 100%;
+            padding: 3rem 2.5rem;
+            text-align: center;
+        }
+        .error-code {
+            font-size: 4.5rem;
+            font-weight: 800;
+            color: var(--primary);
+            line-height: 1;
+            letter-spacing: -0.02em;
+        }
+        .error-title {
+            font-size: 1.5rem;
+            font-weight: 700;
+            margin: 0.75rem 0 1rem;
+        }
+        .error-message { color: var(--muted); margin-bottom: 1.75rem; }
+        .error-path {
+            font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+            font-size: 0.85rem;
+            background: var(--bg);
+            border-radius: 6px;
+            padding: 0.35rem 0.75rem;
+            display: inline-block;
+            word-break: break-all;
+            margin-bottom: 1.75rem;
+        }
+        .actions {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.75rem;
+            justify-content: center;
+        }
+        .btn {
+            display: inline-block;
+            padding: 0.7rem 1.5rem;
+            border-radius: 8px;
+            font-weight: 600;
+            font-size: 0.95rem;
+            text-decoration: none;
+            transition: background-color 0.2s ease, transform 0.2s ease;
+        }
+        .btn-primary { background: var(--primary); color: #fff; }
+        .btn-primary:hover, .btn-primary:focus-visible { background: var(--primary-dark); }
+        .btn-outline { border: 2px solid var(--primary); color: var(--primary); }
+        .btn-outline:hover, .btn-outline:focus-visible { background: rgba(10, 54, 255, 0.08); }
+        .help { margin-top: 2rem; padding-top: 1.5rem; border-top: 1px solid #e5e7eb; font-size: 0.875rem; color: var(--muted); }
+        .help a { color: var(--primary); }
+        @media (prefers-reduced-motion: reduce) {
+            .btn { transition: none; }
+        }
+    </style>
+</head>
+<body>
+    <main class="error-card">
+        <p class="error-code" aria-hidden="true">404</p>
+        <h1 class="error-title">Page non trouvée</h1>
+        <p class="error-message">
+            La page que vous recherchez n'existe pas, a été déplacée ou son adresse est incorrecte.
+        </p>
+        {% if request_path %}<p><code class="error-path">{{ request_path }}</code></p>{% endif %}
+        <div class="actions">
+            <a href="/" class="btn btn-primary">Retour à l'accueil</a>
+            <a href="/nos-eglises/" class="btn btn-outline">Nos églises</a>
+            <a href="/contact/" class="btn btn-outline">Nous contacter</a>
         </div>
-    </div>
-</div>
-
-<style>
-.card {
-    border-radius: 15px;
-}
-
-.btn {
-    border-radius: 8px;
-}
-
-.alert {
-    border-radius: 10px;
-}
-
-.card.bg-light {
-    border-radius: 10px;
-    transition: transform 0.2s ease;
-}
-
-.card.bg-light:hover {
-    transform: translateY(-2px);
-}
-
-@media (max-width: 576px) {
-    .display-4 {
-        font-size: 2.5rem;
-    }
-    
-    .card-body {
-        padding: 2rem 1.5rem !important;
-    }
-    
-    .row.g-3 .col-md-6 {
-        margin-bottom: 1rem;
-    }
-}
-</style>
-{% endblock %}
+        <p class="help">
+            Si vous pensez qu'il s'agit d'une erreur, <a href="/contact/">signalez-le-nous</a>.
+        </p>
+    </main>
+</body>
+</html>

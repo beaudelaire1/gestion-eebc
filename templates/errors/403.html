@@ -1,99 +1,100 @@
-{% extends "base.html" %}
-{% load static %}
-
-{% block title %}Accès refusé - Gestion EEBC{% endblock %}
-
-{% block content %}
-<div class="container-fluid">
-    <div class="row justify-content-center">
-        <div class="col-md-8 col-lg-6">
-            <div class="card shadow-sm border-0 mt-5">
-                <div class="card-body text-center p-5">
-                    <!-- Icône d'erreur -->
-                    <div class="mb-4">
-                        <i class="fas fa-lock text-warning" style="font-size: 4rem;"></i>
-                    </div>
-                    
-                    <!-- Titre principal -->
-                    <h1 class="display-4 text-dark mb-3">403</h1>
-                    <h2 class="h4 text-muted mb-4">Accès refusé</h2>
-                    
-                    <!-- Message explicatif -->
-                    <div class="alert alert-warning border-0 mb-4">
-                        <p class="mb-2">
-                            <strong>Vous n'avez pas les permissions nécessaires pour accéder à cette page.</strong>
-                        </p>
-                        <p class="mb-0 text-muted">
-                            Cette ressource nécessite des droits d'accès spécifiques que votre compte ne possède pas actuellement.
-                        </p>
-                    </div>
-                    
-                    <!-- Suggestions d'actions -->
-                    <div class="mb-4">
-                        <p class="text-muted">Que pouvez-vous faire ?</p>
-                        <ul class="list-unstyled text-start">
-                            <li class="mb-2">
-                                <i class="fas fa-arrow-left text-primary me-2"></i>
-                                Retourner à la page précédente
-                            </li>
-                            <li class="mb-2">
-                                <i class="fas fa-home text-primary me-2"></i>
-                                Aller au tableau de bord principal
-                            </li>
-                            <li class="mb-2">
-                                <i class="fas fa-envelope text-primary me-2"></i>
-                                Contacter l'administrateur si vous pensez qu'il s'agit d'une erreur
-                            </li>
-                        </ul>
-                    </div>
-                    
-                    <!-- Boutons d'action -->
-                    <div class="d-flex flex-column flex-sm-row gap-3 justify-content-center">
-                        <button onclick="history.back()" class="btn btn-outline-primary">
-                            <i class="fas fa-arrow-left me-2"></i>
-                            Retour
-                        </button>
-                        <a href="/app/" class="btn btn-primary">
-                            <i class="fas fa-home me-2"></i>
-                            Tableau de bord
-                        </a>
-                    </div>
-                    
-                    <!-- Informations de contact -->
-                    <div class="mt-4 pt-3 border-top">
-                        <small class="text-muted">
-                            Besoin d'aide ? Contactez l'administrateur système à 
-                            <a href="mailto:admin@eebc.org" class="text-decoration-none">admin@eebc.org</a>
-                        </small>
-                    </div>
-                </div>
-            </div>
+{% load static %}<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Accès refusé (403) - EEBC</title>
+    <style>
+        :root {
+            --primary: #0A36FF;
+            --primary-dark: #082acc;
+            --warning: #b45309;
+            --text: #1f2937;
+            --muted: #6b7280;
+            --bg: #f4f6fb;
+            --card: #ffffff;
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 1.5rem;
+            line-height: 1.6;
+        }
+        .error-card {
+            background: var(--card);
+            border-radius: 16px;
+            box-shadow: 0 10px 40px rgba(10, 54, 255, 0.08);
+            max-width: 560px;
+            width: 100%;
+            padding: 3rem 2.5rem;
+            text-align: center;
+        }
+        .error-code {
+            font-size: 4.5rem;
+            font-weight: 800;
+            color: var(--warning);
+            line-height: 1;
+            letter-spacing: -0.02em;
+        }
+        .error-title {
+            font-size: 1.5rem;
+            font-weight: 700;
+            margin: 0.75rem 0 1rem;
+        }
+        .error-message { color: var(--muted); margin-bottom: 1.75rem; }
+        .actions {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.75rem;
+            justify-content: center;
+        }
+        .btn {
+            display: inline-block;
+            padding: 0.7rem 1.5rem;
+            border-radius: 8px;
+            font-weight: 600;
+            font-size: 0.95rem;
+            text-decoration: none;
+            transition: background-color 0.2s ease;
+        }
+        .btn-primary { background: var(--primary); color: #fff; }
+        .btn-primary:hover, .btn-primary:focus-visible { background: var(--primary-dark); }
+        .btn-outline { border: 2px solid var(--primary); color: var(--primary); }
+        .btn-outline:hover, .btn-outline:focus-visible { background: rgba(10, 54, 255, 0.08); }
+        .help { margin-top: 2rem; padding-top: 1.5rem; border-top: 1px solid #e5e7eb; font-size: 0.875rem; color: var(--muted); }
+        .help a { color: var(--primary); }
+        @media (prefers-reduced-motion: reduce) {
+            .btn { transition: none; }
+        }
+    </style>
+</head>
+<body>
+    <main class="error-card">
+        <p class="error-code" aria-hidden="true">403</p>
+        <h1 class="error-title">Accès refusé</h1>
+        <p class="error-message">
+            Vous n'avez pas les permissions nécessaires pour accéder à cette page.
+            Si vous êtes membre, connectez-vous ; sinon, cette page est peut-être réservée
+            à l'équipe de gestion.
+        </p>
+        <div class="actions">
+            <a href="/" class="btn btn-primary">Retour à l'accueil</a>
+            {% if user.is_authenticated %}
+            <a href="/app/" class="btn btn-outline">Mon tableau de bord</a>
+            {% else %}
+            <a href="/app/accounts/login/" class="btn btn-outline">Se connecter</a>
+            {% endif %}
+            <a href="/contact/" class="btn btn-outline">Nous contacter</a>
         </div>
-    </div>
-</div>
-
-<style>
-.card {
-    border-radius: 15px;
-}
-
-.btn {
-    border-radius: 8px;
-    padding: 10px 20px;
-}
-
-.alert {
-    border-radius: 10px;
-}
-
-@media (max-width: 576px) {
-    .display-4 {
-        font-size: 2.5rem;
-    }
-    
-    .card-body {
-        padding: 2rem 1.5rem !important;
-    }
-}
-</style>
-{% endblock %}
+        <p class="help">
+            Vous pensez qu'il s'agit d'une erreur ? <a href="/contact/">Contactez le secrétariat</a>.
+        </p>
+    </main>
+</body>
+</html>

@@ -276,6 +276,16 @@ TEMPLATES = [
 
 
 # =============================================================================
+# MESSAGES (mapping vers les classes CSS Bootstrap)
+# =============================================================================
+from django.contrib.messages import constants as messages_constants
+
+MESSAGE_TAGS = {
+    messages_constants.ERROR: 'danger',
+}
+
+
+# =============================================================================
 # PASSWORD VALIDATION
 # =============================================================================
 AUTH_PASSWORD_VALIDATORS = [
