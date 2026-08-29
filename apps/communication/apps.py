@@ -2,9 +2,9 @@ from django.apps import AppConfig
 
 
 class CommunicationConfig(AppConfig):
-    default_auto_field = 'django.db.models.BigAutoField'
-    name = 'apps.communication'
-    verbose_name = 'Communication'
+    default_auto_field = "django.db.models.BigAutoField"
+    name = "apps.communication"
+    verbose_name = "Communication"
 
     def ready(self):
         # Importer les signaux et les tâches de canal pour les enregistrer.
@@ -19,12 +19,12 @@ class CommunicationConfig(AppConfig):
 
         from apps.communication.forms import AnnouncementForm
 
-        notify_field = AnnouncementForm.base_fields.get('notify_by_email')
-        legacy_field = AnnouncementForm.base_fields.get('notify_by_sms')
+        notify_field = AnnouncementForm.base_fields.get("notify_by_email")
+        legacy_field = AnnouncementForm.base_fields.get("notify_by_sms")
         if notify_field:
-            notify_field.label = 'Notifier par email + WhatsApp'
+            notify_field.label = "Notifier par email + WhatsApp"
             notify_field.help_text = (
-                'Envoie les deux canaux aux membres qui les ont autorisés.'
+                "Envoie les deux canaux aux membres qui les ont autorisés."
             )
         if legacy_field:
             legacy_field.widget = forms.HiddenInput()
