@@ -22,7 +22,7 @@
                     <img src="{{ event.image.url }}" class="card-img-top image-card--sm" alt="{{ event.title }}" loading="lazy">
                     {% else %}
                     <div class="card-img-top image-placeholder image-placeholder--primary image-card--sm">
-                        <i class="bi bi-calendar-event text-white image-placeholder__icon"></i>
+                        <i class="bi bi-calendar-event text-white image-placeholder__icon" aria-hidden="true"></i>
                     </div>
                     {% endif %}
                     <div class="card-body">
@@ -34,14 +34,14 @@
                             <div>
                                 <h5 class="card-title mb-1">{{ event.title }}</h5>
                                 {% if event.start_time %}
-                                <small class="text-muted"><i class="bi bi-clock me-1"></i>{{ event.start_time|time:"H:i" }}</small>
+                                <small class="text-muted"><i class="bi bi-clock me-1" aria-hidden="true"></i>{{ event.start_time|time:"H:i" }}</small>
                                 {% endif %}
                             </div>
                         </div>
                         
                         {% if event.location %}
                         <p class="card-text small text-muted mb-2">
-                            <i class="bi bi-geo-alt me-1"></i>{{ event.location }}
+                            <i class="bi bi-geo-alt me-1" aria-hidden="true"></i>{{ event.location }}
                         </p>
                         {% endif %}
                         
@@ -56,34 +56,38 @@
             </div>
             {% empty %}
             <div class="col-12 text-center py-5">
-                <i class="bi bi-calendar-x text-muted image-placeholder__icon--lg"></i>
-                <p class="text-muted mt-3">Aucun événement à venir pour le moment.</p>
+                <i class="bi bi-calendar-x text-muted image-placeholder__icon--lg" aria-hidden="true"></i>
+                <h2 class="h5 mt-3">Aucun événement à venir pour le moment</h2>
+                <p class="text-muted">Revenez bientôt, ou contactez-nous pour connaître les prochaines dates.</p>
+                <a href="{% url 'public:contact' %}" class="btn btn-outline-primary mt-2">
+                    <i class="bi bi-envelope me-2" aria-hidden="true"></i>Nous contacter
+                </a>
             </div>
             {% endfor %}
         </div>
         
         <!-- Pagination -->
         {% if page_obj.has_other_pages %}
-        <nav class="mt-4">
+        <nav class="mt-4" aria-label="Pagination des événements">
             <ul class="pagination justify-content-center">
                 {% if page_obj.has_previous %}
                 <li class="page-item">
-                    <a class="page-link" href="?page={{ page_obj.previous_page_number }}">
-                        <i class="bi bi-chevron-left"></i>
+                    <a class="page-link" href="?page={{ page_obj.previous_page_number }}" aria-label="Page précédente">
+                        <i class="bi bi-chevron-left" aria-hidden="true"></i>
                     </a>
                 </li>
                 {% endif %}
                 
                 {% for num in page_obj.paginator.page_range %}
                 <li class="page-item {% if page_obj.number == num %}active{% endif %}">
-                    <a class="page-link" href="?page={{ num }}">{{ num }}</a>
+                    <a class="page-link" href="?page={{ num }}"{% if page_obj.number == num %} aria-current="page"{% endif %}>{{ num }}</a>
                 </li>
                 {% endfor %}
                 
                 {% if page_obj.has_next %}
                 <li class="page-item">
-                    <a class="page-link" href="?page={{ page_obj.next_page_number }}">
-                        <i class="bi bi-chevron-right"></i>
+                    <a class="page-link" href="?page={{ page_obj.next_page_number }}" aria-label="Page suivante">
+                        <i class="bi bi-chevron-right" aria-hidden="true"></i>
                     </a>
                 </li>
                 {% endif %}

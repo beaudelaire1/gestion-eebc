@@ -14,12 +14,12 @@
     <div class="container">
         <!-- Filtres -->
         <div class="mb-4">
-            <div class="btn-group flex-wrap" role="group">
-                <a href="{% url 'public:news_list' %}" class="btn {% if not current_category %}btn-primary{% else %}btn-outline-primary{% endif %}">
+            <div class="btn-group flex-wrap" role="group" aria-label="Filtrer les actualités par catégorie">
+                <a href="{% url 'public:news_list' %}" class="btn {% if not current_category %}btn-primary{% else %}btn-outline-primary{% endif %}"{% if not current_category %} aria-current="true"{% endif %}>
                     Tous
                 </a>
                 {% for value, label in categories %}
-                <a href="?category={{ value }}" class="btn {% if current_category == value %}btn-primary{% else %}btn-outline-primary{% endif %}">
+                <a href="?category={{ value }}" class="btn {% if current_category == value %}btn-primary{% else %}btn-outline-primary{% endif %}"{% if current_category == value %} aria-current="true"{% endif %}>
                     {{ label }}
                 </a>
                 {% endfor %}
@@ -35,7 +35,7 @@
                     <img src="{{ article.featured_image.url }}" class="card-img-top" alt="{{ article.title }}" style="height: 200px; object-fit: cover;">
                     {% else %}
                     <div class="card-img-top bg-secondary d-flex align-items-center justify-content-center" style="height: 200px;">
-                        <i class="bi bi-newspaper text-white" style="font-size: 3rem;"></i>
+                        <i class="bi bi-newspaper text-white" style="font-size: 3rem;" aria-hidden="true"></i>
                     </div>
                     {% endif %}
                     <div class="card-body">
@@ -55,34 +55,35 @@
             </div>
             {% empty %}
             <div class="col-12 text-center py-5">
-                <i class="bi bi-newspaper text-muted" style="font-size: 4rem;"></i>
-                <p class="text-muted mt-3">Aucun article pour le moment.</p>
+                <i class="bi bi-newspaper text-muted" style="font-size: 4rem;" aria-hidden="true"></i>
+                <h2 class="h5 mt-3">Aucun article pour le moment</h2>
+                <p class="text-muted">{% if current_category %}Aucune actualité dans cette catégorie. <a href="{% url 'public:news_list' %}">Voir toutes les actualités</a>.{% else %}Revenez bientôt pour découvrir la vie de notre église.{% endif %}</p>
             </div>
             {% endfor %}
         </div>
         
         <!-- Pagination -->
         {% if page_obj.has_other_pages %}
-        <nav class="mt-4">
+        <nav class="mt-4" aria-label="Pagination des actualités">
             <ul class="pagination justify-content-center">
                 {% if page_obj.has_previous %}
                 <li class="page-item">
-                    <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% if current_category %}&category={{ current_category }}{% endif %}">
-                        <i class="bi bi-chevron-left"></i>
+                    <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% if current_category %}&category={{ current_category }}{% endif %}" aria-label="Page précédente">
+                        <i class="bi bi-chevron-left" aria-hidden="true"></i>
                     </a>
                 </li>
                 {% endif %}
                 
                 {% for num in page_obj.paginator.page_range %}
                 <li class="page-item {% if page_obj.number == num %}active{% endif %}">
-                    <a class="page-link" href="?page={{ num }}{% if current_category %}&category={{ current_category }}{% endif %}">{{ num }}</a>
+                    <a class="page-link" href="?page={{ num }}{% if current_category %}&category={{ current_category }}{% endif %}"{% if page_obj.number == num %} aria-current="page"{% endif %}>{{ num }}</a>
                 </li>
                 {% endfor %}
                 
                 {% if page_obj.has_next %}
                 <li class="page-item">
-                    <a class="page-link" href="?page={{ page_obj.next_page_number }}{% if current_category %}&category={{ current_category }}{% endif %}">
-                        <i class="bi bi-chevron-right"></i>
+                    <a class="page-link" href="?page={{ page_obj.next_page_number }}{% if current_category %}&category={{ current_category }}{% endif %}" aria-label="Page suivante">
+                        <i class="bi bi-chevron-right" aria-hidden="true"></i>
                     </a>
                 </li>
                 {% endif %}

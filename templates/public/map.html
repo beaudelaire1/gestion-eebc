@@ -15,51 +15,59 @@
         border-radius: 10px;
         box-shadow: 0 4px 15px rgba(0,0,0,0.1);
     }
-    
+
     .leaflet-popup-content {
         min-width: 200px;
     }
-    
+
     .popup-title {
         font-weight: bold;
         font-size: 1.1rem;
         color: var(--primary-color);
         margin-bottom: 8px;
     }
-    
+
     .popup-info {
         margin: 5px 0;
         font-size: 0.9rem;
     }
-    
+
     .popup-info i {
         width: 20px;
         color: var(--primary-color);
     }
-    
+
     .map-legend {
         background: white;
         padding: 15px;
         border-radius: 8px;
         box-shadow: 0 2px 10px rgba(0,0,0,0.1);
     }
-    
+
     .legend-item {
         display: flex;
         align-items: center;
         margin: 5px 0;
     }
-    
+
     .legend-marker {
         width: 20px;
         height: 20px;
         border-radius: 50%;
         margin-right: 10px;
     }
-    
+
     .marker-church { background: #0A36FF; }
-    .marker-family { background: #28a745; }
     .marker-event { background: #ffc107; }
+
+    .site-link:focus-visible {
+        outline: 3px solid var(--primary-color, #0A36FF);
+        outline-offset: -3px;
+    }
+
+    @media (max-width: 991.98px) {
+        #map { height: 380px; }
+    }
 </style>
 {% endblock %}
 
@@ -73,79 +81,136 @@
 
 <section class="py-4">
     <div class="container">
+        {% if sites %}
         <div class="row">
-            <div class="col-lg-9">
-                <div id="map"></div>
+            <div class="col-lg-9 mb-4 mb-lg-0">
+                <div id="map" role="region" aria-label="Carte interactive des églises et événements"></div>
+                <noscript>
+                    <p class="alert alert-info mt-3">
+                        La carte interactive nécessite JavaScript. Retrouvez les adresses complètes sur la page
+                        <a href="{% url 'public:sites' %}">Nos Églises</a>.
+                    </p>
+                </noscript>
             </div>
             <div class="col-lg-3">
                 <!-- Légende -->
                 <div class="map-legend mb-4">
-                    <h5 class="mb-3">Légende</h5>
+                    <h2 class="h5 mb-3">Légende</h2>
                     <div class="legend-item">
-                        <div class="legend-marker marker-church"></div>
+                        <div class="legend-marker marker-church" aria-hidden="true"></div>
                         <span>Églises</span>
                     </div>
+                    {% if upcoming_events %}
                     <div class="legend-item">
-                        <div class="legend-marker marker-event"></div>
+                        <div class="legend-marker marker-event" aria-hidden="true"></div>
                         <span>Événements</span>
                     </div>
+                    {% endif %}
                 </div>
-                
+
                 <!-- Liste des sites -->
                 <div class="card">
                     <div class="card-header">
-                        <h5 class="mb-0">Nos églises</h5>
+                        <h2 class="h5 mb-0">Nos églises</h2>
                     </div>
                     <div class="list-group list-group-flush">
                         {% for site in sites %}
-                        <a href="#" class="list-group-item list-group-item-action site-link" 
-                           data-lat="{{ site.latitude|unlocalize }}" data-lng="{{ site.longitude|unlocalize }}"
-                           data-name="{{ site.name }}">
-                            <i class="bi bi-geo-alt me-2 text-primary"></i>
+                        <button type="button" class="list-group-item list-group-item-action site-link"
+                                data-site-id="{{ site.pk }}">
+                            <i class="bi bi-geo-alt me-2 text-primary" aria-hidden="true"></i>
                             {{ site.name }}
-                        </a>
+                        </button>
                         {% endfor %}
                     </div>
                 </div>
+
+                <a href="{% url 'public:sites' %}" class="btn btn-outline-primary w-100 mt-3">
+                    <i class="bi bi-list-ul me-2" aria-hidden="true"></i>Détails des églises
+                </a>
             </div>
         </div>
+        {% else %}
+        <div class="text-center py-5">
+            <i class="bi bi-geo-alt text-muted image-placeholder__icon--lg" aria-hidden="true"></i>
+            <p class="text-muted mt-3">La carte sera disponible dès que nos sites auront des coordonnées GPS.</p>
+            <a href="{% url 'public:sites' %}" class="btn btn-outline-primary mt-2">
+                <i class="bi bi-list-ul me-2" aria-hidden="true"></i>Voir la liste de nos églises
+            </a>
+        </div>
+        {% endif %}
     </div>
 </section>
 {% endblock %}
 
 {% block extra_js %}
+{% if sites %}
 <!-- Leaflet JS -->
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    console.log('Initialisation de la carte...');
-    
+    if (typeof L === 'undefined') {
+        // CDN indisponible : proposer le repli vers la liste des sites
+        var mapEl = document.getElementById('map');
+        if (mapEl) {
+            mapEl.innerHTML = '<div class="alert alert-warning m-3">La carte n\'a pas pu être chargée. ' +
+                '<a href="{% url "public:sites" %}">Consultez la liste de nos églises</a>.</div>';
+        }
+        return;
+    }
+
     // Centre de la Guyane (Cayenne)
-    const map = L.map('map').setView([4.9225, -52.3058], 11);
-    
+    var map = L.map('map').setView([4.9225, -52.3058], 11);
+
     // Couche OpenStreetMap
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-        attribution: '&copy; OpenStreetMap contributors'
+        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener noreferrer">OpenStreetMap</a> contributors'
     }).addTo(map);
-    
-    // Ajouter les marqueurs des sites directement
+
+    var siteMarkers = {};
+
+    // Marqueurs des églises (bleu, conforme à la légende)
     {% for site in sites %}
-    console.log('Ajout site: {{ site.name }}');
-    L.marker([{{ site.latitude|unlocalize }}, {{ site.longitude|unlocalize }}])
-        .bindPopup('<strong>{{ site.name|escapejs }}</strong><br>{{ site.address|escapejs }}<br>{{ site.city|escapejs }}')
-        .addTo(map);
-    {% empty %}
-    console.log('Aucun site trouvé avec coordonnées GPS');
+    siteMarkers[{{ site.pk }}] = L.circleMarker([{{ site.latitude|unlocalize }}, {{ site.longitude|unlocalize }}], {
+        radius: 10,
+        color: '#ffffff',
+        weight: 2,
+        fillColor: '#0A36FF',
+        fillOpacity: 0.9
+    }).bindPopup(
+        '<div class="popup-title">{{ site.name|escapejs }}</div>' +
+        '<p class="popup-info"><i class="bi bi-geo-alt" aria-hidden="true"></i>{{ site.address|escapejs }}, {{ site.city|escapejs }}</p>' +
+        {% if site.phone %}'<p class="popup-info"><i class="bi bi-telephone" aria-hidden="true"></i><a href="tel:{{ site.phone|escapejs }}">{{ site.phone|escapejs }}</a></p>' +{% endif %}
+        '<a class="btn btn-sm btn-primary mt-1" target="_blank" rel="noopener noreferrer" ' +
+        'href="https://www.google.com/maps/dir/?api=1&destination={{ site.latitude|unlocalize }},{{ site.longitude|unlocalize }}">Itinéraire</a>'
+    ).addTo(map);
     {% endfor %}
-    
-    // Ajouter les marqueurs des événements
+
+    // Marqueurs des événements (jaune, conforme à la légende)
     {% for event in upcoming_events %}
-    L.marker([{{ event.site.latitude }}, {{ event.site.longitude }}])
-        .bindPopup('<strong>{{ event.title|escapejs }}</strong><br>{{ event.start_date|date:"d/m/Y" }}')
-        .addTo(map);
+    L.circleMarker([{{ event.site.latitude|unlocalize }}, {{ event.site.longitude|unlocalize }}], {
+        radius: 8,
+        color: '#ffffff',
+        weight: 2,
+        fillColor: '#ffc107',
+        fillOpacity: 0.9
+    }).bindPopup(
+        '<div class="popup-title">{{ event.title|escapejs }}</div>' +
+        '<p class="popup-info"><i class="bi bi-calendar-event" aria-hidden="true"></i>{{ event.start_date|date:"d/m/Y" }}</p>' +
+        '<p class="popup-info"><i class="bi bi-geo-alt" aria-hidden="true"></i>{{ event.site.name|escapejs }}</p>'
+    ).addTo(map);
     {% endfor %}
-    
-    console.log('Carte initialisée');
+
+    // Clic sur un site dans la liste : centrer la carte et ouvrir le popup
+    document.querySelectorAll('.site-link').forEach(function(btn) {
+        btn.addEventListener('click', function() {
+            var marker = siteMarkers[btn.dataset.siteId];
+            if (marker) {
+                map.setView(marker.getLatLng(), 15, { animate: !window.matchMedia('(prefers-reduced-motion: reduce)').matches });
+                marker.openPopup();
+            }
+        });
+    });
 });
 </script>
+{% endif %}
 {% endblock %}
