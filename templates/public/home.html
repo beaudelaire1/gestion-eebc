@@ -61,7 +61,7 @@
 {% else %}
 <!-- HERO AURORA + BIBLE PREMIUM (quand pas de slides) -->
 <section class="aurora-hero">
-    <div class="css-particles">
+    <div class="css-particles" aria-hidden="true">
         <div class="dot"></div><div class="dot"></div><div class="dot"></div>
         <div class="dot"></div><div class="dot"></div><div class="dot"></div>
         <div class="dot"></div><div class="dot"></div><div class="dot"></div>
@@ -80,10 +80,10 @@
             </div>
         </div>
 
-        <!-- Typewriter Verse -->
+        <!-- Verset du hero : texte complet dès le chargement (accessible), rotation en fondu via JS -->
         <div class="verse-typewriter">
-            <span class="verse-text"></span>
-            <span class="verse-ref"></span>
+            <span class="verse-text">« Car Dieu a tant aimé le monde qu'il a donné son Fils unique, afin que quiconque croit en lui ne périsse point, mais qu'il ait la vie éternelle. »</span>
+            <span class="verse-ref">— Jean 3:16</span>
         </div>
 
         <h1>Église Évangélique Baptiste de Cabassou</h1>
@@ -91,10 +91,13 @@
 
         <div class="hero-cta-group">
             <a href="{% url 'public:sites' %}" class="btn-glow btn-glow-primary">
-                <i class="bi bi-geo-alt me-2"></i>Nos Églises
+                <i class="bi bi-geo-alt me-2"></i>Trouver une église
+            </a>
+            <a href="{% url 'public:events_list' %}" class="btn-glow btn-glow-outline">
+                <i class="bi bi-calendar3 me-2"></i>Événements à venir
             </a>
             <a href="{% url 'public:contact' %}" class="btn-glow btn-glow-outline">
-                <i class="bi bi-envelope me-2"></i>Nous Contacter
+                <i class="bi bi-envelope me-2"></i>Nous contacter
             </a>
         </div>
     </div>
@@ -126,8 +129,8 @@
             </div>
             <div class="col-md-7 col-lg-6 reveal-right">
                 <div class="verse-typewriter verse-typewriter-dark">
-                    <span class="verse-text"></span>
-                    <span class="verse-ref"></span>
+                    <span class="verse-text">« Car Dieu a tant aimé le monde qu'il a donné son Fils unique, afin que quiconque croit en lui ne périsse point, mais qu'il ait la vie éternelle. »</span>
+                    <span class="verse-ref">— Jean 3:16</span>
                 </div>
                 <p class="verse-typewriter-note">La Bible, notre seule source d'autorité</p>
             </div>

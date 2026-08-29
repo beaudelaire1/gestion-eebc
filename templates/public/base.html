@@ -11,10 +11,10 @@
     <link rel="canonical" href="{{ request.build_absolute_uri }}">
     {% endblock %}
     
-    <!-- E1: Open Graph Meta Tags (social sharing) -->
+    <!-- E1: Open Graph Meta Tags (social sharing) — URLs absolues obligatoires -->
     <meta property="og:title" content="{% block og_title %}{{ block.super|truncatewords:8 }}{% endblock %}">
     <meta property="og:description" content="{% block og_description %}{{ block.super|default:settings.meta_description|default:'Église Évangélique Baptiste de Cabassou'|truncatewords:30 }}{% endblock %}">
-    <meta property="og:image" content="{% block og_image %}{{ settings.og_image_url|default:'/static/img/og-image.png' }}{% endblock %}">
+    <meta property="og:image" content="{% block og_image %}{% if settings.og_image_url %}{{ settings.og_image_url }}{% else %}{{ request.scheme }}://{{ request.get_host }}{% static 'img/og-image.png' %}{% endif %}{% endblock %}">
     <meta property="og:image:alt" content="{% block og_image_alt %}{{ settings.site_name|default:'EEBC' }}{% endblock %}">
     <meta property="og:type" content="{% block og_type %}website{% endblock %}">
     <meta property="og:url" content="{{ request.build_absolute_uri }}">
@@ -25,7 +25,7 @@
     <meta name="twitter:card" content="summary_large_image">
     <meta name="twitter:title" content="{% block twitter_title %}{{ block.super|truncatewords:8 }}{% endblock %}">
     <meta name="twitter:description" content="{% block twitter_description %}{{ block.super|default:settings.meta_description|default:'Église Évangélique Baptiste de Cabassou'|truncatewords:30 }}{% endblock %}">
-    <meta name="twitter:image" content="{% block twitter_image %}{{ settings.og_image_url|default:'/static/img/og-image.png' }}{% endblock %}">
+    <meta name="twitter:image" content="{% block twitter_image %}{% if settings.og_image_url %}{{ settings.og_image_url }}{% else %}{{ request.scheme }}://{{ request.get_host }}{% static 'img/og-image.png' %}{% endif %}{% endblock %}">
     <meta name="twitter:image:alt" content="{% block twitter_image_alt %}{{ settings.site_name|default:'EEBC' }}{% endblock %}">
     
     <title>{% block title %}{{ settings.site_name|default:'EEBC' }}{% endblock %}</title>
@@ -59,29 +59,23 @@
     <script type="application/ld+json">
     {
         "@context": "https://schema.org",
-        "@type": "Organization",
+        "@type": "Church",
         "name": "{{ settings.site_name|default:'EEBC' }}",
         "alternateName": "Église Évangélique Baptiste de Cabassou",
         "url": "{{ request.scheme }}://{{ request.get_host }}/",
-        "logo": "{{ settings.og_image_url|default:'/static/img/logo.png' }}",
-        "description": "{{ settings.meta_description|default:'Église Évangélique Baptiste de Cabassou' }}",
-        "sameAs": [
-            "https://www.facebook.com/egliseebc",
-            "https://www.instagram.com/egliseebc"
+        "logo": "{{ request.scheme }}://{{ request.get_host }}{% static 'img/logo.png' %}",
+        "description": "{{ settings.meta_description|default:'Église Évangélique Baptiste de Cabassou' }}"{% if settings.facebook_url or settings.instagram_url %},
+        "sameAs": [{% if settings.facebook_url %}"{{ settings.facebook_url }}"{% endif %}{% if settings.facebook_url and settings.instagram_url %}, {% endif %}{% if settings.instagram_url %}"{{ settings.instagram_url }}"{% endif %}]{% endif %}{% if settings.phone %},
+        "telephone": "{{ settings.phone }}"{% endif %}{% if sites %},
+        "address": [{% for site in sites %}{% if site.address %}
+            {
+                "@type": "PostalAddress",
+                "streetAddress": "{{ site.address }}",
+                "addressLocality": "{{ site.city }}",
+                "addressCountry": "GF"
+            }{% if not forloop.last %},{% endif %}{% endif %}{% endfor %}
         ],
-        "contact": {
-            "@type": "ContactPoint",
-            "telephone": "[PHONE]",
-            "contactType": "Customer Service"
-        },
-        "areaServed": "GF",
-        "address": {
-            "@type": "PostalAddress",
-            "streetAddress": "[ADDRESS]",
-            "addressLocality": "Cabassou",
-            "postalCode": "[ZIP]",
-            "addressCountry": "GF"
-        }
+        "areaServed": "GF"{% endif %}
     }
     </script>
     {% endblock %}
@@ -123,6 +117,36 @@
             font-weight: 500;
             transition: color 0.3s;
         }
+
+        /* État actif de navigation (repère de position) */
+        .nav-link.active {
+            color: var(--primary-color) !important;
+            font-weight: 600;
+            position: relative;
+        }
+
+        .nav-link.active::after {
+            content: '';
+            position: absolute;
+            left: 0.5rem;
+            right: 0.5rem;
+            bottom: 0;
+            height: 3px;
+            border-radius: 3px;
+            background: var(--primary-color);
+        }
+
+        /* Respect des préférences de mouvement réduit (WCAG 2.2) */
+        @media (prefers-reduced-motion: reduce) {
+            *,
+            *::before,
+            *::after {
+                animation-duration: 0.01ms !important;
+                animation-iteration-count: 1 !important;
+                transition-duration: 0.01ms !important;
+                scroll-behavior: auto !important;
+            }
+        }
         
         /* A3: Focus styles for keyboard navigation accessibility */
         a:focus-visible,
@@ -140,61 +164,12 @@
         }
         
         .btn-primary {
-            background-color: var(--primary-color);
-            border-color: var(--primary-color);
-        }
-        
-        .btn-primary:hover {
-            background-color: #0830d9;
-            border-color: #0830d9;
-        }
-        
-        .btn-outline-primary {
-            color: var(--primary-color);
-            border: 2px solid var(--primary-color);
-        }
-        
-        .btn-outline-primary:hover {
-            background: var(--primary-color);
-            border-color: var(--primary-color);
-            transform: translateY(-2px);
-        }
-        
-        /* Rounded pills */
-        .rounded-pill {
-            border-radius: 50px !important;
-        }
-        
-        /* Hero Section */
-        .hero-section {
-            background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
-            color: white;
-            padding: 100px 0;
-        }
-        
-        /* Cards */
-        .card {
-            border: none;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
-            transition: transform 0.4s ease, box-shadow 0.4s ease;
-        }
-        
-        .card:hover {
-            transform: translateY(-8px);
-            box-shadow: 0 15px 35px rgba(0,0,0,0.15);
-        }
-        
-        /* Buttons */
-        .btn {
-            transition: all 0.3s ease;
-        }
-        
-        .btn-primary {
             background: linear-gradient(135deg, var(--primary-color) 0%, #3b82f6 100%);
             border: none;
         }
-        
-        .btn-primary:hover {
+
+        .btn-primary:hover,
+        .btn-primary:focus-visible {
             background: linear-gradient(135deg, #0830d9 0%, var(--primary-color) 100%);
             transform: translateY(-2px);
             box-shadow: 0 5px 20px rgba(10, 54, 255, 0.4);
@@ -214,6 +189,30 @@
         /* Rounded pills */
         .rounded-pill {
             border-radius: 50px !important;
+        }
+
+        /* Hero Section */
+        .hero-section {
+            background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
+            color: white;
+            padding: 100px 0;
+        }
+
+        /* Cards */
+        .card {
+            border: none;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            transition: transform 0.4s ease, box-shadow 0.4s ease;
+        }
+
+        .card:hover {
+            transform: translateY(-8px);
+            box-shadow: 0 15px 35px rgba(0,0,0,0.15);
+        }
+
+        /* Buttons */
+        .btn {
+            transition: all 0.3s ease;
         }
         
         /* Footer */
@@ -349,31 +348,38 @@
                 <img src="{% static 'images/eebc-logo.png' %}" alt="{{ settings.site_name|default:'EEBC' }}" height="40">
             </a>
             
-            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav"
+                    aria-controls="navbarNav" aria-expanded="false" aria-label="Ouvrir le menu de navigation">
                 <span class="navbar-toggler-icon"></span>
             </button>
             
             <div class="collapse navbar-collapse" id="navbarNav">
                 <ul class="navbar-nav me-auto">
                     <li class="nav-item">
-                        <a class="nav-link" href="{% url 'public:home' %}">Accueil</a>
+                        <a class="nav-link {% if request.resolver_match.url_name == 'home' %}active{% endif %}"
+                           href="{% url 'public:home' %}"{% if request.resolver_match.url_name == 'home' %} aria-current="page"{% endif %}>Accueil</a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" href="{% url 'public:sites' %}">Nos Églises</a>
+                        <a class="nav-link {% if request.resolver_match.url_name == 'sites' or request.resolver_match.url_name == 'map' %}active{% endif %}"
+                           href="{% url 'public:sites' %}"{% if request.resolver_match.url_name == 'sites' or request.resolver_match.url_name == 'map' %} aria-current="page"{% endif %}>Nos Églises</a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" href="{% url 'public:events_list' %}">Événements</a>
+                        <a class="nav-link {% if 'event' in request.resolver_match.url_name %}active{% endif %}"
+                           href="{% url 'public:events_list' %}"{% if 'event' in request.resolver_match.url_name %} aria-current="page"{% endif %}>Événements</a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" href="{% url 'public:news_list' %}">Actualités</a>
+                        <a class="nav-link {% if 'news' in request.resolver_match.url_name %}active{% endif %}"
+                           href="{% url 'public:news_list' %}"{% if 'news' in request.resolver_match.url_name %} aria-current="page"{% endif %}>Actualités</a>
                     </li>
                     {% for page in menu_pages %}
                     <li class="nav-item">
-                        <a class="nav-link" href="{% url 'public:page' page.slug %}">{{ page.title }}</a>
+                        <a class="nav-link {% if request.resolver_match.url_name == 'page' and request.resolver_match.kwargs.slug == page.slug %}active{% endif %}"
+                           href="{% url 'public:page' page.slug %}"{% if request.resolver_match.url_name == 'page' and request.resolver_match.kwargs.slug == page.slug %} aria-current="page"{% endif %}>{{ page.title }}</a>
                     </li>
                     {% endfor %}
                     <li class="nav-item">
-                        <a class="nav-link" href="{% url 'public:contact' %}">Contact</a>
+                        <a class="nav-link {% if request.resolver_match.url_name == 'contact' %}active{% endif %}"
+                           href="{% url 'public:contact' %}"{% if request.resolver_match.url_name == 'contact' %} aria-current="page"{% endif %}>Contact</a>
                     </li>
                 </ul>
                 
@@ -508,8 +514,9 @@
             <div style="flex:1; min-width:250px;">
                 <strong style="color:#ffffff;"><i class="bi bi-shield-lock me-2"></i>Cookies &amp; Confidentialité</strong>
                 <p style="margin:0.35rem 0 0; font-size:0.95rem; line-height:1.45; color:#ffffff; opacity:1;">
-                    Ce site utilise des cookies essentiels à son fonctionnement (session, sécurité CSRF).
-                    En continuant, vous acceptez leur utilisation conformément à notre politique de confidentialité.
+                    Ce site utilise uniquement des cookies strictement nécessaires à son fonctionnement
+                    (session, sécurité CSRF). Aucun cookie tiers ni traceur publicitaire n'est déposé.
+                    Une question ? <a href="{% url 'public:contact' %}" style="color:#ffffff; text-decoration:underline;">Contactez-nous</a>.
                 </p>
             </div>
             <div style="display:flex; gap:0.75rem; flex-shrink:0;">
@@ -529,13 +536,25 @@
     </div>
     <script>
     (function() {
-        var consent = localStorage.getItem('eebc_cookie_consent');
-        if (!consent) {
+        // Consentement valable 6 mois (recommandation CNIL)
+        var CONSENT_TTL_MS = 180 * 24 * 60 * 60 * 1000;
+        try {
+            var raw = localStorage.getItem('eebc_cookie_consent');
+            if (raw) {
+                var data = JSON.parse(raw);
+                if (data && data.v && data.t && (Date.now() - data.t) < CONSENT_TTL_MS) {
+                    return; // consentement encore valide
+                }
+            }
+            document.getElementById('cookie-banner').style.display = 'block';
+        } catch (e) {
             document.getElementById('cookie-banner').style.display = 'block';
         }
     })();
     function setCookieConsent(value) {
-        localStorage.setItem('eebc_cookie_consent', value);
+        try {
+            localStorage.setItem('eebc_cookie_consent', JSON.stringify({ v: value, t: Date.now() }));
+        } catch (e) {}
         document.getElementById('cookie-banner').style.display = 'none';
     }
     </script>
@@ -563,7 +582,7 @@
                 btn.style.transform='translateY(20px)';
                 setTimeout(function(){if(window.scrollY<=400)btn.style.display='none';},300);
             }
-        });
+        },{passive:true});
     })();
     </script>
 </body>
