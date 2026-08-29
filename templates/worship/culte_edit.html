@@ -127,14 +127,26 @@
                     <h5 class="mb-0"><i class="bi bi-music-note-beamed me-2"></i>Choristes</h5>
                 </div>
                 <div class="card-body">
-                    <select name="singers" class="form-select" multiple size="8">
-                        {% for member in members %}
-                        <option value="{{ member.id }}" {% if member in service.singers.all %}selected{% endif %}>
-                            {{ member.last_name }} {{ member.first_name }}
-                        </option>
-                        {% endfor %}
-                    </select>
-                    <small class="text-muted">Maintenez Ctrl pour sélectionner plusieurs personnes</small>
+                    <div class="check-list" data-check-list>
+                        <input type="search" class="form-control check-list__search" data-check-list-search
+                               placeholder="Filtrer…" aria-label="Filtrer la liste des choristes">
+                        <div class="check-list__items" role="group" aria-label="Choristes">
+                            {% for member in members %}
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" name="singers"
+                                       value="{{ member.id }}" id="singers_{{ member.id }}"
+                                       {% if member in service.singers.all %}checked{% endif %}>
+                                <label class="form-check-label" for="singers_{{ member.id }}">
+                                    {{ member.last_name }} {{ member.first_name }}
+                                </label>
+                            </div>
+                            {% endfor %}
+                            <p class="check-list__empty">Aucun résultat pour cette recherche.</p>
+                        </div>
+                        <div class="check-list__footer">
+                            <span data-check-list-count aria-live="polite"></span>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -146,14 +158,26 @@
                     <h5 class="mb-0"><i class="bi bi-vinyl me-2"></i>Musiciens</h5>
                 </div>
                 <div class="card-body">
-                    <select name="musicians" class="form-select" multiple size="8">
-                        {% for member in members %}
-                        <option value="{{ member.id }}" {% if member in service.musicians.all %}selected{% endif %}>
-                            {{ member.last_name }} {{ member.first_name }}
-                        </option>
-                        {% endfor %}
-                    </select>
-                    <small class="text-muted">Maintenez Ctrl pour sélectionner plusieurs personnes</small>
+                    <div class="check-list" data-check-list>
+                        <input type="search" class="form-control check-list__search" data-check-list-search
+                               placeholder="Filtrer…" aria-label="Filtrer la liste des musiciens">
+                        <div class="check-list__items" role="group" aria-label="Musiciens">
+                            {% for member in members %}
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" name="musicians"
+                                       value="{{ member.id }}" id="musicians_{{ member.id }}"
+                                       {% if member in service.musicians.all %}checked{% endif %}>
+                                <label class="form-check-label" for="musicians_{{ member.id }}">
+                                    {{ member.last_name }} {{ member.first_name }}
+                                </label>
+                            </div>
+                            {% endfor %}
+                            <p class="check-list__empty">Aucun résultat pour cette recherche.</p>
+                        </div>
+                        <div class="check-list__footer">
+                            <span data-check-list-count aria-live="polite"></span>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
