@@ -27,48 +27,91 @@
                     <div class="card-body p-4">
                         <h4 class="mb-4">Envoyez-nous un message</h4>
                         
-                        <form method="post">
+                        <form method="post" novalidate>
                             {% csrf_token %}
-                            
+
+                            {% if form.errors %}
+                            <div class="alert alert-danger" role="alert">
+                                <h5 class="alert-heading fs-6">
+                                    <i class="bi bi-exclamation-triangle me-2" aria-hidden="true"></i>
+                                    Le formulaire contient des erreurs
+                                </h5>
+                                <ul class="mb-0 ps-3">
+                                    {% for field in form %}
+                                        {% if field.errors %}
+                                        <li><strong>{{ field.label }}</strong> : {{ field.errors|join:", " }}</li>
+                                        {% endif %}
+                                    {% endfor %}
+                                </ul>
+                            </div>
+                            {% endif %}
+
                             <div class="row">
                                 <div class="col-md-6 mb-3">
                                     <label for="id_name" class="form-label">Nom complet *</label>
-                                    <input type="text" class="form-control" id="id_name" name="name" required>
+                                    <input type="text" class="form-control{% if form.name.errors %} is-invalid{% endif %}" id="id_name" name="name"
+                                           value="{{ form.name.value|default_if_none:'' }}" required autocomplete="name"
+                                           {% if form.name.errors %}aria-invalid="true" aria-describedby="id_name_error"{% endif %}>
+                                    {% if form.name.errors %}
+                                    <div class="invalid-feedback d-block" id="id_name_error">{{ form.name.errors|join:", " }}</div>
+                                    {% endif %}
                                 </div>
                                 <div class="col-md-6 mb-3">
                                     <label for="id_email" class="form-label">Email *</label>
-                                    <input type="email" class="form-control" id="id_email" name="email" required>
+                                    <input type="email" class="form-control{% if form.email.errors %} is-invalid{% endif %}" id="id_email" name="email"
+                                           value="{{ form.email.value|default_if_none:'' }}" required autocomplete="email"
+                                           {% if form.email.errors %}aria-invalid="true" aria-describedby="id_email_error"{% endif %}>
+                                    {% if form.email.errors %}
+                                    <div class="invalid-feedback d-block" id="id_email_error">{{ form.email.errors|join:", " }}</div>
+                                    {% endif %}
                                 </div>
                             </div>
-                            
+
                             <div class="row">
                                 <div class="col-md-6 mb-3">
                                     <label for="id_phone" class="form-label">Téléphone</label>
-                                    <input type="tel" class="form-control" id="id_phone" name="phone">
+                                    <input type="tel" class="form-control{% if form.phone.errors %} is-invalid{% endif %}" id="id_phone" name="phone"
+                                           value="{{ form.phone.value|default_if_none:'' }}" autocomplete="tel"
+                                           {% if form.phone.errors %}aria-invalid="true" aria-describedby="id_phone_error"{% endif %}>
+                                    {% if form.phone.errors %}
+                                    <div class="invalid-feedback d-block" id="id_phone_error">{{ form.phone.errors|join:", " }}</div>
+                                    {% endif %}
                                 </div>
                                 <div class="col-md-6 mb-3">
                                     <label for="id_subject" class="form-label">Sujet *</label>
-                                    <select class="form-select" id="id_subject" name="subject" required>
+                                    <select class="form-select{% if form.subject.errors %} is-invalid{% endif %}" id="id_subject" name="subject" required
+                                            {% if form.subject.errors %}aria-invalid="true" aria-describedby="id_subject_error"{% endif %}>
                                         {% for value, label in subjects %}
-                                        <option value="{{ value }}">{{ label }}</option>
+                                        <option value="{{ value }}" {% if form.subject.value == value %}selected{% endif %}>{{ label }}</option>
                                         {% endfor %}
                                     </select>
+                                    {% if form.subject.errors %}
+                                    <div class="invalid-feedback d-block" id="id_subject_error">{{ form.subject.errors|join:", " }}</div>
+                                    {% endif %}
                                 </div>
                             </div>
-                            
+
                             <div class="mb-3">
                                 <label for="id_site" class="form-label">Site concerné</label>
-                                <select class="form-select" id="id_site" name="site">
+                                <select class="form-select{% if form.site.errors %} is-invalid{% endif %}" id="id_site" name="site"
+                                        {% if form.site.errors %}aria-invalid="true" aria-describedby="id_site_error"{% endif %}>
                                     <option value="">-- Tous les sites --</option>
                                     {% for site in sites %}
-                                    <option value="{{ site.pk }}">{{ site.name }}</option>
+                                    <option value="{{ site.pk }}" {% if form.site.value|stringformat:"s" == site.pk|stringformat:"s" %}selected{% endif %}>{{ site.name }}</option>
                                     {% endfor %}
                                 </select>
+                                {% if form.site.errors %}
+                                <div class="invalid-feedback d-block" id="id_site_error">{{ form.site.errors|join:", " }}</div>
+                                {% endif %}
                             </div>
-                            
+
                             <div class="mb-3">
                                 <label for="id_message" class="form-label">Message *</label>
-                                <textarea class="form-control" id="id_message" name="message" rows="5" required></textarea>
+                                <textarea class="form-control{% if form.message.errors %} is-invalid{% endif %}" id="id_message" name="message" rows="5" required
+                                          {% if form.message.errors %}aria-invalid="true" aria-describedby="id_message_error"{% endif %}>{{ form.message.value|default_if_none:'' }}</textarea>
+                                {% if form.message.errors %}
+                                <div class="invalid-feedback d-block" id="id_message_error">{{ form.message.errors|join:", " }}</div>
+                                {% endif %}
                             </div>
                             
                             {% if turnstile_site_key %}
@@ -76,9 +119,17 @@
                             {% endif %}
 
                             <button type="submit" class="btn btn-primary btn-lg">
-                                <i class="bi bi-send me-2"></i>Envoyer
+                                <i class="bi bi-send me-2" aria-hidden="true"></i>Envoyer
                             </button>
                         </form>
+                        {% if form.errors %}
+                        <script>
+                        document.addEventListener('DOMContentLoaded', function () {
+                            var firstInvalid = document.querySelector('.is-invalid');
+                            if (firstInvalid) { firstInvalid.focus(); }
+                        });
+                        </script>
+                        {% endif %}
                     </div>
                 </div>
             </div>
@@ -122,18 +173,18 @@
                         <h5>Suivez-nous</h5>
                         <div class="mt-3">
                             {% if settings.facebook_url %}
-                            <a href="{{ settings.facebook_url }}" target="_blank" class="btn btn-outline-light me-2">
-                                <i class="bi bi-facebook"></i>
+                            <a href="{{ settings.facebook_url }}" target="_blank" rel="noopener noreferrer" class="btn btn-outline-light me-2" aria-label="Suivez-nous sur Facebook (nouvel onglet)">
+                                <i class="bi bi-facebook" aria-hidden="true"></i>
                             </a>
                             {% endif %}
                             {% if settings.youtube_url %}
-                            <a href="{{ settings.youtube_url }}" target="_blank" class="btn btn-outline-light me-2">
-                                <i class="bi bi-youtube"></i>
+                            <a href="{{ settings.youtube_url }}" target="_blank" rel="noopener noreferrer" class="btn btn-outline-light me-2" aria-label="Suivez-nous sur YouTube (nouvel onglet)">
+                                <i class="bi bi-youtube" aria-hidden="true"></i>
                             </a>
                             {% endif %}
                             {% if settings.instagram_url %}
-                            <a href="{{ settings.instagram_url }}" target="_blank" class="btn btn-outline-light">
-                                <i class="bi bi-instagram"></i>
+                            <a href="{{ settings.instagram_url }}" target="_blank" rel="noopener noreferrer" class="btn btn-outline-light" aria-label="Suivez-nous sur Instagram (nouvel onglet)">
+                                <i class="bi bi-instagram" aria-hidden="true"></i>
                             </a>
                             {% endif %}
                         </div>
@@ -149,104 +200,30 @@
                         {% for site in sites %}
                         <div class="{% if not forloop.last %}mb-4 pb-4 border-bottom{% endif %}">
                             <!-- En-tête avec nom -->
-                            <h5><i class="bi bi-church text-primary me-2"></i>{{ site.name }}</h5>
+                            <h5><i class="bi bi-church text-primary me-2" aria-hidden="true"></i>{{ site.name }}</h5>
                             
                             <!-- Adresse -->
                             {% if site.address %}
                             <div class="mb-3">
                                 <h6 class="text-muted mb-2">Adresse</h6>
-                                <p class="mb-0"><i class="bi bi-geo-alt me-2 text-muted"></i>{{ site.address }}, {{ site.city }}</p>
+                                <p class="mb-0"><i class="bi bi-geo-alt me-2 text-muted" aria-hidden="true"></i>{{ site.address }}, {{ site.city }}</p>
                             </div>
                             {% endif %}
                             
-                            <!-- Horaires -->
+                            <!-- Horaires (données réelles du site) -->
                             {% if site.worship_schedule %}
                             <div class="mb-3">
                                 <h6 class="text-muted mb-2">Horaires</h6>
-                                {% if site.code == 'CAB' %}
-                                    <!-- Mise en forme structurée pour Cayenne -->
-                                    <div class="schedule-organized">
-                                        <h6 class="schedule-title"><i class="bi bi-calendar-week me-2"></i>Horaires des activités</h6>
-                                        <div class="activities-list">
-                                            <div class="activity-item">
-                                                <div class="activity-icon">
-                                                    <i class="bi bi-church"></i>
-                                                </div>
-                                                <div class="activity-details">
-                                                    <strong>Culte</strong>
-                                                    <span>Dimanche 9h30-12h00</span>
-                                                </div>
-                                            </div>
-                                            <div class="activity-item">
-                                                <div class="activity-icon">
-                                                    <i class="bi bi-book"></i>
-                                                </div>
-                                                <div class="activity-details">
-                                                    <strong>Étude biblique</strong>
-                                                    <span>Mercredi 19h00</span>
-                                                </div>
-                                            </div>
-                                            <div class="activity-item">
-                                                <div class="activity-icon">
-                                                    <i class="bi bi-heart"></i>
-                                                </div>
-                                                <div class="activity-details">
-                                                    <strong>Réunion de prière</strong>
-                                                    <span>Vendredi 19h00</span>
-                                                </div>
-                                            </div>
-                                            <div class="activity-item">
-                                                <div class="activity-icon">
-                                                    <i class="bi bi-people"></i>
-                                                </div>
-                                                <div class="activity-details">
-                                                    <strong>Groupe de jeunes</strong>
-                                                    <span>Samedi 16h00-18h00</span>
-                                                </div>
-                                            </div>
-                                            <div class="activity-item">
-                                                <div class="activity-icon">
-                                                    <i class="bi bi-mortarboard"></i>
-                                                </div>
-                                                <div class="activity-details">
-                                                    <strong>Club biblique</strong>
-                                                    <span>Samedi 15h00-16h30</span>
-                                                </div>
-                                            </div>
-                                            <div class="activity-item">
-                                                <div class="activity-icon">
-                                                    <i class="bi bi-music-note-beamed"></i>
-                                                </div>
-                                                <div class="activity-details">
-                                                    <strong>Chorale</strong>
-                                                    <span>Samedi 17h30-19h30</span>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                {% else %}
-                                    <!-- Affichage simple pour Macouria -->
-                                    <div class="schedule-organized">
-                                        <h6 class="schedule-title"><i class="bi bi-calendar-week me-2"></i>Horaires des activités</h6>
-                                        <div class="activities-list">
-                                            <div class="activity-item">
-                                                <div class="activity-icon">
-                                                    <i class="bi bi-church"></i>
-                                                </div>
-                                                <div class="activity-details">
-                                                    <strong>Culte</strong>
-                                                    <span>Dimanche 9h30</span>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                {% endif %}
+                                <div class="schedule-organized">
+                                    <h6 class="schedule-title"><i class="bi bi-calendar-week me-2" aria-hidden="true"></i>Horaires des activités</h6>
+                                    <p class="mb-0">{{ site.worship_schedule|linebreaksbr }}</p>
+                                </div>
                             </div>
                             {% endif %}
                             
                             <!-- Contact -->
                             {% if site.phone %}
-                            <p class="mb-0 mt-3"><i class="bi bi-telephone me-2 text-muted"></i>{{ site.phone }}</p>
+                            <p class="mb-0 mt-3"><i class="bi bi-telephone me-2 text-muted" aria-hidden="true"></i>{{ site.phone }}</p>
                             {% endif %}
                         </div>
                         {% endfor %}

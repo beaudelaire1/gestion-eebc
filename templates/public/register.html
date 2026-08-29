@@ -21,74 +21,120 @@
     <div class="container">
         <div class="row justify-content-center">
             <div class="col-lg-8">
-                <!-- Bannière de verset biblique -->
+                <!-- Bannière de verset biblique (le JS remplace ce contenu ; texte statique sans JS) -->
                 <div class="animated-verse-banner mb-4">
-                    <div class="verse-content">
-                        <div class="verse-icon">
-                            <i class="bi bi-book"></i>
-                        </div>
-                        <div class="verse-text">
-                            <p class="verse-quote" id="verse-quote">Chargement du verset...</p>
-                            <p class="verse-reference" id="verse-reference"></p>
-                        </div>
-                    </div>
+                    <p class="verse-banner-text">« Car Dieu a tant aimé le monde qu'il a donné son Fils unique, afin que quiconque croit en lui ne périsse point, mais qu'il ait la vie éternelle. » — Jean 3:16</p>
                 </div>
                 
                 <div class="card">
                     <div class="card-body p-4">
-                        <form method="post">
+                        <form method="post" novalidate>
                             {% csrf_token %}
-                            
+
+                            {% if form.errors %}
+                            <div class="alert alert-danger" role="alert">
+                                <h5 class="alert-heading fs-6">
+                                    <i class="bi bi-exclamation-triangle me-2" aria-hidden="true"></i>
+                                    Le formulaire contient des erreurs
+                                </h5>
+                                <ul class="mb-0 ps-3">
+                                    {% for field in form %}
+                                        {% if field.errors %}
+                                        <li><strong>{{ field.label }}</strong> : {{ field.errors|join:", " }}</li>
+                                        {% endif %}
+                                    {% endfor %}
+                                </ul>
+                            </div>
+                            {% endif %}
+
                             <div class="row">
                                 <div class="col-md-6 mb-3">
                                     <label for="id_first_name" class="form-label">Prénom *</label>
-                                    <input type="text" class="form-control" id="id_first_name" name="first_name" required>
+                                    <input type="text" class="form-control{% if form.first_name.errors %} is-invalid{% endif %}" id="id_first_name" name="first_name"
+                                           value="{{ form.first_name.value|default_if_none:'' }}" required autocomplete="given-name"
+                                           {% if form.first_name.errors %}aria-invalid="true" aria-describedby="id_first_name_error"{% endif %}>
+                                    {% if form.first_name.errors %}
+                                    <div class="invalid-feedback d-block" id="id_first_name_error">{{ form.first_name.errors|join:", " }}</div>
+                                    {% endif %}
                                 </div>
                                 <div class="col-md-6 mb-3">
                                     <label for="id_last_name" class="form-label">Nom *</label>
-                                    <input type="text" class="form-control" id="id_last_name" name="last_name" required>
+                                    <input type="text" class="form-control{% if form.last_name.errors %} is-invalid{% endif %}" id="id_last_name" name="last_name"
+                                           value="{{ form.last_name.value|default_if_none:'' }}" required autocomplete="family-name"
+                                           {% if form.last_name.errors %}aria-invalid="true" aria-describedby="id_last_name_error"{% endif %}>
+                                    {% if form.last_name.errors %}
+                                    <div class="invalid-feedback d-block" id="id_last_name_error">{{ form.last_name.errors|join:", " }}</div>
+                                    {% endif %}
                                 </div>
                             </div>
-                            
+
                             <div class="row">
                                 <div class="col-md-6 mb-3">
                                     <label for="id_email" class="form-label">Email *</label>
-                                    <input type="email" class="form-control" id="id_email" name="email" required>
+                                    <input type="email" class="form-control{% if form.email.errors %} is-invalid{% endif %}" id="id_email" name="email"
+                                           value="{{ form.email.value|default_if_none:'' }}" required autocomplete="email"
+                                           {% if form.email.errors %}aria-invalid="true" aria-describedby="id_email_error"{% endif %}>
+                                    {% if form.email.errors %}
+                                    <div class="invalid-feedback d-block" id="id_email_error">{{ form.email.errors|join:", " }}</div>
+                                    {% endif %}
                                 </div>
                                 <div class="col-md-6 mb-3">
                                     <label for="id_phone" class="form-label">Téléphone</label>
-                                    <input type="tel" class="form-control" id="id_phone" name="phone">
+                                    <input type="tel" class="form-control{% if form.phone.errors %} is-invalid{% endif %}" id="id_phone" name="phone"
+                                           value="{{ form.phone.value|default_if_none:'' }}" autocomplete="tel"
+                                           {% if form.phone.errors %}aria-invalid="true" aria-describedby="id_phone_error"{% endif %}>
+                                    {% if form.phone.errors %}
+                                    <div class="invalid-feedback d-block" id="id_phone_error">{{ form.phone.errors|join:", " }}</div>
+                                    {% endif %}
                                 </div>
                             </div>
-                            
+
                             <div class="mb-3">
                                 <label for="id_city" class="form-label">Ville</label>
-                                <input type="text" class="form-control" id="id_city" name="city">
+                                <input type="text" class="form-control{% if form.city.errors %} is-invalid{% endif %}" id="id_city" name="city"
+                                       value="{{ form.city.value|default_if_none:'' }}" autocomplete="address-level2"
+                                       {% if form.city.errors %}aria-invalid="true" aria-describedby="id_city_error"{% endif %}>
+                                {% if form.city.errors %}
+                                <div class="invalid-feedback d-block" id="id_city_error">{{ form.city.errors|join:", " }}</div>
+                                {% endif %}
                             </div>
-                            
+
                             <div class="row">
                                 <div class="col-md-6 mb-3">
                                     <label for="id_interest" class="form-label">Je suis intéressé(e) par *</label>
-                                    <select class="form-select" id="id_interest" name="interest" required>
+                                    <select class="form-select{% if form.interest.errors %} is-invalid{% endif %}" id="id_interest" name="interest" required
+                                            {% if form.interest.errors %}aria-invalid="true" aria-describedby="id_interest_error"{% endif %}>
                                         {% for value, label in interests %}
-                                        <option value="{{ value }}">{{ label }}</option>
+                                        <option value="{{ value }}" {% if form.interest.value == value %}selected{% endif %}>{{ label }}</option>
                                         {% endfor %}
                                     </select>
+                                    {% if form.interest.errors %}
+                                    <div class="invalid-feedback d-block" id="id_interest_error">{{ form.interest.errors|join:", " }}</div>
+                                    {% endif %}
                                 </div>
                                 <div class="col-md-6 mb-3">
                                     <label for="id_preferred_site" class="form-label">Site préféré</label>
-                                    <select class="form-select" id="id_preferred_site" name="preferred_site">
+                                    <select class="form-select{% if form.preferred_site.errors %} is-invalid{% endif %}" id="id_preferred_site" name="preferred_site"
+                                            {% if form.preferred_site.errors %}aria-invalid="true" aria-describedby="id_preferred_site_error"{% endif %}>
                                         <option value="">-- Peu importe --</option>
                                         {% for site in sites %}
-                                        <option value="{{ site.pk }}">{{ site.name }}</option>
+                                        <option value="{{ site.pk }}" {% if form.preferred_site.value|stringformat:"s" == site.pk|stringformat:"s" %}selected{% endif %}>{{ site.name }}</option>
                                         {% endfor %}
                                     </select>
+                                    {% if form.preferred_site.errors %}
+                                    <div class="invalid-feedback d-block" id="id_preferred_site_error">{{ form.preferred_site.errors|join:", " }}</div>
+                                    {% endif %}
                                 </div>
                             </div>
-                            
+
                             <div class="mb-4">
                                 <label for="id_message" class="form-label">Message (optionnel)</label>
-                                <textarea class="form-control" id="id_message" name="message" rows="3" placeholder="Dites-nous en plus sur vous ou vos attentes..."></textarea>
+                                <textarea class="form-control{% if form.message.errors %} is-invalid{% endif %}" id="id_message" name="message" rows="3"
+                                          placeholder="Dites-nous en plus sur vous ou vos attentes..."
+                                          {% if form.message.errors %}aria-invalid="true" aria-describedby="id_message_error"{% endif %}>{{ form.message.value|default_if_none:'' }}</textarea>
+                                {% if form.message.errors %}
+                                <div class="invalid-feedback d-block" id="id_message_error">{{ form.message.errors|join:", " }}</div>
+                                {% endif %}
                             </div>
                             
                             {% if turnstile_site_key %}
@@ -96,15 +142,23 @@
                             {% endif %}
 
                             <button type="submit" class="btn btn-primary btn-lg">
-                                <i class="bi bi-send me-2"></i>Envoyer
+                                <i class="bi bi-send me-2" aria-hidden="true"></i>Envoyer
                             </button>
                         </form>
+                        {% if form.errors %}
+                        <script>
+                        document.addEventListener('DOMContentLoaded', function () {
+                            var firstInvalid = document.querySelector('.is-invalid');
+                            if (firstInvalid) { firstInvalid.focus(); }
+                        });
+                        </script>
+                        {% endif %}
                     </div>
                 </div>
                 
                 <div class="text-center mt-4">
                     <p class="text-muted">
-                        Vous pouvez aussi nous contacter directement via notre 
+                        Vous pouvez aussi nous contacter directement via notre
                         <a href="{% url 'public:contact' %}">formulaire de contact</a>.
                     </p>
                 </div>
