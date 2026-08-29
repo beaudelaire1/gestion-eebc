@@ -49,7 +49,7 @@ class ThemeManager {
     }
 
     getSystemTheme() {
-        return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+        return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'darkly' : 'default';
     }
 
     applyTheme(themeId) {
@@ -207,7 +207,7 @@ class ThemeManager {
         // Écouter les changements de préférence système
         window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', (e) => {
             if (!this.getStoredTheme()) {
-                this.applyTheme(e.matches ? 'dark' : 'light');
+                this.applyTheme(e.matches ? 'darkly' : 'default');
             }
         });
 
