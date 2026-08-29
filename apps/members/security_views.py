@@ -1,4 +1,4 @@
-"""Security boundary for member and pastoral data."""
+"""Security boundary for member, family and pastoral data."""
 from __future__ import annotations
 
 import json
@@ -15,11 +15,13 @@ from django.views.decorators.http import require_POST
 from apps.core.permissions import role_required
 from apps.core.security import can_view_confidential_pastoral_data
 from . import views as legacy_views
+from . import family_views as legacy_family
 from . import kanban_views as legacy_kanban
 from .models import LifeEvent, Member, VisitationLog
 
 
 STAFF_ROLES = ('admin', 'secretariat', 'encadrant', 'pasteur')
+FAMILY_WRITE_ROLES = ('admin', 'secretariat')
 
 
 def _visible_visits(user, queryset=None):
@@ -32,8 +34,6 @@ def _visible_visits(user, queryset=None):
 @login_required
 @role_required(*STAFF_ROLES)
 def member_list(request):
-    # The legacy template exposes phone/email/profession. Restrict the complete
-    # directory instead of pretending that hiding action buttons protects data.
     return legacy_views.member_list(request)
 
 
@@ -58,6 +58,47 @@ def member_detail(request, pk):
 @role_required(*STAFF_ROLES)
 def member_print_registration(request, pk):
     return legacy_views.member_print_registration(request, pk)
+
+
+# -----------------------------------------------------------------------------
+# Families: the legacy screens include phone, email, address and child/young
+# membership information, so they share the same read boundary as members.
+# Writes remain limited to admin/secretariat.
+# -----------------------------------------------------------------------------
+@login_required
+@role_required(*STAFF_ROLES)
+def family_list(request):
+    return legacy_family.family_list(request)
+
+
+@login_required
+@role_required(*STAFF_ROLES)
+def family_detail(request, pk):
+    return legacy_family.family_detail(request, pk)
+
+
+@login_required
+@role_required(*STAFF_ROLES)
+def member_api_data(request, pk):
+    return legacy_family.member_api_data(request, pk)
+
+
+@login_required
+@role_required(*FAMILY_WRITE_ROLES)
+def family_create(request):
+    return legacy_family.family_create(request)
+
+
+@login_required
+@role_required(*FAMILY_WRITE_ROLES)
+def family_edit(request, pk):
+    return legacy_family.family_edit(request, pk)
+
+
+@login_required
+@role_required(*FAMILY_WRITE_ROLES)
+def family_add_member(request, pk):
+    return legacy_family.family_add_member(request, pk)
 
 
 @login_required
