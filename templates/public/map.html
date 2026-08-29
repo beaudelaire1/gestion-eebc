@@ -2,6 +2,8 @@
 {% load l10n %}
 
 {% block title %}Carte des églises - {{ settings.site_name|default:'EEBC' }}{% endblock %}
+{% block meta_description %}Localisez nos sites sur la carte interactive de {{ settings.site_name|default:'EEBC' }}.{% endblock %}
+{% block og_title %}Carte des sites{% endblock %}
 
 {% block extra_css %}
 <!-- Leaflet CSS -->

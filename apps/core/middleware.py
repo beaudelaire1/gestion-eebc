@@ -202,7 +202,7 @@ class RateLimitMiddleware:
             return True
         
         # Check for admin role
-        if hasattr(request.user, 'role') and request.user.role == 'admin':
+        if request.user.has_role('admin'):
             return True
         
         return False

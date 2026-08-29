@@ -1,0 +1,138 @@
+/* =============================================================================
+   BANDE DE VERSET ANIMÉE - 25px de hauteur avec texte défilant
+   ============================================================================= */
+
+.animated-verse-banner {
+    height: 25px;
+    background: linear-gradient(90deg, #0A36FF 0%, #3D5FFF 50%, #0A36FF 100%);
+    background-size: 200% 100%;
+    animation: gradientShift 3s ease-in-out infinite;
+    overflow: hidden;
+    position: relative;
+    margin-bottom: 1rem;
+    border-radius: 2px;
+    box-shadow: 0 2px 8px rgba(10, 54, 255, 0.3);
+}
+
+.verse-scroll-container {
+    height: 100%;
+    width: 100%;
+    position: relative;
+    overflow: hidden;
+}
+
+.verse-scroll-text {
+    position: absolute;
+    top: 50%;
+    left: 100%;
+    transform: translateY(-50%);
+    white-space: nowrap;
+    color: white;
+    font-size: 12px;
+    font-weight: 500;
+    font-family: 'Poppins', sans-serif;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+    line-height: 1;
+    padding: 0 20px;
+}
+
+.verse-scroll-text.scrolling {
+    animation: scrollText linear infinite;
+}
+
+/* Animation du dégradé de fond */
+@keyframes gradientShift {
+    0%, 100% {
+        background-position: 0% 50%;
+    }
+    50% {
+        background-position: 100% 50%;
+    }
+}
+
+/* Animation du texte défilant */
+@keyframes scrollText {
+    0% {
+        left: 100%;
+    }
+    100% {
+        left: -100%;
+    }
+}
+
+/* Effet de brillance qui passe sur la bande */
+.animated-verse-banner::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.4), transparent);
+    animation: shine 4s ease-in-out infinite;
+}
+
+@keyframes shine {
+    0% {
+        left: -100%;
+    }
+    50% {
+        left: 100%;
+    }
+    100% {
+        left: 100%;
+    }
+}
+
+/* Variations pour les thèmes sombres */
+[data-theme="dark"] .animated-verse-banner,
+[data-theme="darky"] .animated-verse-banner,
+[data-theme="darkly"] .animated-verse-banner,
+[data-theme="cyborg"] .animated-verse-banner,
+[data-theme="slate"] .animated-verse-banner,
+[data-theme="solar"] .animated-verse-banner,
+[data-theme="superhero"] .animated-verse-banner {
+    background: linear-gradient(90deg, #3b82f6 0%, #1d4ed8 50%, #3b82f6 100%);
+    box-shadow: 0 2px 8px rgba(59, 130, 246, 0.4);
+}
+
+/* Responsive - Ajustements pour mobile */
+@media (max-width: 768px) {
+    .verse-scroll-text {
+        font-size: 10px;
+        padding: 0 15px;
+    }
+}
+
+@media (max-width: 480px) {
+    .verse-scroll-text {
+        font-size: 9px;
+        padding: 0 10px;
+    }
+}
+
+/* Animation plus lente sur mobile pour une meilleure lisibilité */
+@media (max-width: 768px) {
+    .verse-scroll-text.scrolling {
+        animation-duration: 25s !important;
+    }
+}
+
+/* Pause de l'animation au survol */
+.animated-verse-banner:hover .verse-scroll-text.scrolling {
+    animation-play-state: paused;
+}
+
+/* Effet de pulsation subtile */
+.animated-verse-banner {
+    animation: gradientShift 3s ease-in-out infinite, pulse 2s ease-in-out infinite alternate;
+}
+
+@keyframes pulse {
+    0% {
+        box-shadow: 0 2px 8px rgba(10, 54, 255, 0.3);
+    }
+    100% {
+        box-shadow: 0 2px 12px rgba(10, 54, 255, 0.5);
+    }
+}

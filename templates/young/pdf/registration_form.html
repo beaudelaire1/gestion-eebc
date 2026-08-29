@@ -1,0 +1,131 @@
+{% extends 'pdf/registration_base.html' %}
+
+{% block title %}Fiche d'inscription - Jeune{% endblock %}
+{% block document_eyebrow %}EEBC | Jeunesse{% endblock %}
+{% block document_title %}Fiche d'inscription jeune{% endblock %}
+{% block document_subtitle %}Version PDF construite sur la meme logique de sections que le formulaire de saisie Jeunesse.{% endblock %}
+
+{% block document_chips %}
+<span class="chip">Jeunesse</span>
+<span class="chip chip-muted">Inscription du {{ youth.registration_date|date:"d/m/Y" }}</span>
+{% if youth.group %}<span class="chip chip-muted">{{ youth.group }}</span>{% endif %}
+{% endblock %}
+
+{% block hero %}
+<div class="summary-card">
+    <div class="summary-grid">
+        <div class="summary-item">
+            <div class="summary-label">Nom complet</div>
+            <div class="summary-value">{{ youth.full_name }}</div>
+        </div>
+        <div class="summary-item">
+            <div class="summary-label">Age</div>
+            <div class="summary-value">{{ youth.age }} ans</div>
+        </div>
+        <div class="summary-item">
+            <div class="summary-label">Statut</div>
+            <div class="summary-value">{{ youth.get_status_display }}</div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block hero_photo %}
+<div class="photo-box">
+    {% if youth.photo %}
+    <img src="{{ youth.photo.url }}" alt="{{ youth.full_name }}">
+    {% else %}
+    <div class="photo-placeholder">Photo jeune</div>
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block content %}
+<div class="section">
+    <h2 class="section-heading">Identite</h2>
+    <div class="field-grid">
+        <div class="field third"><div class="field-box"><div class="field-label">Prenom</div><div class="field-value">{{ youth.first_name }}</div></div></div>
+        <div class="field third"><div class="field-box"><div class="field-label">Nom</div><div class="field-value">{{ youth.last_name|upper }}</div></div></div>
+        <div class="field third"><div class="field-box"><div class="field-label">Date de naissance</div><div class="field-value">{{ youth.date_of_birth|date:"d/m/Y" }}</div></div></div>
+        <div class="field half"><div class="field-box"><div class="field-label">Genre</div><div class="field-value">{{ youth.get_gender_display }}</div></div></div>
+        <div class="field half"><div class="field-box"><div class="field-label">Groupe</div><div class="field-value">{{ youth.group|default:"Non attribue" }}</div></div></div>
+    </div>
+</div>
+
+<div class="section">
+    <h2 class="section-heading">Lien eglise</h2>
+    <div class="field-grid">
+        <div class="field third"><div class="field-box"><div class="field-label">Site</div><div class="field-value">{{ youth.site|default:"Non renseigne" }}</div></div></div>
+        <div class="field third"><div class="field-box"><div class="field-label">Famille</div><div class="field-value">{{ youth.family|default:"Aucune famille" }}</div></div></div>
+        <div class="field third"><div class="field-box"><div class="field-label">Fiche membre liee</div><div class="field-value">{{ youth.linked_member|default:"Aucun lien" }}</div></div></div>
+    </div>
+</div>
+
+<div class="section">
+    <h2 class="section-heading">Coordonnees</h2>
+    <div class="field-grid">
+        <div class="field half"><div class="field-box"><div class="field-label">Telephone</div><div class="field-value">{{ youth.phone|default:"Non renseigne" }}</div></div></div>
+        <div class="field half"><div class="field-box"><div class="field-label">Email</div><div class="field-value">{{ youth.email|default:"Non renseigne" }}</div></div></div>
+        <div class="field full"><div class="field-box tall"><div class="field-label">Adresse</div><div class="field-value small">{{ youth.address|default:"Non renseignee"|linebreaksbr }}</div></div></div>
+        <div class="field half"><div class="field-box"><div class="field-label">Ville</div><div class="field-value">{{ youth.city|default:"Non renseignee" }}</div></div></div>
+        <div class="field half"><div class="field-box"><div class="field-label">Code postal</div><div class="field-value">{{ youth.postal_code|default:"Non renseigne" }}</div></div></div>
+    </div>
+</div>
+
+<div class="section">
+    <h2 class="section-heading">Parent ou tuteur</h2>
+    <div class="field-grid">
+        <div class="field third"><div class="field-box"><div class="field-label">Nom du parent</div><div class="field-value">{{ youth.parent_name|default:"Non renseigne" }}</div></div></div>
+        <div class="field third"><div class="field-box"><div class="field-label">Telephone parent</div><div class="field-value">{{ youth.parent_phone|default:"Non renseigne" }}</div></div></div>
+        <div class="field third"><div class="field-box"><div class="field-label">Email parent</div><div class="field-value">{{ youth.parent_email|default:"Non renseigne" }}</div></div></div>
+    </div>
+</div>
+
+<div class="section">
+    <h2 class="section-heading">Contact d'urgence</h2>
+    <div class="field-grid">
+        <div class="field half"><div class="field-box"><div class="field-label">Contact d'urgence</div><div class="field-value">{{ youth.emergency_contact|default:"Non renseigne" }}</div></div></div>
+        <div class="field half"><div class="field-box"><div class="field-label">Telephone d'urgence</div><div class="field-value">{{ youth.emergency_phone|default:"Non renseigne" }}</div></div></div>
+    </div>
+</div>
+
+<div class="section">
+    <h2 class="section-heading">Sante</h2>
+    <div class="field-grid">
+        <div class="field half"><div class="field-box tall"><div class="field-label">Allergies</div><div class="field-value small">{{ youth.allergies|default:"Aucune allergie signalee"|linebreaksbr }}</div></div></div>
+        <div class="field half"><div class="field-box tall"><div class="field-label">Notes medicales</div><div class="field-value small">{{ youth.medical_notes|default:"Aucune note medicale"|linebreaksbr }}</div></div></div>
+    </div>
+</div>
+
+<div class="section">
+    <h2 class="section-heading">Vie spirituelle</h2>
+    <div class="field-grid">
+        <div class="field half"><div class="field-box"><div class="field-label">Baptise(e)</div><div class="field-value">{{ youth.is_baptized|yesno:"Oui,Non" }}</div></div></div>
+        <div class="field half"><div class="field-box"><div class="field-label">Date de bapteme</div><div class="field-value">{{ youth.baptism_date|date:"d/m/Y"|default:"Non renseignee" }}</div></div></div>
+        <div class="field half"><div class="field-box"><div class="field-label">Ne(e) de nouveau</div><div class="field-value">{{ youth.is_born_again|yesno:"Oui,Non" }}</div></div></div>
+        <div class="field half"><div class="field-box"><div class="field-label">Date de conversion</div><div class="field-value">{{ youth.conversion_date|date:"d/m/Y"|default:"Non renseignee" }}</div></div></div>
+    </div>
+</div>
+
+<div class="section">
+    <h2 class="section-heading">Transport</h2>
+    <div class="field-grid">
+        <div class="field third"><div class="field-box"><div class="field-label">Besoin de transport</div><div class="field-value">{{ youth.needs_transport|yesno:"Oui,Non" }}</div></div></div>
+        <div class="field third"><div class="field-box"><div class="field-label">Chauffeur assigne</div><div class="field-value">{{ youth.assigned_driver|default:"Aucun" }}</div></div></div>
+        <div class="field third"><div class="field-box"><div class="field-label">Actif</div><div class="field-value">{{ youth.is_active|yesno:"Oui,Non" }}</div></div></div>
+        <div class="field full"><div class="field-box tall"><div class="field-label">Adresse de ramassage</div><div class="field-value small">{{ youth.pickup_address|default:"Aucune adresse de ramassage"|linebreaksbr }}</div></div></div>
+    </div>
+</div>
+
+<div class="section">
+    <h2 class="section-heading">Statut et notes</h2>
+    <div class="field-grid">
+        <div class="field third"><div class="field-box"><div class="field-label">Statut</div><div class="field-value">{{ youth.get_status_display }}</div></div></div>
+        <div class="field third"><div class="field-box"><div class="field-label">Inscription</div><div class="field-value">{{ youth.registration_date|date:"d/m/Y" }}</div></div></div>
+        <div class="field third"><div class="field-box"><div class="field-label">Minorite</div><div class="field-value">{{ youth.is_minor|yesno:"Oui,Non" }}</div></div></div>
+        <div class="field full"><div class="field-box tall"><div class="field-label">Notes</div><div class="field-value small">{{ youth.notes|default:"Aucune note"|linebreaksbr }}</div></div></div>
+    </div>
+</div>
+{% endblock %}
+
+{% block footer_signature %}Date et signature : ___________________________{% endblock %}

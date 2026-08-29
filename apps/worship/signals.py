@@ -32,12 +32,12 @@ def notify_role_assignment(sender, instance, created, **kwargs):
     service_date = instance.service.event.start_date.strftime('%d/%m/%Y')
     
     Notification.objects.create(
-        recipient=recipient,
+        user=recipient,
         title=f"Assignation : {instance.get_role_display()}",
         message=f"Vous avez été assigné(e) au rôle de {instance.get_role_display()} "
                 f"pour le service du {service_date}. Merci de confirmer votre disponibilité.",
-        notification_type='event',
-        link=f"/app/worship/services/{instance.service.pk}/"
+        notification_type='info',
+        action_url=f"/app/worship/services/{instance.service.pk}/"
     )
     
     # Marquer comme notifié

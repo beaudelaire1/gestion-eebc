@@ -1,17 +1,16 @@
 """
-URLs pour les health checks.
+URL patterns for health checks.
+
+Endpoints:
+- GET /health/ → Full system health (DB, cache, Celery)
+- GET /health/lite/ → Fast check (DB, cache only)
 """
 from django.urls import path
-from django.http import HttpResponse
-from .health import health_check, readiness_check, liveness_check
+from .health_views import health_check, health_check_lite
 
-def ping(request):
-    """Simple ping - retourne OK sans vérification"""
-    return HttpResponse("OK", content_type="text/plain")
+app_name = 'core_health'
 
 urlpatterns = [
     path('', health_check, name='health_check'),
-    path('ping/', ping, name='ping'),
-    path('ready/', readiness_check, name='readiness_check'),
-    path('alive/', liveness_check, name='liveness_check'),
+    path('lite/', health_check_lite, name='health_check_lite'),
 ]

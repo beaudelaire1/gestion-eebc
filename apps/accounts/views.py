@@ -6,19 +6,62 @@ from django.http import JsonResponse, HttpResponseRedirect
 from django.views.decorators.http import require_http_methods
 from django.core.exceptions import ValidationError
 from django.contrib.auth.password_validation import validate_password
+from django.db.models import Q
 from django.urls import reverse
 from urllib.parse import urlencode
-from .forms import UserCreationByTeamForm, FirstLoginPasswordChangeForm
+from .forms import UserCreationByTeamForm, FirstLoginPasswordChangeForm, ProfileForm, UserBulkImportForm
 from .services import AuthenticationService, AccountsService
 
 User = get_user_model()
 
 
+from django.conf import settings
+from apps.core.utils.recaptcha import validate_recaptcha
+from apps.core.utils.turnstile import validate_turnstile_with_ip
+import logging
+
+logger = logging.getLogger(__name__)
+
 def login_view(request):
-    """Vue de connexion personnalisée avec rate limiting et tokens sécurisés."""
+    """Vue de connexion personnalisée avec rate limiting, tokens sécurisés et CAPTCHA.
+    
+    Support de 2 systèmes CAPTCHA (transition progressive) :
+    - CloudFlare Turnstile (préféré) : gratuit illimité, meilleur UX
+    - Google reCAPTCHA v3 (legacy) : pour compatibilité
+    """
     if request.method == 'POST':
         username = request.POST.get('username')
         password = request.POST.get('password')
+        
+        # Validation CAPTCHA (CloudFlare Turnstile en priorité, sinon reCAPTCHA)
+        captcha_valid = False
+        captcha_error = None
+        
+        # 1. Essayer CloudFlare Turnstile d'abord (si configuré)
+        turnstile_site_key = getattr(settings, 'TURNSTILE_SITE_KEY', '')
+        if turnstile_site_key:
+            captcha_valid, captcha_error = validate_turnstile_with_ip(request)
+        
+        # 2. Fallback sur reCAPTCHA si Turnstile non configuré ou échoué
+        if not captcha_valid and not turnstile_site_key:
+            recaptcha_token = request.POST.get('recaptcha_token')
+            if settings.RECAPTCHA_PUBLIC_KEY:
+                captcha_valid, captcha_error = validate_recaptcha(recaptcha_token)
+        
+        # Si aucun CAPTCHA n'est configuré, laisser passer en dev
+        if not turnstile_site_key and not settings.RECAPTCHA_PUBLIC_KEY:
+            if settings.DEBUG:
+                captcha_valid = True
+            else:
+                captcha_error = "Configuration de sécurité manquante."
+        
+        # Bloquer si CAPTCHA invalide
+        if not captcha_valid:
+            messages.error(request, captcha_error or "Échec de validation de sécurité.")
+            return render(request, 'accounts/login.html', {
+                'recaptcha_site_key': getattr(settings, 'RECAPTCHA_PUBLIC_KEY', ''),
+                'turnstile_site_key': turnstile_site_key
+            })
         
         if username and password:
             # Utiliser le service d'authentification avec rate limiting
@@ -39,12 +82,19 @@ def login_view(request):
                 
                 # Connexion normale
                 login(request, user)
+                # S1: Validate next URL to prevent open redirect
+                from django.utils.http import url_has_allowed_host_and_scheme
                 next_url = request.GET.get('next', 'dashboard:home')
+                if not url_has_allowed_host_and_scheme(next_url, allowed_hosts={request.get_host()}):
+                    next_url = 'dashboard:home'
                 return redirect(next_url)
             else:
                 messages.error(request, error_message)
     
-    return render(request, 'accounts/login.html')
+    return render(request, 'accounts/login.html', {
+        'recaptcha_site_key': getattr(settings, 'RECAPTCHA_PUBLIC_KEY', ''),
+        'turnstile_site_key': getattr(settings, 'TURNSTILE_SITE_KEY', '')
+    })
 
 
 def first_login_password_change(request):
@@ -120,7 +170,7 @@ def create_user_view(request):
     La vue ne fait que: recevoir requête → appeler service → renvoyer réponse.
     """
     # Vérifier les permissions
-    if not (request.user.is_admin or request.user.role in ['admin', 'secretariat']):
+    if not (request.user.is_admin or request.user.has_any_role('admin', 'secretariat')):
         messages.error(request, 'Vous n\'avez pas les permissions pour créer des utilisateurs.')
         return redirect('dashboard:home')
     
@@ -132,7 +182,7 @@ def create_user_view(request):
                 first_name=form.cleaned_data['first_name'],
                 last_name=form.cleaned_data['last_name'],
                 email=form.cleaned_data['email'],
-                role=form.cleaned_data['role'],
+                roles=form.cleaned_data['roles'],  # Maintenant une liste
                 phone=form.cleaned_data.get('phone', ''),
                 created_by=request.user
             )
@@ -158,7 +208,7 @@ def create_user_view(request):
 @login_required
 def user_list_view(request):
     """Liste des utilisateurs (pour l'équipe)."""
-    if not (request.user.is_admin or request.user.role in ['admin', 'secretariat']):
+    if not (request.user.is_admin or request.user.has_any_role('admin', 'secretariat')):
         messages.error(request, 'Vous n\'avez pas les permissions pour voir cette page.')
         return redirect('dashboard:home')
     
@@ -176,7 +226,7 @@ def resend_invitation(request, user_id):
     
     Délègue la logique métier au service AccountsService.
     """
-    if not (request.user.is_admin or request.user.role in ['admin', 'secretariat']):
+    if not (request.user.is_admin or request.user.has_any_role('admin', 'secretariat')):
         return JsonResponse({'success': False, 'error': 'Permissions insuffisantes'})
     
     user = get_object_or_404(User, id=user_id)
@@ -197,7 +247,7 @@ def reset_user_password(request, user_id):
     
     Délègue la logique métier au service AccountsService.
     """
-    if not (request.user.is_admin or request.user.role in ['admin', 'secretariat']):
+    if not (request.user.is_admin or request.user.has_any_role('admin', 'secretariat')):
         return JsonResponse({'success': False, 'error': 'Permissions insuffisantes'})
     
     user = get_object_or_404(User, id=user_id)
@@ -227,15 +277,263 @@ def logout_view(request):
 def profile_view(request):
     """Vue du profil utilisateur."""
     if request.method == 'POST':
-        # Mise à jour du profil
-        user = request.user
-        user.first_name = request.POST.get('first_name', '')
-        user.last_name = request.POST.get('last_name', '')
-        user.email = request.POST.get('email', '')
-        user.phone = request.POST.get('phone', '')
+        form = ProfileForm(request.POST, instance=request.user)
+        if form.is_valid():
+            form.save()
+            messages.success(request, 'Profil mis à jour avec succès.')
+            return redirect('accounts:profile')
+    else:
+        form = ProfileForm(instance=request.user)
+    
+    return render(request, 'accounts/profile.html', {'form': form})
+
+
+# =============================================================================
+# CRUD COMPLET POUR LES UTILISATEURS - OPÉRATIONS MANQUANTES
+# =============================================================================
+
+@login_required
+def user_detail_view(request, user_id):
+    """Détail d'un utilisateur."""
+    if not (request.user.is_admin or request.user.has_any_role('admin', 'secretariat')):
+        messages.error(request, 'Vous n\'avez pas les permissions pour voir cette page.')
+        return redirect('dashboard:home')
+    
+    user = get_object_or_404(User, id=user_id)
+    
+    # Statistiques de l'utilisateur
+    stats = {
+        'last_login': user.last_login,
+        'date_joined': user.date_joined,
+        'is_active': user.is_active,
+        'must_change_password': user.must_change_password,
+        'roles_count': len(user.get_roles_list()),
+    }
+    
+    context = {
+        'user_detail': user,  # Renommé pour éviter conflit avec request.user
+        'stats': stats,
+    }
+    
+    return render(request, 'accounts/user_detail.html', context)
+
+
+@login_required
+def user_update_view(request, user_id):
+    """Modifier un utilisateur."""
+    if not (request.user.is_admin or request.user.has_any_role('admin', 'secretariat')):
+        messages.error(request, 'Vous n\'avez pas les permissions pour voir cette page.')
+        return redirect('dashboard:home')
+    
+    user = get_object_or_404(User, id=user_id)
+    
+    if request.method == 'POST':
+        # Récupérer les données du formulaire
+        first_name = request.POST.get('first_name', '').strip()
+        last_name = request.POST.get('last_name', '').strip()
+        email = request.POST.get('email', '').strip()
+        phone = request.POST.get('phone', '').strip()
+        roles = request.POST.getlist('roles')
+        is_active = 'is_active' in request.POST
+        
+        # Validation
+        if not first_name or not last_name or not email:
+            messages.error(request, 'Les champs prénom, nom et email sont requis.')
+        elif User.objects.filter(email=email).exclude(id=user_id).exists():
+            messages.error(request, 'Un utilisateur avec cet email existe déjà.')
+        else:
+            # Mettre à jour l'utilisateur
+            user.first_name = first_name
+            user.last_name = last_name
+            user.email = email
+            user.phone = phone
+            user.role = ','.join(roles) if roles else 'membre'
+            user.is_active = is_active
+            user.save()
+            
+            messages.success(request, f'Utilisateur {user.get_full_name()} modifié avec succès.')
+            return redirect('accounts:user_detail', user_id=user.id)
+    
+    # Choix de rôles disponibles
+    role_choices = [
+        ('admin', 'Administrateur'),
+        ('secretariat', 'Secrétariat'),
+        ('pasteur', 'Pasteur'),
+        ('ancien', 'Ancien'),
+        ('diacre', 'Diacre'),
+        ('responsable_groupe', 'Responsable de groupe'),
+        ('finance', 'Finance'),
+        ('encadrant', 'Encadrant'),
+    ]
+    
+    context = {
+        'user_detail': user,
+        'role_choices': role_choices,
+        'title': f'Modifier {user.get_full_name()}',
+        'submit_text': 'Enregistrer les modifications'
+    }
+    
+    return render(request, 'accounts/user_form.html', context)
+
+
+@login_required
+def user_delete_view(request, user_id):
+    """Supprimer un utilisateur (désactivation)."""
+    if not (request.user.is_admin or request.user.has_any_role('admin', 'secretariat')):
+        messages.error(request, 'Vous n\'avez pas les permissions pour voir cette page.')
+        return redirect('dashboard:home')
+    
+    user = get_object_or_404(User, id=user_id)
+    
+    # Empêcher l'auto-suppression
+    if user.id == request.user.id:
+        messages.error(request, 'Vous ne pouvez pas supprimer votre propre compte.')
+        return redirect('accounts:user_list')
+    
+    # Empêcher la suppression du dernier admin
+    if user.is_admin:
+        admin_count = User.objects.filter(
+            Q(role__contains='admin') | Q(is_superuser=True),
+            is_active=True
+        ).count()
+        if admin_count <= 1:
+            messages.error(request, 'Impossible de supprimer le dernier administrateur actif.')
+            return redirect('accounts:user_detail', user_id=user_id)
+    
+    if request.method == 'POST':
+        action = request.POST.get('action')
+        user_name = user.get_full_name()
+        
+        if action == 'deactivate':
+            # Désactivation (soft delete)
+            user.is_active = False
+            user.save()
+            messages.success(request, f'Utilisateur {user_name} désactivé avec succès.')
+        elif action == 'delete':
+            # Suppression définitive (à utiliser avec précaution)
+            user.delete()
+            messages.success(request, f'Utilisateur {user_name} supprimé définitivement.')
+        
+        return redirect('accounts:user_list')
+    
+    # Vérifier les dépendances
+    dependencies = []
+    
+    # Vérifier si l'utilisateur a créé des membres
+    if hasattr(user, 'created_members'):
+        created_members_count = user.created_members.count()
+        if created_members_count > 0:
+            dependencies.append(f'{created_members_count} membre(s) créé(s)')
+    
+    # Vérifier si l'utilisateur est responsable de groupes
+    if hasattr(user, 'led_groups'):
+        led_groups_count = user.led_groups.filter(is_active=True).count()
+        if led_groups_count > 0:
+            dependencies.append(f'{led_groups_count} groupe(s) dirigé(s)')
+    
+    context = {
+        'user_detail': user,
+        'dependencies': dependencies,
+        'is_last_admin': user.is_admin and User.objects.filter(
+            Q(role__contains='admin') | Q(is_superuser=True),
+            is_active=True
+        ).count() <= 1,
+    }
+    
+    return render(request, 'accounts/user_delete_confirm.html', context)
+
+
+@login_required
+def user_activate_view(request, user_id):
+    """Réactiver un utilisateur désactivé."""
+    if not (request.user.is_admin or request.user.has_any_role('admin', 'secretariat')):
+        return JsonResponse({'success': False, 'error': 'Permissions insuffisantes'})
+    
+    user = get_object_or_404(User, id=user_id)
+    
+    if request.method == 'POST':
+        user.is_active = True
         user.save()
         
-        messages.success(request, 'Profil mis à jour avec succès.')
-        return redirect('accounts:profile')
+        if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+            return JsonResponse({'success': True, 'message': f'Utilisateur {user.get_full_name()} réactivé'})
+        else:
+            messages.success(request, f'Utilisateur {user.get_full_name()} réactivé avec succès.')
+            return redirect('accounts:user_detail', user_id=user_id)
     
-    return render(request, 'accounts/profile.html')
+    return JsonResponse({'success': False, 'error': 'Méthode non autorisée'})
+
+
+# =============================================================================
+# IMPORT EN MASSE D'UTILISATEURS DEPUIS EXCEL/CSV
+# =============================================================================
+
+@login_required
+def user_bulk_import_view(request):
+    """Import en masse d'utilisateurs depuis un fichier Excel/CSV."""
+    if not (request.user.is_admin or request.user.has_any_role('admin', 'secretariat')):
+        messages.error(request, "Vous n'avez pas les permissions pour importer des utilisateurs.")
+        return redirect('dashboard:home')
+
+    summary = None
+    if request.method == 'POST':
+        form = UserBulkImportForm(request.POST, request.FILES)
+        if form.is_valid():
+            result = AccountsService.bulk_create_users_from_file(
+                uploaded_file=form.cleaned_data['file'],
+                created_by=request.user,
+                default_roles=form.cleaned_data.get('default_roles') or ['membre'],
+                send_email=form.cleaned_data.get('send_email', True),
+            )
+            if result.success:
+                summary = result.data
+                created = len(summary['created'])
+                skipped = len(summary['skipped'])
+                errors = len(summary['errors'])
+                messages.success(
+                    request,
+                    f"Import terminé : {created} créé(s), {skipped} ignoré(s), {errors} erreur(s)."
+                )
+            else:
+                messages.error(request, result.error or "Erreur lors de l'import.")
+    else:
+        form = UserBulkImportForm()
+
+    return render(request, 'accounts/user_bulk_import.html', {
+        'form': form,
+        'summary': summary,
+    })
+
+
+@login_required
+def user_bulk_import_template(request):
+    """Télécharge un modèle Excel pour l'import d'utilisateurs."""
+    if not (request.user.is_admin or request.user.has_any_role('admin', 'secretariat')):
+        messages.error(request, "Vous n'avez pas les permissions.")
+        return redirect('dashboard:home')
+
+    from io import BytesIO
+    from openpyxl import Workbook
+    from django.http import HttpResponse
+
+    wb = Workbook()
+    ws = wb.active
+    ws.title = "Utilisateurs"
+    headers = ['first_name', 'last_name', 'email', 'phone', 'roles']
+    ws.append(headers)
+    ws.append(['Jean', 'Dupont', 'jean.dupont@example.com', '0694000000', 'membre'])
+    ws.append(['Marie', 'Martin', 'marie.martin@example.com', '', 'membre,encadrant'])
+
+    for col_idx, _ in enumerate(headers, start=1):
+        ws.column_dimensions[chr(64 + col_idx)].width = 24
+
+    output = BytesIO()
+    wb.save(output)
+    output.seek(0)
+
+    response = HttpResponse(
+        output.getvalue(),
+        content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    )
+    response['Content-Disposition'] = 'attachment; filename="modele_import_utilisateurs.xlsx"'
+    return response

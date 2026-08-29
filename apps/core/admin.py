@@ -300,7 +300,7 @@ class PageContentAdmin(admin.ModelAdmin):
     )
     
     class Media:
-        js = ('https://cdn.tiny.cloud/1/6qr0im1d33wizm1ytimh1kpwbugqeb8r4fq1gebb03rme6hv/tinymce/6/tinymce.min.js',)
+        js = ('https://cdn.jsdelivr.net/npm/tinymce@6/tinymce.min.js',)
     
     def save_model(self, request, obj, form, change):
         if not change:
@@ -408,11 +408,12 @@ class ContactMessageAdmin(admin.ModelAdmin):
 
 @admin.register(VisitorRegistration)
 class VisitorRegistrationAdmin(admin.ModelAdmin):
-    list_display = ['full_name', 'email', 'interest', 'preferred_site', 'is_contacted', 'created_at']
+    list_display = ['full_name', 'email', 'interest', 'preferred_site', 'is_contacted', 'conversion_status', 'created_at']
     list_filter = ['interest', 'preferred_site', 'is_contacted', 'neighborhood__city']
     search_fields = ['first_name', 'last_name', 'email', 'phone']
     date_hierarchy = 'created_at'
-    autocomplete_fields = ['neighborhood', 'preferred_site', 'contacted_by', 'converted_to_member']
+    raw_id_fields = ['neighborhood', 'preferred_site', 'contacted_by', 'converted_to_member']
+    actions = ['mark_contacted', 'convert_to_member']
     
     fieldsets = (
         ('Informations personnelles', {
@@ -433,6 +434,44 @@ class VisitorRegistrationAdmin(admin.ModelAdmin):
     def full_name(self, obj):
         return f"{obj.first_name} {obj.last_name}"
     full_name.short_description = 'Nom'
+    
+    def conversion_status(self, obj):
+        if obj.converted_to_member:
+            return format_html('<span style="color:#16a34a;">✅ Membre</span>')
+        if obj.is_contacted:
+            return format_html('<span style="color:#d97706;">📞 Contacté</span>')
+        return format_html('<span style="color:#dc2626;">⏳ En attente</span>')
+    conversion_status.short_description = 'Statut'
+    
+    @admin.action(description="Marquer comme contacté")
+    def mark_contacted(self, request, queryset):
+        from django.utils import timezone
+        queryset.filter(is_contacted=False).update(
+            is_contacted=True,
+            contacted_by=request.user,
+            contacted_at=timezone.now(),
+        )
+        self.message_user(request, f"{queryset.count()} visiteur(s) marqué(s) comme contacté(s).")
+    
+    @admin.action(description="Convertir en membre")
+    def convert_to_member(self, request, queryset):
+        from apps.members.models import Member
+        converted = 0
+        for visitor in queryset.filter(converted_to_member__isnull=True):
+            member = Member.objects.create(
+                first_name=visitor.first_name,
+                last_name=visitor.last_name,
+                email=visitor.email,
+                phone=visitor.phone,
+                address=visitor.address,
+                city=visitor.city,
+                site=visitor.preferred_site,
+                status='actif',
+            )
+            visitor.converted_to_member = member
+            visitor.save(update_fields=['converted_to_member'])
+            converted += 1
+        self.message_user(request, f"{converted} visiteur(s) converti(s) en membre(s).")
 
 
 @admin.register(PublicEvent)
@@ -806,13 +845,8 @@ class DatabaseBackupAdmin(admin.ModelAdmin):
         
         return self.response_redirect(request, '../')
     
+    
     def response_redirect(self, request, url):
         """Redirection helper."""
         from django.shortcuts import redirect
         return redirect(url)
-    
-    def changelist_view(self, request, extra_context=None):
-        """Ajouter le bouton de sauvegarde manuelle."""
-        extra_context = extra_context or {}
-        extra_context['show_manual_backup_button'] = True
-        return super().changelist_view(request, extra_context)

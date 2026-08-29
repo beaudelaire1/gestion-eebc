@@ -1,0 +1,56 @@
+{% extends 'base.html' %}
+
+{% block title %}Supprimer le service - {{ service }}{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-6">
+        <div class="card border-danger">
+            <div class="card-header bg-danger text-white">
+                <h5 class="mb-0"><i class="bi bi-trash me-2"></i>Supprimer le service</h5>
+            </div>
+            <div class="card-body">
+                <p class="lead">Voulez-vous vraiment supprimer ce service ?</p>
+
+                <div class="callout callout-info mb-3">
+                    <strong>{{ service }}</strong><br>
+                    Date : {{ service.date }}<br>
+                    Thème : {{ service.theme|default:"Aucun" }}
+                </div>
+
+                <p>Vous avez deux options :</p>
+
+                <form method="post">
+                    {% csrf_token %}
+
+                    <div class="mb-3">
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="radio" name="action" value="cancel" id="cancelOption"
+                                checked>
+                            <label class="form-check-label" for="cancelOption">
+                                <strong>Annuler le service (Recommandé)</strong>
+                                <div class="text-muted small">Le service restera visible mais marqué comme "Annulé".
+                                    L'événement sera conservé.</div>
+                            </label>
+                        </div>
+
+                        <div class="form-check">
+                            <input class="form-check-input" type="radio" name="action" value="delete" id="deleteOption">
+                            <label class="form-check-label" for="deleteOption">
+                                <strong>Supprimer définitivement</strong>
+                                <div class="text-muted small text-danger">Supprime le service, l'événement calendrier
+                                    associé et tous les rôles. Cette action est irréversible.</div>
+                            </label>
+                        </div>
+                    </div>
+
+                    <div class="d-flex justify-content-end gap-2 mt-4">
+                        <a href="{% url 'worship:service_detail' service.pk %}" class="btn btn-secondary">Retour</a>
+                        <button type="submit" class="btn btn-danger">Confirmer</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

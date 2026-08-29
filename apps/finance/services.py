@@ -26,6 +26,11 @@ from .models import (
 )
 
 
+OPERATING_INCOME_PARENT = 'Recettes de fonctionnement'
+OPERATING_EXPENSE_PARENT = 'Dépenses de fonctionnement'
+DEDICATED_FUNDS_PARENT = 'Fonds dédiés'
+
+
 class ServiceResult:
     """Résultat d'une opération de service."""
     
@@ -209,59 +214,126 @@ class TransactionService:
             return ServiceResult.fail(f"Erreur lors de l'annulation de la transaction: {str(e)}")
     
     @classmethod
-    def get_dashboard_stats(cls, site=None) -> Dict[str, Any]:
+    def _get_validated_filter(cls, site=None) -> Q:
+        base_filter = Q(status=FinancialTransaction.Status.VALIDE)
+        if site:
+            base_filter &= Q(site=site)
+        return base_filter
+
+    @classmethod
+    def _get_income_queryset(cls, queryset):
+        return queryset.filter(
+            transaction_type__in=[
+                FinancialTransaction.TransactionType.DON,
+                FinancialTransaction.TransactionType.DIME,
+                FinancialTransaction.TransactionType.OFFRANDE,
+            ]
+        )
+
+    @classmethod
+    def _get_operating_income_queryset(cls, queryset):
+        return cls._get_income_queryset(queryset).exclude(
+            category__parent__name=DEDICATED_FUNDS_PARENT,
+        )
+
+    @classmethod
+    def _get_dedicated_funds_queryset(cls, queryset):
+        return cls._get_income_queryset(queryset).filter(
+            category__parent__name=DEDICATED_FUNDS_PARENT,
+        )
+
+    @classmethod
+    def _get_expense_queryset(cls, queryset):
+        return queryset.filter(
+            transaction_type=FinancialTransaction.TransactionType.DEPENSE,
+        )
+
+    @classmethod
+    def _sum_amount(cls, queryset):
+        return queryset.aggregate(total=Sum('amount'))['total'] or Decimal('0')
+
+    @classmethod
+    def _build_category_summary(cls, queryset):
+        summary = queryset.values('category__name').annotate(
+            total=Sum('amount')
+        ).order_by('-total', 'category__name')
+        return [
+            {
+                'label': item['category__name'] or 'Sans catégorie',
+                'amount': item['total'] or Decimal('0'),
+            }
+            for item in summary
+        ]
+
+    @classmethod
+    def _get_reference_date(cls, year: Optional[int] = None, site=None) -> date:
+        today = date.today()
+        target_year = year or today.year
+
+        if year is None or target_year == today.year:
+            return today
+
+        latest_transaction_date = FinancialTransaction.objects.filter(
+            cls._get_validated_filter(site),
+            transaction_date__year=target_year,
+        ).order_by('-transaction_date').values_list('transaction_date', flat=True).first()
+
+        return latest_transaction_date or date(target_year, 12, 31)
+
+    @classmethod
+    def get_dashboard_stats(cls, site=None, year: Optional[int] = None) -> Dict[str, Any]:
         """
         Retourne les statistiques pour le dashboard financier.
         
         Args:
             site: Site pour filtrer les statistiques (optionnel)
+            year: Exercice à afficher (optionnel)
         
         Returns:
             Dictionnaire contenant les statistiques
         """
         today = date.today()
-        start_of_month = today.replace(day=1)
-        start_of_year = today.replace(month=1, day=1)
+        selected_year = year or today.year
+        reference_date = cls._get_reference_date(selected_year, site)
+        start_of_month = reference_date.replace(day=1)
+        start_of_year = date(selected_year, 1, 1)
         
         # Filtre de base
-        base_filter = Q(status=FinancialTransaction.Status.VALIDE)
-        if site:
-            base_filter &= Q(site=site)
+        base_filter = cls._get_validated_filter(site) & Q(transaction_date__year=selected_year)
         
         # Stats du mois
-        month_filter = base_filter & Q(transaction_date__gte=start_of_month)
+        month_filter = base_filter & Q(
+            transaction_date__gte=start_of_month,
+            transaction_date__lte=reference_date,
+        )
         month_transactions = FinancialTransaction.objects.filter(month_filter)
-        
-        month_income = month_transactions.filter(
-            transaction_type__in=['don', 'dime', 'offrande']
-        ).aggregate(total=Sum('amount'))['total'] or Decimal('0')
-        
-        month_expenses = month_transactions.filter(
-            transaction_type='depense'
-        ).aggregate(total=Sum('amount'))['total'] or Decimal('0')
+        month_income = cls._sum_amount(cls._get_operating_income_queryset(month_transactions))
+        month_expenses = cls._sum_amount(cls._get_expense_queryset(month_transactions))
+        month_dedicated_funds = cls._sum_amount(cls._get_dedicated_funds_queryset(month_transactions))
         
         # Stats de l'année
         year_filter = base_filter & Q(transaction_date__gte=start_of_year)
         year_transactions = FinancialTransaction.objects.filter(year_filter)
-        
-        year_income = year_transactions.filter(
-            transaction_type__in=['don', 'dime', 'offrande']
-        ).aggregate(total=Sum('amount'))['total'] or Decimal('0')
-        
-        year_expenses = year_transactions.filter(
-            transaction_type='depense'
-        ).aggregate(total=Sum('amount'))['total'] or Decimal('0')
+        year_income = cls._sum_amount(cls._get_operating_income_queryset(year_transactions))
+        year_expenses = cls._sum_amount(cls._get_expense_queryset(year_transactions))
+        year_dedicated_funds = cls._sum_amount(cls._get_dedicated_funds_queryset(year_transactions))
+        operating_result = year_income - year_expenses
+        closing_balance = operating_result + year_dedicated_funds
+
+        income_summary = cls._build_category_summary(cls._get_operating_income_queryset(year_transactions))
+        expense_summary = cls._build_category_summary(cls._get_expense_queryset(year_transactions))
+        dedicated_funds_summary = cls._build_category_summary(cls._get_dedicated_funds_queryset(year_transactions))
         
         # Transactions en attente
         pending_filter = Q(status=FinancialTransaction.Status.EN_ATTENTE)
         if site:
             pending_filter &= Q(site=site)
+        pending_filter &= Q(transaction_date__year=selected_year)
         pending_count = FinancialTransaction.objects.filter(pending_filter).count()
         
         # Transactions récentes
-        recent_filter = base_filter if site else Q()
         recent_transactions = FinancialTransaction.objects.filter(
-            recent_filter
+            base_filter
         ).select_related('category', 'member').order_by(
             '-transaction_date', '-created_at'
         )[:10]
@@ -270,15 +342,28 @@ class TransactionService:
             'month_income': month_income,
             'month_expenses': month_expenses,
             'month_balance': month_income - month_expenses,
+            'month_dedicated_funds': month_dedicated_funds,
             'year_income': year_income,
             'year_expenses': year_expenses,
-            'year_balance': year_income - year_expenses,
+            'year_balance': operating_result,
+            'dedicated_funds_total': year_dedicated_funds,
+            'closing_balance': closing_balance,
+            'income_summary': income_summary,
+            'expense_summary': expense_summary,
+            'dedicated_funds_summary': dedicated_funds_summary,
             'pending_count': pending_count,
             'recent_transactions': recent_transactions,
+            'reference_date': reference_date,
+            'selected_year': selected_year,
         }
     
     @classmethod
-    def get_monthly_donations_data(cls, months: int = 12, site=None) -> Dict[str, Any]:
+    def get_monthly_donations_data(
+        cls,
+        months: int = 12,
+        site=None,
+        year: Optional[int] = None,
+    ) -> Dict[str, Any]:
         """
         Retourne les données de dons par mois pour les graphiques.
         
@@ -294,26 +379,34 @@ class TransactionService:
         from django.db.models.functions import TruncMonth
         
         # Calculer la date de début
-        today = date.today()
-        start_date = today.replace(day=1)
+        anchor_date = cls._get_reference_date(year, site)
+        start_date = anchor_date.replace(day=1)
         for _ in range(months - 1):
             if start_date.month == 1:
                 start_date = start_date.replace(year=start_date.year - 1, month=12)
             else:
                 start_date = start_date.replace(month=start_date.month - 1)
+
+        if year is not None and start_date.year < year:
+            start_date = date(year, 1, 1)
+
+        end_date = anchor_date
+        end_month = end_date.replace(day=1)
         
         # Filtre de base
         base_filter = Q(
             status=FinancialTransaction.Status.VALIDE,
-            transaction_type__in=['don', 'dime', 'offrande'],
-            transaction_date__gte=start_date
+            transaction_date__gte=start_date,
+            transaction_date__lte=end_date,
         )
         if site:
             base_filter &= Q(site=site)
+        if year is not None:
+            base_filter &= Q(transaction_date__year=year)
         
         # Grouper par mois et sommer les montants
-        monthly_data = FinancialTransaction.objects.filter(
-            base_filter
+        monthly_data = cls._get_operating_income_queryset(
+            FinancialTransaction.objects.filter(base_filter)
         ).annotate(
             month=TruncMonth('transaction_date')
         ).values('month').annotate(
@@ -327,11 +420,11 @@ class TransactionService:
         
         # Convertir les résultats en dictionnaire pour un accès rapide
         monthly_totals = {
-            item['month'].date().replace(day=1): float(item['total'] or 0)
+            item['month'].replace(day=1): float(item['total'] or 0)
             for item in monthly_data
         }
         
-        for _ in range(months):
+        while current_date <= end_month:
             # Format du label (ex: "Jan 2024")
             labels.append(current_date.strftime('%b %Y'))
             
@@ -353,7 +446,12 @@ class TransactionService:
         }
     
     @classmethod
-    def get_expenses_distribution_data(cls, months: int = 12, site=None) -> Dict[str, Any]:
+    def get_expenses_distribution_data(
+        cls,
+        months: int = 12,
+        site=None,
+        year: Optional[int] = None,
+    ) -> Dict[str, Any]:
         """
         Retourne les données de répartition des dépenses par catégorie pour les graphiques.
         
@@ -367,22 +465,30 @@ class TransactionService:
         from django.db.models import Sum
         
         # Calculer la date de début
-        today = date.today()
-        start_date = today.replace(day=1)
+        anchor_date = cls._get_reference_date(year, site)
+        start_date = anchor_date.replace(day=1)
         for _ in range(months - 1):
             if start_date.month == 1:
                 start_date = start_date.replace(year=start_date.year - 1, month=12)
             else:
                 start_date = start_date.replace(month=start_date.month - 1)
+
+        if year is not None and start_date.year < year:
+            start_date = date(year, 1, 1)
+
+        end_date = anchor_date
         
         # Filtre de base pour les dépenses
         base_filter = Q(
             status=FinancialTransaction.Status.VALIDE,
             transaction_type='depense',
-            transaction_date__gte=start_date
+            transaction_date__gte=start_date,
+            transaction_date__lte=end_date,
         )
         if site:
             base_filter &= Q(site=site)
+        if year is not None:
+            base_filter &= Q(transaction_date__year=year)
         
         # Grouper par catégorie et sommer les montants
         category_data = FinancialTransaction.objects.filter(
@@ -411,7 +517,7 @@ class TransactionService:
         
         total_expenses = Decimal('0')
         
-        for i, item in enumerate(category_data):
+        for item in category_data:
             category_name = item['category__name'] or 'Sans catégorie'
             amount = float(item['total'] or 0)
             
@@ -436,7 +542,7 @@ class TransactionService:
             data = data[:10] + [other_amount]
         
         # Assigner les couleurs
-        chart_colors = colors[:len(data)]
+        chart_colors = [colors[index % len(colors)] for index in range(len(data))]
         
         return {
             'labels': labels,

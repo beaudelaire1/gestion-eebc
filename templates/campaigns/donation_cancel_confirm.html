@@ -1,0 +1,58 @@
+{% extends 'base.html' %}
+
+{% block title %}Annuler le don - {{ donation.campaign.name }}{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-6">
+        <div class="card {% if donation.is_cancelled %}border-success{% else %}border-warning{% endif %}">
+            <div
+                class="card-header {% if donation.is_cancelled %}bg-success{% else %}bg-warning text-dark{% endif %} text-white">
+                <h5 class="mb-0">
+                    {% if donation.is_cancelled %}
+                    <i class="bi bi-arrow-counterclockwise me-2"></i>Réactiver le don
+                    {% else %}
+                    <i class="bi bi-x-circle me-2"></i>Annuler le don
+                    {% endif %}
+                </h5>
+            </div>
+            <div class="card-body">
+                <p>
+                    {% if donation.is_cancelled %}
+                    Voulez-vous réactiver ce don de <strong>{{ donation.amount }}€</strong> ?
+                    {% else %}
+                    Voulez-vous annuler ce don de <strong>{{ donation.amount }}€</strong> ?
+                    {% endif %}
+                </p>
+
+                <ul class="list-group mb-3">
+                    <li class="list-group-item"><strong>Campagne :</strong> {{ campaign.name }}</li>
+                    <li class="list-group-item"><strong>Donateur :</strong> {{ donation.donor_name|default:"Anonyme" }}
+                    </li>
+                    <li class="list-group-item"><strong>Date :</strong> {{ donation.donation_date }}</li>
+                </ul>
+
+                <p class="text-muted small">
+                    {% if donation.is_cancelled %}
+                    Le montant sera ajouté au total de la campagne.
+                    {% else %}
+                    Le montant sera déduit du total de la campagne.
+                    {% endif %}
+                </p>
+
+                <form method="post">
+                    {% csrf_token %}
+                    <div class="d-flex justify-content-end gap-2">
+                        <a href="{% url 'campaigns:detail' campaign.pk %}" class="btn btn-secondary">Retour</a>
+                        <button type="submit"
+                            class="btn {% if donation.is_cancelled %}btn-success{% else %}btn-warning{% endif %}">
+                            {% if donation.is_cancelled %}Confirmer la réactivation{% else %}Confirmer l'annulation{%
+                            endif %}
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

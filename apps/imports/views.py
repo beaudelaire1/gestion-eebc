@@ -7,15 +7,22 @@ from django.utils import timezone
 from django.core.paginator import Paginator
 from django.db.models import Q
 import io
-import threading
+import logging
 import pandas as pd
 
 from .models import ImportLog
 from .forms import ImportForm
-from .services import ExcelImportService, generate_template_excel, export_members_to_excel, export_children_to_excel
+from .services import ExcelImportService, generate_template_excel, export_members_to_excel, export_children_to_excel, export_young_members_to_excel
+from apps.core.permissions import role_required
+
+logger = logging.getLogger(__name__)
+
+ALLOWED_IMPORT_EXTENSIONS = {'.xlsx', '.xls'}
+MAX_IMPORT_FILE_SIZE = 10 * 1024 * 1024  # 10 MB
 
 
 @login_required
+@role_required('admin', 'secretariat')
 def import_list(request):
     """
     Liste des imports effectués.
@@ -57,6 +64,7 @@ def import_list(request):
 
 
 @login_required
+@role_required('admin', 'secretariat')
 def import_create(request):
     """
     Créer un nouvel import.
@@ -64,23 +72,34 @@ def import_create(request):
     if request.method == 'POST':
         form = ImportForm(request.POST, request.FILES)
         if form.is_valid():
+            # Le champ du formulaire est file_path (on garde un fallback legacy sur file).
+            uploaded_file = request.FILES.get('file_path') or request.FILES.get('file')
+            if uploaded_file:
+                import os
+                ext = os.path.splitext(uploaded_file.name)[1].lower()
+                if ext not in ALLOWED_IMPORT_EXTENSIONS:
+                    messages.error(request, 'Type de fichier non autorisé. Seuls les fichiers Excel (.xlsx, .xls) sont acceptés.')
+                    return render(request, 'imports/import_create.html', {'form': form, 'import_types': ImportLog.ImportType.choices})
+                if uploaded_file.size > MAX_IMPORT_FILE_SIZE:
+                    messages.error(request, 'Fichier trop volumineux. La taille maximale est de 10 Mo.')
+                    return render(request, 'imports/import_create.html', {'form': form, 'import_types': ImportLog.ImportType.choices})
+
             import_log = form.save(commit=False)
             import_log.imported_by = request.user
             import_log.save()
             
-            # Lancer l'import en arrière-plan
-            def run_import():
-                try:
-                    service = ExcelImportService(import_log)
-                    service.process_import()
-                except Exception as e:
-                    print(f"Erreur lors de l'import: {e}")
+            # Traitement synchrone de l'import
+            try:
+                service = ExcelImportService(import_log)
+                service.process_import()
+                messages.success(request, 'Import terminé avec succès.')
+            except Exception as e:
+                logger.error(f"Erreur lors de l'import {import_log.pk}: {e}")
+                import_log.status = ImportLog.Status.FAILED
+                import_log.error_message = str(e)
+                import_log.save(update_fields=['status', 'error_message'])
+                messages.warning(request, "L'import a rencontré une erreur. Consultez les détails.")
             
-            thread = threading.Thread(target=run_import)
-            thread.daemon = True
-            thread.start()
-            
-            messages.success(request, 'Import lancé avec succès. Vous pouvez suivre le progrès dans la liste des imports.')
             return redirect('imports:detail', pk=import_log.pk)
     else:
         form = ImportForm()
@@ -94,6 +113,7 @@ def import_create(request):
 
 
 @login_required
+@role_required('admin', 'secretariat')
 def import_detail(request, pk):
     """
     Détail d'un import.
@@ -108,6 +128,7 @@ def import_detail(request, pk):
 
 
 @login_required
+@role_required('admin', 'secretariat')
 def import_status(request, pk):
     """
     API pour récupérer le statut d'un import (AJAX).
@@ -134,7 +155,7 @@ def download_template(request, import_type):
     """
     Télécharger un template Excel pour l'import.
     """
-    if import_type not in ['members', 'children']:
+    if import_type not in ['members', 'children', 'young_members']:
         messages.error(request, 'Type d\'import invalide.')
         return redirect('imports:list')
     
@@ -193,9 +214,23 @@ def _get_column_descriptions(import_type):
             'Prénom de l\'enfant', 'Nom de famille', 'Date de naissance (JJ/MM/AAAA)',
             'Genre (M ou F)', 'Nom complet du père', 'Téléphone du père', 'Email du père',
             'Nom complet de la mère', 'Téléphone de la mère', 'Email de la mère',
+            'Adresse postale', 'Ville', 'Code postal',
             'Nom du contact d\'urgence', 'Téléphone d\'urgence', 'Allergies connues',
             'Notes médicales', 'Besoin de transport (oui/non)', 'Adresse de ramassage',
             'Notes diverses'
+        ]
+    elif import_type == 'young_members':
+        return [
+            'Prénom du jeune', 'Nom de famille', 'Date de naissance (JJ/MM/AAAA)',
+            'Genre (M ou F)', 'Numéro de téléphone', 'Adresse email',
+            'Adresse complète', 'Ville', 'Code postal',
+            'Nom du parent / responsable', 'Téléphone parent', 'Email parent',
+            'Nom du contact d\'urgence', 'Téléphone d\'urgence',
+            'Allergies connues', 'Notes médicales',
+            'Baptisé (oui/non)', 'Date de baptême',
+            'Né de nouveau (oui/non)', 'Date de conversion',
+            'Besoin de transport (oui/non)', 'Adresse de ramassage',
+            'Statut (actif/inactif/visiteur)', 'Notes diverses'
         ]
 
 
@@ -206,7 +241,17 @@ def _get_required_columns(import_type):
                    'Non', 'Non', 'Non', 'Non', 'Non', 'Non']
     elif import_type == 'children':
         required = ['Oui', 'Oui', 'Oui', 'Oui', 'Oui', 'Oui', 'Non', 'Non', 'Non', 'Non',
-                   'Non', 'Non', 'Non', 'Non', 'Non', 'Non', 'Non']
+                   'Non', 'Non', 'Non', 'Non', 'Non', 'Non', 'Non', 'Non', 'Non', 'Non']
+    elif import_type == 'young_members':
+        required = ['Oui', 'Oui', 'Oui', 'Non', 'Non', 'Non',
+                   'Non', 'Non', 'Non',
+                   'Non', 'Non', 'Non',
+                   'Non', 'Non',
+                   'Non', 'Non',
+                   'Non', 'Non',
+                   'Non', 'Non',
+                   'Non', 'Non',
+                   'Non', 'Non']
     
     return required
 
@@ -222,8 +267,20 @@ def _get_column_formats(import_type):
     elif import_type == 'children':
         return [
             'Texte', 'Texte', 'JJ/MM/AAAA', 'M ou F', 'Texte', 'Téléphone', 'Email',
-            'Texte', 'Téléphone', 'Email', 'Texte', 'Téléphone', 'Texte', 'Texte',
-            'oui/non', 'Texte', 'Texte'
+            'Texte', 'Téléphone', 'Email', 'Texte', 'Texte', 'Texte',
+            'Texte', 'Téléphone', 'Texte', 'Texte', 'oui/non', 'Texte', 'Texte'
+        ]
+    elif import_type == 'young_members':
+        return [
+            'Texte', 'Texte', 'JJ/MM/AAAA', 'M ou F', 'Téléphone', 'Email',
+            'Texte', 'Texte', 'Texte',
+            'Texte', 'Téléphone', 'Email',
+            'Texte', 'Téléphone',
+            'Texte', 'Texte',
+            'oui/non', 'JJ/MM/AAAA',
+            'oui/non', 'JJ/MM/AAAA',
+            'oui/non', 'Texte',
+            'actif/inactif/visiteur', 'Texte'
         ]
 
 
@@ -318,13 +375,56 @@ def export_children(request):
         messages.error(request, f'Erreur lors de l\'export des enfants: {str(e)}')
         return redirect('bibleclub:children_list')
 
+
+@login_required
+def export_young_members(request):
+    """
+    Exporte tous les jeunes actifs vers un fichier Excel.
+    """
+    try:
+        df = export_young_members_to_excel()
+        
+        output = io.BytesIO()
+        
+        with pd.ExcelWriter(output, engine='openpyxl') as writer:
+            df.to_excel(writer, index=False, sheet_name='Jeunes')
+            
+            info_data = {
+                'Information': ['Date d\'export', 'Nombre de jeunes', 'Utilisateur'],
+                'Valeur': [
+                    timezone.now().strftime('%d/%m/%Y %H:%M'),
+                    len(df),
+                    request.user.get_full_name() or request.user.username
+                ]
+            }
+            
+            info_df = pd.DataFrame(info_data)
+            info_df.to_excel(writer, index=False, sheet_name='Informations')
+        
+        output.seek(0)
+        
+        filename = f'export_jeunes_{timezone.now().strftime("%Y%m%d_%H%M")}.xlsx'
+        response = HttpResponse(
+            output.getvalue(),
+            content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+        )
+        response['Content-Disposition'] = f'attachment; filename="{filename}"'
+        
+        messages.success(request, f'{len(df)} jeunes exportés avec succès!')
+        return response
+        
+    except Exception as e:
+        messages.error(request, f'Erreur lors de l\'export des jeunes: {str(e)}')
+        return redirect('young:member_list')
+
+
 @login_required
 def export_hub(request):
     """
-    Hub central de tous les exports disponibles.
+    Hub central de tous les exports et imports disponibles.
     """
     try:
-        from .export_config import get_user_exports, get_export_stats
+        from .export_config import ExportConfig, get_user_exports, get_export_stats
         from .services import ExportHistoryService
         
         # Exports disponibles pour l'utilisateur
@@ -332,6 +432,28 @@ def export_hub(request):
         
         # Statistiques des exports
         export_stats = get_export_stats()
+
+        can_access_finance_import = (
+            request.user.is_superuser or
+            request.user.is_admin or
+            request.user.has_any_role('admin', 'finance')
+        )
+
+        if can_access_finance_import:
+            finance_import_config = ExportConfig(
+                name='Import Finance Excel',
+                description='Importer categories, budgets, previsionnels et transactions depuis un classeur Excel avec modele et simulation.',
+                icon='bi-file-earmark-arrow-up',
+                url_name='finance:import_excel',
+                category='Finances',
+                format_type='import',
+                sensitive=True,
+            )
+            user_exports.setdefault('Finances', []).append(('finance_import_excel', finance_import_config))
+            export_stats['total'] += 1
+            export_stats['sensitive_count'] += 1
+            export_stats['by_format']['import'] = export_stats['by_format'].get('import', 0) + 1
+            export_stats['by_category']['Finances'] = export_stats['by_category'].get('Finances', 0) + 1
         
         # Historique récent des exports
         recent_exports = ExportHistoryService.get_export_history(
@@ -393,7 +515,7 @@ def export_groups(request):
         
     except Exception as e:
         messages.error(request, f'Erreur lors de l\'export des groupes: {str(e)}')
-        return redirect('imports:export_hub')
+        return redirect('imports:hub')
 
 
 @login_required
@@ -435,7 +557,7 @@ def export_inventory(request):
         
     except Exception as e:
         messages.error(request, f'Erreur lors de l\'export de l\'inventaire: {str(e)}')
-        return redirect('imports:export_hub')
+        return redirect('imports:hub')
 
 
 @login_required
@@ -477,7 +599,7 @@ def export_transport(request):
         
     except Exception as e:
         messages.error(request, f'Erreur lors de l\'export du transport: {str(e)}')
-        return redirect('imports:export_hub')
+        return redirect('imports:hub')
 
 
 @login_required
@@ -521,3 +643,46 @@ def export_communication(request):
     except Exception as e:
         messages.error(request, f'Erreur lors de l\'export des logs: {str(e)}')
         return redirect('imports:export_hub')
+
+
+@login_required
+def import_delete(request, pk):
+    """Supprimer un log d'import et le fichier associé."""
+    import_log = get_object_or_404(ImportLog, pk=pk)
+    
+    if request.method == 'POST':
+        # Supprimer le fichier physique si existant
+        if import_log.file_path:
+            import_log.file_path.delete(save=False)
+            
+        import_log.delete()
+        messages.success(request, 'Journal d\'import supprimé avec succès.')
+        return redirect('imports:list')
+    
+    return render(request, 'imports/import_confirm_delete.html', {'import_log': import_log})
+
+
+@login_required
+def import_bulk_delete(request):
+    """Suppression de plusieurs logs d'import en une seule opération."""
+    if request.method == 'POST':
+        ids = request.POST.getlist('selected_ids')
+        if not ids:
+            messages.warning(request, 'Aucun import sélectionné.')
+            return redirect('imports:list')
+        
+        logs = ImportLog.objects.filter(pk__in=ids)
+        count = logs.count()
+        
+        # Supprimer les fichiers physiques
+        for log in logs:
+            if log.file_path:
+                try:
+                    log.file_path.delete(save=False)
+                except Exception:
+                    pass
+        
+        logs.delete()
+        messages.success(request, f'{count} journal(aux) d\'import supprimé(s) avec succès.')
+    
+    return redirect('imports:list')

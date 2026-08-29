@@ -29,7 +29,7 @@ class MemberForm(forms.ModelForm):
                 'class': 'form-control',
                 'placeholder': 'Nom de famille'
             }),
-            'date_of_birth': forms.DateInput(attrs={
+            'date_of_birth': forms.DateInput(format='%Y-%m-%d', attrs={
                 'class': 'form-control',
                 'type': 'date'
             }),
@@ -57,7 +57,8 @@ class MemberForm(forms.ModelForm):
                 'placeholder': 'Code postal'
             }),
             'family': forms.Select(attrs={
-                'class': 'form-select'
+                'class': 'form-select tom-select',
+                'data-placeholder': 'Rechercher une famille...'
             }),
             'family_role': forms.Select(attrs={
                 'class': 'form-select'
@@ -75,11 +76,11 @@ class MemberForm(forms.ModelForm):
             'status': forms.Select(attrs={
                 'class': 'form-select'
             }),
-            'baptism_date': forms.DateInput(attrs={
+            'baptism_date': forms.DateInput(format='%Y-%m-%d', attrs={
                 'class': 'form-control',
                 'type': 'date'
             }),
-            'wedding_date': forms.DateInput(attrs={
+            'wedding_date': forms.DateInput(format='%Y-%m-%d', attrs={
                 'class': 'form-control',
                 'type': 'date'
             }),
@@ -119,16 +120,19 @@ class MemberForm(forms.ModelForm):
         self.fields['date_of_birth'].required = False
         self.fields['baptism_date'].required = False
         self.fields['wedding_date'].required = False
+        self.fields['gender'].required = False
+        self.fields['email'].required = False  # Email optionnel
         
         # Ajouter des choix vides
         self.fields['family'].empty_label = "Aucune famille"
         self.fields['site'].empty_label = "Sélectionner un site"
+        self.fields['gender'].empty_label = "Non spécifié"
         
-        # Filtrer les familles actives
-        self.fields['family'].queryset = Family.objects.filter(is_active=True)
+        # Filtrer les familles actives (triées alphabétiquement)
+        self.fields['family'].queryset = Family.objects.filter(is_active=True).order_by('name')
         
         # Filtrer les sites actifs
-        self.fields['site'].queryset = Site.objects.filter(is_active=True)
+        self.fields['site'].queryset = Site.objects.filter(is_active=True).order_by('name')
     
     def clean_email(self):
         """Valider l'unicité de l'email."""
@@ -155,10 +159,7 @@ class MemberForm(forms.ModelForm):
         if birth_date and baptism_date and baptism_date < birth_date:
             raise ValidationError("La date de baptême ne peut pas être antérieure à la date de naissance.")
         
-        # Si baptisé, la date de baptême est requise
-        is_baptized = cleaned_data.get('is_baptized')
-        if is_baptized and not baptism_date:
-            self.add_error('baptism_date', "La date de baptême est requise si le membre est baptisé.")
+        # Date de baptême optionnelle même si baptisé (supprimé la validation obligatoire)
         
         # Vérifier le numéro WhatsApp si les notifications WhatsApp sont activées
         notify_whatsapp = cleaned_data.get('notify_by_whatsapp')
@@ -183,10 +184,10 @@ class LifeEventForm(forms.ModelForm):
         widgets = {
             'event_type': forms.Select(attrs={'class': 'form-select'}),
             'title': forms.TextInput(attrs={'class': 'form-control'}),
-            'event_date': forms.DateInput(attrs={'class': 'form-control', 'type': 'date'}),
+            'event_date': forms.DateInput(format='%Y-%m-%d', attrs={'class': 'form-control', 'type': 'date'}),
             'priority': forms.Select(attrs={'class': 'form-select'}),
-            'primary_member': forms.Select(attrs={'class': 'form-select'}),
-            'related_members': forms.SelectMultiple(attrs={'class': 'form-select'}),
+            'primary_member': forms.Select(attrs={'class': 'form-select tom-select', 'data-placeholder': 'Rechercher un membre...'}),
+            'related_members': forms.SelectMultiple(attrs={'class': 'form-select tom-select', 'data-placeholder': 'Rechercher des membres...'}),
             'description': forms.Textarea(attrs={'class': 'form-control', 'rows': 3}),
             'notes': forms.Textarea(attrs={'class': 'form-control', 'rows': 2}),
             'requires_visit': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
@@ -197,6 +198,10 @@ class LifeEventForm(forms.ModelForm):
         super().__init__(*args, **kwargs)
         self.fields['related_members'].required = False
         self.fields['notes'].required = False
+        # Membres actifs triés alphabétiquement
+        membres_qs = Member.objects.filter(status='actif').order_by('last_name', 'first_name')
+        self.fields['primary_member'].queryset = membres_qs
+        self.fields['related_members'].queryset = membres_qs
 
 
 class VisitationLogForm(forms.ModelForm):
@@ -211,14 +216,14 @@ class VisitationLogForm(forms.ModelForm):
             'follow_up_needed', 'follow_up_notes', 'is_confidential'
         ]
         widgets = {
-            'member': forms.Select(attrs={'class': 'form-select'}),
-            'visitor': forms.Select(attrs={'class': 'form-select'}),
+            'member': forms.Select(attrs={'class': 'form-select tom-select', 'data-placeholder': 'Rechercher un membre...'}),
+            'visitor': forms.Select(attrs={'class': 'form-select tom-select', 'data-placeholder': 'Rechercher un visiteur...'}),
             'visit_type': forms.Select(attrs={'class': 'form-select'}),
             'status': forms.Select(attrs={'class': 'form-select'}),
-            'scheduled_date': forms.DateInput(attrs={'class': 'form-control', 'type': 'date'}),
-            'visit_date': forms.DateInput(attrs={'class': 'form-control', 'type': 'date'}),
+            'scheduled_date': forms.DateInput(format='%Y-%m-%d', attrs={'class': 'form-control', 'type': 'date'}),
+            'visit_date': forms.DateInput(format='%Y-%m-%d', attrs={'class': 'form-control', 'type': 'date'}),
             'duration_minutes': forms.NumberInput(attrs={'class': 'form-control'}),
-            'life_event': forms.Select(attrs={'class': 'form-select'}),
+            'life_event': forms.Select(attrs={'class': 'form-select tom-select', 'data-placeholder': "Filtrer par événement de vie..."}),
             'summary': forms.Textarea(attrs={'class': 'form-control', 'rows': 4}),
             'prayer_requests': forms.Textarea(attrs={'class': 'form-control', 'rows': 3}),
             'follow_up_notes': forms.Textarea(attrs={'class': 'form-control', 'rows': 2}),
@@ -235,9 +240,13 @@ class VisitationLogForm(forms.ModelForm):
         self.fields['prayer_requests'].required = False
         self.fields['follow_up_notes'].required = False
         
+        # Membres actifs triés alphabétiquement
+        membres_qs = Member.objects.filter(status='actif').order_by('last_name', 'first_name')
+        self.fields['member'].queryset = membres_qs
+        self.fields['visitor'].queryset = membres_qs
         # Filtrer les événements de vie non visités
         self.fields['life_event'].queryset = LifeEvent.objects.filter(
             requires_visit=True, 
             visit_completed=False
-        )
+        ).order_by('event_date', 'title')
         self.fields['life_event'].empty_label = "Aucun événement lié"

@@ -1,0 +1,110 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{{ title }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row justify-content-center">
+        <div class="col-md-8 col-lg-6">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-chalkboard-teacher"></i> {{ title }}
+                    </h5>
+                </div>
+                <div class="card-body">
+                    {% if messages %}
+                        {% for message in messages %}
+                            <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                                {{ message }}
+                                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Fermer"></button>
+                            </div>
+                        {% endfor %}
+                    {% endif %}
+
+                    <form method="post">
+                        {% csrf_token %}
+                        
+                        <div class="mb-3">
+                            <label for="age_group" class="form-label">Tranche d'âge *</label>
+                            <select class="form-select" id="age_group" name="age_group" required>
+                                <option value="">Choisir une tranche d'âge...</option>
+                                {% for age_group in age_groups %}
+                                    <option value="{{ age_group.pk }}" 
+                                            {% if selected_age_group_id == age_group.pk|stringformat:'s' %}selected{% endif %}>
+                                        {{ age_group.name }} ({{ age_group.min_age }}-{{ age_group.max_age }} ans)
+                                    </option>
+                                {% endfor %}
+                            </select>
+                            <div class="form-text">La classe sera identifiée par sa tranche d'âge et sa salle.</div>
+                            {% if not age_groups %}
+                                <div class="alert alert-warning mt-2 mb-0">
+                                    Aucune tranche d'âge configurée.
+                                    <a href="{% url 'bibleclub:age_group_create' %}">Créer une tranche d'âge</a>.
+                                </div>
+                            {% else %}
+                                <div class="mt-2">
+                                    <a href="{% url 'bibleclub:age_group_create' %}" class="btn btn-sm btn-outline-primary">
+                                        <i class="bi bi-plus-lg me-1"></i>Ajouter une tranche d'âge
+                                    </a>
+                                </div>
+                            {% endif %}
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="room" class="form-label">Salle</label>
+                            <input type="text"
+                                   class="form-control"
+                                   id="room"
+                                   name="room"
+                                   value="{{ submitted_room|default:'' }}"
+                                   maxlength="50"
+                                   placeholder="Ex: Salle B">
+                            <div class="form-text">Optionnel - Permet d'avoir plusieurs classes pour une même tranche d'âge.</div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="max_capacity" class="form-label">Capacité maximale</label>
+                            <input type="number" 
+                                   class="form-control" 
+                                   id="max_capacity" 
+                                   name="max_capacity" 
+                                   value="{{ submitted_capacity|default:15 }}"
+                                   min="1"
+                                   max="100"
+                                   placeholder="Ex: 15">
+                            <div class="form-text">15 par défaut si le champ est laissé vide.</div>
+                        </div>
+
+                        {% if bible_class %}
+                            <div class="mb-3">
+                                <div class="form-check">
+                                    <input class="form-check-input" 
+                                           type="checkbox" 
+                                           id="is_active" 
+                                           name="is_active"
+                                           {% if bible_class.is_active %}checked{% endif %}>
+                                    <label class="form-check-label" for="is_active">
+                                        Classe active
+                                    </label>
+                                </div>
+                                <div class="form-text">Décochez pour désactiver temporairement la classe.</div>
+                            </div>
+                        {% endif %}
+
+                        <div class="d-flex justify-content-between">
+                            <a href="{% url 'bibleclub:class_list' %}" class="btn btn-secondary">
+                                <i class="fas fa-arrow-left"></i> Annuler
+                            </a>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-save"></i> {{ submit_text }}
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

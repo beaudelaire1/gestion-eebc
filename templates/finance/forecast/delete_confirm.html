@@ -1,0 +1,40 @@
+{% extends 'base.html' %}
+
+{% block title %}Supprimer {{ forecast.name }}{% endblock %}
+
+{% block page_title %}Supprimer le prévisionnel{% endblock %}
+{% block page_subtitle %}Confirmation de suppression{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row justify-content-center">
+        <div class="col-md-6">
+            <div class="card shadow-sm border-danger">
+                <div class="card-body text-center py-5">
+                    <i class="bi bi-exclamation-triangle display-1 text-danger"></i>
+                    <h4 class="mt-3">Êtes-vous sûr ?</h4>
+                    <p class="text-muted mb-1">
+                        Vous êtes sur le point de supprimer le prévisionnel :
+                    </p>
+                    <h5 class="mb-1">{{ forecast.name }}</h5>
+                    <p class="text-muted">
+                        {{ forecast.year }} — {{ forecast.get_scenario_display }}<br>
+                        <small>{{ forecast.lines.count }} ligne{{ forecast.lines.count|pluralize:"s" }} budgétaire{{ forecast.lines.count|pluralize:"s" }}</small>
+                    </p>
+                    <p class="text-danger fw-bold">Cette action est irréversible.</p>
+                    
+                    <form method="post" class="d-inline">
+                        {% csrf_token %}
+                        <button type="submit" class="btn btn-danger me-2">
+                            <i class="bi bi-trash me-1"></i>Confirmer la suppression
+                        </button>
+                        <a href="{% url 'finance:forecast_detail' forecast.pk %}" class="btn btn-outline-secondary">
+                            <i class="bi bi-arrow-left me-1"></i>Annuler
+                        </a>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

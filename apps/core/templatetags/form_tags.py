@@ -69,6 +69,14 @@ def add_error_class(field):
 @register.inclusion_tag('components/form_field.html')
 def render_field(field, show_label=True, show_help=True):
     """Rend un champ de formulaire avec gestion des erreurs."""
+    describedby = []
+    if field.help_text:
+        describedby.append(f"{field.id_for_label}_help")
+    if field.errors:
+        describedby.append(f"{field.id_for_label}_errors")
+        field.field.widget.attrs['aria-invalid'] = 'true'
+    if describedby:
+        field.field.widget.attrs['aria-describedby'] = ' '.join(describedby)
     return {
         'field': field,
         'show_label': show_label,

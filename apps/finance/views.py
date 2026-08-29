@@ -1,18 +1,31 @@
 """Vues pour le module Finance."""
 
+import logging
+from pathlib import Path
+
 from django.shortcuts import render, get_object_or_404, redirect
 from django.contrib.auth.decorators import login_required, permission_required
 from django.contrib import messages
+from django.core.paginator import Paginator
 from django.db.models import Sum, Count, Q
 from django.utils import timezone
-from django.http import JsonResponse
+from django.http import JsonResponse, HttpResponse
 from datetime import date, timedelta
 from decimal import Decimal
 
-from .models import FinancialTransaction, FinanceCategory, ReceiptProof, BudgetLine
-from .forms import TransactionForm, ProofUploadForm
-from .services import TransactionService, BudgetService
+from .models import FinancialTransaction, FinanceCategory, ReceiptProof, BudgetLine, BudgetCategory, Budget, BudgetItem, BudgetRequest
+from .forms import TransactionForm, ProofUploadForm, FinanceCategoryForm, FinanceExcelImportForm, DonationReceiptForm
+from .import_services import (
+    FINANCE_IMPORT_SHEET_SPECS,
+    FinanceBundleImporter,
+    FinanceExcelWorkbookParser,
+    FinanceImportError,
+    build_finance_import_template_workbook,
+)
+from .services import TransactionService, BudgetService, DEDICATED_FUNDS_PARENT
 from apps.core.permissions import role_required
+
+logger = logging.getLogger(__name__)
 
 
 @login_required
@@ -24,26 +37,50 @@ def dashboard(request):
     Utilise TransactionService pour récupérer les statistiques.
     Requirements: 7.2, 21.1
     """
+    available_years = list(
+        FinancialTransaction.objects.filter(status=FinancialTransaction.Status.VALIDE)
+        .dates('transaction_date', 'year', order='DESC')
+    )
+    available_year_values = [year.year for year in available_years]
+
+    year_param = request.GET.get('year', '').strip()
+    if year_param.isdigit():
+        selected_year = int(year_param)
+    elif available_year_values:
+        selected_year = available_year_values[0]
+    else:
+        selected_year = date.today().year
+
     # Déléguer la logique métier au service
-    stats = TransactionService.get_dashboard_stats()
+    stats = TransactionService.get_dashboard_stats(year=selected_year)
     
     # Données pour le graphique d'évolution des dons (12 mois)
-    donations_chart_data = TransactionService.get_monthly_donations_data(12)
+    donations_chart_data = TransactionService.get_monthly_donations_data(12, year=selected_year)
     
     # Données pour le graphique de répartition des dépenses (12 mois)
-    expenses_chart_data = TransactionService.get_expenses_distribution_data(12)
+    expenses_chart_data = TransactionService.get_expenses_distribution_data(12, year=selected_year)
     
     context = {
         'month_income': stats['month_income'],
         'month_expenses': stats['month_expenses'],
         'month_balance': stats['month_balance'],
+        'month_dedicated_funds': stats['month_dedicated_funds'],
         'year_income': stats['year_income'],
         'year_expenses': stats['year_expenses'],
         'year_balance': stats['year_balance'],
+        'dedicated_funds_total': stats['dedicated_funds_total'],
+        'closing_balance': stats['closing_balance'],
+        'income_summary': stats['income_summary'],
+        'expense_summary': stats['expense_summary'],
+        'dedicated_funds_summary': stats['dedicated_funds_summary'],
         'recent_transactions': stats['recent_transactions'],
         'pending_count': stats['pending_count'],
         'donations_chart_data': donations_chart_data,
         'expenses_chart_data': expenses_chart_data,
+        'available_years': available_year_values,
+        'selected_year': selected_year,
+        'reference_date': stats['reference_date'],
+        'current_year': date.today().year,
     }
     
     return render(request, 'finance/dashboard.html', context)
@@ -59,6 +96,8 @@ def dashboard_chart_data(request):
     """
     months = int(request.GET.get('months', 12))
     chart_type = request.GET.get('type', 'donations')
+    year_param = request.GET.get('year', '').strip()
+    selected_year = int(year_param) if year_param.isdigit() else None
     
     # Limiter le nombre de mois pour éviter les abus
     if months not in [3, 6, 12, 24]:
@@ -66,9 +105,9 @@ def dashboard_chart_data(request):
     
     # Récupérer les données via le service selon le type
     if chart_type == 'expenses':
-        chart_data = TransactionService.get_expenses_distribution_data(months)
+        chart_data = TransactionService.get_expenses_distribution_data(months, year=selected_year)
     else:  # donations par défaut
-        chart_data = TransactionService.get_monthly_donations_data(months)
+        chart_data = TransactionService.get_monthly_donations_data(months, year=selected_year)
     
     return JsonResponse(chart_data)
 
@@ -111,8 +150,12 @@ def transaction_list(request):
     
     transactions = transactions.order_by(sort_by)
     
+    paginator = Paginator(transactions, 25)
+    page_obj = paginator.get_page(request.GET.get('page', 1))
+    
     context = {
-        'transactions': transactions,
+        'transactions': page_obj,
+        'page_obj': page_obj,
         'transaction_types': FinancialTransaction.TransactionType.choices,
         'statuses': FinancialTransaction.Status.choices,
         'current_sort': request.GET.get('sort', 'transaction_date'),
@@ -149,7 +192,10 @@ def transaction_create(request):
             else:
                 messages.error(request, result.error)
     else:
-        form = TransactionForm()
+        initial = {}
+        if request.GET.get('type'):
+            initial['transaction_type'] = request.GET['type']
+        form = TransactionForm(initial=initial)
     
     return render(request, 'finance/transaction_form.html', {'form': form})
 
@@ -200,6 +246,70 @@ def transaction_validate(request, pk):
 
 @login_required
 @role_required('admin', 'finance')
+def transaction_receipt_pdf(request, pk):
+    """Génère un reçu PDF pour une transaction manuelle (don, dîme, offrande)."""
+    transaction = get_object_or_404(FinancialTransaction, pk=pk)
+
+    income_types = ('don', 'dime', 'offrande')
+    if transaction.transaction_type not in income_types:
+        messages.error(request, "Seuls les dons, dîmes et offrandes peuvent avoir un reçu.")
+        return redirect('finance:transaction_detail', pk=pk)
+
+    from .pdf_service import generate_transaction_receipt_pdf
+    pdf_bytes, receipt_number = generate_transaction_receipt_pdf(transaction)
+
+    response = HttpResponse(pdf_bytes, content_type='application/pdf')
+    response['Content-Disposition'] = f'inline; filename="recu_{receipt_number}.pdf"'
+    return response
+
+
+@login_required
+@role_required('admin', 'finance')
+def donation_receipt_create(request):
+    """Page de création d'un reçu de don avec formulaire (espèces, chèque…)."""
+    if request.method == 'POST':
+        form = DonationReceiptForm(request.POST)
+        if form.is_valid():
+            from .pdf_service import generate_manual_donation_receipt_pdf
+
+            pdf_bytes, receipt_number = generate_manual_donation_receipt_pdf(
+                donor_name=form.cleaned_data['donor_name'],
+                donor_address=form.cleaned_data.get('donor_address', ''),
+                donor_email=form.cleaned_data.get('donor_email', ''),
+                amount=form.cleaned_data['amount'],
+                donation_type=form.cleaned_data['donation_type'],
+                payment_method=form.cleaned_data['payment_method'],
+                donation_date=form.cleaned_data['donation_date'],
+            )
+
+            response = HttpResponse(pdf_bytes, content_type='application/pdf')
+            response['Content-Disposition'] = f'inline; filename="recu_{receipt_number}.pdf"'
+            return response
+    else:
+        form = DonationReceiptForm(initial={'donation_date': date.today()})
+
+    return render(request, 'finance/donation_receipt_create.html', {'form': form})
+
+
+@login_required
+@role_required('admin', 'finance')
+def member_info_api(request, pk):
+    """API JSON pour pré-remplir le formulaire de reçu depuis un membre."""
+    from apps.members.models import Member
+    member = get_object_or_404(Member, pk=pk)
+    address_parts = [member.address or '']
+    city_line = ' '.join(filter(None, [member.postal_code, member.city]))
+    if city_line:
+        address_parts.append(city_line)
+    return JsonResponse({
+        'name': member.get_full_name(),
+        'email': member.email or '',
+        'address': ', '.join(p for p in address_parts if p.strip()),
+    })
+
+
+@login_required
+@role_required('admin', 'finance')
 def proof_upload(request, pk):
     """Upload d'une preuve de paiement."""
     transaction = get_object_or_404(FinancialTransaction, pk=pk)
@@ -238,9 +348,185 @@ def budget_overview(request):
 @login_required
 @role_required('admin', 'finance')
 def reports(request):
-    """Rapports financiers."""
-    # Placeholder pour les rapports avancés
-    return render(request, 'finance/reports.html')
+    """Rapports financiers avec filtres et export PDF."""
+    from django.db.models import Sum, Count
+    from datetime import date
+    
+    # Filtres
+    year = int(request.GET.get('year', date.today().year))
+    month = request.GET.get('month', '')
+    site_id = request.GET.get('site', '')
+    
+    # Transactions de la période
+    qs = FinancialTransaction.objects.filter(
+        transaction_date__year=year,
+        status='valide',
+    )
+    if month:
+        qs = qs.filter(transaction_date__month=int(month))
+    if site_id:
+        qs = qs.filter(site_id=site_id)
+    
+    # Calculs
+    income_types = ['don', 'dime', 'offrande']
+    income = qs.filter(transaction_type__in=income_types).aggregate(
+        total=Sum('amount'), count=Count('id')
+    )
+    expenses = qs.filter(transaction_type='depense').aggregate(
+        total=Sum('amount'), count=Count('id')
+    )
+    
+    # Par type
+    by_type = qs.values('transaction_type').annotate(
+        total=Sum('amount'), count=Count('id')
+    ).order_by('-total')
+    
+    # Par mois (si année complète)
+    monthly = []
+    if not month:
+        for m in range(1, 13):
+            m_qs = qs.filter(transaction_date__month=m)
+            m_income = m_qs.filter(transaction_type__in=income_types).aggregate(t=Sum('amount'))['t'] or 0
+            m_expense = m_qs.filter(transaction_type='depense').aggregate(t=Sum('amount'))['t'] or 0
+            monthly.append({
+                'month': m,
+                'month_name': ['', 'Janvier', 'Février', 'Mars', 'Avril', 'Mai', 'Juin',
+                               'Juillet', 'Août', 'Septembre', 'Octobre', 'Novembre', 'Décembre'][m],
+                'income': m_income,
+                'expense': m_expense,
+                'balance': m_income - m_expense,
+            })
+    
+    # Par méthode de paiement
+    by_method = qs.values('payment_method').annotate(
+        total=Sum('amount'), count=Count('id')
+    ).order_by('-total')
+    
+    from apps.core.models import Site
+    sites = Site.objects.filter(is_active=True)
+
+    french_month_names = [
+        'Janvier', 'Février', 'Mars', 'Avril', 'Mai', 'Juin',
+        'Juillet', 'Août', 'Septembre', 'Octobre', 'Novembre', 'Décembre',
+    ]
+    month_choices = [(str(i), name) for i, name in enumerate(french_month_names, start=1)]
+
+    context = {
+        'year': year,
+        'month': month,
+        'site_id': site_id,
+        'sites': sites,
+        'years': range(date.today().year, date.today().year - 5, -1),
+        'income_total': income['total'] or 0,
+        'income_count': income['count'] or 0,
+        'expense_total': expenses['total'] or 0,
+        'expense_count': expenses['count'] or 0,
+        'balance': (income['total'] or 0) - (expenses['total'] or 0),
+        'by_type': by_type,
+        'monthly': monthly,
+        'by_method': by_method,
+        'transaction_count': qs.count(),
+        'month_choices': month_choices,
+    }
+    
+    # Export PDF
+    if request.GET.get('export') == 'pdf':
+        return _generate_report_pdf(context)
+    
+    return render(request, 'finance/reports.html', context)
+
+
+def _generate_report_pdf(context):
+    """Génère un PDF du rapport financier."""
+    from django.template.loader import render_to_string
+    from django.http import HttpResponse
+    
+    try:
+        from weasyprint import HTML, CSS
+    except ImportError:
+        return HttpResponse("WeasyPrint non installé.", status=500)
+    
+    html_content = render_to_string('finance/report_pdf.html', context)
+    html = HTML(string=html_content)
+    pdf = html.write_pdf()
+    
+    period = f"{context['year']}"
+    if context['month']:
+        period += f"-{context['month']:0>2}"
+    
+    response = HttpResponse(pdf, content_type='application/pdf')
+    response['Content-Disposition'] = f'inline; filename="rapport_financier_{period}.pdf"'
+    return response
+
+
+@login_required
+@role_required('admin', 'finance')
+def finance_import_excel(request):
+    """Import d'un classeur Excel structure pour la finance."""
+    if request.method == 'POST':
+        form = FinanceExcelImportForm(request.POST, request.FILES)
+        if form.is_valid():
+            importer = FinanceBundleImporter()
+            parser = FinanceExcelWorkbookParser()
+            uploaded_file = form.cleaned_data['file']
+            dry_run = form.cleaned_data['dry_run']
+
+            try:
+                bundle, sections = parser.parse(uploaded_file)
+                result = importer.import_bundle(bundle, sections=sections, dry_run=dry_run)
+            except FinanceImportError as exc:
+                form.add_error(None, str(exc))
+            except Exception as exc:
+                form.add_error(None, f"Import impossible : {exc}")
+            else:
+                counts = []
+                for model_name in sorted(result['stats']):
+                    counters = result['stats'][model_name]
+                    counts.append(
+                        f"{model_name}: {counters.get('created', 0)} créé(s), {counters.get('updated', 0)} mis à jour"
+                    )
+
+                if dry_run:
+                    messages.info(
+                        request,
+                        f"Simulation terminée. Sections lues : {', '.join(sections)}.",
+                    )
+                else:
+                    messages.success(
+                        request,
+                        f"Import terminé. Sections importées : {', '.join(sections)}.",
+                    )
+
+                for line in counts:
+                    messages.info(request, line)
+                for warning in result['warnings'][:5]:
+                    messages.warning(request, warning)
+                if len(result['warnings']) > 5:
+                    messages.warning(request, 'Des avertissements supplémentaires ont été masqués.')
+
+                return redirect('finance:import_excel')
+    else:
+        form = FinanceExcelImportForm()
+
+    context = {
+        'form': form,
+        'sheet_specs': FINANCE_IMPORT_SHEET_SPECS,
+    }
+    return render(request, 'finance/import_excel.html', context)
+
+
+@login_required
+@role_required('admin', 'finance')
+def finance_import_excel_template(request):
+    """Télécharge un modèle de classeur pour l'import finance."""
+    workbook = build_finance_import_template_workbook()
+    response = HttpResponse(
+        content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+    )
+    filename = f"modele_import_finance_{timezone.now().strftime('%Y%m%d')}.xlsx"
+    response['Content-Disposition'] = f'attachment; filename="{filename}"'
+    workbook.save(response)
+    return response
 
 
 # =============================================================================
@@ -268,9 +554,14 @@ def tax_receipt_list(request):
     # Stats
     total_amount = receipts.filter(status='issued').aggregate(Sum('total_amount'))['total_amount__sum'] or 0
     
+    paginator = Paginator(receipts, 25)
+    page_obj = paginator.get_page(request.GET.get('page', 1))
+    
     context = {
-        'receipts': receipts,
+        'receipts': page_obj,
+        'page_obj': page_obj,
         'total_amount': total_amount,
+        'current_year': date.today().year,
         'years': TaxReceipt.objects.values_list('fiscal_year', flat=True).distinct().order_by('-fiscal_year'),
         'statuses': TaxReceipt.Status.choices if hasattr(TaxReceipt, 'Status') else [],
     }
@@ -304,8 +595,17 @@ def tax_receipt_create(request):
             transaction_date__year=fiscal_year
         )
         
+        # Inclure les dons de campagne (liés par nom du donateur)
+        from apps.campaigns.models import Donation as CampaignDonation
+        campaign_donations = CampaignDonation.objects.filter(
+            donor_name=member.full_name,
+            is_cancelled=False,
+            donation_date__year=fiscal_year
+        )
+        
         total = (donations.aggregate(Sum('amount'))['amount__sum'] or 0) + \
-                (transactions.aggregate(Sum('amount'))['amount__sum'] or 0)
+                (transactions.aggregate(Sum('amount'))['amount__sum'] or 0) + \
+                (campaign_donations.aggregate(Sum('amount'))['amount__sum'] or 0)
         
         if total <= 0:
             messages.error(request, f"Aucun don trouvé pour {member.full_name} en {fiscal_year}")
@@ -317,7 +617,7 @@ def tax_receipt_create(request):
             try:
                 last_num = int(last_receipt.receipt_number.split('-')[-1])
                 new_num = last_num + 1
-            except:
+            except (ValueError, IndexError):
                 new_num = 1
         else:
             new_num = 1
@@ -335,6 +635,10 @@ def tax_receipt_create(request):
             issued_by=request.user,
             status='draft'
         )
+        
+        # Rattacher les transactions financières au reçu
+        if transactions.exists():
+            receipt.transactions.set(transactions)
         
         messages.success(request, f"Reçu fiscal créé pour {member.full_name}")
         return redirect('finance:tax_receipt_detail', pk=receipt.pk)
@@ -367,13 +671,12 @@ def tax_receipt_detail(request, pk):
 @role_required('admin', 'finance')
 def tax_receipt_pdf(request, pk):
     """Générer le PDF d'un reçu fiscal."""
-    from .pdf_service import TaxReceiptPDFService
+    from .pdf_service import generate_tax_receipt_pdf
     
     receipt = get_object_or_404(TaxReceipt, pk=pk)
     
     # Générer le PDF
-    pdf_service = TaxReceiptPDFService()
-    pdf_content = pdf_service.generate_receipt_pdf(receipt)
+    pdf_content = generate_tax_receipt_pdf(receipt)
     
     # Mettre à jour le statut si brouillon
     if receipt.status == 'draft':
@@ -392,7 +695,7 @@ def tax_receipt_pdf(request, pk):
 @role_required('admin', 'finance')
 def tax_receipt_send(request, pk):
     """Envoyer le reçu fiscal par email."""
-    from .pdf_service import TaxReceiptPDFService
+    from .pdf_service import generate_tax_receipt_pdf
     from django.core.mail import EmailMessage
     
     receipt = get_object_or_404(TaxReceipt, pk=pk)
@@ -406,8 +709,7 @@ def tax_receipt_send(request, pk):
         return redirect('finance:tax_receipt_detail', pk=pk)
     
     # Générer le PDF
-    pdf_service = TaxReceiptPDFService()
-    pdf_content = pdf_service.generate_receipt_pdf(receipt)
+    pdf_content = generate_tax_receipt_pdf(receipt)
     
     # Envoyer l'email
     email = EmailMessage(
@@ -443,6 +745,156 @@ L'équipe EEBC""",
         messages.error(request, f"Erreur d'envoi : {e}")
     
     return redirect('finance:tax_receipt_detail', pk=pk)
+
+
+@login_required
+@role_required('admin', 'finance')
+def tax_receipt_bulk_generate(request):
+    """Générer les relevés fiscaux en masse pour une année donnée."""
+    from apps.members.models import Member
+    from apps.campaigns.models import Donation as CampaignDonation
+
+    if request.method == 'POST':
+        fiscal_year = int(request.POST.get('fiscal_year', date.today().year))
+
+        members = Member.objects.filter(status='actif').order_by('last_name', 'first_name')
+        created_count = 0
+        skipped_count = 0
+
+        for member in members:
+            # Vérifier qu'il n'y a pas déjà un reçu
+            if TaxReceipt.objects.filter(member=member, fiscal_year=fiscal_year).exists():
+                skipped_count += 1
+                continue
+
+            # 1. Transactions financières
+            transactions = FinancialTransaction.objects.filter(
+                member=member,
+                transaction_date__year=fiscal_year,
+                status='valide',
+                transaction_type__in=['don', 'dime', 'offrande'],
+            )
+            total_tx = transactions.aggregate(Sum('amount'))['amount__sum'] or 0
+
+            # 2. Dons en ligne
+            from .models import OnlineDonation
+            total_online = OnlineDonation.objects.filter(
+                member=member, status='completed', created_at__year=fiscal_year,
+            ).aggregate(Sum('amount'))['amount__sum'] or 0
+
+            # 3. Dons de campagne
+            total_campaign = CampaignDonation.objects.filter(
+                donor_name=member.full_name, is_cancelled=False, donation_date__year=fiscal_year,
+            ).aggregate(Sum('amount'))['amount__sum'] or 0
+
+            total = total_tx + total_online + total_campaign
+            if total <= 0:
+                continue
+
+            # Numéro de reçu
+            last = TaxReceipt.objects.filter(fiscal_year=fiscal_year).order_by('-receipt_number').first()
+            if last:
+                try:
+                    new_num = int(last.receipt_number.split('-')[-1]) + 1
+                except (ValueError, IndexError):
+                    new_num = 1
+            else:
+                new_num = 1
+            receipt_number = f"RF-{fiscal_year}-{new_num:04d}"
+
+            receipt = TaxReceipt.objects.create(
+                receipt_number=receipt_number,
+                member=member,
+                fiscal_year=fiscal_year,
+                total_amount=total,
+                donor_name=member.full_name,
+                donor_address=f"{member.address or ''}, {member.postal_code or ''} {member.city or ''}".strip(', '),
+                donor_email=member.email or '',
+                issued_by=request.user,
+                status='draft',
+            )
+            if transactions.exists():
+                receipt.transactions.set(transactions)
+            created_count += 1
+
+        if created_count:
+            messages.success(request, f"{created_count} relevé(s) fiscal/fiscaux créé(s) pour {fiscal_year}.")
+        else:
+            messages.info(request, f"Aucun nouveau relevé à créer pour {fiscal_year}.")
+        if skipped_count:
+            messages.info(request, f"{skipped_count} membre(s) avai(en)t déjà un relevé.")
+
+        return redirect('finance:tax_receipt_list')
+
+    return redirect('finance:tax_receipt_list')
+
+
+@login_required
+@role_required('admin', 'finance')
+def tax_receipt_bulk_send(request):
+    """Envoyer par email tous les relevés fiscaux émis (issued) qui ont un email."""
+    from .pdf_service import generate_tax_receipt_pdf
+    from django.core.mail import EmailMessage as DjangoEmail
+
+    if request.method == 'POST':
+        fiscal_year = request.POST.get('fiscal_year')
+        qs = TaxReceipt.objects.filter(status='issued')
+        if fiscal_year:
+            qs = qs.filter(fiscal_year=int(fiscal_year))
+
+        # Filtrer ceux qui ont un email
+        receipts = [r for r in qs if (r.donor_email or (r.member and r.member.email))]
+
+        sent_count = 0
+        error_count = 0
+
+        for receipt in receipts:
+            recipient_email = receipt.donor_email or receipt.member.email
+            recipient_name = receipt.donor_name.split()[0] if receipt.donor_name else 'Cher donateur'
+
+            try:
+                pdf_content = generate_tax_receipt_pdf(receipt)
+                email = DjangoEmail(
+                    subject=f"Reçu fiscal {receipt.fiscal_year} - {receipt.receipt_number}",
+                    body=f"""Bonjour {recipient_name},
+
+Veuillez trouver ci-joint votre reçu fiscal pour l'année {receipt.fiscal_year}.
+
+Montant total des dons : {receipt.total_amount} €
+
+Ce document est à conserver pour votre déclaration d'impôts.
+
+Merci pour votre générosité !
+
+Fraternellement,
+L'équipe EEBC""",
+                    from_email=None,
+                    to=[recipient_email],
+                )
+                email.attach(
+                    f"recu_fiscal_{receipt.receipt_number}.pdf",
+                    pdf_content,
+                    'application/pdf',
+                )
+                email.send()
+                receipt.status = 'sent'
+                receipt.sent_date = date.today()
+                receipt.save()
+                sent_count += 1
+            except Exception as e:
+                error_count += 1
+                logger.error(f"Failed to send receipt {receipt.receipt_number}: {e}")
+
+        if sent_count:
+            messages.success(request, f"{sent_count} reçu(s) envoyé(s) par email.")
+        if error_count:
+            messages.warning(request, f"{error_count} erreur(s) lors de l'envoi.")
+        if not receipts:
+            messages.info(request, "Aucun reçu émis avec email à envoyer.")
+
+        return redirect('finance:tax_receipt_list')
+
+    return redirect('finance:tax_receipt_list')
 
 
 @login_required
@@ -504,6 +956,9 @@ def batch_retry_ocr(request):
 # =============================================================================
 
 from django.http import JsonResponse
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 @login_required
@@ -668,7 +1123,6 @@ def receipt_process_ocr(request, pk):
     
     try:
         from .tasks import process_ocr_task
-        
         # Réinitialiser le statut
         proof.ocr_status = ReceiptProof.OCRStatus.NON_TRAITE
         proof.ocr_raw_text = ''
@@ -693,3 +1147,533 @@ def receipt_process_ocr(request, pk):
         messages.error(request, f"Erreur lors du lancement de l'OCR : {e}")
     
     return redirect('finance:receipt_proof_list')
+
+# =============================================================================
+# CRUD POUR LES CATÉGORIES DE BUDGET - OPÉRATIONS MANQUANTES
+# =============================================================================
+
+@login_required
+@role_required('admin', 'finance')
+def budget_category_list(request):
+    """Liste des catégories de budget."""
+    categories = BudgetCategory.objects.filter(is_active=True).order_by('name')
+    
+    # Statistiques d'utilisation
+    for category in categories:
+        category.budgets_count = Budget.objects.filter(items__category=category).distinct().count()
+        category.requests_count = BudgetRequest.objects.filter(category=category).count()
+        category.total_usage = category.budgets_count + category.requests_count
+    
+    context = {
+        'categories': categories,
+        'total_categories': categories.count(),
+    }
+    
+    return render(request, 'finance/budget_category_list.html', context)
+
+
+@login_required
+@role_required('admin', 'finance')
+def budget_category_create(request):
+    """Créer une nouvelle catégorie de budget."""
+    if request.method == 'POST':
+        name = request.POST.get('name', '').strip()
+        description = request.POST.get('description', '').strip()
+        color = request.POST.get('color', '#0A36FF')
+        
+        if not name:
+            messages.error(request, 'Le nom de la catégorie est requis.')
+        else:
+            # Vérifier l'unicité
+            if BudgetCategory.objects.filter(name__iexact=name, is_active=True).exists():
+                messages.error(request, f'Une catégorie "{name}" existe déjà.')
+            else:
+                try:
+                    category = BudgetCategory.objects.create(
+                        name=name,
+                        description=description,
+                        color=color,
+                        is_active=True
+                    )
+                    
+                    messages.success(request, f'Catégorie "{category.name}" créée avec succès.')
+                    return redirect('finance:budget_category_list')
+                except Exception as e:
+                    messages.error(request, f'Erreur lors de la création : {e}')
+    
+    context = {
+        'title': 'Nouvelle catégorie de budget',
+        'submit_text': 'Créer la catégorie'
+    }
+    return render(request, 'finance/budget_category_form.html', context)
+
+
+@login_required
+@role_required('admin', 'finance')
+def budget_category_update(request, pk):
+    """Modifier une catégorie de budget."""
+    category = get_object_or_404(BudgetCategory, pk=pk)
+    
+    if request.method == 'POST':
+        name = request.POST.get('name', '').strip()
+        description = request.POST.get('description', '').strip()
+        color = request.POST.get('color', '#0A36FF')
+        is_active = 'is_active' in request.POST
+        
+        if not name:
+            messages.error(request, 'Le nom de la catégorie est requis.')
+        else:
+            # Vérifier l'unicité (exclure la catégorie actuelle)
+            if BudgetCategory.objects.filter(name__iexact=name, is_active=True).exclude(pk=pk).exists():
+                messages.error(request, f'Une catégorie "{name}" existe déjà.')
+            else:
+                try:
+                    category.name = name
+                    category.description = description
+                    category.color = color
+                    category.is_active = is_active
+                    category.save()
+                    
+                    messages.success(request, f'Catégorie "{category.name}" modifiée avec succès.')
+                    return redirect('finance:budget_category_list')
+                except Exception as e:
+                    messages.error(request, f'Erreur lors de la modification : {e}')
+    
+    context = {
+        'category': category,
+        'title': f'Modifier {category.name}',
+        'submit_text': 'Enregistrer les modifications'
+    }
+    return render(request, 'finance/budget_category_form.html', context)
+
+
+@login_required
+@role_required('admin', 'finance')
+def budget_category_delete(request, pk):
+    """Supprimer une catégorie de budget (soft delete)."""
+    category = get_object_or_404(BudgetCategory, pk=pk)
+    
+    if request.method == 'POST':
+        category.is_active = False
+        category.save()
+        messages.success(request, f'Catégorie "{category.name}" supprimée avec succès.')
+        return redirect('finance:budget_category_list')
+    
+    return render(request, 'finance/budget_category_delete_confirm.html', {'category': category})
+
+
+# =============================================================================
+# CRUD POUR LES CATÉGORIES FINANCIÈRES (TRANSACTIONS)
+# =============================================================================
+
+@login_required
+@role_required('admin', 'finance')
+def finance_category_list(request):
+    """Liste des catégories financières."""
+    categories = FinanceCategory.objects.filter(is_active=True).order_by('name')
+    
+    # Statistiques
+    for category in categories:
+        category.transactions_count = category.transactions.count()
+    
+    context = {
+        'categories': categories,
+        'total_categories': categories.count(),
+    }
+    
+    return render(request, 'finance/finance_category_list.html', context)
+
+
+@login_required
+@role_required('admin', 'finance')
+def finance_category_create(request):
+    """Créer une nouvelle catégorie financière."""
+    if request.method == 'POST':
+        form = FinanceCategoryForm(request.POST)
+        if form.is_valid():
+            category = form.save()
+            messages.success(request, f'Catégorie "{category.name}" créée avec succès.')
+            return redirect('finance:finance_category_list')
+    else:
+        form = FinanceCategoryForm()
+    
+    context = {
+        'form': form,
+        'title': 'Nouvelle catégorie financière',
+        'submit_text': 'Créer la catégorie'
+    }
+    return render(request, 'finance/finance_category_form.html', context)
+
+
+@login_required
+@role_required('admin', 'finance')
+def finance_category_update(request, pk):
+    """Modifier une catégorie financière."""
+    category = get_object_or_404(FinanceCategory, pk=pk)
+    
+    if request.method == 'POST':
+        form = FinanceCategoryForm(request.POST, instance=category)
+        if form.is_valid():
+            category = form.save()
+            messages.success(request, f'Catégorie "{category.name}" modifiée avec succès.')
+            return redirect('finance:finance_category_list')
+    else:
+        form = FinanceCategoryForm(instance=category)
+    
+    context = {
+        'form': form,
+        'category': category,
+        'title': f'Modifier {category.name}',
+        'submit_text': 'Enregistrer les modifications'
+    }
+    return render(request, 'finance/finance_category_form.html', context)
+
+
+@login_required
+@role_required('admin', 'finance')
+def finance_category_delete(request, pk):
+    """Supprimer une catégorie financière (soft delete)."""
+    category = get_object_or_404(FinanceCategory, pk=pk)
+    
+    # Vérifier les transactions liées
+    transactions_count = category.transactions.count()
+    
+    if request.method == 'POST':
+        if transactions_count > 0:
+             # Demander confirmation pour la réassignation
+            reassign_to_id = request.POST.get('reassign_to')
+            if reassign_to_id:
+                try:
+                    new_category = FinanceCategory.objects.get(pk=reassign_to_id)
+                    category.transactions.update(category=new_category)
+                    messages.success(
+                        request, 
+                        f'{transactions_count} transaction(s) réassignée(s) à "{new_category.name}".'
+                    )
+                except FinanceCategory.DoesNotExist:
+                    messages.error(request, 'Catégorie de réassignation invalide.')
+                    return redirect('finance:finance_category_delete', pk=pk)
+            else:
+                 # Désactiver simplement sans réassigner (les transactions gardent la ref ou on met null?)
+                 # FinanceCategory est SET_NULL dans FinancialTransaction.
+                 if request.POST.get('action') == 'delete':
+                     category.transactions.update(category=None)
+                     messages.warning(request, f'{transactions_count} transaction(s) n\'ont plus de catégorie.')
+        
+        category.is_active = False # Soft delete
+        category.save()
+        messages.success(request, f'Catégorie "{category.name}" archivée avec succès.')
+        return redirect('finance:finance_category_list')
+    
+    other_categories = FinanceCategory.objects.filter(is_active=True).exclude(pk=pk)
+    
+    context = {
+        'category': category,
+        'transactions_count': transactions_count,
+        'other_categories': other_categories
+    }
+    
+    return render(request, 'finance/finance_category_confirm_delete.html', context)
+
+
+@login_required
+@role_required('admin', 'finance')
+def yearly_comparison(request):
+    """
+    Graphique comparatif Année N vs Année N-1.
+    Recettes et dépenses mensuelles côte à côte.
+    """
+    from django.db.models.functions import TruncMonth, ExtractMonth
+
+    available_years = list(
+        FinancialTransaction.objects.filter(status=FinancialTransaction.Status.VALIDE)
+        .dates('transaction_date', 'year', order='DESC')
+    )
+    available_year_values = [y.year for y in available_years]
+
+    year_param = request.GET.get('year', '').strip()
+    if year_param.isdigit() and int(year_param) in available_year_values:
+        year_n = int(year_param)
+    elif available_year_values:
+        year_n = available_year_values[0]
+    else:
+        year_n = date.today().year
+    year_n1 = year_n - 1
+
+    MOIS_LABELS = ['Jan', 'Fév', 'Mar', 'Avr', 'Mai', 'Juin',
+                   'Juil', 'Août', 'Sep', 'Oct', 'Nov', 'Déc']
+
+    INCOME_TYPES = ['don', 'dime', 'offrande']
+
+    def _monthly_totals(year):
+        base_qs = FinancialTransaction.objects.filter(
+            status='valide',
+            transaction_date__year=year,
+        )
+        income_qs = base_qs.filter(
+            transaction_type__in=INCOME_TYPES,
+        ).exclude(
+            category__parent__name=DEDICATED_FUNDS_PARENT,
+        ).annotate(
+            m=ExtractMonth('transaction_date')
+        ).values('m').annotate(total=Sum('amount')).order_by('m')
+
+        expense_qs = base_qs.filter(transaction_type='depense').annotate(
+            m=ExtractMonth('transaction_date')
+        ).values('m').annotate(total=Sum('amount')).order_by('m')
+
+        income_map = {r['m']: float(r['total']) for r in income_qs}
+        expense_map = {r['m']: float(r['total']) for r in expense_qs}
+
+        income = [income_map.get(i, 0) for i in range(1, 13)]
+        expense = [expense_map.get(i, 0) for i in range(1, 13)]
+        return income, expense
+
+    income_n, expense_n = _monthly_totals(year_n)
+    income_n1, expense_n1 = _monthly_totals(year_n1)
+
+    context = {
+        'year_n': year_n,
+        'year_n1': year_n1,
+        'months': MOIS_LABELS,
+        'income_n': income_n,
+        'expense_n': expense_n,
+        'income_n1': income_n1,
+        'expense_n1': expense_n1,
+        'total_income_n': sum(income_n),
+        'total_expense_n': sum(expense_n),
+        'total_income_n1': sum(income_n1),
+        'total_expense_n1': sum(expense_n1),
+        'net_total_n': sum(income_n) - sum(expense_n),
+        'net_total_n1': sum(income_n1) - sum(expense_n1),
+        'available_years': available_year_values,
+        'selected_year': year_n,
+    }
+    return render(request, 'finance/yearly_comparison.html', context)
+
+
+# =============================================================================
+# DONS EN LIGNE
+# =============================================================================
+
+@login_required
+@role_required('admin', 'finance')
+def online_donation_list(request):
+    """Liste des dons en ligne (Stripe)."""
+    from .models import OnlineDonation
+    
+    qs = OnlineDonation.objects.select_related('transaction', 'site', 'member').order_by('-created_at')
+    
+    # Filtres
+    status = request.GET.get('status', '')
+    donation_type = request.GET.get('type', '')
+    date_from = request.GET.get('from', '')
+    date_to = request.GET.get('to', '')
+    
+    if status:
+        qs = qs.filter(status=status)
+    if donation_type:
+        qs = qs.filter(donation_type=donation_type)
+    if date_from:
+        qs = qs.filter(created_at__date__gte=date_from)
+    if date_to:
+        qs = qs.filter(created_at__date__lte=date_to)
+    
+    # Stats
+    stats = qs.filter(status='completed').aggregate(
+        total=Sum('amount'),
+        count=Count('id'),
+    )
+    
+    paginator = Paginator(qs, 25)
+    page = paginator.get_page(request.GET.get('page'))
+    
+    context = {
+        'donations': page,
+        'stats': stats,
+        'filter_status': status,
+        'filter_type': donation_type,
+        'filter_from': date_from,
+        'filter_to': date_to,
+    }
+    return render(request, 'finance/online_donations.html', context)
+
+
+# =============================================================================
+# RÉCAPITULATIF ANNUEL PAR MEMBRE
+# =============================================================================
+
+@login_required
+@role_required('admin', 'finance')
+def member_annual_summary(request):
+    """Récapitulatif annuel des dons par membre."""
+    from apps.members.models import Member
+    
+    year = int(request.GET.get('year', date.today().year))
+    site_id = request.GET.get('site', '')
+    
+    income_types = ['don', 'dime', 'offrande']
+    
+    # Membres ayant des transactions cette année
+    members_qs = Member.objects.filter(
+        transactions__transaction_date__year=year,
+        transactions__status='valide',
+        transactions__transaction_type__in=income_types,
+        transactions__is_deleted=False,
+    ).distinct()
+    
+    if site_id:
+        members_qs = members_qs.filter(site_id=site_id)
+    
+    # Annoter avec les totaux
+    members_qs = members_qs.annotate(
+        total_dons=Sum('transactions__amount', filter=Q(
+            transactions__transaction_type='don',
+            transactions__transaction_date__year=year,
+            transactions__status='valide',
+            transactions__is_deleted=False,
+        )),
+        total_dimes=Sum('transactions__amount', filter=Q(
+            transactions__transaction_type='dime',
+            transactions__transaction_date__year=year,
+            transactions__status='valide',
+            transactions__is_deleted=False,
+        )),
+        total_offrandes=Sum('transactions__amount', filter=Q(
+            transactions__transaction_type='offrande',
+            transactions__transaction_date__year=year,
+            transactions__status='valide',
+            transactions__is_deleted=False,
+        )),
+    ).order_by('last_name', 'first_name')
+    
+    # Calculer les totaux globaux
+    grand_total = {'dons': Decimal('0'), 'dimes': Decimal('0'), 'offrandes': Decimal('0')}
+    members_data = []
+    for m in members_qs:
+        dons = m.total_dons or Decimal('0')
+        dimes = m.total_dimes or Decimal('0')
+        offrandes = m.total_offrandes or Decimal('0')
+        total = dons + dimes + offrandes
+        members_data.append({
+            'member': m,
+            'dons': dons,
+            'dimes': dimes,
+            'offrandes': offrandes,
+            'total': total,
+        })
+        grand_total['dons'] += dons
+        grand_total['dimes'] += dimes
+        grand_total['offrandes'] += offrandes
+    
+    grand_total['total'] = grand_total['dons'] + grand_total['dimes'] + grand_total['offrandes']
+    
+    from apps.core.models import Site
+    sites = Site.objects.filter(is_active=True)
+    
+    context = {
+        'year': year,
+        'site_id': site_id,
+        'sites': sites,
+        'years': range(date.today().year, date.today().year - 5, -1),
+        'members_data': members_data,
+        'grand_total': grand_total,
+        'member_count': len(members_data),
+    }
+    return render(request, 'finance/member_summary.html', context)
+
+
+@login_required
+@role_required('admin', 'finance')
+def member_donation_detail(request, member_id):
+    """Détail des dons d'un membre pour une année."""
+    from apps.members.models import Member
+    
+    member = get_object_or_404(Member, pk=member_id)
+    year = int(request.GET.get('year', date.today().year))
+    
+    income_types = ['don', 'dime', 'offrande']
+    transactions = FinancialTransaction.objects.filter(
+        member=member,
+        transaction_date__year=year,
+        status='valide',
+        transaction_type__in=income_types,
+    ).order_by('transaction_date')
+    
+    # Totaux par type
+    totals = transactions.values('transaction_type').annotate(
+        total=Sum('amount'), count=Count('id')
+    )
+    totals_dict = {t['transaction_type']: t for t in totals}
+    
+    # Par mois
+    monthly = []
+    for m in range(1, 13):
+        m_txs = transactions.filter(transaction_date__month=m)
+        m_total = m_txs.aggregate(t=Sum('amount'))['t'] or 0
+        monthly.append({
+            'month': m,
+            'month_name': ['', 'Janvier', 'Février', 'Mars', 'Avril', 'Mai', 'Juin',
+                           'Juillet', 'Août', 'Septembre', 'Octobre', 'Novembre', 'Décembre'][m],
+            'total': m_total,
+            'count': m_txs.count(),
+        })
+    
+    # Dons en ligne
+    from .models import OnlineDonation
+    online = OnlineDonation.objects.filter(
+        member=member, status='completed', created_at__year=year
+    ).order_by('created_at')
+    online_total = online.aggregate(t=Sum('amount'))['t'] or 0
+    
+    context = {
+        'member': member,
+        'year': year,
+        'years': range(date.today().year, date.today().year - 5, -1),
+        'transactions': transactions,
+        'totals': totals_dict,
+        'monthly': monthly,
+        'online_donations': online,
+        'online_total': online_total,
+        'grand_total': (transactions.aggregate(t=Sum('amount'))['t'] or 0) + online_total,
+    }
+    return render(request, 'finance/member_donation_detail.html', context)
+
+
+@login_required
+@role_required('admin', 'finance')
+def member_donation_detail_pdf(request, member_id):
+    """Export PDF du récapitulatif d'un membre."""
+    from apps.members.models import Member
+    from django.template.loader import render_to_string
+    
+    member = get_object_or_404(Member, pk=member_id)
+    year = int(request.GET.get('year', date.today().year))
+    
+    income_types = ['don', 'dime', 'offrande']
+    transactions = FinancialTransaction.objects.filter(
+        member=member, transaction_date__year=year,
+        status='valide', transaction_type__in=income_types,
+    ).order_by('transaction_date')
+    
+    totals = transactions.values('transaction_type').annotate(total=Sum('amount'))
+    totals_dict = {t['transaction_type']: t['total'] for t in totals}
+    grand_total = sum(totals_dict.values(), Decimal('0'))
+    
+    try:
+        from weasyprint import HTML
+    except ImportError:
+        return HttpResponse("WeasyPrint non installé.", status=500)
+    
+    html_content = render_to_string('finance/member_donation_detail_pdf.html', {
+        'member': member,
+        'year': year,
+        'transactions': transactions,
+        'totals': totals_dict,
+        'grand_total': grand_total,
+    })
+    
+    pdf = HTML(string=html_content).write_pdf()
+    response = HttpResponse(pdf, content_type='application/pdf')
+    response['Content-Disposition'] = f'inline; filename="recapitulatif_{member.member_id}_{year}.pdf"'
+    return response

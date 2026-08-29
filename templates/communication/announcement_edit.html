@@ -1,0 +1,142 @@
+{% extends 'base.html' %}
+{% load crispy_forms_tags %}
+
+{% block title %}Modifier l'annonce - {{ settings.site_name|default:'EEBC' }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <div>
+                    <h1 class="h3 mb-0">Modifier l'annonce</h1>
+                    <p class="text-muted">{{ announcement.title }}</p>
+                </div>
+                <div>
+                    <a href="{% url 'communication:announcement_detail' announcement.pk %}" class="btn btn-outline-secondary">
+                        <i class="bi bi-arrow-left me-1"></i> Retour
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-lg-8">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="bi bi-pencil me-2"></i>Informations de l'annonce
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <form method="post">
+                        {% csrf_token %}
+                        
+                        <div class="mb-3">
+                            <label for="title" class="form-label">Titre *</label>
+                            <input type="text" class="form-control" id="title" name="title" 
+                                   value="{{ announcement.title }}" required>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="content" class="form-label">Contenu *</label>
+                            <textarea class="form-control" id="content" name="content" rows="6" required>{{ announcement.content }}</textarea>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="start_date" class="form-label">Date de début</label>
+                                    <input type="datetime-local" class="form-control" id="start_date" name="start_date"
+                                           value="{{ announcement.start_date|date:'Y-m-d\TH:i' }}">
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="end_date" class="form-label">Date de fin</label>
+                                    <input type="datetime-local" class="form-control" id="end_date" name="end_date"
+                                           value="{{ announcement.end_date|date:'Y-m-d\TH:i'|default:'' }}">
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="form-check mb-3">
+                                    <input class="form-check-input" type="checkbox" id="is_pinned" name="is_pinned"
+                                           {% if announcement.is_pinned %}checked{% endif %}>
+                                    <label class="form-check-label" for="is_pinned">
+                                        <i class="bi bi-pin me-1"></i>Épingler l'annonce
+                                    </label>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-check mb-3">
+                                    <input class="form-check-input" type="checkbox" id="is_active" name="is_active"
+                                           {% if announcement.is_active %}checked{% endif %}>
+                                    <label class="form-check-label" for="is_active">
+                                        <i class="bi bi-check-circle me-1"></i>Annonce active
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="d-flex gap-2">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="bi bi-check-lg me-1"></i>Enregistrer les modifications
+                            </button>
+                            <a href="{% url 'communication:announcement_detail' announcement.pk %}" class="btn btn-outline-secondary">
+                                Annuler
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-lg-4">
+            <div class="card">
+                <div class="card-header">
+                    <h6 class="card-title mb-0">
+                        <i class="bi bi-info-circle me-2"></i>Informations
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <label class="text-muted small">Créée par</label>
+                        <div>{{ announcement.created_by.get_full_name|default:announcement.created_by.username }}</div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="text-muted small">Créée le</label>
+                        <div>{{ announcement.created_at|date:"d/m/Y à H:i" }}</div>
+                    </div>
+                    
+                    {% if announcement.updated_at != announcement.created_at %}
+                    <div class="mb-3">
+                        <label class="text-muted small">Modifiée le</label>
+                        <div>{{ announcement.updated_at|date:"d/m/Y à H:i" }}</div>
+                    </div>
+                    {% endif %}
+                    
+                    <div class="mb-3">
+                        <label class="text-muted small">Statut</label>
+                        <div>
+                            {% if announcement.is_active %}
+                                <span class="badge bg-success">Active</span>
+                            {% else %}
+                                <span class="badge bg-secondary">Inactive</span>
+                            {% endif %}
+                            
+                            {% if announcement.is_pinned %}
+                                <span class="badge bg-warning">Épinglée</span>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,100 +1,14 @@
-<!DOCTYPE html>
-<html lang="fr">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Événement annulé - {{ event.title }}</title>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            line-height: 1.6;
-            color: #333;
-            max-width: 600px;
-            margin: 0 auto;
-            padding: 20px;
-        }
-        .header {
-            background-color: #dc3545;
-            color: white;
-            padding: 20px;
-            text-align: center;
-            border-radius: 5px 5px 0 0;
-        }
-        .content {
-            background-color: #f8f9fa;
-            padding: 20px;
-            border: 1px solid #dee2e6;
-            border-top: none;
-        }
-        .event-details {
-            background-color: white;
-            padding: 15px;
-            border-radius: 5px;
-            margin: 15px 0;
-            border-left: 4px solid #dc3545;
-        }
-        .footer {
-            background-color: #6c757d;
-            color: white;
-            padding: 15px;
-            text-align: center;
-            border-radius: 0 0 5px 5px;
-            font-size: 12px;
-        }
-        .btn {
-            display: inline-block;
-            padding: 10px 20px;
-            background-color: #007bff;
-            color: white;
-            text-decoration: none;
-            border-radius: 5px;
-            margin: 10px 0;
-        }
-    </style>
-</head>
-<body>
-    <div class="header">
-        <h1>⚠️ Événement annulé</h1>
-    </div>
-    
-    <div class="content">
-        <p>Bonjour {{ user.get_full_name|default:user.username }},</p>
-        
-        <p>Nous vous informons que l'événement suivant auquel vous étiez inscrit(e) a été <strong>annulé</strong> :</p>
-        
-        <div class="event-details">
-            <h3>{{ event.title }}</h3>
-            <p><strong>Date :</strong> {{ event.start_date|date:"l j F Y" }}
-            {% if event.start_time %}
-                à {{ event.start_time|time:"H:i" }}
-            {% endif %}</p>
-            
-            {% if event.location %}
-                <p><strong>Lieu :</strong> {{ event.location }}</p>
-            {% endif %}
-            
-            {% if event.description %}
-                <p><strong>Description :</strong> {{ event.description|truncatewords:30 }}</p>
-            {% endif %}
-        </div>
-        
-        {% if reason %}
-            <div style="background-color: #fff3cd; border: 1px solid #ffeaa7; padding: 15px; border-radius: 5px; margin: 15px 0;">
-                <h4>Raison de l'annulation :</h4>
-                <p>{{ reason }}</p>
-            </div>
-        {% endif %}
-        
-        <p>Nous nous excusons pour tout désagrément que cette annulation pourrait causer.</p>
-        
-        <p>Si vous avez des questions, n'hésitez pas à nous contacter.</p>
-        
-        <p>Cordialement,<br>
-        L'équipe d'organisation</p>
-    </div>
-    
-    <div class="footer">
-        <p>Cet email a été envoyé automatiquement. Merci de ne pas y répondre directement.</p>
-    </div>
-</body>
-</html>
+{% extends 'emails/base_email.html' %}
+{% block content %}
+<h2 style="color:#dc2626;margin:0 0 15px;font-size:18px;">❌ Événement annulé</h2>
+<p style="color:#333;font-size:15px;line-height:1.7;">Bonjour{% if recipient_name %} {{ recipient_name }}{% endif %},</p>
+<p style="color:#333;font-size:15px;line-height:1.7;">Nous vous informons que l'événement suivant a été annulé :</p>
+<table role="presentation" width="100%" style="background:#fef2f2;border-radius:10px;border:1px solid #fecaca;margin:20px 0;">
+<tr><td style="padding:20px;">
+    <h3 style="color:#991b1b;margin:0 0 10px;text-decoration:line-through;">{{ event.title }}</h3>
+    <p style="color:#555;margin:4px 0;font-size:14px;">📆 {{ event.start_date|date:"d/m/Y" }}</p>
+    {% if cancellation_reason %}<p style="color:#666;margin:10px 0 0;font-size:13px;">Raison : {{ cancellation_reason }}</p>{% endif %}
+</td></tr>
+</table>
+<p style="color:#333;font-size:15px;">Nous nous excusons pour la gêne occasionnée.</p>
+{% endblock %}

@@ -4,9 +4,217 @@
 {% block page_title %}Nouvelle famille{% endblock %}
 {% block page_subtitle %}Créer une nouvelle famille{% endblock %}
 
+{% block extra_css %}
+<style>
+    /* ================================================================
+       PANNEAU DE SÉLECTION DU CHEF DE FAMILLE
+       Liste visible et scrollable — PAS un dropdown minuscule
+       ================================================================ */
+
+    /* Barre de recherche */
+    .chef-search-input {
+        width: 100%;
+        padding: 12px 16px 12px 42px;
+        font-size: 1rem;
+        border: 2px solid #d1d5db;
+        border-radius: 8px;
+        outline: none;
+        transition: border-color 0.2s;
+        background: white url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' fill='%239ca3af' viewBox='0 0 16 16'%3E%3Cpath d='M11.742 10.344a6.5 6.5 0 1 0-1.397 1.398h-.001q.044.06.098.115l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85a1 1 0 0 0-.115-.1zM12 6.5a5.5 5.5 0 1 1-11 0 5.5 5.5 0 0 1 11 0'/%3E%3C/svg%3E") no-repeat 14px center;
+    }
+    .chef-search-input:focus {
+        border-color: #3b82f6;
+        box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
+    }
+    .chef-search-input::placeholder {
+        color: #9ca3af;
+    }
+
+    /* Liste des membres — visible directement */
+    .chef-member-list {
+        max-height: 320px;
+        overflow-y: auto;
+        border: 2px solid #e5e7eb;
+        border-radius: 8px;
+        margin-top: 10px;
+        background: white;
+    }
+    .chef-member-list::-webkit-scrollbar {
+        width: 6px;
+    }
+    .chef-member-list::-webkit-scrollbar-thumb {
+        background: #cbd5e1;
+        border-radius: 3px;
+    }
+
+    /* Compteur de résultats */
+    .chef-result-count {
+        font-size: 0.8rem;
+        color: #6b7280;
+        margin-top: 6px;
+        padding-left: 4px;
+    }
+
+    /* Chaque membre dans la liste */
+    .chef-member-item {
+        display: flex;
+        align-items: center;
+        gap: 14px;
+        padding: 12px 16px;
+        cursor: pointer;
+        border-bottom: 1px solid #f3f4f6;
+        transition: background 0.15s;
+    }
+    .chef-member-item:last-child {
+        border-bottom: none;
+    }
+    .chef-member-item:hover {
+        background: #eff6ff;
+    }
+    .chef-member-item.selected {
+        background: #dbeafe;
+        border-left: 4px solid #2563eb;
+        padding-left: 12px;
+    }
+
+    /* Avatar / Initiales */
+    .chef-avatar {
+        width: 44px;
+        height: 44px;
+        border-radius: 50%;
+        object-fit: cover;
+        flex-shrink: 0;
+    }
+    .chef-initials {
+        width: 44px;
+        height: 44px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 700;
+        font-size: 0.9rem;
+        flex-shrink: 0;
+    }
+
+    /* Info membre */
+    .chef-info {
+        flex: 1;
+        min-width: 0;
+    }
+    .chef-name {
+        font-weight: 600;
+        color: #1e293b;
+        font-size: 0.95rem;
+        line-height: 1.3;
+    }
+    .chef-meta {
+        font-size: 0.8rem;
+        color: #6b7280;
+        margin-top: 2px;
+        display: flex;
+        gap: 10px;
+        flex-wrap: wrap;
+    }
+    .chef-meta span {
+        display: inline-flex;
+        align-items: center;
+        gap: 3px;
+    }
+
+    /* Aucun résultat */
+    .chef-no-result {
+        padding: 24px;
+        text-align: center;
+        color: #9ca3af;
+        font-size: 0.9rem;
+    }
+
+    /* Bouton déselection */
+    .chef-clear-btn {
+        display: none;
+        margin-top: 8px;
+    }
+    .chef-clear-btn.visible {
+        display: inline-flex;
+    }
+    
+    /* Status auto-remplissage */
+    #autofill-status { display: none; }
+    #autofill-status.visible { display: block; }
+</style>
+{% endblock %}
+
 {% block content %}
 <div class="row justify-content-center">
-    <div class="col-lg-8">
+    <div class="col-12 col-xl-10">
+
+        <!-- Sélecteur chef de famille -->
+        <div class="card border-primary mb-3">
+            <div class="card-header bg-primary bg-opacity-10">
+                <h6 class="card-title mb-0">
+                    <i class="bi bi-person-fill-gear me-2 text-primary"></i>
+                    Importer depuis un membre existant <span class="badge bg-secondary ms-1">Optionnel</span>
+                </h6>
+            </div>
+            <div class="card-body">
+                <p class="text-muted small mb-3">
+                    <i class="bi bi-info-circle me-1"></i>
+                    Sélectionnez le chef de famille pour pré-remplir automatiquement le formulaire avec ses informations.
+                </p>
+                
+                <!-- Champ caché qui contient l'ID du membre sélectionné -->
+                <input type="hidden" id="chef-famille-value" name="chef_famille" value="">
+
+                <!-- Barre de recherche -->
+                <input type="text"
+                       id="chef-search"
+                       class="chef-search-input"
+                       placeholder="Rechercher par nom, prénom, téléphone, site…"
+                       autocomplete="off">
+
+                <!-- Liste visible des membres -->
+                <div class="chef-member-list" id="chef-member-list">
+                    {% for m in available_members %}
+                    <div class="chef-member-item"
+                         data-id="{{ m.id }}"
+                         data-first-name="{{ m.first_name }}"
+                         data-last-name="{{ m.last_name }}"
+                         data-photo="{% if m.photo %}{{ m.photo.url }}{% endif %}"
+                         data-site="{% if m.site %}{{ m.site.name }}{% endif %}"
+                         data-phone="{{ m.phone }}"
+                         data-search="{{ m.last_name|lower }} {{ m.first_name|lower }} {{ m.phone }} {% if m.site %}{{ m.site.name|lower }}{% endif %}">
+                        {% if m.photo %}
+                        <img src="{{ m.photo.url }}" class="chef-avatar" alt="Photo">
+                        {% else %}
+                        <div class="chef-initials">{{ m.first_name|first|upper }}{{ m.last_name|first|upper }}</div>
+                        {% endif %}
+                        <div class="chef-info">
+                            <div class="chef-name">{{ m.last_name }} {{ m.first_name }}</div>
+                            <div class="chef-meta">
+                                {% if m.site %}<span><i class="bi bi-building"></i> {{ m.site.name }}</span>{% endif %}
+                                {% if m.phone %}<span><i class="bi bi-telephone"></i> {{ m.phone }}</span>{% endif %}
+                            </div>
+                        </div>
+                    </div>
+                    {% empty %}
+                    <div class="chef-no-result">Aucun membre disponible</div>
+                    {% endfor %}
+                </div>
+                <div class="chef-result-count" id="chef-result-count"></div>
+
+                <!-- Bouton annuler la sélection -->
+                <button type="button" class="btn btn-sm btn-outline-secondary chef-clear-btn" id="chef-clear-btn">
+                    <i class="bi bi-x-circle me-1"></i>Annuler la sélection
+                </button>
+                
+                <!-- Status de l'auto-remplissage -->
+                <div id="autofill-status"></div>
+            </div>
+        </div>
+
         <div class="card">
             <div class="card-body">
                 <form method="post">
@@ -15,11 +223,11 @@
                     <div class="row">
                         <div class="col-md-6 mb-3">
                             <label class="form-label">Nom de famille *</label>
-                            <input type="text" name="name" class="form-control" required>
+                            <input type="text" name="name" id="id_name" class="form-control" required>
                         </div>
                         <div class="col-md-6 mb-3">
                             <label class="form-label">Site</label>
-                            <select name="site" class="form-select">
+                            <select name="site" id="id_site" class="form-select">
                                 <option value="">-- Sélectionner --</option>
                                 {% for site in sites %}
                                 <option value="{{ site.id }}">{{ site.name }}</option>
@@ -43,17 +251,17 @@
                     
                     <div class="mb-3">
                         <label class="form-label">Adresse</label>
-                        <input type="text" name="address" class="form-control" placeholder="Numéro et rue">
+                        <input type="text" name="address" id="id_address" class="form-control" placeholder="Numéro et rue">
                     </div>
                     
                     <div class="row">
                         <div class="col-md-4 mb-3">
                             <label class="form-label">Code postal</label>
-                            <input type="text" name="postal_code" class="form-control">
+                            <input type="text" name="postal_code" id="id_postal_code" class="form-control">
                         </div>
                         <div class="col-md-8 mb-3">
                             <label class="form-label">Ville</label>
-                            <input type="text" name="city" class="form-control">
+                            <input type="text" name="city" id="id_city" class="form-control">
                         </div>
                     </div>
                     
@@ -63,11 +271,11 @@
                     <div class="row">
                         <div class="col-md-6 mb-3">
                             <label class="form-label">Téléphone</label>
-                            <input type="tel" name="phone" class="form-control">
+                            <input type="tel" name="phone" id="id_phone" class="form-control">
                         </div>
                         <div class="col-md-6 mb-3">
                             <label class="form-label">Email</label>
-                            <input type="email" name="email" class="form-control">
+                            <input type="email" name="email" id="id_email" class="form-control">
                         </div>
                     </div>
                     
@@ -84,4 +292,162 @@
         </div>
     </div>
 </div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+/**
+ * Sélection du chef de famille — Panneau visible avec recherche
+ * PAS de TomSelect / dropdown minuscule.
+ * Liste scrollable avec avatars, noms, recherche instantanée.
+ */
+document.addEventListener('DOMContentLoaded', function () {
+    var searchInput = document.getElementById('chef-search');
+    var memberList = document.getElementById('chef-member-list');
+    var hiddenInput = document.getElementById('chef-famille-value');
+    var clearBtn = document.getElementById('chef-clear-btn');
+    var statusEl = document.getElementById('autofill-status');
+    var countEl = document.getElementById('chef-result-count');
+    
+    if (!memberList || !searchInput) return;
+    
+    var allItems = Array.from(memberList.querySelectorAll('.chef-member-item'));
+    var API_URL_TPL = "{% url 'members:member_api_data' 0 %}";
+    var isProcessing = false;
+    
+    // Afficher le compteur initial
+    updateCount(allItems.length, allItems.length);
+    
+    // ── Recherche instantanée ──
+    searchInput.addEventListener('input', function () {
+        var query = this.value.toLowerCase().trim();
+        var visibleCount = 0;
+        
+        allItems.forEach(function (item) {
+            var searchText = item.dataset.search || '';
+            var match = !query || searchText.indexOf(query) !== -1;
+            item.style.display = match ? '' : 'none';
+            if (match) visibleCount++;
+        });
+        
+        // Afficher message si aucun résultat
+        var noResult = memberList.querySelector('.chef-no-result-dynamic');
+        if (visibleCount === 0 && allItems.length > 0) {
+            if (!noResult) {
+                noResult = document.createElement('div');
+                noResult.className = 'chef-no-result chef-no-result-dynamic';
+                memberList.appendChild(noResult);
+            }
+            noResult.innerHTML = '<i class="bi bi-search me-1"></i> Aucun membre trouvé pour « ' + query + ' »';
+            noResult.style.display = '';
+        } else if (noResult) {
+            noResult.style.display = 'none';
+        }
+        
+        updateCount(visibleCount, allItems.length);
+    });
+    
+    // ── Clic sur un membre ──
+    allItems.forEach(function (item) {
+        item.addEventListener('click', function () {
+            if (isProcessing) return;
+            
+            // Désélectionner l'ancien
+            allItems.forEach(function (el) { el.classList.remove('selected'); });
+            
+            // Sélectionner celui-ci
+            this.classList.add('selected');
+            hiddenInput.value = this.dataset.id;
+            clearBtn.classList.add('visible');
+            
+            // Scroll vers l'élément sélectionné
+            this.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+            
+            // Charger les données et pré-remplir
+            isProcessing = true;
+            loadMemberData(this.dataset.id, this.dataset.firstName, this.dataset.lastName);
+        });
+    });
+    
+    // ── Bouton annuler ──
+    clearBtn.addEventListener('click', function () {
+        allItems.forEach(function (el) { el.classList.remove('selected'); });
+        hiddenInput.value = '';
+        this.classList.remove('visible');
+        if (statusEl) statusEl.className = '';
+        isProcessing = false;
+    });
+    
+    // ── Compteur ──
+    function updateCount(visible, total) {
+        if (countEl) {
+            if (visible === total) {
+                countEl.textContent = total + ' membre' + (total > 1 ? 's' : '') + ' disponible' + (total > 1 ? 's' : '');
+            } else {
+                countEl.textContent = visible + ' résultat' + (visible > 1 ? 's' : '') + ' sur ' + total;
+            }
+        }
+    }
+    
+    // ── Charger les données du membre et pré-remplir le formulaire ──
+    function loadMemberData(memberId, firstName, lastName) {
+        var url = API_URL_TPL.replace('/0/', '/' + memberId + '/');
+        
+        if (statusEl) {
+            statusEl.textContent = '⏳ Chargement des informations…';
+            statusEl.className = 'alert alert-info py-2 px-3 small mt-3 visible';
+        }
+        
+        fetch(url)
+            .then(function (res) {
+                if (!res.ok) throw new Error('HTTP ' + res.status);
+                return res.json();
+            })
+            .then(function (data) {
+                // Nom de famille
+                var nameField = document.getElementById('id_name');
+                if (nameField && !nameField.value && data.last_name) {
+                    nameField.value = 'Famille ' + data.last_name.toUpperCase();
+                }
+                
+                // Pré-remplir uniquement les champs vides
+                setIfEmpty('id_address', data.address);
+                setIfEmpty('id_city', data.city);
+                setIfEmpty('id_postal_code', data.postal_code);
+                setIfEmpty('id_phone', data.phone);
+                setIfEmpty('id_email', data.email);
+                
+                // Site
+                if (data.site_id) {
+                    var siteSelect = document.getElementById('id_site');
+                    if (siteSelect && !siteSelect.value) siteSelect.value = data.site_id;
+                }
+                
+                // Status succès
+                if (statusEl) {
+                    statusEl.innerHTML = '<i class="bi bi-check-circle me-2"></i>Informations de <strong>' + 
+                                         (data.first_name || firstName) + ' ' + (data.last_name || lastName) + 
+                                         '</strong> importées avec succès.';
+                    statusEl.className = 'alert alert-success py-2 px-3 small mt-3 visible';
+                    setTimeout(function () { statusEl.className = ''; }, 5000);
+                }
+                
+                isProcessing = false;
+            })
+            .catch(function (err) {
+                console.error('[Auto-fill Error]', err);
+                if (statusEl) {
+                    statusEl.innerHTML = '<i class="bi bi-exclamation-triangle me-2"></i>Impossible de charger les informations du membre.';
+                    statusEl.className = 'alert alert-warning py-2 px-3 small mt-3 visible';
+                }
+                isProcessing = false;
+            });
+    }
+    
+    function setIfEmpty(id, value) {
+        var el = document.getElementById(id);
+        if (el && !el.value && value) el.value = value;
+    }
+});
+</script>
 {% endblock %}

@@ -1,0 +1,104 @@
+{% extends 'pdf/registration_base.html' %}
+
+{% block title %}Fiche d'inscription - Enfant{% endblock %}
+{% block document_eyebrow %}EEBC | Club Biblique{% endblock %}
+{% block document_title %}Fiche d'inscription enfant{% endblock %}
+{% block document_subtitle %}Version PDF calquee sur le formulaire de saisie du Club Biblique.{% endblock %}
+
+{% block document_chips %}
+<span class="chip">Club biblique</span>
+<span class="chip chip-muted">Inscription du {{ child.registration_date|date:"d/m/Y" }}</span>
+{% if child.bible_class %}<span class="chip chip-muted">{{ child.bible_class }}</span>{% endif %}
+{% endblock %}
+
+{% block hero %}
+<div class="summary-card">
+    <div class="summary-grid">
+        <div class="summary-item">
+            <div class="summary-label">Enfant</div>
+            <div class="summary-value">{{ child.full_name }}</div>
+        </div>
+        <div class="summary-item">
+            <div class="summary-label">Age</div>
+            <div class="summary-value">{{ child.age }} ans</div>
+        </div>
+        <div class="summary-item">
+            <div class="summary-label">Statut</div>
+            <div class="summary-value">{{ child.is_active|yesno:"Actif,Inactif" }}</div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block hero_photo %}
+<div class="photo-box">
+    {% if child.photo %}
+    <img src="{{ child.photo.url }}" alt="{{ child.full_name }}">
+    {% else %}
+    <div class="photo-placeholder">Photo enfant</div>
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block content %}
+<div class="section">
+    <h2 class="section-heading">Informations personnelles</h2>
+    <div class="field-grid">
+        <div class="field half"><div class="field-box"><div class="field-label">Prenom</div><div class="field-value">{{ child.first_name }}</div></div></div>
+        <div class="field half"><div class="field-box"><div class="field-label">Nom</div><div class="field-value">{{ child.last_name|upper }}</div></div></div>
+        <div class="field third"><div class="field-box"><div class="field-label">Date de naissance</div><div class="field-value">{{ child.date_of_birth|date:"d/m/Y" }}</div></div></div>
+        <div class="field third"><div class="field-box"><div class="field-label">Genre</div><div class="field-value">{{ child.get_gender_display }}</div></div></div>
+        <div class="field third"><div class="field-box"><div class="field-label">Classe</div><div class="field-value">{{ child.bible_class|default:"Non attribuee" }}</div></div></div>
+    </div>
+</div>
+
+<div class="section">
+    <h2 class="section-heading">Informations des parents</h2>
+    <div class="field-grid">
+        <div class="field half"><div class="field-box"><div class="field-label">Nom du pere</div><div class="field-value">{{ child.father_name|default:"Non renseigne" }}</div></div></div>
+        <div class="field half"><div class="field-box"><div class="field-label">Telephone du pere</div><div class="field-value">{{ child.father_phone|default:"Non renseigne" }}</div></div></div>
+        <div class="field half"><div class="field-box"><div class="field-label">Email du pere</div><div class="field-value">{{ child.father_email|default:"Non renseigne" }}</div></div></div>
+        <div class="field half"><div class="field-box"><div class="field-label">Nom de la mere</div><div class="field-value">{{ child.mother_name|default:"Non renseigne" }}</div></div></div>
+        <div class="field half"><div class="field-box"><div class="field-label">Telephone de la mere</div><div class="field-value">{{ child.mother_phone|default:"Non renseigne" }}</div></div></div>
+        <div class="field half"><div class="field-box"><div class="field-label">Email de la mere</div><div class="field-value">{{ child.mother_email|default:"Non renseigne" }}</div></div></div>
+    </div>
+</div>
+
+<div class="section">
+    <h2 class="section-heading">Adresse postale</h2>
+    <div class="field-grid">
+        <div class="field full"><div class="field-box"><div class="field-label">Adresse</div><div class="field-value">{{ child.address|default:"Non renseignee" }}</div></div></div>
+        <div class="field half"><div class="field-box"><div class="field-label">Ville</div><div class="field-value">{{ child.city|default:"Non renseignee" }}</div></div></div>
+        <div class="field half"><div class="field-box"><div class="field-label">Code postal</div><div class="field-value">{{ child.postal_code|default:"Non renseigne" }}</div></div></div>
+    </div>
+</div>
+
+<div class="section">
+    <h2 class="section-heading">Contact d'urgence</h2>
+    <div class="field-grid">
+        <div class="field half"><div class="field-box"><div class="field-label">Contact d'urgence</div><div class="field-value">{{ child.emergency_contact|default:"Non renseigne" }}</div></div></div>
+        <div class="field half"><div class="field-box"><div class="field-label">Telephone d'urgence</div><div class="field-value">{{ child.emergency_phone|default:"Non renseigne" }}</div></div></div>
+    </div>
+</div>
+
+<div class="section">
+    <h2 class="section-heading">Informations medicales</h2>
+    <div class="field-grid">
+        <div class="field half"><div class="field-box tall"><div class="field-label">Allergies</div><div class="field-value small">{{ child.allergies|default:"Aucune allergie signalee"|linebreaksbr }}</div></div></div>
+        <div class="field half"><div class="field-box tall"><div class="field-label">Notes medicales</div><div class="field-value small">{{ child.medical_notes|default:"Aucune note medicale"|linebreaksbr }}</div></div></div>
+    </div>
+</div>
+
+<div class="section">
+    <h2 class="section-heading">Transport</h2>
+    <div class="field-grid">
+        <div class="field third"><div class="field-box"><div class="field-label">Besoin de transport</div><div class="field-value">{{ child.needs_transport|yesno:"Oui,Non" }}</div></div></div>
+        <div class="field third"><div class="field-box"><div class="field-label">Chauffeur assigne</div><div class="field-value">{{ child.assigned_driver|default:"Aucun" }}</div></div></div>
+        <div class="field third"><div class="field-box"><div class="field-label">Statut du dossier</div><div class="field-value">{{ child.is_active|yesno:"Actif,Inactif" }}</div></div></div>
+        <div class="field full"><div class="field-box tall"><div class="field-label">Adresse de ramassage</div><div class="field-value small">{{ child.pickup_address|default:"Aucune adresse de ramassage"|linebreaksbr }}</div></div></div>
+        <div class="field full"><div class="field-box tall"><div class="field-label">Notes</div><div class="field-value small">{{ child.notes|default:"Aucune note"|linebreaksbr }}</div></div></div>
+    </div>
+</div>
+{% endblock %}
+
+{% block footer_signature %}Signature des parents : ___________________________{% endblock %}

@@ -2,6 +2,7 @@ from django.contrib import admin
 from django.utils.html import format_html
 from django.urls import reverse
 from django import forms
+from django.db.models import Q
 from .models import Member, LifeEvent, VisitationLog
 
 
@@ -32,7 +33,7 @@ class MemberAdmin(admin.ModelAdmin):
     ordering = ['last_name', 'first_name']
     date_hierarchy = 'date_joined'
     list_per_page = 25
-    autocomplete_fields = ['user', 'site', 'family']
+    raw_id_fields = ['user', 'site', 'family']  # Remplace autocomplete_fields
     
     fieldsets = (
         ('Identification', {
@@ -68,6 +69,19 @@ class MemberAdmin(admin.ModelAdmin):
     )
     
     readonly_fields = ['member_id', 'photo_preview']
+    actions = ['print_registration_form']
+    
+    @admin.action(description="Imprimer la fiche d'inscription en PDF")
+    def print_registration_form(self, request, queryset):
+        from apps.core.pdf_service import PDFService
+        
+        if queryset.count() == 1:
+            member = queryset.first()
+            context = {'member': member}
+            filename = f"Fiche_Inscription_Membre_{member.member_id}.pdf"
+            return PDFService.generate_pdf_download('members/pdf/registration_form.html', context, filename, request)
+        else:
+            self.message_user(request, "Veuillez sélectionner un seul membre à la fois pour l'impression.", level='WARNING')
     
     @admin.display(description='Photo')
     def photo_thumbnail(self, obj):
@@ -76,9 +90,12 @@ class MemberAdmin(admin.ModelAdmin):
                 '<img src="{}" style="width: 40px; height: 40px; border-radius: 50%; object-fit: cover; border: 2px solid #0A36FF;" />',
                 obj.photo.url
             )
+        initials = '?'
+        if obj.first_name and obj.last_name:
+            initials = obj.first_name[0].upper() + obj.last_name[0].upper()
         return format_html(
             '<div style="width: 40px; height: 40px; border-radius: 50%; background: linear-gradient(135deg, #0A36FF 0%, #3b82f6 100%); display: flex; align-items: center; justify-content: center; color: white; font-weight: bold; font-size: 14px;">{}</div>',
-            obj.first_name[0].upper() + obj.last_name[0].upper() if obj.first_name and obj.last_name else '?'
+            initials
         )
     
     @admin.display(description='Aperçu photo')
@@ -88,9 +105,12 @@ class MemberAdmin(admin.ModelAdmin):
                 '<img src="{}" style="max-width: 200px; max-height: 200px; border-radius: 10px; box-shadow: 0 4px 6px rgba(0,0,0,0.1);" />',
                 obj.photo.url
             )
+        initials = '?'
+        if obj.first_name and obj.last_name:
+            initials = obj.first_name[0].upper() + obj.last_name[0].upper()
         return format_html(
             '<div style="width: 150px; height: 150px; border-radius: 10px; background: linear-gradient(135deg, #0A36FF 0%, #3b82f6 100%); display: flex; align-items: center; justify-content: center; color: white; font-weight: bold; font-size: 48px;">{}</div>',
-            obj.first_name[0].upper() + obj.last_name[0].upper() if obj.first_name and obj.last_name else '?'
+            initials
         )
 
 
@@ -118,8 +138,8 @@ class LifeEventInline(admin.TabularInline):
     max_num = 5
 
 
-# Ajouter les inlines au MemberAdmin existant
-MemberAdmin.inlines = [LifeEventInline, VisitationLogInline]
+# Ajouter les inlines au MemberAdmin existant (désactivé temporairement)
+# MemberAdmin.inlines = [LifeEventInline, VisitationLogInline]
 
 
 @admin.register(LifeEvent)
@@ -135,7 +155,7 @@ class LifeEventAdmin(admin.ModelAdmin):
     search_fields = ['title', 'description', 'primary_member__first_name', 
                      'primary_member__last_name']
     date_hierarchy = 'event_date'
-    autocomplete_fields = ['primary_member', 'related_members']
+    raw_id_fields = ['primary_member', 'related_members']  # Remplace autocomplete_fields
     
     fieldsets = (
         ('Événement', {
@@ -195,7 +215,7 @@ class VisitationLogAdmin(admin.ModelAdmin):
     list_filter = ['status', 'visit_type', 'follow_up_needed', 'is_confidential', 'visit_date']
     search_fields = ['member__first_name', 'member__last_name', 'summary', 'prayer_requests']
     date_hierarchy = 'visit_date'
-    autocomplete_fields = ['member', 'visitor', 'life_event']
+    raw_id_fields = ['member', 'visitor', 'life_event']
     
     fieldsets = (
         ('Visite', {
@@ -227,14 +247,3 @@ class VisitationLogAdmin(admin.ModelAdmin):
             obj.get_status_display()
         )
     status_badge.short_description = 'Statut'
-    
-    def get_queryset(self, request):
-        """Filtre les visites confidentielles pour les non-superusers."""
-        qs = super().get_queryset(request)
-        if not request.user.is_superuser:
-            # Les non-superusers ne voient pas les visites confidentielles des autres
-            qs = qs.filter(
-                models.Q(is_confidential=False) | 
-                models.Q(visitor=request.user)
-            )
-        return qs

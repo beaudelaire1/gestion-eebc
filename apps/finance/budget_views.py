@@ -5,13 +5,14 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.http import JsonResponse
-from django.db.models import Sum, Q
+from django.db.models import Count, DecimalField, ExpressionWrapper, F, Q, Sum, Value
+from django.db.models.functions import Coalesce
 from django.utils import timezone
 from datetime import date, datetime
 from decimal import Decimal
 
-from .models import Budget, BudgetItem, BudgetCategory, BudgetRequest, FinancialTransaction
-from .services import BudgetService
+from .models import Budget, BudgetItem, BudgetCategory, BudgetRequest, FinancialTransaction, BudgetForecast, ForecastLine
+from .services import BudgetService, TransactionService
 from apps.groups.models import Group
 from apps.departments.models import Department
 from apps.core.permissions import role_required
@@ -100,7 +101,7 @@ def budget_detail(request, budget_id):
     # Vérifier les permissions
     user_can_edit = (
         request.user.is_admin or
-        request.user.role in ['admin', 'finance'] or
+        request.user.has_any_role('admin', 'finance') or
         budget.created_by == request.user
     )
     
@@ -134,7 +135,7 @@ def budget_detail(request, budget_id):
 @role_required('admin', 'finance')
 def budget_create(request):
     """Créer un nouveau budget."""
-    if not (request.user.is_admin or request.user.role in ['admin', 'finance']):
+    if not (request.user.is_admin or request.user.has_any_role('admin', 'finance')):
         messages.error(request, 'Vous n\'avez pas les permissions pour créer un budget.')
         return redirect('finance:budget_list')
     
@@ -150,6 +151,20 @@ def budget_create(request):
         
         if not (group_id or department_id):
             messages.error(request, 'Vous devez sélectionner un groupe ou un département.')
+            return render(request, 'finance/budget/create.html', {
+                'groups': Group.objects.filter(is_active=True),
+                'departments': Department.objects.filter(is_active=True),
+                'categories': BudgetCategory.objects.filter(is_active=True),
+            })
+        
+        # Vérifier l'unicité groupe/année ou département/année
+        dup_filter = Q(year=year)
+        if group_id:
+            dup_filter &= Q(group_id=group_id)
+        else:
+            dup_filter &= Q(department_id=department_id)
+        if Budget.objects.filter(dup_filter).exists():
+            messages.error(request, f'Un budget existe déjà pour cette entité en {year}.')
             return render(request, 'finance/budget/create.html', {
                 'groups': Group.objects.filter(is_active=True),
                 'departments': Department.objects.filter(is_active=True),
@@ -317,7 +332,7 @@ def budget_request_detail(request, request_id):
     # Vérifier les permissions
     user_can_review = (
         request.user.is_admin or
-        request.user.role in ['admin', 'finance']
+        request.user.has_any_role('admin', 'finance')
     )
     
     context = {
@@ -332,7 +347,7 @@ def budget_request_detail(request, request_id):
 @role_required('admin', 'finance')
 def budget_approve_detailed(request, budget_id):
     """Approbation détaillée ligne par ligne."""
-    if not (request.user.is_admin or request.user.role in ['admin', 'finance']):
+    if not (request.user.is_admin or request.user.has_any_role('admin', 'finance')):
         messages.error(request, 'Vous n\'avez pas les permissions pour approuver un budget.')
         return redirect('finance:budget_detail', budget_id=budget_id)
     
@@ -415,7 +430,7 @@ def budget_submit(request, budget_id):
     budget = get_object_or_404(Budget, id=budget_id)
     
     # Vérifier les permissions
-    if not (request.user == budget.created_by or request.user.is_admin or request.user.role in ['admin', 'finance']):
+    if not (request.user == budget.created_by or request.user.is_admin or request.user.has_any_role('admin', 'finance')):
         messages.error(request, 'Vous n\'avez pas les permissions pour soumettre ce budget.')
         return redirect('finance:budget_detail', budget_id=budget_id)
     
@@ -446,7 +461,7 @@ def budget_edit(request, budget_id):
     budget = get_object_or_404(Budget, id=budget_id)
     
     # Vérifier les permissions
-    if not (request.user == budget.created_by or request.user.is_admin or request.user.role in ['admin', 'finance']):
+    if not (request.user == budget.created_by or request.user.is_admin or request.user.has_any_role('admin', 'finance')):
         messages.error(request, 'Vous n\'avez pas les permissions pour éditer ce budget.')
         return redirect('finance:budget_detail', budget_id=budget_id)
     
@@ -560,6 +575,42 @@ def budget_edit(request, budget_id):
     }
     
     return render(request, 'finance/budget/edit.html', context)
+
+
+@login_required
+@role_required('admin', 'finance')
+def budget_delete(request, budget_id):
+    """Supprimer un budget en brouillon sans transactions liées."""
+    budget = get_object_or_404(Budget, id=budget_id)
+
+    if not (request.user == budget.created_by or request.user.is_admin or request.user.has_any_role('admin', 'finance')):
+        messages.error(request, 'Vous n\'avez pas les permissions pour supprimer ce budget.')
+        return redirect('finance:budget_detail', budget_id=budget_id)
+
+    linked_transactions_count = FinancialTransaction.objects.filter(budget_item__budget=budget).count()
+
+    if request.method == 'POST':
+        if budget.status != Budget.Status.DRAFT:
+            messages.error(request, 'Seuls les budgets en brouillon peuvent être supprimés.')
+            return redirect('finance:budget_detail', budget_id=budget_id)
+
+        if linked_transactions_count:
+            messages.error(
+                request,
+                'Ce budget ne peut pas être supprimé car des transactions sont encore rattachées à ses lignes.',
+            )
+            return redirect('finance:budget_detail', budget_id=budget_id)
+
+        budget_name = budget.name
+        budget.delete()
+        messages.success(request, f'Budget "{budget_name}" supprimé.')
+        return redirect('finance:budget_list')
+
+    context = {
+        'budget': budget,
+        'linked_transactions_count': linked_transactions_count,
+    }
+    return render(request, 'finance/budget/delete_confirm.html', context)
 
 # =============================================================================
 # FONCTIONNALITÉS D'EXPORT ET D'IMPRESSION
@@ -937,3 +988,570 @@ def transactions_export_excel(request):
     
     wb.save(response)
     return response
+
+
+# =============================================================================
+# PRÉVISIONNEL BUDGÉTAIRE
+# =============================================================================
+
+MONTH_FIELDS = ForecastLine.MONTH_FIELDS
+MONTH_LABELS = ['Janvier', 'Février', 'Mars', 'Avril', 'Mai', 'Juin',
+                'Juillet', 'Août', 'Septembre', 'Octobre', 'Novembre', 'Décembre']
+
+
+def build_forecast_total_annotation(line_type):
+    zero_total = Value(
+        Decimal('0.00'),
+        output_field=DecimalField(max_digits=14, decimal_places=2),
+    )
+    return ExpressionWrapper(
+        Coalesce(Sum('lines__jan', filter=Q(lines__line_type=line_type)), zero_total) +
+        Coalesce(Sum('lines__feb', filter=Q(lines__line_type=line_type)), zero_total) +
+        Coalesce(Sum('lines__mar', filter=Q(lines__line_type=line_type)), zero_total) +
+        Coalesce(Sum('lines__apr', filter=Q(lines__line_type=line_type)), zero_total) +
+        Coalesce(Sum('lines__may', filter=Q(lines__line_type=line_type)), zero_total) +
+        Coalesce(Sum('lines__jun', filter=Q(lines__line_type=line_type)), zero_total) +
+        Coalesce(Sum('lines__jul', filter=Q(lines__line_type=line_type)), zero_total) +
+        Coalesce(Sum('lines__aug', filter=Q(lines__line_type=line_type)), zero_total) +
+        Coalesce(Sum('lines__sep', filter=Q(lines__line_type=line_type)), zero_total) +
+        Coalesce(Sum('lines__oct', filter=Q(lines__line_type=line_type)), zero_total) +
+        Coalesce(Sum('lines__nov', filter=Q(lines__line_type=line_type)), zero_total) +
+        Coalesce(Sum('lines__dec', filter=Q(lines__line_type=line_type)), zero_total),
+        output_field=DecimalField(max_digits=14, decimal_places=2),
+    )
+
+
+@login_required
+@role_required('admin', 'finance')
+def forecast_list(request):
+    """Liste des prévisionnels."""
+    income_total = build_forecast_total_annotation(ForecastLine.LineType.INCOME)
+    expense_total = build_forecast_total_annotation(ForecastLine.LineType.EXPENSE)
+
+    forecasts = BudgetForecast.objects.select_related('created_by').annotate(
+        annotated_total_income=income_total,
+        annotated_total_expense=expense_total,
+        annotated_lines_count=Count('lines', distinct=True),
+    ).annotate(
+        annotated_net_forecast=ExpressionWrapper(
+            F('annotated_total_income') - F('annotated_total_expense'),
+            output_field=DecimalField(max_digits=14, decimal_places=2),
+        )
+    )
+    
+    year_filter = request.GET.get('year', '')
+    if year_filter:
+        forecasts = forecasts.filter(year=year_filter)
+    
+    forecasts = list(forecasts)
+    years = list(BudgetForecast.objects.values_list('year', flat=True).distinct().order_by('-year'))
+    latest_update = max((forecast.updated_at for forecast in forecasts), default=None)
+    
+    context = {
+        'forecasts': forecasts,
+        'years': years,
+        'current_year': date.today().year,
+        'year_filter': year_filter,
+        'forecast_count': len(forecasts),
+        'year_count': len(years),
+        'latest_update': latest_update,
+    }
+    return render(request, 'finance/forecast/list.html', context)
+
+
+@login_required
+@role_required('admin', 'finance')
+def forecast_create(request):
+    """Créer un nouveau prévisionnel."""
+    from .models import FinanceCategory
+    
+    if request.method == 'POST':
+        name = request.POST.get('name', '').strip()
+        year = request.POST.get('year')
+        scenario = request.POST.get('scenario', 'realiste')
+        description = request.POST.get('description', '').strip()
+        
+        if not name or not year:
+            messages.error(request, "Le nom et l'année sont obligatoires.")
+            return redirect('finance:forecast_create')
+        
+        year = int(year)
+        
+        if BudgetForecast.objects.filter(year=year, scenario=scenario).exists():
+            messages.error(request, f"Un prévisionnel {BudgetForecast.Scenario(scenario).label} existe déjà pour {year}.")
+            return redirect('finance:forecast_create')
+        
+        forecast = BudgetForecast.objects.create(
+            name=name,
+            year=year,
+            scenario=scenario,
+            description=description,
+            created_by=request.user,
+        )
+        
+        # Créer les lignes à partir du POST (lignes dynamiques)
+        line_index = 0
+        while True:
+            label = request.POST.get(f'line_{line_index}_label', '').strip()
+            if not label:
+                break
+            
+            line_type = request.POST.get(f'line_{line_index}_type', 'expense')
+            cat_id = request.POST.get(f'line_{line_index}_category', '')
+            
+            line_data = {
+                'forecast': forecast,
+                'label': label,
+                'line_type': line_type,
+                'category_id': int(cat_id) if cat_id else None,
+            }
+            for i, mf in enumerate(MONTH_FIELDS):
+                val = request.POST.get(f'line_{line_index}_{mf}', '0')
+                try:
+                    line_data[mf] = Decimal(val.replace(',', '.') or '0')
+                except Exception:
+                    line_data[mf] = Decimal('0')
+            
+            ForecastLine.objects.create(**line_data)
+            line_index += 1
+        
+        messages.success(request, f"Prévisionnel « {name} » créé avec {line_index} lignes.")
+        return redirect('finance:forecast_detail', forecast_id=forecast.pk)
+    
+    categories = FinanceCategory.objects.filter(is_active=True).order_by('name')
+    
+    context = {
+        'current_year': date.today().year,
+        'scenarios': BudgetForecast.Scenario.choices,
+        'categories': categories,
+        'month_labels': MONTH_LABELS,
+        'month_fields': MONTH_FIELDS,
+    }
+    return render(request, 'finance/forecast/create.html', context)
+
+
+@login_required
+@role_required('admin', 'finance')
+def forecast_detail(request, forecast_id):
+    """Détail d'un prévisionnel avec comparaison au réalisé."""
+    forecast = get_object_or_404(BudgetForecast, pk=forecast_id)
+    actual_account_balance = TransactionService.get_dashboard_stats(year=forecast.year)['closing_balance']
+    
+    income_lines = forecast.lines.filter(line_type='income')
+    expense_lines = forecast.lines.filter(line_type='expense')
+    
+    # Calcul réalisé par mois
+    actuals_by_month = {}
+    for month_num in range(1, 13):
+        income_actual = FinancialTransaction.objects.filter(
+            transaction_date__year=forecast.year,
+            transaction_date__month=month_num,
+            status='valide',
+            transaction_type__in=['don', 'dime', 'offrande'],
+        ).aggregate(total=Sum('amount'))['total'] or Decimal('0.00')
+        
+        expense_actual = FinancialTransaction.objects.filter(
+            transaction_date__year=forecast.year,
+            transaction_date__month=month_num,
+            status='valide',
+            transaction_type='depense',
+        ).aggregate(total=Sum('amount'))['total'] or Decimal('0.00')
+        
+        actuals_by_month[month_num] = {
+            'income': income_actual,
+            'expense': expense_actual,
+            'net': income_actual - expense_actual,
+        }
+    
+    # Totaux prévisionnels par mois
+    forecast_by_month = []
+    for i, (mf, label) in enumerate(zip(MONTH_FIELDS, MONTH_LABELS), 1):
+        inc_prev = sum(getattr(l, mf) for l in income_lines)
+        exp_prev = sum(getattr(l, mf) for l in expense_lines)
+        actual = actuals_by_month.get(i, {})
+        inc_real = actual.get('income', Decimal('0.00'))
+        exp_real = actual.get('expense', Decimal('0.00'))
+        
+        forecast_by_month.append({
+            'month': label,
+            'month_short': label[:3],
+            'income_forecast': inc_prev,
+            'expense_forecast': exp_prev,
+            'net_forecast': inc_prev - exp_prev,
+            'income_actual': inc_real,
+            'expense_actual': exp_real,
+            'net_actual': inc_real - exp_real,
+            'income_variance': inc_real - inc_prev,
+            'expense_variance': exp_real - exp_prev,
+        })
+    
+    # Totaux annuels
+    total_income_forecast = sum(m['income_forecast'] for m in forecast_by_month)
+    total_expense_forecast = sum(m['expense_forecast'] for m in forecast_by_month)
+    total_income_actual = sum(m['income_actual'] for m in forecast_by_month)
+    total_expense_actual = sum(m['expense_actual'] for m in forecast_by_month)
+    
+    # Données pour graphique Chart.js
+    import json
+    chart_data = json.dumps({
+        'labels': [m['month_short'] for m in forecast_by_month],
+        'income_forecast': [float(m['income_forecast']) for m in forecast_by_month],
+        'expense_forecast': [float(m['expense_forecast']) for m in forecast_by_month],
+        'income_actual': [float(m['income_actual']) for m in forecast_by_month],
+        'expense_actual': [float(m['expense_actual']) for m in forecast_by_month],
+    })
+    
+    context = {
+        'forecast': forecast,
+        'income_lines': income_lines,
+        'expense_lines': expense_lines,
+        'forecast_by_month': forecast_by_month,
+        'month_labels': MONTH_LABELS,
+        'month_fields': MONTH_FIELDS,
+        'total_income_forecast': total_income_forecast,
+        'total_expense_forecast': total_expense_forecast,
+        'total_income_actual': total_income_actual,
+        'total_expense_actual': total_expense_actual,
+        'net_forecast': total_income_forecast - total_expense_forecast,
+        'net_actual': total_income_actual - total_expense_actual,
+        'actual_account_balance': actual_account_balance,
+        'chart_data': chart_data,
+    }
+    return render(request, 'finance/forecast/detail.html', context)
+
+
+@login_required
+@role_required('admin', 'finance')
+def forecast_edit(request, forecast_id):
+    """Modifier un prévisionnel existant."""
+    from .models import FinanceCategory
+    
+    forecast = get_object_or_404(BudgetForecast, pk=forecast_id)
+    
+    if request.method == 'POST':
+        name = request.POST.get('name', forecast.name).strip()
+        year_raw = request.POST.get('year', '').strip()
+        description = request.POST.get('description', '').strip()
+
+        if not name or not year_raw:
+            messages.error(request, "Le nom et l'année sont obligatoires.")
+            return redirect('finance:forecast_edit', forecast_id=forecast.pk)
+
+        try:
+            year = int(year_raw)
+        except (TypeError, ValueError):
+            messages.error(request, "L'année doit etre un nombre valide.")
+            return redirect('finance:forecast_edit', forecast_id=forecast.pk)
+
+        duplicate_exists = BudgetForecast.objects.filter(
+            year=year,
+            scenario=forecast.scenario,
+        ).exclude(pk=forecast.pk).exists()
+        if duplicate_exists:
+            messages.error(
+                request,
+                f"Un prévisionnel {forecast.get_scenario_display()} existe déjà pour {year}.",
+            )
+            return redirect('finance:forecast_edit', forecast_id=forecast.pk)
+
+        forecast.name = name
+        forecast.year = year
+        forecast.description = description
+        forecast.save()
+        
+        # Supprimer les anciennes lignes et recréer
+        forecast.lines.all().delete()
+        
+        line_index = 0
+        while True:
+            label = request.POST.get(f'line_{line_index}_label', '').strip()
+            if not label:
+                break
+            
+            line_type = request.POST.get(f'line_{line_index}_type', 'expense')
+            cat_id = request.POST.get(f'line_{line_index}_category', '')
+            
+            line_data = {
+                'forecast': forecast,
+                'label': label,
+                'line_type': line_type,
+                'category_id': int(cat_id) if cat_id else None,
+            }
+            for mf in MONTH_FIELDS:
+                val = request.POST.get(f'line_{line_index}_{mf}', '0')
+                try:
+                    line_data[mf] = Decimal(val.replace(',', '.') or '0')
+                except Exception:
+                    line_data[mf] = Decimal('0')
+            
+            ForecastLine.objects.create(**line_data)
+            line_index += 1
+        
+        messages.success(request, "Prévisionnel mis à jour.")
+        return redirect('finance:forecast_detail', forecast_id=forecast.pk)
+    
+    categories = FinanceCategory.objects.filter(is_active=True).order_by('name')
+    existing_lines = list(forecast.lines.all().values())
+    
+    # Préparer les lignes pour le JS
+    import json
+    lines_json = json.dumps([
+        {
+            'label': line['label'],
+            'line_type': line['line_type'],
+            'category_id': line['category_id'] or '',
+            **{mf: str(line[mf]) for mf in MONTH_FIELDS},
+        }
+        for line in existing_lines
+    ])
+    
+    context = {
+        'forecast': forecast,
+        'categories': categories,
+        'month_labels': MONTH_LABELS,
+        'month_fields': MONTH_FIELDS,
+        'lines_json': lines_json,
+    }
+    return render(request, 'finance/forecast/edit.html', context)
+
+
+@login_required
+@role_required('admin', 'finance')
+def forecast_delete(request, forecast_id):
+    """Supprimer un prévisionnel."""
+    forecast = get_object_or_404(BudgetForecast, pk=forecast_id)
+    
+    if request.method == 'POST':
+        name = forecast.name
+        forecast.delete()
+        messages.success(request, f"Prévisionnel « {name} » supprimé.")
+        return redirect('finance:forecast_list')
+    
+    return render(request, 'finance/forecast/delete_confirm.html', {'forecast': forecast})
+
+
+@login_required
+@role_required('admin', 'finance')
+def forecast_export_excel(request, forecast_id):
+    """Export Excel du prévisionnel avec comparaison réalisé."""
+    from django.http import HttpResponse
+    from openpyxl import Workbook
+    from openpyxl.styles import Font, Alignment, PatternFill, Border, Side
+    from openpyxl.utils import get_column_letter
+    
+    forecast = get_object_or_404(BudgetForecast, pk=forecast_id)
+    
+    wb = Workbook()
+    ws = wb.active
+    ws.title = f"Prévisionnel {forecast.year}"
+    
+    # Styles
+    header_font = Font(bold=True, color="FFFFFF", size=11)
+    header_fill = PatternFill(start_color="0F2557", end_color="0F2557", fill_type="solid")
+    income_fill = PatternFill(start_color="E8F5E9", end_color="E8F5E9", fill_type="solid")
+    expense_fill = PatternFill(start_color="FFEBEE", end_color="FFEBEE", fill_type="solid")
+    total_font = Font(bold=True, size=11)
+    border = Border(
+        left=Side(style='thin'), right=Side(style='thin'),
+        top=Side(style='thin'), bottom=Side(style='thin')
+    )
+    
+    # Titre
+    ws.merge_cells('A1:N1')
+    ws['A1'] = f"PRÉVISIONNEL {forecast.year} — {forecast.get_scenario_display()}"
+    ws['A1'].font = Font(bold=True, size=14, color="0F2557")
+    ws['A1'].alignment = Alignment(horizontal='center')
+    
+    ws.merge_cells('A2:N2')
+    ws['A2'] = forecast.name
+    ws['A2'].font = Font(size=11, italic=True)
+    ws['A2'].alignment = Alignment(horizontal='center')
+    
+    # En-têtes
+    row = 4
+    headers = ['Libellé', 'Type'] + MONTH_LABELS + ['TOTAL']
+    for col, h in enumerate(headers, 1):
+        cell = ws.cell(row=row, column=col, value=h)
+        cell.font = header_font
+        cell.fill = header_fill
+        cell.border = border
+        cell.alignment = Alignment(horizontal='center')
+    
+    # Lignes de recettes
+    row += 1
+    ws.cell(row=row, column=1, value="═══ RECETTES ═══").font = Font(bold=True, color="2E7D32")
+    row += 1
+    
+    for line in forecast.lines.filter(line_type='income'):
+        ws.cell(row=row, column=1, value=line.label).border = border
+        ws.cell(row=row, column=2, value='Recette').border = border
+        total = Decimal('0')
+        for i, mf in enumerate(MONTH_FIELDS):
+            val = getattr(line, mf)
+            cell = ws.cell(row=row, column=3 + i, value=float(val))
+            cell.number_format = '#,##0.00'
+            cell.fill = income_fill
+            cell.border = border
+            total += val
+        cell = ws.cell(row=row, column=15, value=float(total))
+        cell.font = total_font
+        cell.number_format = '#,##0.00'
+        cell.border = border
+        row += 1
+    
+    # Lignes de dépenses
+    ws.cell(row=row, column=1, value="═══ DÉPENSES ═══").font = Font(bold=True, color="C62828")
+    row += 1
+    
+    for line in forecast.lines.filter(line_type='expense'):
+        ws.cell(row=row, column=1, value=line.label).border = border
+        ws.cell(row=row, column=2, value='Dépense').border = border
+        total = Decimal('0')
+        for i, mf in enumerate(MONTH_FIELDS):
+            val = getattr(line, mf)
+            cell = ws.cell(row=row, column=3 + i, value=float(val))
+            cell.number_format = '#,##0.00'
+            cell.fill = expense_fill
+            cell.border = border
+            total += val
+        cell = ws.cell(row=row, column=15, value=float(total))
+        cell.font = total_font
+        cell.number_format = '#,##0.00'
+        cell.border = border
+        row += 1
+    
+    # Totaux
+    row += 1
+    ws.cell(row=row, column=1, value="TOTAL RECETTES").font = Font(bold=True, color="2E7D32", size=11)
+    for i in range(12):
+        val = sum(
+            getattr(l, MONTH_FIELDS[i])
+            for l in forecast.lines.filter(line_type='income')
+        )
+        cell = ws.cell(row=row, column=3 + i, value=float(val))
+        cell.font = Font(bold=True, color="2E7D32")
+        cell.number_format = '#,##0.00'
+    ws.cell(row=row, column=15, value=float(forecast.total_income_forecast)).font = Font(bold=True, color="2E7D32", size=12)
+    
+    row += 1
+    ws.cell(row=row, column=1, value="TOTAL DÉPENSES").font = Font(bold=True, color="C62828", size=11)
+    for i in range(12):
+        val = sum(
+            getattr(l, MONTH_FIELDS[i])
+            for l in forecast.lines.filter(line_type='expense')
+        )
+        cell = ws.cell(row=row, column=3 + i, value=float(val))
+        cell.font = Font(bold=True, color="C62828")
+        cell.number_format = '#,##0.00'
+    ws.cell(row=row, column=15, value=float(forecast.total_expense_forecast)).font = Font(bold=True, color="C62828", size=12)
+    
+    row += 1
+    ws.cell(row=row, column=1, value="SOLDE NET").font = Font(bold=True, size=12)
+    ws.cell(row=row, column=15, value=float(forecast.net_forecast)).font = Font(bold=True, size=12)
+    
+    # Largeurs colonnes
+    ws.column_dimensions['A'].width = 30
+    ws.column_dimensions['B'].width = 10
+    for col in range(3, 16):
+        ws.column_dimensions[get_column_letter(col)].width = 13
+    
+    response = HttpResponse(
+        content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+    )
+    response['Content-Disposition'] = f'attachment; filename="previsionnel_{forecast.year}_{forecast.scenario}.xlsx"'
+    wb.save(response)
+    return response
+
+
+# ============================================================================
+# VUES DE SYNTHÈSE (présentation AG / petit écran)
+# ============================================================================
+
+def _build_forecast_summary(forecast):
+    """Calcule les données de synthèse pour un prévisionnel donné."""
+    actual_account_balance = TransactionService.get_dashboard_stats(year=forecast.year)['closing_balance']
+    income_lines = list(forecast.lines.filter(line_type='income'))
+    expense_lines = list(forecast.lines.filter(line_type='expense'))
+
+    def _row(line):
+        months = [getattr(line, mf) for mf in MONTH_FIELDS]
+        return {'label': line.label, 'total': line.amount, 'months': months}
+
+    income_rows = sorted(
+        [_row(l) for l in income_lines],
+        key=lambda r: r['total'], reverse=True,
+    )
+    expense_rows = sorted(
+        [_row(l) for l in expense_lines],
+        key=lambda r: r['total'], reverse=True,
+    )
+
+    total_income = sum(r['total'] for r in income_rows)
+    total_expense = sum(r['total'] for r in expense_rows)
+
+    actuals_income = FinancialTransaction.objects.filter(
+        transaction_date__year=forecast.year,
+        status='valide',
+        transaction_type__in=['don', 'dime', 'offrande'],
+    ).aggregate(total=Sum('amount'))['total'] or Decimal('0.00')
+    actuals_expense = FinancialTransaction.objects.filter(
+        transaction_date__year=forecast.year,
+        status='valide',
+        transaction_type='depense',
+    ).aggregate(total=Sum('amount'))['total'] or Decimal('0.00')
+
+    monthly = []
+    for mf, label in zip(MONTH_FIELDS, MONTH_LABELS):
+        inc = sum(getattr(l, mf) for l in income_lines)
+        exp = sum(getattr(l, mf) for l in expense_lines)
+        monthly.append({
+            'label': label,
+            'short': label[:3],
+            'income': inc,
+            'expense': exp,
+            'net': inc - exp,
+        })
+
+    return {
+        'forecast': forecast,
+        'income_rows': income_rows,
+        'expense_rows': expense_rows,
+        'total_income': total_income,
+        'total_expense': total_expense,
+        'net': total_income - total_expense,
+        'actuals_income': actuals_income,
+        'actuals_expense': actuals_expense,
+        'actuals_net': actuals_income - actuals_expense,
+        'actual_account_balance': actual_account_balance,
+        'monthly': monthly,
+        'month_labels_short': [l[:3] for l in MONTH_LABELS],
+        'income_month_totals': [m['income'] for m in monthly],
+        'expense_month_totals': [m['expense'] for m in monthly],
+    }
+
+
+@login_required
+@role_required('admin', 'finance')
+def forecast_summary_income(request, forecast_id):
+    """Page de synthèse des recettes (présentation AG)."""
+    forecast = get_object_or_404(BudgetForecast, pk=forecast_id)
+    context = _build_forecast_summary(forecast)
+    return render(request, 'finance/forecast/summary_income.html', context)
+
+
+@login_required
+@role_required('admin', 'finance')
+def forecast_summary_expense(request, forecast_id):
+    """Page de synthèse des dépenses (présentation AG)."""
+    forecast = get_object_or_404(BudgetForecast, pk=forecast_id)
+    context = _build_forecast_summary(forecast)
+    return render(request, 'finance/forecast/summary_expense.html', context)
+
+
+@login_required
+@role_required('admin', 'finance')
+def forecast_summary_result(request, forecast_id):
+    """Page de synthèse du résultat (présentation AG)."""
+    forecast = get_object_or_404(BudgetForecast, pk=forecast_id)
+    context = _build_forecast_summary(forecast)
+    return render(request, 'finance/forecast/summary_result.html', context)

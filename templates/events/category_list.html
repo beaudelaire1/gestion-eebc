@@ -1,0 +1,89 @@
+{% extends 'base.html' %}
+
+{% block title %}Catégories d'événements{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-md-8">
+        <h1>Catégories d'événements</h1>
+        <p class="text-muted">Gérez les catégories pour classer vos événements.</p>
+    </div>
+    <div class="col-md-4 text-end">
+        <a href="{% url 'events:category_create' %}" class="btn btn-primary">
+            <i class="bi bi-plus-lg me-2"></i>Nouvelle catégorie
+        </a>
+    </div>
+</div>
+
+<div class="card shadow-sm">
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="bg-light">
+                    <tr>
+                        <th style="width: 50px;">Couleur</th>
+                        <th>Nom</th>
+                        <th>Description</th>
+                        <th class="text-center">Événements</th>
+                        <th class="text-end">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for category in categories %}
+                    <tr>
+                        <td class="text-center">
+                            <span class="d-inline-block rounded-circle"
+                                style="width: 24px; height: 24px; background-color: {{ category.color }}; border: 1px solid rgba(0,0,0,0.1);"></span>
+                        </td>
+                        <td>
+                            <span class="fw-bold">{{ category.name }}</span>
+                            {% if category.icon %}
+                            <i class="{{ category.icon }} ms-2 text-muted"></i>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if category.description %}
+                            <span class="text-muted small">{{ category.description|truncatechars:50 }}</span>
+                            {% else %}
+                            <em class="text-muted small">-</em>
+                            {% endif %}
+                        </td>
+                        <td class="text-center">
+                            <span class="badge bg-light text-dark border">
+                                {{ category.events_count }} total
+                            </span>
+                            {% if category.upcoming_events_count > 0 %}
+                            <span class="badge bg-info text-white ms-1">
+                                {{ category.upcoming_events_count }} à venir
+                            </span>
+                            {% endif %}
+                        </td>
+                        <td class="text-end">
+                            <a href="{% url 'events:category_update' pk=category.pk %}"
+                                class="btn btn-sm btn-outline-secondary me-1" title="Modifier">
+                                <i class="bi bi-pencil"></i>
+                            </a>
+                            <a href="{% url 'events:category_delete' pk=category.pk %}"
+                                class="btn btn-sm btn-outline-danger" title="Supprimer">
+                                <i class="bi bi-trash"></i>
+                            </a>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="5" class="text-center py-5">
+                            <div class="text-muted">
+                                <i class="bi bi-tags display-4 mb-3 d-block"></i>
+                                <p>Aucune catégorie définie.</p>
+                                <a href="{% url 'events:category_create' %}" class="btn btn-sm btn-primary">Créer la
+                                    première catégorie</a>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

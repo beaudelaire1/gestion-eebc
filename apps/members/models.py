@@ -138,6 +138,16 @@ class Member(models.Model):
         verbose_name = "Membre"
         verbose_name_plural = "Membres"
         ordering = ['last_name', 'first_name']
+        indexes = [
+            models.Index(fields=['status'], name='member_status_idx'),
+            models.Index(fields=['site'], name='member_site_idx'),
+            models.Index(fields=['date_joined'], name='member_date_joined_idx'),
+            models.Index(fields=['is_baptized'], name='member_baptized_idx'),
+            models.Index(fields=['family'], name='member_family_idx'),
+            models.Index(fields=['status', 'site'], name='member_status_site_idx'),
+            models.Index(fields=['last_name', 'first_name'], name='member_name_idx'),
+            models.Index(fields=['email'], name='member_email_idx'),
+        ]
     
     def __str__(self):
         prefix = f"[{self.member_id}] " if self.member_id else ""
@@ -273,6 +283,13 @@ class LifeEvent(models.Model):
         verbose_name = "Événement de vie"
         verbose_name_plural = "Événements de vie"
         ordering = ['-event_date', '-created_at']
+        indexes = [
+            models.Index(fields=['event_date'], name='lifeevent_date_idx'),
+            models.Index(fields=['event_type'], name='lifeevent_type_idx'),
+            models.Index(fields=['primary_member'], name='lifeevent_member_idx'),
+            models.Index(fields=['requires_visit', 'visit_completed'], name='lifeevent_visit_idx'),
+            models.Index(fields=['announce_sunday', 'announced'], name='lifeevent_announce_idx'),
+        ]
     
     def __str__(self):
         if self.title:
@@ -405,10 +422,68 @@ class VisitationLog(models.Model):
         verbose_name = "Visite pastorale"
         verbose_name_plural = "Visites pastorales"
         ordering = ['-visit_date', '-scheduled_date']
+        indexes = [
+            models.Index(fields=['visit_date'], name='visitlog_visitdate_idx'),
+            models.Index(fields=['scheduled_date'], name='visitlog_scheddate_idx'),
+            models.Index(fields=['member'], name='visitlog_member_idx'),
+            models.Index(fields=['visitor'], name='visitlog_visitor_idx'),
+            models.Index(fields=['status'], name='visitlog_status_idx'),
+            models.Index(fields=['member', 'visit_date'], name='visitlog_member_date_idx'),
+        ]
     
     def __str__(self):
         date_str = self.visit_date or self.scheduled_date or "Non planifié"
         return f"{self.member} - {date_str} ({self.get_status_display()})"
+
+
+class GeocodedAddress(models.Model):
+    """
+    Cache persistant des géocodages par adresse canonique.
+
+    Une address_key détermine un unique point GPS stable.
+    """
+
+    address_key = models.CharField(
+        max_length=255,
+        unique=True,
+        db_index=True,
+        verbose_name="Clé d'adresse canonique"
+    )
+    normalized_address = models.TextField(blank=True, verbose_name="Adresse normalisée")
+    normalized_city = models.CharField(max_length=100, blank=True, verbose_name="Ville normalisée")
+    normalized_postal_code = models.CharField(max_length=10, blank=True, verbose_name="Code postal normalisé")
+    country = models.CharField(max_length=100, default="Guyane française", verbose_name="Pays")
+
+    latitude = models.DecimalField(max_digits=9, decimal_places=6, verbose_name="Latitude")
+    longitude = models.DecimalField(max_digits=9, decimal_places=6, verbose_name="Longitude")
+
+    provider = models.CharField(max_length=50, default="nominatim", verbose_name="Provider")
+    provider_precision = models.CharField(max_length=50, blank=True, verbose_name="Précision provider")
+    provider_importance = models.DecimalField(
+        max_digits=6,
+        decimal_places=5,
+        null=True,
+        blank=True,
+        verbose_name="Importance provider"
+    )
+    raw_query = models.TextField(blank=True, verbose_name="Requête brute")
+
+    last_geocoded_at = models.DateTimeField(auto_now=True, verbose_name="Dernier géocodage")
+    expires_at = models.DateTimeField(null=True, blank=True, verbose_name="Expire le")
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        verbose_name = "Adresse géocodée"
+        verbose_name_plural = "Adresses géocodées"
+        ordering = ['-updated_at']
+        indexes = [
+            models.Index(fields=['address_key'], name='geocode_addr_key_idx'),
+            models.Index(fields=['expires_at'], name='geocode_expires_idx'),
+        ]
+
+    def __str__(self):
+        return f"{self.address_key[:48]}... ({self.latitude}, {self.longitude})"
 
 
 # Extension du modèle Member avec des propriétés optimisées

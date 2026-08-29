@@ -32,7 +32,7 @@ def get_user_classes(user):
         return BibleClass.objects.none()
     
     # Admin ou responsable club : accès total
-    if user.is_superuser or user.role in ['admin', 'responsable_club']:
+    if user.is_superuser or user.has_any_role('admin', 'responsable_club'):
         return BibleClass.objects.filter(is_active=True)
     
     # Moniteur : sa classe uniquement
@@ -49,7 +49,7 @@ def can_access_class(user, bible_class):
         return False
     
     # Admin ou responsable club : accès total
-    if user.is_superuser or user.role in ['admin', 'responsable_club']:
+    if user.is_superuser or user.has_any_role('admin', 'responsable_club'):
         return True
     
     # Moniteur : sa classe uniquement
@@ -66,7 +66,7 @@ def can_access_child(user, child):
         return False
     
     # Admin ou responsable club : accès total
-    if user.is_superuser or user.role in ['admin', 'responsable_club']:
+    if user.is_superuser or user.has_any_role('admin', 'responsable_club'):
         return True
     
     # Moniteur : enfants de sa classe uniquement
@@ -87,7 +87,7 @@ def is_club_staff(user):
     if not user.is_authenticated:
         return False
     
-    if user.is_superuser or user.role in ['admin', 'responsable_club']:
+    if user.is_superuser or user.has_any_role('admin', 'responsable_club'):
         return True
     
     monitor = get_monitor_for_user(user)
@@ -98,7 +98,7 @@ def is_club_admin(user):
     """Vérifie si l'utilisateur est admin du club biblique."""
     if not user.is_authenticated:
         return False
-    return user.is_superuser or user.role in ['admin', 'responsable_club']
+    return user.is_superuser or user.has_any_role('admin', 'responsable_club')
 
 
 # ============================================================================

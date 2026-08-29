@@ -1,6 +1,7 @@
 from django.shortcuts import render, get_object_or_404, redirect
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
+from django.core.paginator import Paginator
 from django.http import JsonResponse, HttpResponse
 from django.template.loader import render_to_string
 from django.db.models import Q
@@ -11,7 +12,10 @@ import calendar as cal_module
 
 from apps.core.permissions import role_required
 from .models import Event, EventCategory, EventRegistration
-from .forms import EventForm, EventCancelForm, EventDuplicateForm, EventSearchForm
+from .forms import EventForm, EventCancelForm, EventDuplicateForm, EventSearchForm, EventCategoryForm
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 @login_required
@@ -65,11 +69,11 @@ def events_json(request):
     # Filtrer par visibilité
     if not request.user.is_authenticated:
         events = events.filter(visibility='public')
-    elif not request.user.is_staff:
+    elif not request.user.has_any_role('admin', 'secretariat', 'pasteur'):
         events = events.filter(Q(visibility='public') | Q(visibility='members'))
     
     # Inclure les événements annulés pour les admins/organisateurs
-    if not (request.user.role in ['admin', 'secretariat']):
+    if not request.user.has_any_role('admin', 'secretariat'):
         events = events.filter(is_cancelled=False)
     
     events_data = []
@@ -118,12 +122,22 @@ def events_json(request):
 
 @login_required
 def event_list(request):
-    """Liste des événements à venir."""
+    """Liste des événements."""
     today = date.today()
-    events = Event.objects.filter(
-        start_date__gte=today,
-        is_cancelled=False
-    ).select_related('category', 'organizer')
+    
+    # Par défaut, afficher les événements à venir, mais permettre de voir tous
+    show_past = request.GET.get('show_past', '0') == '1'
+    
+    if show_past:
+        events = Event.objects.all()
+    else:
+        events = Event.objects.filter(start_date__gte=today)
+    
+    # Ne pas filtrer les annulés pour les admins
+    if not request.user.has_any_role('admin', 'secretariat'):
+        events = events.filter(is_cancelled=False)
+    
+    events = events.select_related('category').order_by('start_date', 'start_time')
     
     # Filtrer par catégorie
     category = request.GET.get('category')
@@ -132,9 +146,14 @@ def event_list(request):
     
     categories = EventCategory.objects.all()
     
+    paginator = Paginator(events, 25)
+    page_obj = paginator.get_page(request.GET.get('page', 1))
+    
     context = {
-        'events': events,
+        'events': page_obj,
+        'page_obj': page_obj,
         'categories': categories,
+        'show_past': show_past,
     }
     return render(request, 'events/event_list.html', context)
 
@@ -539,8 +558,14 @@ def event_create(request):
             
             # Ajouter l'utilisateur actuel comme organisateur par défaut
             event.save()
+            form.save_m2m()
             if not event.organizers.exists():
                 event.organizers.add(request.user)
+            
+            # Envoyer les notifications si configurées
+            if event.notification_scope != 'none':
+                from .tasks import send_immediate_notification
+                send_immediate_notification.delay(event.id)
             
             messages.success(request, f"L'événement '{event.title}' a été créé avec succès.")
             return redirect('events:detail', pk=event.pk)
@@ -590,7 +615,7 @@ def event_update(request, pk):
     event = get_object_or_404(Event, pk=pk)
     
     # Vérifier si l'utilisateur peut modifier cet événement
-    if not request.user.role == 'admin' and request.user not in event.organizers.all():
+    if not request.user.has_role('admin') and request.user not in event.organizers.all():
         messages.error(request, "Vous ne pouvez modifier que les événements que vous organisez.")
         return redirect('events:detail', pk=event.pk)
     
@@ -598,6 +623,12 @@ def event_update(request, pk):
         form = EventForm(request.POST, request.FILES, instance=event)
         if form.is_valid():
             event = form.save()
+            
+            # Re-notifier si la portée de notification a changé ou n'est pas 'none'
+            if event.notification_scope != 'none' and not event.notification_sent:
+                from .tasks import send_immediate_notification
+                send_immediate_notification.delay(event.id)
+            
             messages.success(request, f"L'événement '{event.title}' a été modifié avec succès.")
             return redirect('events:detail', pk=event.pk)
     else:
@@ -622,7 +653,7 @@ def event_cancel(request, pk):
     event = get_object_or_404(Event, pk=pk)
     
     # Vérifier si l'utilisateur peut annuler cet événement
-    if not request.user.role == 'admin' and request.user not in event.organizers.all():
+    if not request.user.has_role('admin') and request.user not in event.organizers.all():
         messages.error(request, "Vous ne pouvez annuler que les événements que vous organisez.")
         return redirect('events:detail', pk=event.pk)
     
@@ -761,7 +792,7 @@ def event_list_advanced(request):
     events = Event.objects.select_related('category').prefetch_related('organizers')
     
     # Appliquer les filtres de base
-    if not request.user.is_staff:
+    if not request.user.has_any_role('admin', 'secretariat', 'pasteur'):
         # Filtrer par visibilité pour les non-staff
         events = events.filter(Q(visibility='public') | Q(visibility='members'))
     
@@ -816,3 +847,128 @@ def event_list_advanced(request):
     if request.htmx:
         return render(request, 'events/partials/event_list_content.html', context)
     return render(request, 'events/event_list_advanced.html', context)
+
+
+# =============================================================================
+# CRUD POUR LES CATÉGORIES D'ÉVÉNEMENTS
+# =============================================================================
+
+@login_required
+@role_required('admin', 'secretariat')
+def category_list(request):
+    """Liste des catégories d'événements."""
+    categories = EventCategory.objects.all().order_by('name')
+    
+    # Statistiques d'utilisation
+    for category in categories:
+        category.events_count = category.events.count()
+        category.upcoming_events_count = category.events.filter(
+            start_date__gte=date.today(),
+            is_cancelled=False
+        ).count()
+    
+    context = {
+        'categories': categories,
+        'total_categories': categories.count(),
+    }
+    
+    return render(request, 'events/category_list.html', context)
+
+
+@login_required
+@role_required('admin', 'secretariat')
+def category_create(request):
+    """Créer une nouvelle catégorie d'événement."""
+    if request.method == 'POST':
+        form = EventCategoryForm(request.POST)
+        if form.is_valid():
+            category = form.save()
+            messages.success(request, f'Catégorie "{category.name}" créée avec succès.')
+            return redirect('events:category_list')
+    else:
+        form = EventCategoryForm()
+    
+    context = {
+        'form': form,
+        'title': 'Créer une catégorie d\'événement',
+        'submit_text': 'Créer la catégorie'
+    }
+    return render(request, 'events/category_form.html', context)
+    
+    context = {
+        'title': 'Nouvelle catégorie',
+        'submit_text': 'Créer la catégorie'
+    }
+    return render(request, 'events/category_form.html', context)
+
+
+@login_required
+@role_required('admin', 'secretariat')
+def category_update(request, pk):
+    """Modifier une catégorie d'événement."""
+    category = get_object_or_404(EventCategory, pk=pk)
+
+    if request.method == 'POST':
+        form = EventCategoryForm(request.POST, instance=category)
+        if form.is_valid():
+            category = form.save()
+            messages.success(request, f'Catégorie "{category.name}" modifiée avec succès.')
+            return redirect('events:category_list')
+    else:
+        form = EventCategoryForm(instance=category)
+
+    context = {
+        'form': form,
+        'category': category,
+        'title': f'Modifier {category.name}',
+        'submit_text': 'Enregistrer les modifications'
+    }
+    return render(request, 'events/category_form.html', context)
+
+
+@login_required
+@role_required('admin', 'secretariat')
+def category_delete(request, pk):
+    """Supprimer une catégorie d'événement."""
+    category = get_object_or_404(EventCategory, pk=pk)
+    
+    # Vérifier s'il y a des événements liés
+    events_count = category.events.count()
+    
+    if request.method == 'POST':
+        if events_count > 0:
+            # Demander confirmation pour la réassignation
+            reassign_to_id = request.POST.get('reassign_to')
+            if reassign_to_id:
+                try:
+                    new_category = EventCategory.objects.get(pk=reassign_to_id)
+                    category.events.update(category=new_category)
+                    messages.success(
+                        request, 
+                        f'{events_count} événement(s) réassigné(s) à "{new_category.name}".'
+                    )
+                except EventCategory.DoesNotExist:
+                    messages.error(request, 'Catégorie de réassignation invalide.')
+                    return redirect('events:category_delete', pk=pk)
+            else:
+                # Supprimer la catégorie des événements (mettre à null)
+                category.events.update(category=None)
+                messages.warning(
+                    request, 
+                    f'{events_count} événement(s) n\'ont plus de catégorie.'
+                )
+        
+        category_name = category.name
+        category.delete()
+        messages.success(request, f'Catégorie "{category_name}" supprimée avec succès.')
+        return redirect('events:category_list')
+    
+    # Autres catégories pour réassignation
+    other_categories = EventCategory.objects.exclude(pk=pk)
+    
+    context = {
+        'category': category,
+        'events_count': events_count,
+        'other_categories': other_categories,
+    }
+    return render(request, 'events/category_delete_confirm.html', context)

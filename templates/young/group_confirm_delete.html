@@ -1,0 +1,32 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ title }} - Jeunesse - EEBC{% endblock %}
+{% block page_title %}{{ title }}{% endblock %}
+{% block page_subtitle %}Cette action désactivera le groupe{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-5">
+        <div class="card text-center p-4">
+            <div style="width: 80px; height: 80px; border-radius: 50%; background: linear-gradient(135deg, #f59e0b, #d97706); display: flex; align-items: center; justify-content: center; font-size: 2rem; color: white; margin: 0 auto 1.5rem;">
+                <i class="bi bi-exclamation-triangle"></i>
+            </div>
+
+            <h4 class="mb-2">Désactiver « {{ group.name }} » ?</h4>
+            <p class="text-muted">
+                Ce groupe contient <strong>{{ member_count }}</strong> membre{{ member_count|pluralize }} actif{{ member_count|pluralize }}.
+            </p>
+
+            <form method="post">
+                {% csrf_token %}
+                <div class="d-flex gap-3 justify-content-center mt-3">
+                    <a href="{% url 'young:group_list' %}" class="btn btn-outline-secondary">Annuler</a>
+                    <button type="submit" class="btn btn-danger">
+                        <i class="bi bi-trash me-2"></i>Désactiver
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

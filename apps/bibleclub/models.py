@@ -6,7 +6,7 @@ from django.utils import timezone
 class AgeGroup(models.Model):
     """
     Tranche d'âge pour le club biblique.
-    Ex: 3-5 ans, 6-8 ans, 9-12 ans
+    Ex : 3-5 ans, 6-8 ans, 9-12 ans
     """
     name = models.CharField(max_length=50, verbose_name="Nom de la tranche")
     min_age = models.PositiveIntegerField(verbose_name="Âge minimum")
@@ -18,12 +18,6 @@ class AgeGroup(models.Model):
         verbose_name = "Tranche d'âge"
         verbose_name_plural = "Tranches d'âge"
         ordering = ['min_age']
-        constraints = [
-            models.CheckConstraint(
-                condition=models.Q(min_age__lt=models.F('max_age')),
-                name='min_age_less_than_max_age'
-            )
-        ]
     
     def __str__(self):
         return f"{self.name} ({self.min_age}-{self.max_age} ans)"
@@ -102,6 +96,14 @@ class Monitor(models.Model):
         verbose_name = "Moniteur"
         verbose_name_plural = "Moniteurs"
         ordering = ['-is_lead', 'user__last_name']
+
+    @property
+    def role(self):
+        return 'responsable' if self.is_lead else 'moniteur'
+
+    @property
+    def role_label(self):
+        return 'Moniteur principal' if self.is_lead else 'Moniteur'
     
     def __str__(self):
         return self.user.get_full_name() or self.user.username
@@ -131,15 +133,40 @@ class Child(models.Model):
         related_name='children',
         verbose_name="Classe"
     )
-    
+
+    # Rattachement famille (facultatif)
+    family = models.ForeignKey(
+        'core.Family',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='bibleclub_children',
+        verbose_name="Famille",
+    )
+
+    # Lien vers la fiche Membre (créée quand l'enfant est rattaché à une famille)
+    linked_member = models.OneToOneField(
+        'members.Member',
+        on_delete=models.SET_NULL,
+        null=True, blank=True,
+        related_name='bibleclub_profile',
+        verbose_name="Fiche membre liée",
+        help_text="Fiche membre correspondante (créée automatiquement lors du rattachement à une famille)",
+    )
+
     # Contacts parents
-    father_name = models.CharField(max_length=200, verbose_name="Nom du père")
-    father_phone = models.CharField(max_length=20, verbose_name="Téléphone du père")
+    father_name = models.CharField(max_length=200, blank=True, verbose_name="Nom du père")
+    father_phone = models.CharField(max_length=20, blank=True, verbose_name="Téléphone du père")
     father_email = models.EmailField(blank=True, verbose_name="Email du père")
     
     mother_name = models.CharField(max_length=200, blank=True, verbose_name="Nom de la mère")
     mother_phone = models.CharField(max_length=20, blank=True, verbose_name="Téléphone de la mère")
     mother_email = models.EmailField(blank=True, verbose_name="Email de la mère")
+
+    # Adresse postale
+    address = models.CharField(max_length=255, blank=True, verbose_name="Adresse postale")
+    city = models.CharField(max_length=100, blank=True, verbose_name="Ville")
+    postal_code = models.CharField(max_length=20, blank=True, verbose_name="Code postal")
     
     # Contact d'urgence
     emergency_contact = models.CharField(max_length=200, blank=True, verbose_name="Contact d'urgence")

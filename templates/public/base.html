@@ -6,6 +6,28 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="description" content="{% block meta_description %}{{ settings.meta_description|default:'Église Évangélique Baptiste de Cabassou - Guyane' }}{% endblock %}">
     
+    <!-- E2: Canonical URL (prevent duplicate content) -->
+    {% block canonical %}
+    <link rel="canonical" href="{{ request.build_absolute_uri }}">
+    {% endblock %}
+    
+    <!-- E1: Open Graph Meta Tags (social sharing) -->
+    <meta property="og:title" content="{% block og_title %}{{ block.super|truncatewords:8 }}{% endblock %}">
+    <meta property="og:description" content="{% block og_description %}{{ block.super|default:settings.meta_description|default:'Église Évangélique Baptiste de Cabassou'|truncatewords:30 }}{% endblock %}">
+    <meta property="og:image" content="{% block og_image %}{{ settings.og_image_url|default:'/static/img/og-image.png' }}{% endblock %}">
+    <meta property="og:image:alt" content="{% block og_image_alt %}{{ settings.site_name|default:'EEBC' }}{% endblock %}">
+    <meta property="og:type" content="{% block og_type %}website{% endblock %}">
+    <meta property="og:url" content="{{ request.build_absolute_uri }}">
+    <meta property="og:site_name" content="{{ settings.site_name|default:'EEBC' }}">
+    <meta property="og:locale" content="fr_FR">
+    
+    <!-- E1: Twitter Card Meta Tags -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="{% block twitter_title %}{{ block.super|truncatewords:8 }}{% endblock %}">
+    <meta name="twitter:description" content="{% block twitter_description %}{{ block.super|default:settings.meta_description|default:'Église Évangélique Baptiste de Cabassou'|truncatewords:30 }}{% endblock %}">
+    <meta name="twitter:image" content="{% block twitter_image %}{{ settings.og_image_url|default:'/static/img/og-image.png' }}{% endblock %}">
+    <meta name="twitter:image:alt" content="{% block twitter_image_alt %}{{ settings.site_name|default:'EEBC' }}{% endblock %}">
+    
     <title>{% block title %}{{ settings.site_name|default:'EEBC' }}{% endblock %}</title>
     
     <!-- PWA Meta Tags -->
@@ -17,11 +39,52 @@
     <link rel="apple-touch-icon" href="{% static 'icons/icon-192x192.png' %}">
     
     <!-- Bootstrap 5 CSS -->
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="{% static 'vendor/bootstrap/bootstrap.min.css' %}">
     <!-- Bootstrap Icons -->
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" rel="stylesheet">
+    <link rel="stylesheet" href="{% static 'vendor/bootstrap-icons/bootstrap-icons.css' %}">
     <!-- Google Fonts -->
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- Public Pages CSS (thème fixe) -->
+    <link rel="stylesheet" href="{% static 'css/public.css' %}?v=20260505">
+    
+    <!-- Luxe Design CSS - Premium UX/UI enhancements -->
+    <link rel="stylesheet" href="{% static 'css/luxe-design.css' %}?v=20260505">
+    
+    <!-- Animated Verse Banner CSS -->
+    <link rel="stylesheet" href="{% static 'css/animated-verse-banner.css' %}">
+    
+    <!-- E3: JSON-LD Structured Data (Church Organization) -->
+    {% block json_ld %}
+    <script type="application/ld+json">
+    {
+        "@context": "https://schema.org",
+        "@type": "Organization",
+        "name": "{{ settings.site_name|default:'EEBC' }}",
+        "alternateName": "Église Évangélique Baptiste de Cabassou",
+        "url": "{{ request.scheme }}://{{ request.get_host }}/",
+        "logo": "{{ settings.og_image_url|default:'/static/img/logo.png' }}",
+        "description": "{{ settings.meta_description|default:'Église Évangélique Baptiste de Cabassou' }}",
+        "sameAs": [
+            "https://www.facebook.com/egliseebc",
+            "https://www.instagram.com/egliseebc"
+        ],
+        "contact": {
+            "@type": "ContactPoint",
+            "telephone": "[PHONE]",
+            "contactType": "Customer Service"
+        },
+        "areaServed": "GF",
+        "address": {
+            "@type": "PostalAddress",
+            "streetAddress": "[ADDRESS]",
+            "addressLocality": "Cabassou",
+            "postalCode": "[ZIP]",
+            "addressCountry": "GF"
+        }
+    }
+    </script>
+    {% endblock %}
     
     <style>
         :root {
@@ -39,6 +102,17 @@
         .navbar-brand {
             font-weight: 700;
             font-size: 1.5rem;
+            display: inline-flex;
+            align-items: center;
+            padding-top: 0;
+            padding-bottom: 0;
+        }
+        .navbar-brand img {
+            height: 44px !important;
+            width: auto !important;
+            max-height: 44px;
+            object-fit: contain;
+            display: block;
         }
         
         .navbar {
@@ -48,6 +122,21 @@
         .nav-link {
             font-weight: 500;
             transition: color 0.3s;
+        }
+        
+        /* A3: Focus styles for keyboard navigation accessibility */
+        a:focus-visible,
+        button:focus-visible,
+        input:focus-visible,
+        textarea:focus-visible,
+        select:focus-visible {
+            outline: 3px solid var(--accent-color);
+            outline-offset: 2px;
+            border-radius: 2px;
+        }
+        
+        .nav-link:focus-visible {
+            color: var(--accent-color);
         }
         
         .btn-primary {
@@ -132,9 +221,27 @@
             background-color: var(--secondary-color);
             color: white;
         }
+
+        footer h1,
+        footer h2,
+        footer h3,
+        footer h4,
+        footer h5,
+        footer h6,
+        footer strong,
+        footer p,
+        footer li,
+        footer i {
+            color: #ffffff !important;
+        }
+
+        footer small,
+        footer .text-white-50 {
+            color: rgba(255, 255, 255, 0.82) !important;
+        }
         
         footer a {
-            color: rgba(255,255,255,0.8);
+            color: rgba(255,255,255,0.92);
             text-decoration: none;
         }
         
@@ -222,17 +329,24 @@
     </style>
     
     {% block extra_css %}{% endblock %}
+    {% block extra_head_js %}{% endblock %}
 </head>
 <body>
+    <!-- A1: Skip to content link for accessibility -->
+    <a href="#main-content" class="btn btn-primary position-absolute top-0 start-0 m-2" style="z-index: 9999; transform: translateY(-200%)" id="skip-link">Aller au contenu principal</a>
+    <style>
+        #skip-link:focus {
+            transform: translateY(0);
+            top: 0 !important;
+            left: 0 !important;
+        }
+    </style>
+    
     <!-- Navigation -->
-    <nav class="navbar navbar-expand-lg navbar-light bg-white sticky-top">
+    <nav class="navbar navbar-expand-lg navbar-light bg-white sticky-top" role="navigation" aria-label="Navigation principale">
         <div class="container">
             <a class="navbar-brand text-primary" href="{% url 'public:home' %}">
-                {% if settings.logo %}
-                    <img src="{{ settings.logo.url }}" alt="{{ settings.site_name }}" height="40">
-                {% else %}
-                    <i class="bi bi-church me-2"></i>{{ settings.site_name|default:'EEBC' }}
-                {% endif %}
+                <img src="{% static 'images/eebc-logo.png' %}" alt="{{ settings.site_name|default:'EEBC' }}" height="40">
             </a>
             
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
@@ -291,7 +405,7 @@
     {% endif %}
     
     <!-- Main Content -->
-    <main>
+    <main id="main-content" role="main">
         {% block content %}{% endblock %}
     </main>
     
@@ -354,18 +468,24 @@
                 </div>
                 <div class="col-md-6 text-center text-md-end">
                     <small class="text-white-50">
-                        {{ settings.footer_text|default:'' }}
+                        développé par <a href="https://www.traitdunion.it" target="_blank" rel="noopener noreferrer" class="text-white">Trait d'Union Studio</a> (www.traitdunion.it)
+                        {% if settings.footer_text %}
+                        <span class="mx-2">•</span>{{ settings.footer_text }}
+                        {% endif %}
                     </small>
                 </div>
             </div>
         </div>
     </footer>
     
-    <!-- Bootstrap JS -->
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- P3: Bootstrap JS with defer for non-blocking render -->
+    <script defer src="{% static 'vendor/bootstrap/bootstrap.bundle.min.js' %}"></script>
     
-    <!-- Service Worker Registration -->
-    <script>
+    <!-- Animated Verse Banner System -->
+    <script defer src="{% static 'js/animated-verse-banner.js' %}"></script>
+    
+    <!-- P3: Service Worker Registration (deferred) -->
+    <script defer>
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', function() {
                 navigator.serviceWorker.register('/static/sw.js')
@@ -380,5 +500,71 @@
     </script>
     
     {% block extra_js %}{% endblock %}
+
+    <!-- Bannière RGPD - Consentement cookies -->
+    <div id="cookie-banner" style="display:none; position:fixed; bottom:0; left:0; right:0; z-index:99999;
+         background:#0f1738; color:#fff; padding:1rem 1.5rem; box-shadow:0 -4px 20px rgba(0,0,0,0.35); border-top:1px solid rgba(255,255,255,0.16);">
+        <div style="max-width:1200px; margin:0 auto; display:flex; align-items:center; gap:1rem; flex-wrap:wrap; justify-content:space-between;">
+            <div style="flex:1; min-width:250px;">
+                <strong style="color:#ffffff;"><i class="bi bi-shield-lock me-2"></i>Cookies &amp; Confidentialité</strong>
+                <p style="margin:0.35rem 0 0; font-size:0.95rem; line-height:1.45; color:#ffffff; opacity:1;">
+                    Ce site utilise des cookies essentiels à son fonctionnement (session, sécurité CSRF).
+                    En continuant, vous acceptez leur utilisation conformément à notre politique de confidentialité.
+                </p>
+            </div>
+            <div style="display:flex; gap:0.75rem; flex-shrink:0;">
+                <button onclick="setCookieConsent('refused')"
+                        style="background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.65); color:#fff;
+                               padding:0.5rem 1rem; border-radius:6px; cursor:pointer; font-size:0.875rem;">
+                    Refuser
+                </button>
+                <button onclick="setCookieConsent('accepted')"
+                        style="background:#0A36FF; border:none; color:#fff;
+                               padding:0.5rem 1.25rem; border-radius:6px; cursor:pointer;
+                               font-size:0.875rem; font-weight:600;">
+                    Tout accepter
+                </button>
+            </div>
+        </div>
+    </div>
+    <script>
+    (function() {
+        var consent = localStorage.getItem('eebc_cookie_consent');
+        if (!consent) {
+            document.getElementById('cookie-banner').style.display = 'block';
+        }
+    })();
+    function setCookieConsent(value) {
+        localStorage.setItem('eebc_cookie_consent', value);
+        document.getElementById('cookie-banner').style.display = 'none';
+    }
+    </script>
+
+    <!-- Bouton retour en haut -->
+    <button id="scrollTopBtn" onclick="window.scrollTo({top:0,behavior:'smooth'})" aria-label="Retour en haut"
+        style="display:none;position:fixed;bottom:80px;right:24px;z-index:9998;
+               width:48px;height:48px;border-radius:50%;border:none;
+               background:linear-gradient(135deg,#0A36FF,#3b82f6);color:#fff;
+               font-size:1.3rem;cursor:pointer;box-shadow:0 4px 15px rgba(10,54,255,0.4);
+               transition:all 0.3s ease;opacity:0;transform:translateY(20px);">
+        <i class="bi bi-chevron-up"></i>
+    </button>
+    <script>
+    (function(){
+        var btn=document.getElementById('scrollTopBtn');
+        window.addEventListener('scroll',function(){
+            if(window.scrollY>400){
+                btn.style.display='flex';
+                btn.style.alignItems='center';
+                btn.style.justifyContent='center';
+                setTimeout(function(){btn.style.opacity='1';btn.style.transform='translateY(0)';},10);
+            }else{
+                btn.style.opacity='0';
+                btn.style.transform='translateY(20px)';
+                setTimeout(function(){if(window.scrollY<=400)btn.style.display='none';},300);
+            }
+        });
+    })();
+    </script>
 </body>
 </html>

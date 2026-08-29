@@ -28,11 +28,11 @@ class CampaignForm(forms.ModelForm):
                 'min': '0',
                 'placeholder': '0.00'
             }),
-            'start_date': forms.DateInput(attrs={
+            'start_date': forms.DateInput(format='%Y-%m-%d', attrs={
                 'class': 'form-control',
                 'type': 'date'
             }),
-            'end_date': forms.DateInput(attrs={
+            'end_date': forms.DateInput(format='%Y-%m-%d', attrs={
                 'class': 'form-control',
                 'type': 'date'
             }),

@@ -1,0 +1,132 @@
+{% extends 'base.html' %}
+
+{% block title %}Supprimer {{ driver.user.get_full_name }} - Transport{% endblock %}
+{% block page_title %}Supprimer le chauffeur{% endblock %}
+{% block page_subtitle %}{{ driver.user.get_full_name }}{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="card border-danger">
+            <div class="card-header bg-danger text-white">
+                <h5 class="mb-0">
+                    <i class="bi bi-exclamation-triangle me-2"></i>
+                    Confirmation de suppression
+                </h5>
+            </div>
+            <div class="card-body">
+                <p>Êtes-vous sûr de vouloir supprimer le profil chauffeur de <strong>{{ driver.user.get_full_name }}</strong> ?</p>
+                
+                <div class="alert alert-info mb-3">
+                    <strong>Informations du chauffeur :</strong><br>
+                    <i class="bi bi-car-front me-2"></i>{{ driver.vehicle_type }}
+                    {% if driver.vehicle_model %} - {{ driver.vehicle_model }}{% endif %}<br>
+                    <i class="bi bi-people me-2"></i>Capacité : {{ driver.capacity }} passagers<br>
+                    {% if driver.zone %}<i class="bi bi-geo-alt me-2"></i>Zone : {{ driver.zone }}<br>{% endif %}
+                </div>
+                
+                {% if active_requests_count > 0 %}
+                <div class="alert alert-warning">
+                    <i class="bi bi-exclamation-triangle me-2"></i>
+                    Ce chauffeur a <strong>{{ active_requests_count }} demande(s) de transport active(s)</strong> (confirmées ou en attente).
+                </div>
+                
+                <div class="mb-3">
+                    <h6>Que faire avec les demandes actives ?</h6>
+                    
+                    <div class="form-check mb-2">
+                        <input class="form-check-input" type="radio" name="action" id="action_reassign" value="reassign">
+                        <label class="form-check-label" for="action_reassign">
+                            Réassigner à un autre chauffeur
+                        </label>
+                    </div>
+                    
+                    {% if other_drivers %}
+                    <div class="ms-4 mb-3" id="reassign_options" style="display: none;">
+                        <select class="form-select" id="new_driver" name="new_driver">
+                            <option value="">Sélectionner un chauffeur</option>
+                            {% for other_driver in other_drivers %}
+                            <option value="{{ other_driver.pk }}">
+                                {{ other_driver.user.get_full_name }} - {{ other_driver.vehicle_type }} ({{ other_driver.capacity }} places)
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    {% endif %}
+                    
+                    <div class="form-check">
+                        <input class="form-check-input" type="radio" name="action" id="action_unassign" value="unassign">
+                        <label class="form-check-label" for="action_unassign">
+                            Remettre les demandes en attente d'assignation
+                        </label>
+                    </div>
+                </div>
+                {% endif %}
+                
+                <div class="alert alert-danger">
+                    <i class="bi bi-exclamation-triangle me-2"></i>
+                    Cette action est irréversible. Le profil chauffeur sera définitivement supprimé.
+                </div>
+                
+                <form method="post" class="d-inline" id="deleteForm">
+                    {% csrf_token %}
+                    <input type="hidden" name="action" id="hidden_action">
+                    <input type="hidden" name="new_driver" id="hidden_new_driver">
+                    
+                    <button type="submit" class="btn btn-danger me-2" id="confirmBtn">
+                        <i class="bi bi-trash me-2"></i>Confirmer la suppression
+                    </button>
+                    <a href="{% url 'transport:driver_detail' driver.pk %}" class="btn btn-secondary">
+                        Annuler
+                    </a>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const form = document.getElementById('deleteForm');
+    const actionRadios = document.querySelectorAll('input[name="action"]');
+    const reassignOptions = document.getElementById('reassign_options');
+    const newDriverSelect = document.getElementById('new_driver');
+    const hiddenAction = document.getElementById('hidden_action');
+    const hiddenNewDriver = document.getElementById('hidden_new_driver');
+    
+    // Gérer l'affichage des options de réassignation
+    actionRadios.forEach(radio => {
+        radio.addEventListener('change', function() {
+            if (this.value === 'reassign') {
+                reassignOptions.style.display = 'block';
+            } else {
+                reassignOptions.style.display = 'none';
+                newDriverSelect.value = '';
+            }
+        });
+    });
+    
+    // Gérer la soumission du formulaire
+    form.addEventListener('submit', function(e) {
+        const selectedAction = document.querySelector('input[name="action"]:checked');
+        
+        {% if active_requests_count > 0 %}
+        if (!selectedAction) {
+            e.preventDefault();
+            alert('Veuillez choisir une action pour les demandes de transport actives.');
+            return;
+        }
+        
+        if (selectedAction.value === 'reassign' && !newDriverSelect.value) {
+            e.preventDefault();
+            alert('Veuillez sélectionner un chauffeur pour la réassignation.');
+            return;
+        }
+        
+        hiddenAction.value = selectedAction.value;
+        hiddenNewDriver.value = newDriverSelect.value;
+        {% endif %}
+    });
+});
+</script>
+{% endblock %}

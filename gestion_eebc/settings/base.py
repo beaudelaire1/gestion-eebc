@@ -19,14 +19,30 @@ SECRET_KEY = os.environ.get('SECRET_KEY', secrets.token_urlsafe(50))
 # Allowed Hosts
 ALLOWED_HOSTS = os.environ.get('ALLOWED_HOSTS', 'localhost,127.0.0.1').split(',')
 
+# =============================================================================
+# CAPTCHA CONFIGURATION - Transition reCAPTCHA → CloudFlare Turnstile
+# =============================================================================
+# CloudFlare Turnstile (recommandé : gratuit illimité, meilleur UX)
+TURNSTILE_SITE_KEY = os.environ.get('TURNSTILE_SITE_KEY', '')
+TURNSTILE_SECRET_KEY = os.environ.get('TURNSTILE_SECRET_KEY', '')
+
+# Google reCAPTCHA v3 (legacy, désactiver après migration)
+RECAPTCHA_PUBLIC_KEY = os.environ.get('RECAPTCHA_PUBLIC_KEY', '')
+RECAPTCHA_PRIVATE_KEY = os.environ.get('RECAPTCHA_PRIVATE_KEY', '')
+
+# =============================================================================
+# DEBUG (défaut False, overrideé par dev.py/prod.py)
+# =============================================================================
+DEBUG = False
 
 # =============================================================================
 # APPLICATIONS
 # =============================================================================
 INSTALLED_APPS = [
-    # Jazzmin - doit être AVANT django.contrib.admin
+    # Thème admin Django (doit être avant django.contrib.admin)
     'jazzmin',
-    
+
+    # Interface d'administration Django standard
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -34,6 +50,7 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'django.contrib.humanize',
+    'django.contrib.sitemaps',
     
     # Third party apps
     'django_htmx',
@@ -41,9 +58,13 @@ INSTALLED_APPS = [
     'crispy_bootstrap5',
     'django_filters',
     'corsheaders',
+    'rest_framework',
+    'rest_framework_simplejwt',
+    'rest_framework_simplejwt.token_blacklist',
     
     # Local apps
     'apps.core',
+    'apps.public',
     'apps.accounts',
     'apps.members',
     'apps.departments',
@@ -58,6 +79,9 @@ INSTALLED_APPS = [
     'apps.finance',
     'apps.worship',
     'apps.imports',  # Import Excel pour membres et enfants
+    'apps.api',  # API REST pour application mobile
+    'apps.young',  # Module Jeunesse
+    'apps.documents',  # Documents & Médias
 ]
 
 
@@ -77,6 +101,7 @@ MIDDLEWARE = [
     'apps.core.middleware.RateLimitMiddleware',  # Rate limiting middleware
     'apps.core.signals.AuditMiddleware',  # Audit logging middleware
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'csp.middleware.CSPMiddleware',  # Content Security Policy
     'django_htmx.middleware.HtmxMiddleware',
 ]
 
@@ -103,7 +128,20 @@ SESSION_TIMEOUT_EXCLUDED_PATHS = [
 CORS_ALLOWED_ORIGINS = [
     "https://eebc.org",
     "https://www.eebc.org",
+    "https://eglise-ebc.org",
+    "https://www.eglise-ebc.org",
 ]
+
+# Dev-only origins (localhost, Expo, Metro)
+if DEBUG:
+    CORS_ORIGIN_ALLOW_ALL = True
+    CORS_ALLOWED_ORIGINS += [
+        "http://localhost:3000",
+        "http://localhost:8000",
+        "http://127.0.0.1:8000",
+    ]
+else:
+    CORS_ORIGIN_ALLOW_ALL = False
 
 CORS_ALLOW_CREDENTIALS = True
 
@@ -129,6 +167,7 @@ CSP_SCRIPT_SRC = [
     "'unsafe-inline'",  # Nécessaire pour HTMX et Bootstrap
     "https://cdn.jsdelivr.net",
     "https://unpkg.com",
+    "https://challenges.cloudflare.com",
 ]
 CSP_STYLE_SRC = [
     "'self'",
@@ -142,7 +181,8 @@ CSP_FONT_SRC = [
     "https://cdn.jsdelivr.net",
 ]
 CSP_IMG_SRC = ["'self'", "data:", "https:"]
-CSP_CONNECT_SRC = ["'self'"]
+CSP_CONNECT_SRC = ["'self'", "https://challenges.cloudflare.com"]
+CSP_FRAME_SRC = ["'self'", "https://challenges.cloudflare.com", "https://js.stripe.com"]
 
 # Security Headers
 SECURE_REFERRER_POLICY = 'strict-origin-when-cross-origin'
@@ -155,6 +195,17 @@ PERMISSIONS_POLICY = {
     "microphone": [],
     "camera": [],
 }
+
+# =============================================================================
+# SESSION & CSRF SECURITY
+# =============================================================================
+SESSION_COOKIE_HTTPONLY = True  # S2: Prevent JavaScript access to session cookie
+SESSION_COOKIE_SAMESITE = 'Strict'  # S2: CSRF protection
+SESSION_COOKIE_SECURE = False  # Overridden to True in prod.py
+CSRF_COOKIE_HTTPONLY = True  # S2: Secure CSRF token
+CSRF_COOKIE_SAMESITE = 'Strict'  # S2: CSRF protection
+CSRF_COOKIE_SECURE = False  # Overridden to True in prod.py
+X_FRAME_OPTIONS = 'DENY'  # S3: Prevent clickjacking - deny all iframe embedding
 
 
 # =============================================================================
@@ -257,11 +308,18 @@ USE_TZ = True
 # STATIC & MEDIA FILES
 # =============================================================================
 STATIC_URL = 'static/'
-STATICFILES_DIRS = [BASE_DIR / 'static']
+STATICFILES_DIRS = [
+    BASE_DIR / 'static',
+    BASE_DIR / 'images',
+]
 STATIC_ROOT = BASE_DIR / 'staticfiles'
 
 MEDIA_URL = 'media/'
 MEDIA_ROOT = BASE_DIR / 'media'
+
+# Upload : taille max pour fichiers audio/vidéo (500 Mo)
+FILE_UPLOAD_MAX_MEMORY_SIZE = 500 * 1024 * 1024
+DATA_UPLOAD_MAX_MEMORY_SIZE = 500 * 1024 * 1024
 
 
 # =============================================================================
@@ -325,56 +383,12 @@ HOSTINGER_API_BASE_URL = os.environ.get('HOSTINGER_API_BASE_URL', 'https://devel
 
 
 # =============================================================================
-# JAZZMIN CONFIGURATION
+# ADMIN CONFIGURATION
 # =============================================================================
-JAZZMIN_SETTINGS = {
-    "site_title": "EEBC",
-    "site_header": "EEBC",
-    "site_brand": "Gestion EEBC",
-    "welcome_sign": "Bienvenue sur Gestion EEBC",
-    "copyright": "EEBC - Église Évangélique Baptiste de Cabassou",
-    "search_model": ["accounts.User", "members.Member", "bibleclub.Child"],
-    "topmenu_links": [
-        {"name": "Accueil", "url": "admin:index", "permissions": ["auth.view_user"]},
-        {"name": "Site", "url": "/", "new_window": False},
-    ],
-    "show_sidebar": True,
-    "navigation_expanded": True,
-    "order_with_respect_to": [
-        "accounts", "core", "bibleclub", "members", "events", "worship",
-        "groups", "campaigns", "finance", "departments", "transport",
-        "inventory", "communication",
-    ],
-    "icons": {
-        "auth": "fas fa-users-cog",
-        "accounts.User": "fas fa-user-circle",
-        "core.Site": "fas fa-church",
-        "bibleclub.Child": "fas fa-child",
-        "members.Member": "fas fa-user-friends",
-        "events.Event": "fas fa-calendar-day",
-        "finance.FinancialTransaction": "fas fa-exchange-alt",
-        "groups.Group": "fas fa-users",
-        "departments.Department": "fas fa-sitemap",
-        "transport.DriverProfile": "fas fa-id-card",
-        "inventory.Equipment": "fas fa-tools",
-    },
-    "related_modal_active": True,
-    "custom_css": "css/admin_custom.css",
-    "changeform_format": "horizontal_tabs",
-}
-
-JAZZMIN_UI_TWEAKS = {
-    "navbar_small_text": False,
-    "brand_colour": "navbar-primary",
-    "accent": "accent-primary",
-    "navbar": "navbar-primary navbar-dark",
-    "navbar_fixed": True,
-    "sidebar_fixed": True,
-    "sidebar": "sidebar-dark-primary",
-    "theme": "default",
-    "actions_sticky_top": True,
-}
-
+# Admin Django standard - simple et robuste
+ADMIN_SITE_HEADER = "EEBC - Gestion"
+ADMIN_SITE_TITLE = "EEBC Admin"
+ADMIN_INDEX_TITLE = "Tableau de bord"
 
 # =============================================================================
 # LOGGING CONFIGURATION
@@ -484,3 +498,155 @@ LOGGING = {
 # Créer le répertoire logs s'il n'existe pas
 import os
 os.makedirs(BASE_DIR / 'logs', exist_ok=True)
+
+
+# =============================================================================
+# DJANGO REST FRAMEWORK CONFIGURATION
+# =============================================================================
+REST_FRAMEWORK = {
+    'DEFAULT_AUTHENTICATION_CLASSES': [
+        'rest_framework_simplejwt.authentication.JWTAuthentication',
+        'rest_framework.authentication.SessionAuthentication',
+    ],
+    'DEFAULT_PERMISSION_CLASSES': [
+        'rest_framework.permissions.IsAuthenticated',
+    ],
+    'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
+    'PAGE_SIZE': DEFAULT_PAGE_SIZE,
+    'DEFAULT_FILTER_BACKENDS': [
+        'django_filters.rest_framework.DjangoFilterBackend',
+        'rest_framework.filters.SearchFilter',
+        'rest_framework.filters.OrderingFilter',
+    ],
+    'DEFAULT_THROTTLE_CLASSES': [
+        'rest_framework.throttling.AnonRateThrottle',
+        'rest_framework.throttling.UserRateThrottle',
+    ],
+    'DEFAULT_THROTTLE_RATES': {
+        'anon': '100/hour',
+        'user': '1000/hour',
+    },
+    'EXCEPTION_HANDLER': 'apps.api.exceptions.custom_exception_handler',
+}
+
+
+# =============================================================================
+# SIMPLE JWT CONFIGURATION
+# =============================================================================
+from datetime import timedelta
+
+SIMPLE_JWT = {
+    'ACCESS_TOKEN_LIFETIME': timedelta(minutes=30),
+    'REFRESH_TOKEN_LIFETIME': timedelta(days=7),
+    'ROTATE_REFRESH_TOKENS': True,
+    'BLACKLIST_AFTER_ROTATION': True,
+    'UPDATE_LAST_LOGIN': True,
+    
+    'ALGORITHM': 'HS256',
+    'SIGNING_KEY': SECRET_KEY,
+    
+    'AUTH_HEADER_TYPES': ('Bearer',),
+    'AUTH_HEADER_NAME': 'HTTP_AUTHORIZATION',
+    'USER_ID_FIELD': 'id',
+    'USER_ID_CLAIM': 'user_id',
+    
+    'AUTH_TOKEN_CLASSES': ('rest_framework_simplejwt.tokens.AccessToken',),
+    'TOKEN_TYPE_CLAIM': 'token_type',
+    
+    'JTI_CLAIM': 'jti',
+    
+    'TOKEN_OBTAIN_SERIALIZER': 'apps.api.serializers.CustomTokenObtainPairSerializer',
+}
+
+
+# =============================================================================
+# MOBILE API CONFIGURATION
+# =============================================================================
+# Maximum failed login attempts before lockout
+API_MAX_LOGIN_ATTEMPTS = int(os.environ.get('API_MAX_LOGIN_ATTEMPTS', 5))
+
+# Lockout duration in minutes
+API_LOCKOUT_DURATION_MINUTES = int(os.environ.get('API_LOCKOUT_DURATION_MINUTES', 15))
+
+# CORS settings for mobile app (dev only)
+if DEBUG:
+    CORS_ALLOWED_ORIGINS += [
+        "http://localhost:19006",  # Expo development
+        "http://localhost:8081",   # Metro bundler
+    ]
+# =============================================================================
+# JAZZMIN ADMIN CONFIGURATION
+# =============================================================================
+# Jazzmin theme and UI customization
+JAZZMIN_SETTINGS = {
+    "site_title": "EEBC Admin",
+    "site_header": "Gestion Église Baptiste de Cayenne",
+    "site_brand": "EEBC",
+    
+    # Navigation customization
+    "navigation_expanded": False,
+    "show_sidebar": True,
+    "navigation_depth": 2,
+    
+    # UI customizations
+    "show_ui_builder": False,
+    "default_icon_parents": "fas fa-chevron-right",
+    "default_icon_children": "fas fa-arrow-right",
+    
+    # Search
+    "search_model": ["auth.User"],
+    
+    # Icons configuration
+    "icons": {
+        "auth": "fas fa-users",
+        "auth.user": "fas fa-user",
+        "auth.Group": "fas fa-users",
+        "accounts.User": "fas fa-user-circle",
+        "members.Member": "fas fa-id-card",
+        "members.LifeEvent": "fas fa-birthday-cake",
+        "members.VisitationLog": "fas fa-clipboard",
+        "departments.Department": "fas fa-sitemap",
+        "transport.Vehicle": "fas fa-car",
+        "transport.TransportRequest": "fas fa-route",
+        "inventory.Category": "fas fa-tags",
+        "inventory.Equipment": "fas fa-tools",
+        "campaigns.Campaign": "fas fa-dollar-sign",
+        "campaigns.Donation": "fas fa-donate",
+        "communication.Message": "fas fa-envelope",
+        "communication.Newsletter": "fas fa-newspaper",
+        "events.Event": "fas fa-calendar",
+        "events.EventCategory": "fas fa-list",
+        "finance.Budget": "fas fa-chart-pie",
+        "finance.BudgetLine": "fas fa-chart-bar",
+        "finance.FinancialTransaction": "fas fa-exchange-alt",
+        "worship.WorshipService": "fas fa-church",
+        "worship.ServiceRole": "fas fa-user-tie",
+        "groups.Group": "fas fa-users-circle",
+        "groups.GroupMeeting": "fas fa-video",
+        "bibleclub.BibleStudy": "fas fa-book",
+        "dashboard.Dashboard": "fas fa-chart-line",
+    },
+    
+    # Related modal widget customization
+    "related_modal_active": True,
+    "show_form_bottom_submit_button": True,
+    "show_administration_panel": True,
+    "enable_nav_sidebar": True,
+    
+    # Custom theme colors
+    "changeform_format": "collapsible",
+    "changeform_format_overrides": {
+        "auth.user": "collapsible",
+        "auth.group": "collapsible",
+    },
+}
+
+# =============================================================================
+# JAZZMIN UI TWEAKS
+# =============================================================================
+# Fix for inline display issues in Jazzmin
+TEMPLATES[0]['OPTIONS']['context_processors'] = TEMPLATES[0]['OPTIONS'].get('context_processors', [])
+if 'django.template.context_processors.request' not in TEMPLATES[0]['OPTIONS']['context_processors']:
+    TEMPLATES[0]['OPTIONS']['context_processors'].append('django.template.context_processors.request')
+if 'django.contrib.auth.context_processors.auth' not in TEMPLATES[0]['OPTIONS']['context_processors']:
+    TEMPLATES[0]['OPTIONS']['context_processors'].append('django.contrib.auth.context_processors.auth')

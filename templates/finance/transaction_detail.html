@@ -4,6 +4,14 @@
 {% block page_title %}Transaction {{ transaction.reference }}{% endblock %}
 
 {% block page_actions %}
+<a href="{% url 'finance:transaction_list' %}{% if transaction.transaction_type %}?type={{ transaction.transaction_type }}{% endif %}" class="btn btn-outline-secondary btn-sm">
+    <i class="bi bi-arrow-left me-1"></i>Retour
+</a>
+{% if transaction.transaction_type == 'don' or transaction.transaction_type == 'dime' or transaction.transaction_type == 'offrande' %}
+<a href="{% url 'finance:transaction_receipt_pdf' transaction.pk %}" class="btn btn-outline-primary" target="_blank">
+    <i class="bi bi-file-earmark-pdf me-1"></i> Reçu PDF
+</a>
+{% endif %}
 {% if transaction.status == 'en_attente' and perms.finance.change_financialtransaction %}
 <a href="{% url 'finance:transaction_validate' transaction.pk %}" class="btn btn-success">
     <i class="bi bi-check-lg me-1"></i> Valider
@@ -157,7 +165,7 @@
             <div class="card-body">
                 <div class="mb-2">
                     <small class="text-muted">Enregistré par</small>
-                    <div>{{ transaction.recorded_by.get_full_name|default:transaction.recorded_by.username|default:"-" }}</div>
+                    <div>{% if transaction.recorded_by %}{{ transaction.recorded_by.get_full_name|default:transaction.recorded_by.username }}{% else %}-{% endif %}</div>
                 </div>
                 <div class="mb-2">
                     <small class="text-muted">Créé le</small>

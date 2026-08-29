@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <title>Document partagé — EEBC</title>
+</head>
+<body style="margin: 0; padding: 0; font-family: 'Segoe UI', Arial, sans-serif; background: #f5f6fa;">
+    <table width="100%" cellpadding="0" cellspacing="0" style="max-width: 600px; margin: 40px auto; background: #ffffff; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 15px rgba(0,0,0,0.08);">
+        <!-- Header -->
+        <tr>
+            <td style="background: linear-gradient(135deg, #0A36FF, #0828b3); padding: 30px; text-align: center;">
+                <h1 style="color: white; margin: 0; font-size: 20px;">EEBC — Document partagé</h1>
+            </td>
+        </tr>
+        <!-- Body -->
+        <tr>
+            <td style="padding: 30px;">
+                <p style="font-size: 15px; color: #374151; margin-bottom: 20px;">
+                    Bonjour{% if recipient_name %} {{ recipient_name }}{% endif %},
+                </p>
+                <p style="font-size: 15px; color: #374151; margin-bottom: 20px;">
+                    <strong>{{ shared_by }}</strong> vous a partagé un document :
+                </p>
+
+                <!-- Document card -->
+                <table width="100%" cellpadding="0" cellspacing="0" style="background: #f9fafb; border-radius: 8px; margin-bottom: 20px;">
+                    <tr>
+                        <td style="padding: 20px;">
+                            <p style="font-size: 16px; font-weight: 700; color: #111827; margin: 0 0 8px 0;">
+                                {{ document_title }}
+                            </p>
+                            <p style="font-size: 13px; color: #6b7280; margin: 0;">
+                                {{ file_size }} &middot; {{ media_type }}
+                            </p>
+                        </td>
+                    </tr>
+                </table>
+
+                {% if message %}
+                <table width="100%" cellpadding="0" cellspacing="0" style="background: #eef2ff; border-left: 3px solid #0A36FF; border-radius: 0 8px 8px 0; margin-bottom: 20px;">
+                    <tr>
+                        <td style="padding: 15px;">
+                            <p style="font-size: 13px; color: #6b7280; margin: 0 0 4px 0;">Message :</p>
+                            <p style="font-size: 14px; color: #374151; margin: 0;">{{ message }}</p>
+                        </td>
+                    </tr>
+                </table>
+                {% endif %}
+
+                <!-- CTA Button -->
+                <table width="100%" cellpadding="0" cellspacing="0">
+                    <tr>
+                        <td align="center" style="padding: 10px 0 20px;">
+                            <a href="{{ share_url }}" style="display: inline-block; background: #0A36FF; color: white; text-decoration: none; padding: 14px 32px; border-radius: 8px; font-weight: 700; font-size: 15px;">
+                                Accéder au document
+                            </a>
+                        </td>
+                    </tr>
+                </table>
+
+                <p style="font-size: 13px; color: #9ca3af; text-align: center;">
+                    Ce lien expire le {{ expires_at|date:"d/m/Y à H:i" }}.
+                </p>
+            </td>
+        </tr>
+        <!-- Footer -->
+        <tr>
+            <td style="background: #f9fafb; padding: 20px; text-align: center; border-top: 1px solid #e5e7eb;">
+                <p style="font-size: 12px; color: #9ca3af; margin: 0;">
+                    EEBC — Église Évangélique Baptiste de la Communauté<br>
+                    Cet email a été envoyé automatiquement, merci de ne pas y répondre.
+                </p>
+            </td>
+        </tr>
+    </table>
+</body>
+</html>

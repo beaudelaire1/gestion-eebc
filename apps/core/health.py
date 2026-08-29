@@ -40,6 +40,10 @@ def health_check(request):
         twilio_status = check_twilio()
         checks['checks']['twilio'] = twilio_status
     
+    # Vérifier l'email
+    email_status = check_email()
+    checks['checks']['email'] = email_status
+    
     # Vérifier l'espace disque
     disk_status = check_disk_space()
     checks['checks']['disk'] = disk_status
@@ -294,3 +298,27 @@ def liveness_check(request):
         'status': 'alive',
         'message': 'Application is running'
     })
+
+
+def check_email():
+    """Vérifie que le backend email est configuré et fonctionnel."""
+    try:
+        from django.core.mail import get_connection
+        start_time = time.time()
+        conn = get_connection(fail_silently=False)
+        conn.open()
+        conn.close()
+        response_time = (time.time() - start_time) * 1000
+        return {
+            'status': 'healthy',
+            'response_time_ms': round(response_time, 2),
+            'backend': settings.EMAIL_BACKEND.split('.')[-1],
+            'message': 'Email backend connected'
+        }
+    except Exception as e:
+        logger.error(f"Email health check failed: {e}")
+        return {
+            'status': 'unhealthy',
+            'error': str(e),
+            'message': 'Email backend connection failed'
+        }

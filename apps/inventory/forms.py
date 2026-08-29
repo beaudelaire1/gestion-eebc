@@ -25,7 +25,7 @@ class EquipmentForm(EnhancedModelForm):
             'location': forms.TextInput(attrs={
                 'placeholder': 'Emplacement de l\'équipement'
             }),
-            'purchase_date': forms.DateInput(attrs={'type': 'date'}),
+            'purchase_date': forms.DateInput(format='%Y-%m-%d', attrs={'type': 'date'}),
             'purchase_price': forms.NumberInput(attrs={
                 'step': '0.01',
                 'min': '0',

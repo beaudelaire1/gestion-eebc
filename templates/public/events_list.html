@@ -1,6 +1,8 @@
 {% extends 'public/base.html' %}
 
 {% block title %}Événements - {{ settings.site_name|default:'EEBC' }}{% endblock %}
+{% block meta_description %}Consultez tous les événements à venir de {{ settings.site_name|default:'EEBC' }}. Services religieux, réunions, formations.{% endblock %}
+{% block og_title %}Événements - {{ settings.site_name|default:'EEBC' }}{% endblock %}
 
 {% block content %}
 <section class="hero-section py-5">
@@ -17,7 +19,7 @@
             <div class="col-md-6 col-lg-4 mb-4">
                 <div class="card h-100">
                     {% if event.image %}
-                    <img src="{{ event.image.url }}" class="card-img-top image-card--sm" alt="{{ event.title }}">
+                    <img src="{{ event.image.url }}" class="card-img-top image-card--sm" alt="{{ event.title }}" loading="lazy">
                     {% else %}
                     <div class="card-img-top image-placeholder image-placeholder--primary image-card--sm">
                         <i class="bi bi-calendar-event text-white image-placeholder__icon"></i>

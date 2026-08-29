@@ -2,36 +2,84 @@
 
 {% block title %}Don annulé - EEBC{% endblock %}
 
+{% block extra_css %}
+<style>
+.cancel-hero {
+    background: linear-gradient(135deg, #0A36FF 0%, #1e3a5f 100%);
+    padding: 60px 0 80px;
+}
+.cancel-card {
+    border: none;
+    border-radius: 16px;
+    box-shadow: 0 8px 40px rgba(0,0,0,0.1);
+    overflow: hidden;
+    margin-top: -50px;
+    position: relative;
+    z-index: 2;
+}
+.cancel-circle {
+    width: 90px;
+    height: 90px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 20px;
+    box-shadow: 0 8px 25px rgba(245,158,11,0.3);
+}
+.cancel-circle i {
+    font-size: 2.5rem;
+    color: #fff;
+}
+</style>
+{% endblock %}
+
 {% block content %}
-<section class="py-5">
+<section class="cancel-hero text-white text-center">
+    <div class="container">
+        <h1 class="display-6 fw-bold">Paiement non effectué</h1>
+    </div>
+</section>
+
+<section class="pb-5">
     <div class="container">
         <div class="row justify-content-center">
-            <div class="col-lg-6 text-center">
-                
-                <div class="mb-4">
-                    <i class="bi bi-x-circle text-warning" style="font-size: 5rem;"></i>
+            <div class="col-lg-6">
+                <div class="cancel-card bg-white">
+                    <div style="height:4px;background:linear-gradient(90deg,#f59e0b,#d97706,#f59e0b);"></div>
+                    <div class="p-5 text-center">
+
+                        <div class="cancel-circle">
+                            <i class="bi bi-x-lg"></i>
+                        </div>
+
+                        <h2 class="fw-bold mb-2" style="color:#d97706;">Don annulé</h2>
+                        <p class="text-muted mb-4">
+                            Votre don n'a pas été effectué. Aucun montant n'a été débité.
+                        </p>
+
+                        <p class="text-muted mb-4" style="font-size:0.9rem;">
+                            Si vous avez rencontré un problème technique, n'hésitez pas à nous contacter
+                            ou à réessayer.
+                        </p>
+
+                        <div class="d-flex justify-content-center gap-3">
+                            <a href="{% url 'public:donation' %}" class="btn btn-primary" style="border-radius:10px;">
+                                <i class="bi bi-arrow-repeat me-2"></i>Réessayer
+                            </a>
+                            <a href="{% url 'public:contact' %}" class="btn btn-outline-secondary" style="border-radius:10px;">
+                                <i class="bi bi-envelope me-2"></i>Nous contacter
+                            </a>
+                        </div>
+                    </div>
+
+                    <div style="background:#f8f9fc;padding:16px 30px;text-align:center;">
+                        <p class="mb-0 text-muted" style="font-size:0.8rem;">
+                            Église Évangélique Baptiste de Cabassou — contact@eglise-ebc.org
+                        </p>
+                    </div>
                 </div>
-                
-                <h1 class="display-5 fw-bold mb-3">Don annulé</h1>
-                
-                <p class="lead mb-4">
-                    Votre don n'a pas été effectué.
-                </p>
-                
-                <p class="text-muted mb-4">
-                    Si vous avez rencontré un problème, n'hésitez pas à nous contacter 
-                    ou à réessayer.
-                </p>
-                
-                <div class="d-flex justify-content-center gap-3">
-                    <a href="{% url 'public:donation' %}" class="btn btn-primary">
-                        <i class="bi bi-arrow-repeat me-2"></i>Réessayer
-                    </a>
-                    <a href="{% url 'public:home' %}" class="btn btn-outline-secondary">
-                        <i class="bi bi-house me-2"></i>Accueil
-                    </a>
-                </div>
-                
             </div>
         </div>
     </div>

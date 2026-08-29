@@ -1,0 +1,434 @@
+{% extends 'base.html' %}
+
+{% block title %}Gestion des Logs Emails{% endblock %}
+{% block page_title %}Logs Emails{% endblock %}
+{% block page_subtitle %}Suppresssion des emails avec sélection{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    
+    <!-- Statistiques -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card bg-light">
+                <div class="card-body text-center">
+                    <h6 class="text-muted">Total</h6>
+                    <h3 class="mb-0">{{ stats.total }}</h3>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-success bg-opacity-10">
+                <div class="card-body text-center">
+                    <h6 class="text-muted">Envoyés</h6>
+                    <h3 class="mb-0 text-success">{{ stats.sent }}</h3>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-danger bg-opacity-10">
+                <div class="card-body text-center">
+                    <h6 class="text-muted">Échoués</h6>
+                    <h3 class="mb-0 text-danger">{{ stats.failed }}</h3>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card bg-warning bg-opacity-10">
+                <div class="card-body text-center">
+                    <h6 class="text-muted">En attente</h6>
+                    <h3 class="mb-0 text-warning">{{ stats.pending }}</h3>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Formulaire de filtrage et suppression -->
+    <div class="card mb-4">
+        <div class="card-header">
+            <div class="row align-items-center">
+                <div class="col">
+                    <h5 class="card-title mb-0">
+                        <i class="bi bi-funnel me-2"></i>Filtres et Actions
+                    </h5>
+                </div>
+            </div>
+        </div>
+        <div class="card-body">
+            <form method="get" id="filter-form" class="row g-3 mb-3">
+                <div class="col-md-6">
+                    <label for="search" class="form-label">Recherche</label>
+                    <input 
+                        type="text" 
+                        class="form-control" 
+                        id="search" 
+                        name="search" 
+                        placeholder="Email, sujet, nom..."
+                        value="{{ search }}"
+                    >
+                </div>
+                <div class="col-md-4">
+                    <label for="status" class="form-label">Statut</label>
+                    <select class="form-select" id="status" name="status">
+                        <option value="">Tous les statuts</option>
+                        {% for value, label in statuses %}
+                        <option value="{{ value }}" {% if status_filter == value %}selected{% endif %}>
+                            {{ label }}
+                        </option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-2 d-flex align-items-end">
+                    <button type="submit" class="btn btn-primary w-100">
+                        <i class="bi bi-search me-1"></i>Filtrer
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Tableau avec checkboxes -->
+    <form method="post" id="delete-form">
+        {% csrf_token %}
+        
+        <div class="card">
+            <div class="card-header bg-light d-flex justify-content-between align-items-center">
+                <h5 class="card-title mb-0">
+                    <i class="bi bi-envelope me-2"></i>Logs Emails
+                    <small class="text-muted">({{ page_obj.paginator.count }} total)</small>
+                </h5>
+                
+                <!-- Couper en deux: Select All et bouton Supprimer -->
+                <div class="d-flex gap-2 align-items-center">
+                    <!-- Select all checkbox -->
+                    <div class="form-check">
+                        <input 
+                            class="form-check-input" 
+                            type="checkbox" 
+                            id="select-all" 
+                            title="Sélectionner tous les logs de cette page"
+                        >
+                        <label class="form-check-label" for="select-all">
+                            Sélectionner tout
+                        </label>
+                    </div>
+                    
+                    <!-- Bouton Supprimer -->
+                    <button 
+                        type="submit" 
+                        class="btn btn-danger btn-sm"
+                        id="delete-btn"
+                        disabled
+                    >
+                        <i class="bi bi-trash me-1"></i>Supprimer sélectionnés
+                    </button>
+                </div>
+            </div>
+
+            <div class="table-responsive">
+                <table class="table table-hover mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th style="width: 40px;">
+                                <input 
+                                    type="checkbox" 
+                                    class="form-check-input" 
+                                    id="select-all-header"
+                                    title="Sélectionner tous"
+                                >
+                            </th>
+                            <th>Email</th>
+                            <th>Sujet</th>
+                            <th>Statut</th>
+                            <th>Date</th>
+                            <th style="width: 100px;">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for log in logs %}
+                        <tr>
+                            <td>
+                                <input 
+                                    type="checkbox" 
+                                    class="form-check-input log-checkbox" 
+                                    name="selected_logs" 
+                                    value="{{ log.id }}"
+                                >
+                            </td>
+                            <td>
+                                <small class="text-muted">{{ log.recipient_email }}</small>
+                                {% if log.recipient_name %}
+                                <br>
+                                <small>{{ log.recipient_name }}</small>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <small>{{ log.subject|truncatechars:50 }}</small>
+                            </td>
+                            <td>
+                                <!-- Badge statut -->
+                                {% if log.status == 'sent' %}
+                                    <span class="badge bg-success">Envoyé</span>
+                                {% elif log.status == 'failed' %}
+                                    <span class="badge bg-danger">Échec</span>
+                                {% elif log.status == 'pending' %}
+                                    <span class="badge bg-warning">En attente</span>
+                                {% elif log.status == 'bounced' %}
+                                    <span class="badge bg-danger">Rejeté</span>
+                                {% elif log.status == 'opened' %}
+                                    <span class="badge bg-info">Ouvert</span>
+                                {% elif log.status == 'clicked' %}
+                                    <span class="badge bg-primary">Cliqué</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <small class="text-muted">{{ log.created_at|date:"d/m/Y H:i" }}</small>
+                            </td>
+                            <td>
+                                <a 
+                                    href="#" 
+                                    class="btn btn-sm btn-outline-info"
+                                    data-bs-toggle="modal"
+                                    data-bs-target="#detailModal{{ log.id }}"
+                                    title="Voir détails"
+                                >
+                                    <i class="bi bi-eye"></i>
+                                </a>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="6" class="text-center py-4">
+                                <i class="bi bi-inbox fs-1 text-muted d-block mb-2"></i>
+                                <p class="text-muted">Aucun log trouvé</p>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Pagination -->
+            {% if page_obj.has_other_pages %}
+            <nav aria-label="Pagination" class="p-3 border-top">
+                <ul class="pagination pagination-sm mb-0">
+                    {% if page_obj.has_previous %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page=1{% if search %}&search={{ search }}{% endif %}{% if status_filter %}&status={{ status_filter }}{% endif %}">
+                            Première
+                        </a>
+                    </li>
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% if search %}&search={{ search }}{% endif %}{% if status_filter %}&status={{ status_filter }}{% endif %}">
+                            Précédente
+                        </a>
+                    </li>
+                    {% endif %}
+
+                    {% for num in page_obj.paginator.page_range %}
+                        {% if page_obj.number == num %}
+                        <li class="page-item active"><span class="page-link">{{ num }}</span></li>
+                        {% else %}
+                        <li class="page-item">
+                            <a class="page-link" href="?page={{ num }}{% if search %}&search={{ search }}{% endif %}{% if status_filter %}&status={{ status_filter }}{% endif %}">
+                                {{ num }}
+                            </a>
+                        </li>
+                        {% endif %}
+                    {% endfor %}
+
+                    {% if page_obj.has_next %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ page_obj.next_page_number }}{% if search %}&search={{ search }}{% endif %}{% if status_filter %}&status={{ status_filter }}{% endif %}">
+                            Suivante
+                        </a>
+                    </li>
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ page_obj.paginator.num_pages }}{% if search %}&search={{ search }}{% endif %}{% if status_filter %}&status={{ status_filter }}{% endif %}">
+                            Dernière
+                        </a>
+                    </li>
+                    {% endif %}
+                </ul>
+            </nav>
+            {% endif %}
+        </div>
+
+        <!-- Alerte confirmation suppression -->
+        <div class="alert alert-warning mt-3 d-none" id="warning-alert" role="alert">
+            <i class="bi bi-exclamation-triangle me-2"></i>
+            <span id="selected-count">0</span> log(s) sera/seront supprimés définitivement.
+        </div>
+    </form>
+
+    <!-- Modals pour détails -->
+    {% for log in logs %}
+    <div class="modal fade" id="detailModal{{ log.id }}" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Détails du Log Email</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <dl class="row mb-0">
+                        <dt class="col-sm-3">Email:</dt>
+                        <dd class="col-sm-9">{{ log.recipient_email }}</dd>
+
+                        <dt class="col-sm-3">Nom:</dt>
+                        <dd class="col-sm-9">{{ log.recipient_name|default:"—" }}</dd>
+
+                        <dt class="col-sm-3">Sujet:</dt>
+                        <dd class="col-sm-9">{{ log.subject }}</dd>
+
+                        <dt class="col-sm-3">Statut:</dt>
+                        <dd class="col-sm-9">
+                            {% if log.status == 'sent' %}
+                                <span class="badge bg-success">Envoyé</span>
+                            {% elif log.status == 'failed' %}
+                                <span class="badge bg-danger">Échec</span>
+                            {% else %}
+                                <span class="badge bg-secondary">{{ log.get_status_display }}</span>
+                            {% endif %}
+                        </dd>
+
+                        <dt class="col-sm-3">Créé:</dt>
+                        <dd class="col-sm-9">{{ log.created_at|date:"d/m/Y H:i:s" }}</dd>
+
+                        {% if log.sent_at %}
+                        <dt class="col-sm-3">Envoyé:</dt>
+                        <dd class="col-sm-9">{{ log.sent_at|date:"d/m/Y H:i:s" }}</dd>
+                        {% endif %}
+
+                        {% if log.opened_at %}
+                        <dt class="col-sm-3">Ouvert:</dt>
+                        <dd class="col-sm-9">{{ log.opened_at|date:"d/m/Y H:i:s" }}</dd>
+                        {% endif %}
+
+                        {% if log.error_message %}
+                        <dt class="col-sm-3">Erreur:</dt>
+                        <dd class="col-sm-9">
+                            <div class="alert alert-danger mb-0">
+                                <small>{{ log.error_message }}</small>
+                            </div>
+                        </dd>
+                        {% endif %}
+
+                        <dt class="col-sm-3">Corps:</dt>
+                        <dd class="col-sm-9">
+                            <div class="card bg-light">
+                                <div class="card-body" style="max-height: 300px; overflow-y: auto;">
+                                    <small>{{ log.body|truncatechars:500 }}</small>
+                                </div>
+                            </div>
+                        </dd>
+                    </dl>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fermer</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+
+<script>
+// Gestion des checkboxes
+document.addEventListener('DOMContentLoaded', function() {
+    const selectAllCheckbox = document.getElementById('select-all-header');
+    const selectAllLabel = document.getElementById('select-all');
+    const logCheckboxes = document.querySelectorAll('.log-checkbox');
+    const deleteBtn = document.getElementById('delete-btn');
+    const warningAlert = document.getElementById('warning-alert');
+    const selectedCount = document.getElementById('selected-count');
+    const form = document.getElementById('delete-form');
+
+    // Fonction pour mettre à jour l'état du bouton supprimer
+    function updateDeleteButton() {
+        const checked = document.querySelectorAll('.log-checkbox:checked').length;
+        if (checked > 0) {
+            deleteBtn.disabled = false;
+            warningAlert.classList.remove('d-none');
+            selectedCount.textContent = checked;
+        } else {
+            deleteBtn.disabled = true;
+            warningAlert.classList.add('d-none');
+        }
+        
+        // Mettre à jour le statut des checkboxes "Sélectionner tout"
+        const allChecked = logCheckboxes.length > 0 && 
+                          Array.from(logCheckboxes).every(cb => cb.checked);
+        selectAllCheckbox.checked = allChecked;
+        selectAllLabel.checked = allChecked;
+    }
+
+    // Sélectionner tous les logs (header)
+    selectAllCheckbox.addEventListener('change', function() {
+        logCheckboxes.forEach(cb => {
+            cb.checked = this.checked;
+        });
+        updateDeleteButton();
+    });
+
+    // Sélectionner tous les logs (label)
+    selectAllLabel.addEventListener('change', function() {
+        logCheckboxes.forEach(cb => {
+            cb.checked = this.checked;
+        });
+        updateDeleteButton();
+    });
+
+    // Chaque checkbox individuelle
+    logCheckboxes.forEach(checkbox => {
+        checkbox.addEventListener('change', updateDeleteButton);
+    });
+
+    // Confirmation avant suppression
+    form.addEventListener('submit', function(e) {
+        const checked = document.querySelectorAll('.log-checkbox:checked').length;
+        if (checked === 0) {
+            e.preventDefault();
+            alert('Veuillez d\'abord sélectionner des logs à supprimer.');
+            return;
+        }
+        
+        if (!confirm(`Êtes-vous sûr de vouloir supprimer définitivement ${checked} log(s) email(s) ?`)) {
+            e.preventDefault();
+        }
+    });
+
+    // Initialisation
+    updateDeleteButton();
+});
+</script>
+
+<style>
+.table-hover tbody tr:hover {
+    background-color: rgba(0, 0, 0, 0.02);
+}
+
+.form-check-input {
+    cursor: pointer;
+}
+
+.badge {
+    font-size: 0.75rem;
+    padding: 0.4rem 0.6rem;
+}
+
+.modal-body dl {
+    font-size: 0.95rem;
+}
+
+.modal-body dt {
+    font-weight: 600;
+    color: #555;
+}
+
+.modal-body dd {
+    word-break: break-all;
+}
+</style>
+
+{% endblock %}

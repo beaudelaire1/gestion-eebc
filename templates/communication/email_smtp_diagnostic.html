@@ -1,0 +1,122 @@
+{% extends 'base.html' %}
+
+{% block title %}Diagnostic SMTP{% endblock %}
+{% block page_title %}Diagnostic SMTP{% endblock %}
+{% block page_subtitle %}Test de connexion et d'authentification des boîtes e-mail{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-10">
+        <div class="card border-0 shadow-sm mb-4">
+            <div class="card-body p-4">
+                <h5 class="mb-3"><i class="bi bi-gear me-2"></i>Configuration active</h5>
+                <div class="row g-3">
+                    <div class="col-md-3">
+                        <small class="text-muted d-block">Backend (EMAIL_BACKEND)</small>
+                        <strong>{{ backend_env }}</strong>
+                        {% if backend_env != 'hostinger' and backend_env != 'smtp' %}
+                        <span class="badge bg-danger ms-1">N'envoie pas réellement</span>
+                        {% endif %}
+                    </div>
+                    <div class="col-md-3">
+                        <small class="text-muted d-block">Serveur</small>
+                        <strong>{{ smtp_host }}:{{ smtp_port }}</strong>
+                    </div>
+                    <div class="col-md-3">
+                        <small class="text-muted d-block">TLS / SSL</small>
+                        <strong>{{ use_tls|yesno:"TLS,—" }} / {{ use_ssl|yesno:"SSL,—" }}</strong>
+                    </div>
+                    <div class="col-md-3">
+                        <small class="text-muted d-block">Classe backend</small>
+                        <small><code>{{ email_backend }}</code></small>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="card border-0 shadow-sm mb-4">
+            <div class="card-body p-4">
+                <h5 class="mb-3"><i class="bi bi-envelope-check me-2"></i>Boîtes des départements</h5>
+                <div class="table-responsive">
+                    <table class="table align-middle">
+                        <thead>
+                            <tr>
+                                <th>Département</th>
+                                <th>Boîte</th>
+                                <th>Variable</th>
+                                <th class="text-center">Mot de passe</th>
+                                <th class="text-center">Connexion</th>
+                                <th class="text-center">Authentification</th>
+                                <th>Détail</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for r in results %}
+                            <tr>
+                                <td><strong>{{ r.department.name }}</strong></td>
+                                <td>{{ r.department.from_email }}</td>
+                                <td><code>{{ r.env_var }}</code></td>
+                                <td class="text-center">
+                                    {% if r.password_found %}<span class="badge bg-success">Définie</span>
+                                    {% else %}<span class="badge bg-danger">Absente</span>{% endif %}
+                                </td>
+                                <td class="text-center">
+                                    {% if r.connection_ok %}<span class="badge bg-success">OK</span>
+                                    {% elif r.password_found %}<span class="badge bg-danger">Échec</span>
+                                    {% else %}<span class="badge bg-secondary">—</span>{% endif %}
+                                </td>
+                                <td class="text-center">
+                                    {% if r.auth_ok %}<span class="badge bg-success">OK</span>
+                                    {% elif r.connection_ok %}<span class="badge bg-danger">Refusée</span>
+                                    {% else %}<span class="badge bg-secondary">—</span>{% endif %}
+                                </td>
+                                <td><small class="text-danger">{{ r.error }}</small></td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <div class="card border-0 shadow-sm mb-4">
+            <div class="card-body p-4">
+                <h5 class="mb-3"><i class="bi bi-envelope me-2"></i>Boîte par défaut (fallback)</h5>
+                <div class="row g-3 align-items-center">
+                    <div class="col-md-3">
+                        <small class="text-muted d-block">Compte</small>
+                        <strong>{{ default_entry.username|default:"Non défini" }}</strong>
+                    </div>
+                    <div class="col-md-2 text-center">
+                        <small class="text-muted d-block">Mot de passe</small>
+                        {% if default_entry.password_found %}<span class="badge bg-success">Défini</span>
+                        {% else %}<span class="badge bg-danger">Absent</span>{% endif %}
+                    </div>
+                    <div class="col-md-2 text-center">
+                        <small class="text-muted d-block">Connexion</small>
+                        {% if default_entry.connection_ok %}<span class="badge bg-success">OK</span>
+                        {% else %}<span class="badge bg-danger">Échec</span>{% endif %}
+                    </div>
+                    <div class="col-md-2 text-center">
+                        <small class="text-muted d-block">Authentification</small>
+                        {% if default_entry.auth_ok %}<span class="badge bg-success">OK</span>
+                        {% else %}<span class="badge bg-danger">Refusée</span>{% endif %}
+                    </div>
+                    <div class="col-md-3">
+                        <small class="text-danger">{{ default_entry.error }}</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="d-flex gap-2">
+            <a href="{% url 'communication:email_compose' %}" class="btn btn-outline-primary">
+                <i class="bi bi-arrow-left me-1"></i>Retour à l'éditeur
+            </a>
+            <a href="{% url 'communication:email_smtp_diagnostic' %}" class="btn btn-primary">
+                <i class="bi bi-arrow-clockwise me-1"></i>Relancer le diagnostic
+            </a>
+        </div>
+    </div>
+</div>
+{% endblock %}

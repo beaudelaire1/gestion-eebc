@@ -2,18 +2,39 @@
 Service de génération PDF avec WeasyPrint.
 
 Ce module fournit des fonctions pour générer des PDF à partir de templates HTML.
+
+IMPORTANT : WeasyPrint nécessite des librairies C système (cairo, pango, gdk-pixbuf).
+Les imports sont paresseux (lazy) pour ne pas bloquer le démarrage de l'application
+si ces librairies ne sont pas installées.
 """
 
 from django.template.loader import render_to_string
 from django.http import HttpResponse
 from django.conf import settings
-from weasyprint import HTML, CSS
-from weasyprint.text.fonts import FontConfiguration
 from io import BytesIO
 from datetime import datetime
 import logging
 
 logger = logging.getLogger(__name__)
+
+
+def _get_weasyprint():
+    """Import paresseux de WeasyPrint. Crash uniquement quand on génère un PDF."""
+    try:
+        from weasyprint import HTML, CSS
+        from weasyprint.text.fonts import FontConfiguration
+        return HTML, CSS, FontConfiguration
+    except (ImportError, OSError) as e:
+        logger.error(
+            "WeasyPrint n'est pas disponible. "
+            "Installez les dépendances système : apt-get install -y "
+            "libcairo2 libpango-1.0-0 libpangocairo-1.0-0 libgdk-pixbuf2.0-0 "
+            "libffi-dev shared-mime-info. Erreur: %s", e
+        )
+        raise ImportError(
+            "WeasyPrint indisponible — librairies système manquantes (cairo/pango). "
+            "La génération PDF est désactivée."
+        ) from e
 
 
 class PDFService:
@@ -172,6 +193,9 @@ class PDFService:
             HttpResponse avec le PDF
         """
         try:
+            # Import paresseux de WeasyPrint
+            HTML, CSS, FontConfiguration = _get_weasyprint()
+
             # Ajouter des données communes au contexte
             context['print_date'] = datetime.now()
             context['site_name'] = getattr(settings, 'SITE_NAME', 'EEBC')

@@ -1,0 +1,278 @@
+"""
+Dashboard Service - Extracted statistics and data gathering for dashboard views.
+Separates business logic from view logic for better maintainability and caching.
+"""
+
+from django.core.cache import cache
+from django.db.models import Count, Sum, Q
+from datetime import date, timedelta
+from typing import Dict, List, Optional
+
+
+class DashboardService:
+    """Service for dashboard statistics and data gathering."""
+    
+    CACHE_TIMEOUT = 600  # 10 minutes
+
+    @staticmethod
+    def _site_scope_key(request) -> str:
+        """Build a stable cache scope key even when User has no direct site field."""
+        user = getattr(request, 'user', None)
+        if not user or not getattr(user, 'is_authenticated', False):
+            return 'anonymous'
+
+        direct_site_id = getattr(user, 'site_id', None)
+        if direct_site_id is not None:
+            return str(direct_site_id)
+
+        member_profile = getattr(user, 'member_profile', None)
+        if member_profile and getattr(member_profile, 'site_id', None) is not None:
+            return str(member_profile.site_id)
+
+        return f'user-{user.pk}'
+    
+    @staticmethod
+    def get_member_stats(request) -> Dict:
+        """Get member statistics with select_related to avoid N+1 queries."""
+        cache_key = f"dashboard_member_stats_{DashboardService._site_scope_key(request)}"
+        cached = cache.get(cache_key)
+        if cached:
+            return cached
+        
+        from apps.members.models import Member
+        
+        members_qs = Member.objects.all()
+        members_by_status = {
+            s['status']: s['n']
+            for s in members_qs.values('status').annotate(n=Count('id'))
+        }
+        
+        stats = {
+            'total_members': sum(members_by_status.values()),
+            'members_actif': members_by_status.get('actif', 0),
+            'members_visiteur': members_by_status.get('visiteur', 0),
+            'members_inactif': members_by_status.get('inactif', 0),
+            'members_transfere': members_by_status.get('transfere', 0),
+        }
+        
+        cache.set(cache_key, stats, DashboardService.CACHE_TIMEOUT)
+        return stats
+    
+    @staticmethod
+    def get_children_and_classes_stats() -> Dict:
+        """Get Bible club statistics."""
+        cache_key = 'dashboard_children_classes_stats'
+        cached = cache.get(cache_key)
+        if cached:
+            return cached
+        
+        from apps.bibleclub.models import Child, BibleClass
+        
+        stats = {
+            'total_children': Child.objects.filter(is_active=True).count(),
+            'total_classes': BibleClass.objects.filter(is_active=True).count(),
+        }
+        
+        cache.set(cache_key, stats, DashboardService.CACHE_TIMEOUT)
+        return stats
+    
+    @staticmethod
+    def get_finance_stats() -> Dict:
+        """Get finance statistics caching for performance."""
+        cache_key = 'dashboard_finance_stats'
+        cached = cache.get(cache_key)
+        if cached:
+            return cached
+        
+        from apps.finance.models import FinancialTransaction
+        
+        today = date.today()
+        start_of_month = today.replace(day=1)
+        
+        month_transactions = FinancialTransaction.objects.filter(
+            transaction_date__gte=start_of_month,
+            status='valide'
+        )
+        
+        # Si aucune transaction ce mois-ci, fallback sur le dernier mois ayant des données
+        fallback_label = None
+        if not month_transactions.exists():
+            last_tx = FinancialTransaction.objects.filter(
+                status='valide'
+            ).order_by('-transaction_date').first()
+            if last_tx:
+                fb_date = last_tx.transaction_date
+                start_of_month = fb_date.replace(day=1)
+                if fb_date.month == 12:
+                    end_of_month = fb_date.replace(year=fb_date.year + 1, month=1, day=1)
+                else:
+                    end_of_month = fb_date.replace(month=fb_date.month + 1, day=1)
+                month_transactions = FinancialTransaction.objects.filter(
+                    transaction_date__gte=start_of_month,
+                    transaction_date__lt=end_of_month,
+                    status='valide'
+                )
+                MOIS = [
+                    '', 'Janvier', 'Février', 'Mars', 'Avril', 'Mai', 'Juin',
+                    'Juillet', 'Août', 'Septembre', 'Octobre', 'Novembre', 'Décembre'
+                ]
+                fallback_label = f"{MOIS[fb_date.month]} {fb_date.year}"
+        
+        month_totals = month_transactions.aggregate(
+            income=Sum('amount', filter=Q(transaction_type__in=['don', 'dime', 'offrande'])),
+            expenses=Sum('amount', filter=Q(transaction_type='depense')),
+        )
+        finance_stats = {
+            'month_income': month_totals['income'] or 0,
+            'month_expenses': month_totals['expenses'] or 0,
+            'pending_transactions': FinancialTransaction.objects.filter(
+                status='en_attente'
+            ).count(),
+            'fallback_label': fallback_label,
+        }
+        
+        finance_stats['month_balance'] = finance_stats['month_income'] - finance_stats['month_expenses']
+        
+        cache.set(cache_key, finance_stats, DashboardService.CACHE_TIMEOUT)
+        return finance_stats
+    
+    @staticmethod
+    def get_pastoral_stats(request) -> Dict:
+        """Get pastoral care statistics."""
+        cache_key = f"dashboard_pastoral_stats_{DashboardService._site_scope_key(request)}"
+        cached = cache.get(cache_key)
+        if cached:
+            return cached
+        
+        from apps.members.models import Member, LifeEvent, VisitationLog
+        
+        today = date.today()
+        
+        # Member.needs_visit est une propriété Python (pas un champ SQL).
+        members_active_qs = Member.objects.filter(
+            status='actif'
+        ).select_related('site')
+        members_needing_visit_count = sum(1 for member in members_active_qs if member.needs_visit)
+        
+        pastoral_stats = {
+            'members_needing_visit': min(members_needing_visit_count, 10),
+            'recent_life_events_count': LifeEvent.objects.filter(
+                event_date__gte=today - timedelta(days=30)
+            ).count(),
+            'pending_visits_count': VisitationLog.objects.filter(
+                status__in=['planifie', 'a_faire']
+            ).count(),
+        }
+        
+        cache.set(cache_key, pastoral_stats, DashboardService.CACHE_TIMEOUT)
+        return pastoral_stats
+    
+    @staticmethod
+    def get_upcoming_events(days: int = 30, limit: int = 4) -> List:
+        """Get upcoming events."""
+        cache_key = f'dashboard_upcoming_events_{days}_{limit}'
+        cached = cache.get(cache_key)
+        if cached:
+            return cached
+        
+        from apps.events.models import Event
+        
+        today = date.today()
+        events = Event.objects.filter(
+            start_date__gte=today,
+            start_date__lte=today + timedelta(days=days),
+            is_cancelled=False
+        ).select_related('category').order_by('start_date')[:limit]
+        
+        cache.set(cache_key, list(events), DashboardService.CACHE_TIMEOUT)
+        return events
+    
+    @staticmethod
+    def get_worship_stats(request) -> Dict:
+        """Get worship service statistics."""
+        from apps.worship.models import WorshipService
+        
+        today = date.today()
+        next_service = WorshipService.objects.filter(
+            event__start_date__gte=today
+        ).select_related('event').order_by('event__start_date').first()
+        
+        unconfirmed_roles_count = 0
+        if next_service:
+            unconfirmed_roles_count = next_service.roles.filter(
+                status='en_attente'
+            ).count()
+        
+        return {
+            'next_service': next_service,
+            'unconfirmed_roles_count': unconfirmed_roles_count,
+        }
+    
+    @staticmethod
+    def get_session_stats() -> Optional[Dict]:
+        """Get latest Bible club session statistics."""
+        from apps.bibleclub.models import Session
+        
+        last_session = Session.objects.filter(
+            is_cancelled=False
+        ).order_by('-date').first()
+        
+        if not last_session:
+            return None
+        
+        attendance_stats = last_session.attendances.aggregate(
+            total=Count('id'),
+            present=Count('id', filter=Q(status='present')),
+            late=Count('id', filter=Q(status='late')),
+            absent=Count('id', filter=Q(status='absent')),
+        )
+        present = attendance_stats['present']
+        late = attendance_stats['late']
+        absent = attendance_stats['absent']
+        total = attendance_stats['total']
+        
+        return {
+            'session': last_session,
+            'present': present,
+            'late': late,
+            'absent': absent,
+            'total': total,
+            'rate': ((present + late) / total * 100) if total > 0 else 0
+        }
+    
+    @staticmethod
+    def get_active_announcements(request) -> List:
+        """Get active announcements."""
+        from django.utils import timezone
+
+        from apps.communication.models import Announcement
+        
+        now = timezone.now()
+        announcements = Announcement.objects.filter(
+            is_active=True
+        ).filter(
+            Q(start_date__isnull=True) | Q(start_date__lte=now)
+        ).filter(
+            Q(end_date__isnull=True) | Q(end_date__gte=now)
+        ).order_by('-is_pinned', '-created_at')[:4]
+        
+        return list(announcements)
+    
+    @staticmethod
+    def get_events_count(days: int = 30) -> int:
+        """Get count of upcoming events."""
+        from apps.events.models import Event
+        
+        today = date.today()
+        return Event.objects.filter(
+            start_date__gte=today,
+            start_date__lte=today + timedelta(days=days),
+            is_cancelled=False
+        ).count()
+    
+    @staticmethod
+    def get_groups_count() -> int:
+        """Get count of active groups."""
+        from apps.groups.models import Group
+        
+        return Group.objects.filter(is_active=True).count()

@@ -95,9 +95,11 @@ def has_role(user, *roles):
     """
     Vérifie si l'utilisateur a l'un des rôles spécifiés.
     
+    Support complet des multi-rôles (séparés par virgules dans user.role).
+    
     Args:
         user: L'utilisateur à vérifier
-        *roles: Liste des rôles autorisés
+        *roles: Liste des rôles autorisés (n'importe lequel suffit)
     
     Returns:
         bool: True si l'utilisateur a l'un des rôles, False sinon
@@ -105,11 +107,12 @@ def has_role(user, *roles):
     Notes:
         - Les superusers ont toujours accès (retourne True)
         - Les utilisateurs avec le rôle 'admin' ont toujours accès
+        - Support multi-rôles : "pasteur,finance" correspond à ['pasteur', 'finance']
         - Un utilisateur non authentifié retourne False
     
     Usage:
         if has_role(request.user, 'admin', 'finance'):
-            # L'utilisateur a accès
+            # L'utilisateur a accès s'il est admin OU finance
     """
     # Vérifier que l'utilisateur est authentifié
     if not user or not user.is_authenticated:
@@ -119,15 +122,24 @@ def has_role(user, *roles):
     if user.is_superuser:
         return True
     
-    # Vérifier si l'utilisateur a le rôle admin (accès total)
-    if hasattr(user, 'role') and user.role == 'admin':
+    # Récupérer les rôles de l'utilisateur (support multi-rôles)
+    user_roles = []
+    if hasattr(user, 'get_roles_list'):
+        # Méthode préférée (définie dans User model)
+        user_roles = user.get_roles_list()
+    elif hasattr(user, 'role'):
+        # Fallback : parser manuellement
+        if ',' in user.role:
+            user_roles = [r.strip() for r in user.role.split(',') if r.strip()]
+        else:
+            user_roles = [user.role] if user.role else []
+    
+    # Admin a accès à tout
+    if 'admin' in user_roles:
         return True
     
     # Vérifier si l'utilisateur a l'un des rôles spécifiés
-    if hasattr(user, 'role') and user.role in roles:
-        return True
-    
-    return False
+    return any(role in user_roles for role in roles)
 
 
 def get_user_permissions(user):

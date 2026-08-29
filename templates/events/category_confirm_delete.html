@@ -1,0 +1,110 @@
+{% extends 'base.html' %}
+
+{% block title %}Supprimer une catégorie{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-6">
+        <div class="card border-danger shadow-sm">
+            <div class="card-header bg-danger text-white">
+                <h5 class="mb-0"><i class="bi bi-exclamation-triangle me-2"></i>Confirmation de suppression</h5>
+            </div>
+            <div class="card-body p-4">
+                <p class="lead">Voulez-vous vraiment supprimer la catégorie <strong>"{{ category.name }}"</strong> ?</p>
+
+                {% if events_count > 0 %}
+                <div class="alert alert-warning">
+                    <i class="bi bi-info-circle me-2"></i>
+                    Cette catégorie est utilisée par <strong>{{ events_count }} événement(s)</strong>.
+                </div>
+
+                <form method="post">
+                    {% csrf_token %}
+
+                    <div class="mb-4">
+                        <label class="form-label fw-bold">Action sur les événements liés :</label>
+
+                        {% if other_categories %}
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="radio" name="reassign_to" id="reassign_none" value=""
+                                checked>
+                            <label class="form-check-label" for="reassign_none">
+                                Ne pas réassigner (laisser sans catégorie)
+                            </label>
+                        </div>
+
+                        <div class="form-check">
+                            <label class="form-check-label mb-2" for="reassign_select">
+                                Réassigner à une autre catégorie :
+                            </label>
+                            <select name="reassign_to" id="reassign_select" class="form-select"
+                                onfocus="document.getElementById('reassign_select_radio').checked = true;">
+                                <option value="" selected disabled>Choisir une catégorie...</option>
+                                {% for cat in other_categories %}
+                                <option value="{{ cat.pk }}">{{ cat.name }}</option>
+                                {% endfor %}
+                            </select>
+                            <!-- Hidden radio to handle logic if needed, but select change handles it mostly -->
+                            <input type="radio" name="reassign_to" id="reassign_select_radio" value="" class="d-none">
+                        </div>
+                        {% else %}
+                        <p class="text-muted small">Aucune autre catégorie disponible pour la réassignation.</p>
+                        <input type="hidden" name="reassign_to" value="">
+                        {% endif %}
+                    </div>
+
+                    <div class="d-flex justify-content-end gap-2">
+                        <a href="{% url 'events:category_list' %}" class="btn btn-secondary">Annuler</a>
+                        <button type="submit" class="btn btn-danger">
+                            <i class="bi bi-trash me-2"></i>Confirmer la suppression
+                        </button>
+                    </div>
+                </form>
+                {% else %}
+                <div class="alert alert-success">
+                    <i class="bi bi-check-circle me-2"></i>
+                    Cette catégorie n'est utilisée par aucun événement.
+                </div>
+
+                <form method="post">
+                    {% csrf_token %}
+                    <div class="d-flex justify-content-end gap-2">
+                        <a href="{% url 'events:category_list' %}" class="btn btn-secondary">Annuler</a>
+                        <button type="submit" class="btn btn-danger">
+                            <i class="bi bi-trash me-2"></i>Confirmer la suppression
+                        </button>
+                    </div>
+                </form>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Simple script to auto-select radio when dropdown is used
+    document.getElementById('reassign_select')?.addEventListener('change', function () {
+        if (this.value) {
+            // We actually need to set the value of the radio associated with reassign logic
+            // But here the select name IS reassign_to, so it overrides the radio if we are not careful
+            // In the view we check request.POST.get('reassign_to')
+            // If the user selects something in the dropdown, that value is sent.
+            // If they select the radio "Ne pas réassigner", the value is empty string.
+            // So we need to ensure the select is disabled or cleared if the "None" radio is picked.
+        }
+    });
+
+    document.getElementById('reassign_none')?.addEventListener('change', function () {
+        if (this.checked) {
+            const select = document.getElementById('reassign_select');
+            if (select) {
+                select.value = "";
+                // Remove name attribute from select temporarily so it doesn't override radio?
+                // Actually the radio value is "" so it matches.
+                // But if select has a value, it might conflict.
+                // Simpler approach: view logic: priority to valid ID.
+            }
+        }
+    });
+</script>
+{% endblock %}

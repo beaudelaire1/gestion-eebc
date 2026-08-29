@@ -7,9 +7,19 @@ urlpatterns = [
     path('', views.bibleclub_home, name='home'),
     path('chart-data/', views.attendance_chart_data, name='attendance_chart_data'),
     
-    # Classes
+    # Classes - CRUD complet
     path('classes/', views.class_list, name='class_list'),
+    path('classes/create/', views.bible_class_create, name='bible_class_create'),
     path('classes/<int:pk>/', views.class_detail, name='class_detail'),
+    path('classes/<int:pk>/monitors/add/', views.class_add_monitors, name='class_add_monitors'),
+    path('classes/<int:pk>/edit/', views.bible_class_update, name='bible_class_update'),
+    path('classes/<int:pk>/delete/', views.bible_class_delete, name='bible_class_delete'),
+    
+    # Moniteurs - CRUD complet
+    path('monitors/', views.monitor_list, name='monitor_list'),
+    path('monitors/create/', views.monitor_create, name='monitor_create'),
+    path('monitors/<int:pk>/edit/', views.monitor_update, name='monitor_update'),
+    path('monitors/<int:pk>/delete/', views.monitor_delete, name='monitor_delete'),
     
     # Enfants
     path('children/', views.children_list, name='children_list'),
@@ -17,6 +27,7 @@ urlpatterns = [
     path('children/<int:pk>/', views.child_detail, name='child_detail'),
     path('children/<int:pk>/edit/', views.child_edit, name='child_edit'),
     path('children/<int:pk>/delete/', views.child_delete, name='child_delete'),
+    path('children/<int:pk>/print/', views.child_print_registration, name='child_print_registration'),
     
     # Sessions
     path('sessions/', views.session_list, name='session_list'),
@@ -32,5 +43,11 @@ urlpatterns = [
     
     # API HTMX
     path('api/my-class-children/', views.my_class_children, name='my_class_children'),
+    
+    # Configuration - Tranches d'âge
+    path('config/age-groups/', views.age_group_list, name='age_group_list'),
+    path('config/age-groups/create/', views.age_group_create, name='age_group_create'),
+    path('config/age-groups/<int:pk>/edit/', views.age_group_update, name='age_group_update'),
+    path('config/age-groups/<int:pk>/delete/', views.age_group_delete, name='age_group_delete'),
 ]
 

@@ -1,0 +1,47 @@
+{% extends 'base.html' %}
+
+{% block title %}Supprimer l'annonce - {{ settings.site_name|default:'EEBC' }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row justify-content-center">
+        <div class="col-md-6">
+            <div class="card border-danger">
+                <div class="card-header bg-danger text-white">
+                    <h5 class="card-title mb-0">
+                        <i class="bi bi-exclamation-triangle me-2"></i>Supprimer l'annonce
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="alert alert-warning">
+                        <i class="bi bi-exclamation-triangle me-2"></i>
+                        <strong>Attention !</strong> Cette action est irréversible.
+                    </div>
+                    
+                    <p>Êtes-vous sûr de vouloir supprimer cette annonce ?</p>
+                    
+                    <div class="bg-light p-3 rounded mb-4">
+                        <h6 class="fw-bold">{{ announcement.title }}</h6>
+                        <p class="mb-2">{{ announcement.content|truncatewords:20 }}</p>
+                        <small class="text-muted">
+                            Créée par {{ announcement.created_by.get_full_name|default:announcement.created_by.username }}
+                            le {{ announcement.created_at|date:"d/m/Y" }}
+                        </small>
+                    </div>
+                    
+                    <form method="post" class="d-inline">
+                        {% csrf_token %}
+                        <button type="submit" class="btn btn-danger">
+                            <i class="bi bi-trash me-1"></i>Oui, supprimer
+                        </button>
+                    </form>
+                    
+                    <a href="{% url 'communication:announcement_detail' announcement.pk %}" class="btn btn-outline-secondary ms-2">
+                        <i class="bi bi-x-lg me-1"></i>Annuler
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -27,29 +27,29 @@ def handle_life_event_notification(sender, instance, created, **kwargs):
     from apps.members.models import VisitationLog
     
     # Notifier les pasteurs/admins
-    pastors = User.objects.filter(is_staff=True, is_active=True)
+    pastors = User.objects.filter(role__icontains='pasteur', is_active=True) | User.objects.filter(role__icontains='admin', is_active=True)
     
     # Notifications selon le type d'événement
     if instance.event_type == 'naissance':
         for pastor in pastors:
             Notification.objects.create(
-                recipient=pastor,
+                user=pastor,
                 title=f"🎉 Naissance à annoncer : {instance.title}",
                 message=f"Une naissance a été enregistrée pour {instance.primary_member.full_name}. "
                         f"Pensez à l'annoncer lors du prochain culte.",
                 notification_type='info',
-                link=f"/admin/members/lifeevent/{instance.pk}/change/"
+                action_url=f"/admin/members/lifeevent/{instance.pk}/change/"
             )
     
     elif instance.event_type == 'deces':
         for pastor in pastors:
             Notification.objects.create(
-                recipient=pastor,
+                user=pastor,
                 title=f"⚫ Décès : {instance.title}",
                 message=f"Un décès a été enregistré concernant {instance.primary_member.full_name}. "
                         f"Une visite pastorale est recommandée.",
                 notification_type='warning',
-                link=f"/admin/members/lifeevent/{instance.pk}/change/"
+                action_url=f"/admin/members/lifeevent/{instance.pk}/change/"
             )
         
         # Créer automatiquement une visite "À FAIRE"
@@ -69,12 +69,12 @@ def handle_life_event_notification(sender, instance, created, **kwargs):
     elif instance.event_type == 'hospitalisation':
         for pastor in pastors:
             Notification.objects.create(
-                recipient=pastor,
+                user=pastor,
                 title=f"🏥 Hospitalisation : {instance.primary_member.full_name}",
                 message=f"{instance.primary_member.full_name} est hospitalisé(e). "
                         f"Une visite est recommandée.",
                 notification_type='warning',
-                link=f"/admin/members/lifeevent/{instance.pk}/change/"
+                action_url=f"/admin/members/lifeevent/{instance.pk}/change/"
             )
         
         # Créer une visite à l'hôpital
@@ -93,22 +93,22 @@ def handle_life_event_notification(sender, instance, created, **kwargs):
     elif instance.event_type == 'mariage':
         for pastor in pastors:
             Notification.objects.create(
-                recipient=pastor,
+                user=pastor,
                 title=f"💒 Mariage à annoncer : {instance.title}",
                 message=f"Un mariage a été enregistré. Pensez à féliciter le couple "
                         f"et à l'annoncer lors du prochain culte.",
                 notification_type='success',
-                link=f"/admin/members/lifeevent/{instance.pk}/change/"
+                action_url=f"/admin/members/lifeevent/{instance.pk}/change/"
             )
     
     elif instance.event_type == 'bapteme':
         for pastor in pastors:
             Notification.objects.create(
-                recipient=pastor,
+                user=pastor,
                 title=f"💧 Baptême : {instance.primary_member.full_name}",
                 message=f"Un baptême a été enregistré pour {instance.primary_member.full_name}.",
                 notification_type='success',
-                link=f"/admin/members/lifeevent/{instance.pk}/change/"
+                action_url=f"/admin/members/lifeevent/{instance.pk}/change/"
             )
 
 
@@ -188,15 +188,15 @@ def send_weekly_visit_reminder():
     message = "\n".join(message_lines)
     
     # Notifier les pasteurs
-    pastors = User.objects.filter(is_staff=True, is_active=True)
+    pastors = User.objects.filter(role__icontains='pasteur', is_active=True) | User.objects.filter(role__icontains='admin', is_active=True)
     
     for pastor in pastors:
         Notification.objects.create(
-            recipient=pastor,
+            user=pastor,
             title="📅 Rappel hebdomadaire : Visites pastorales",
             message=message,
             notification_type='info',
-            link="/admin/members/visitationlog/?status=a_faire"
+            action_url="/admin/members/visitationlog/?status=a_faire"
         )
 
 

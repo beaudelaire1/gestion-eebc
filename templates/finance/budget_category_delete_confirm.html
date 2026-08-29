@@ -1,0 +1,90 @@
+{% extends 'base.html' %}
+
+{% block title %}Supprimer {{ category.name }} - Catégories de Budget{% endblock %}
+{% block page_title %}Supprimer la catégorie{% endblock %}
+{% block page_subtitle %}{{ category.name }}{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="card border-danger">
+            <div class="card-header bg-danger text-white">
+                <h5 class="mb-0">
+                    <i class="bi bi-exclamation-triangle me-2"></i>
+                    Confirmation de suppression
+                </h5>
+            </div>
+            <div class="card-body">
+                <p>Êtes-vous sûr de vouloir supprimer la catégorie de budget <strong>{{ category.name }}</strong> ?</p>
+                
+                {% if budget_items_count > 0 or budget_requests_count > 0 %}
+                <div class="alert alert-warning">
+                    <i class="bi bi-info-circle me-2"></i>
+                    Cette catégorie est utilisée par :
+                    <ul class="mb-0 mt-2">
+                        {% if budget_items_count > 0 %}
+                        <li><strong>{{ budget_items_count }} élément(s) de budget</strong></li>
+                        {% endif %}
+                        {% if budget_requests_count > 0 %}
+                        <li><strong>{{ budget_requests_count }} demande(s) de budget</strong></li>
+                        {% endif %}
+                    </ul>
+                </div>
+                
+                {% if other_categories %}
+                <div class="mb-3">
+                    <label for="new_category" class="form-label">Réassigner à une autre catégorie :</label>
+                    <select class="form-select" id="new_category" name="new_category">
+                        <option value="">Sélectionner une catégorie</option>
+                        {% for other_category in other_categories %}
+                        <option value="{{ other_category.pk }}">{{ other_category.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                {% endif %}
+                {% endif %}
+                
+                <div class="alert alert-info">
+                    <i class="bi bi-info-circle me-2"></i>
+                    Cette action désactivera la catégorie (suppression logique). Les données historiques seront préservées.
+                </div>
+                
+                <form method="post" class="d-inline" id="deleteForm">
+                    {% csrf_token %}
+                    <input type="hidden" name="action" value="{% if budget_items_count > 0 or budget_requests_count > 0 %}reassign{% else %}delete{% endif %}">
+                    <input type="hidden" name="new_category" id="hidden_new_category">
+                    
+                    <button type="submit" class="btn btn-danger me-2" id="confirmBtn">
+                        <i class="bi bi-trash me-2"></i>Confirmer la suppression
+                    </button>
+                    <a href="{% url 'finance:budget_category_list' %}" class="btn btn-secondary">
+                        Annuler
+                    </a>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const form = document.getElementById('deleteForm');
+    const newCategorySelect = document.getElementById('new_category');
+    const hiddenNewCategory = document.getElementById('hidden_new_category');
+    const confirmBtn = document.getElementById('confirmBtn');
+    
+    if (newCategorySelect) {
+        newCategorySelect.addEventListener('change', function() {
+            hiddenNewCategory.value = this.value;
+        });
+        
+        form.addEventListener('submit', function(e) {
+            if ({{ budget_items_count|add:budget_requests_count }} > 0 && !newCategorySelect.value) {
+                e.preventDefault();
+                alert('Veuillez sélectionner une catégorie de réassignation.');
+            }
+        });
+    }
+});
+</script>
+{% endblock %}

@@ -6,3 +6,6 @@ class BibleclubConfig(AppConfig):
     name = 'apps.bibleclub'
     verbose_name = 'Club Biblique'
 
+    def ready(self):
+        import apps.bibleclub.signals  # noqa: F401
+

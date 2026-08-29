@@ -1,0 +1,80 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ title }} - Jeunesse - EEBC{% endblock %}
+{% block page_title %}{{ title }}{% endblock %}
+{% block page_subtitle %}Cette action désactivera le jeune sans supprimer son historique{% endblock %}
+
+{% block extra_css %}
+<style>
+    .delete-card {
+        background: var(--eebc-white);
+        border-radius: 20px;
+        padding: 2rem;
+        box-shadow: 0 10px 40px rgba(11, 15, 25, 0.06);
+        border: none;
+        max-width: 500px;
+        margin: 0 auto;
+    }
+
+    .warning-icon {
+        width: 80px;
+        height: 80px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 2rem;
+        color: white;
+        margin: 0 auto 1.5rem;
+    }
+
+    .member-info {
+        background: var(--eebc-gray-50);
+        border-radius: 12px;
+        padding: 1.5rem;
+        margin: 1.5rem 0;
+        text-align: left;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="delete-card text-center">
+    <div class="warning-icon">
+        <i class="bi bi-exclamation-triangle"></i>
+    </div>
+
+    <h4 class="mb-2">Désactiver ce jeune ?</h4>
+    <p class="text-muted">Le jeune sera marqué comme inactif. Son historique de présences sera conservé.</p>
+
+    <div class="member-info">
+        <div class="d-flex align-items-center gap-3">
+            <div class="avatar"
+                 style="width: 60px; height: 60px; font-size: 1.2rem; font-weight: 700;
+                        background: {% if member.gender == 'M' %}linear-gradient(135deg, #3b82f6, #1d4ed8){% else %}linear-gradient(135deg, #ec4899, #be185d){% endif %};">
+                {{ member.first_name|slice:":1"|upper }}{{ member.last_name|slice:":1"|upper }}
+            </div>
+            <div class="text-start">
+                <strong>{{ member.full_name }}</strong><br>
+                <small class="text-muted">{{ member.age }} ans</small>
+                {% if member.group %}
+                <br><span class="badge" style="background: {{ member.group.color }};">{{ member.group.name }}</span>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <form method="post">
+        {% csrf_token %}
+        <div class="d-flex gap-3 justify-content-center">
+            <a href="{% url 'young:member_detail' member.pk %}" class="btn btn-outline-secondary">
+                <i class="bi bi-arrow-left me-2"></i>Annuler
+            </a>
+            <button type="submit" class="btn btn-danger">
+                <i class="bi bi-trash me-2"></i>Désactiver
+            </button>
+        </div>
+    </form>
+</div>
+{% endblock %}

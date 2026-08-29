@@ -225,10 +225,15 @@
         border-radius: 20px;
         padding: 1.5rem;
         color: white;
+        box-shadow: 0 18px 40px rgba(10, 54, 255, 0.22);
     }
     
     .print-section .section-title {
-        color: white;
+        color: #ffffff !important;
+    }
+
+    .print-section .section-title i {
+        color: #ffffff !important;
     }
     
     .print-btn {
@@ -237,20 +242,54 @@
         justify-content: space-between;
         padding: 0.9rem 1rem;
         border-radius: 12px;
-        background: rgba(255, 255, 255, 0.15);
-        color: white;
+        background: rgba(255, 255, 255, 0.92) !important;
+        border: 1px solid rgba(255, 255, 255, 0.95) !important;
+        color: #14213d !important;
         text-decoration: none;
-        font-weight: 600;
-        font-size: 0.85rem;
+        font-weight: 700;
+        font-size: 0.92rem;
         transition: all 0.3s ease;
         margin-bottom: 0.6rem;
+        -webkit-backdrop-filter: blur(4px);
         backdrop-filter: blur(4px);
+        box-shadow: 0 10px 22px rgba(12, 27, 78, 0.14);
+    }
+
+    .print-btn span,
+    .print-btn i {
+        color: #14213d !important;
+    }
+
+    .print-btn span {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.15rem;
+    }
+
+    .print-btn__download {
+        width: 2rem;
+        height: 2rem;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 999px;
+        background: linear-gradient(135deg, #0A36FF 0%, #2b6df8 100%) !important;
+        border: 1px solid rgba(10, 54, 255, 0.18) !important;
+        color: #ffffff !important;
+        flex-shrink: 0;
+        box-shadow: 0 6px 16px rgba(10, 54, 255, 0.28);
+    }
+
+    .print-btn--brochure {
+        background: #ffffff !important;
+        border-color: rgba(255, 255, 255, 0.95) !important;
     }
     
     .print-btn:hover {
-        background: rgba(255, 255, 255, 0.25);
-        color: white;
+        background: #ffffff !important;
+        color: #0f172a !important;
         transform: translateX(4px);
+        box-shadow: 0 16px 32px rgba(9, 30, 110, 0.22);
     }
     
     .print-btn:last-child {
@@ -413,19 +452,19 @@
             </div>
             <a href="{% url 'events:calendar_pdf' %}?mode=week" class="print-btn">
                 <span><i class="bi bi-calendar-week me-2"></i>Semaine</span>
-                <i class="bi bi-download"></i>
+                <i class="bi bi-download print-btn__download"></i>
             </a>
             <a href="{% url 'events:calendar_pdf' %}?mode=month" class="print-btn">
                 <span><i class="bi bi-calendar-month me-2"></i>Mois</span>
-                <i class="bi bi-download"></i>
+                <i class="bi bi-download print-btn__download"></i>
             </a>
             <a href="{% url 'events:calendar_pdf' %}?mode=quarter" class="print-btn">
                 <span><i class="bi bi-calendar3 me-2"></i>Trimestre</span>
-                <i class="bi bi-download"></i>
+                <i class="bi bi-download print-btn__download"></i>
             </a>
-            <a href="{% url 'events:calendar_pdf' %}?mode=brochure" class="print-btn" style="background: rgba(255,255,255,0.15); border: 1px solid rgba(255,255,255,0.3);">
-                <span><i class="bi bi-book me-2"></i>📖 Brochure</span>
-                <i class="bi bi-download"></i>
+            <a href="{% url 'events:calendar_pdf' %}?mode=brochure" class="print-btn print-btn--brochure">
+                <span><i class="bi bi-book me-2"></i>Brochure</span>
+                <i class="bi bi-download print-btn__download"></i>
             </a>
         </div>
         

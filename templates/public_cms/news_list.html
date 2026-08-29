@@ -1,0 +1,126 @@
+{% extends "base.html" %}
+
+{% block title %}Actualités - EEBC{% endblock %}
+
+{% block page_title %}Actualités{% endblock %}
+{% block page_subtitle %}Gestion des articles et annonces publiques{% endblock %}
+
+{% block content %}
+<div class="card border-0 shadow-sm">
+    <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
+        <h6 class="mb-0 fw-bold">Liste des articles</h6>
+        <a href="{% url 'public_cms:news_create' %}" class="btn btn-primary btn-sm">
+            <i class="bi bi-plus-lg me-2"></i>Nouvel article
+        </a>
+    </div>
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="bg-light">
+                    <tr>
+                        <th class="ps-4">Titre</th>
+                        <th>Catégorie</th>
+                        <th>Auteur</th>
+                        <th>Statut</th>
+                        <th>Date publication</th>
+                        <th>Vues</th>
+                        <th class="text-end pe-4">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for article in articles %}
+                    <tr>
+                        <td class="ps-4">
+                            <div class="fw-medium">{{ article.title }}</div>
+                            <small class="text-muted">{{ article.slug }}</small>
+                        </td>
+                        <td>
+                            <span class="badge bg-secondary">{{ article.get_category_display }}</span>
+                        </td>
+                        <td>
+                            {{ article.display_author|default:"-" }}
+                        </td>
+                        <td>
+                            {% if article.is_published %}
+                            <span class="badge bg-success">Publié</span>
+                            {% if article.is_featured %}<span class="badge bg-warning text-dark"><i
+                                    class="bi bi-star-fill"></i> Une</span>{% endif %}
+                            {% else %}
+                            <span class="badge bg-light text-dark border">Brouillon</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if article.publish_date %}
+                            {{ article.publish_date|date:"d/m/Y H:i" }}
+                            {% else %}
+                            -
+                            {% endif %}
+                        </td>
+                        <td>{{ article.views_count }}</td>
+                        <td class="text-end pe-4">
+                            <div class="btn-group">
+                                <a href="{% url 'public_cms:news_update' article.pk %}"
+                                    class="btn btn-sm btn-outline-primary" title="Modifier">
+                                    <i class="bi bi-pencil"></i>
+                                </a>
+                                <a href="{% url 'public_cms:news_delete' article.pk %}"
+                                    class="btn btn-sm btn-outline-danger" title="Supprimer">
+                                    <i class="bi bi-trash"></i>
+                                </a>
+                                <a href="{% url 'public:news_detail' article.slug %}" target="_blank"
+                                    class="btn btn-sm btn-outline-secondary" title="Voir">
+                                    <i class="bi bi-eye"></i>
+                                </a>
+                            </div>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="7" class="text-center py-5 text-muted">
+                            <i class="bi bi-newspaper fs-1 d-block mb-3"></i>
+                            Aucun article trouvé.
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    {% if is_paginated %}
+    <div class="card-footer bg-white">
+        <nav aria-label="Page navigation">
+            <ul class="pagination justify-content-center mb-0">
+                {% if page_obj.has_previous %}
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ page_obj.previous_page_number }}">Précédent</a>
+                </li>
+                {% else %}
+                <li class="page-item disabled">
+                    <span class="page-link">Précédent</span>
+                </li>
+                {% endif %}
+
+                {% for i in paginator.page_range %}
+                {% if page_obj.number == i %}
+                <li class="page-item active"><span class="page-link">{{ i }}</span></li>
+                {% else %}
+                <li class="page-item"><a class="page-link" href="?page={{ i }}">{{ i }}</a></li>
+                {% endif %}
+                {% endfor %}
+
+                {% if page_obj.has_next %}
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ page_obj.next_page_number }}">Suivant</a>
+                </li>
+                {% else %}
+                <li class="page-item disabled">
+                    <span class="page-link">Suivant</span>
+                </li>
+                {% endif %}
+            </ul>
+        </nav>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

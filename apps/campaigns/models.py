@@ -7,6 +7,15 @@ class Campaign(models.Model):
     """
     Modèle représentant une campagne de collecte de fonds.
     """
+    
+    class NotificationScope(models.TextChoices):
+        NONE = 'none', 'Aucune notification'
+        CREATOR = 'creator', 'Créateur / personne sélectionnée'
+        STAFF = 'staff', 'Direction (pasteurs, diacres, anciens)'
+        MEMBERS = 'members', 'Tous les membres'
+        GROUP = 'group', 'Un groupe spécifique'
+        ALL = 'all', 'Tout le monde'
+    
     name = models.CharField(max_length=200, verbose_name="Nom de la campagne")
     description = models.TextField(blank=True, verbose_name="Description")
     
@@ -46,6 +55,39 @@ class Campaign(models.Model):
         related_name='campaigns',
         verbose_name="Responsable"
     )
+    
+    # Portée des notifications
+    notification_scope = models.CharField(
+        max_length=15,
+        choices=NotificationScope.choices,
+        default=NotificationScope.MEMBERS,
+        verbose_name="Portée des notifications",
+        help_text="Qui doit être notifié de cette campagne"
+    )
+    
+    # Groupe spécifique (si scope = group)
+    target_group = models.ForeignKey(
+        'groups.Group',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='targeted_campaigns',
+        verbose_name="Groupe cible",
+        help_text="Requis si la portée est 'Un groupe spécifique'"
+    )
+    
+    # Personne spécifique (si scope = creator)
+    target_person = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='targeted_campaigns',
+        verbose_name="Personne à notifier",
+        help_text="Si vide, le créateur (responsable) sera notifié"
+    )
+    
+    notification_sent = models.BooleanField(default=False, verbose_name="Notification envoyée")
     
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -103,6 +145,46 @@ class Campaign(models.Model):
         
         days_remaining = (self.end_date - today).days
         return days_remaining <= 14 and self.progress_percentage < 50
+    
+    def get_notification_recipients(self):
+        """Retourne les emails des personnes à notifier selon la portée."""
+        from apps.accounts.models import User
+        from apps.members.models import Member
+        
+        emails = set()
+        
+        if self.notification_scope == self.NotificationScope.NONE:
+            return []
+        
+        if self.notification_scope == self.NotificationScope.CREATOR:
+            # Personne sélectionnée, ou le responsable par défaut
+            person = self.target_person or self.responsible
+            if person and person.email:
+                emails.add(person.email)
+        
+        elif self.notification_scope == self.NotificationScope.ALL:
+            for user in User.objects.filter(is_active=True).exclude(email=''):
+                emails.add(user.email)
+            for member in Member.objects.exclude(email='').exclude(email__isnull=True):
+                emails.add(member.email)
+        
+        elif self.notification_scope == self.NotificationScope.MEMBERS:
+            for member in Member.objects.filter(status='actif').exclude(email='').exclude(email__isnull=True):
+                emails.add(member.email)
+        
+        elif self.notification_scope == self.NotificationScope.STAFF:
+            staff_roles = ['pasteur', 'ancien', 'diacre', 'admin']
+            for user in User.objects.filter(is_active=True).exclude(email=''):
+                if any(r in user.role for r in staff_roles) or user.is_superuser:
+                    emails.add(user.email)
+        
+        elif self.notification_scope == self.NotificationScope.GROUP:
+            if self.target_group:
+                for member in self.target_group.members.all():
+                    if member.email:
+                        emails.add(member.email)
+        
+        return list(emails)
 
 
 class Donation(models.Model):
@@ -124,6 +206,8 @@ class Donation(models.Model):
     
     notes = models.TextField(blank=True, verbose_name="Notes")
     
+    is_cancelled = models.BooleanField(default=False, verbose_name="Annulé")
+    
     created_at = models.DateTimeField(auto_now_add=True)
     
     class Meta:
@@ -133,24 +217,43 @@ class Donation(models.Model):
     
     def __str__(self):
         donor = "Anonyme" if self.is_anonymous else (self.donor_name or "Inconnu")
-        return f"{donor} - {self.amount}€"
+        status = " (Annulé)" if self.is_cancelled else ""
+        return f"{donor} - {self.amount}€{status}"
     
     def save(self, *args, **kwargs):
         is_new = self.pk is None
-        old_amount = None
+        was_cancelled = False
+        prev_amount = Decimal('0')
+        
         if not is_new:
-            old_donation = Donation.objects.filter(pk=self.pk).first()
-            if old_donation:
-                old_amount = old_donation.amount
+            old_inst = Donation.objects.filter(pk=self.pk).first()
+            if old_inst:
+                was_cancelled = old_inst.is_cancelled
+                prev_amount = old_inst.amount
         
         super().save(*args, **kwargs)
         
-        # Mise à jour incrémentale du montant collecté
-        if is_new:
-            self.campaign.collected_amount += self.amount
-        elif old_amount is not None:
-            self.campaign.collected_amount += (self.amount - old_amount)
-        self.campaign.save(update_fields=['collected_amount'])
+        # Mise à jour du montant collecté
+        campaign = self.campaign
+        impact = Decimal('0')
+        
+        if self.is_cancelled:
+            # Si annulé maintenant
+            if not was_cancelled:
+                # Vient d'être annulé : on soustrait l'ancien montant
+                impact = -prev_amount
+        else:
+            # Si actif maintenant
+            if was_cancelled:
+                # Vient d'être réactivé : on ajoute le montant actuel
+                impact = self.amount
+            else:
+                # Était actif et reste actif : on ajuste la différence
+                impact = self.amount - prev_amount
+                
+        if impact != 0:
+            campaign.collected_amount += impact
+            campaign.save(update_fields=['collected_amount'])
     
     def delete(self, *args, **kwargs):
         campaign = self.campaign

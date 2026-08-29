@@ -1,0 +1,107 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Supprimer la catégorie {{ category.name }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row justify-content-center">
+        <div class="col-md-8 col-lg-6">
+            <div class="card border-danger">
+                <div class="card-header bg-danger text-white">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-exclamation-triangle"></i> Confirmer la suppression
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="alert alert-warning">
+                        <i class="fas fa-warning"></i>
+                        <strong>Attention !</strong> Cette action est irréversible.
+                    </div>
+
+                    <p>Êtes-vous sûr de vouloir supprimer la catégorie <strong>"{{ category.name }}"</strong> ?</p>
+
+                    {% if equipment_count > 0 %}
+                        <div class="alert alert-info">
+                            <i class="fas fa-info-circle"></i>
+                            Cette catégorie est utilisée par <strong>{{ equipment_count }} équipement{{ equipment_count|pluralize }}</strong>.
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">Que faire avec les équipements existants ?</label>
+                            <form method="post" id="deleteForm">
+                                {% csrf_token %}
+                                
+                                {% if other_categories %}
+                                    <div class="form-check mb-2">
+                                        <input class="form-check-input" type="radio" name="action" id="reassign" value="reassign" checked>
+                                        <label class="form-check-label" for="reassign">
+                                            Réassigner à une autre catégorie
+                                        </label>
+                                    </div>
+                                    
+                                    <div class="ms-4 mb-3" id="reassignOptions">
+                                        <select class="form-select" name="reassign_to" required>
+                                            <option value="">Choisir une catégorie...</option>
+                                            {% for other_category in other_categories %}
+                                                <option value="{{ other_category.pk }}">{{ other_category.name }}</option>
+                                            {% endfor %}
+                                        </select>
+                                    </div>
+                                {% endif %}
+
+                                <div class="form-check mb-3">
+                                    <input class="form-check-input" type="radio" name="action" id="remove" value="remove" {% if not other_categories %}checked{% endif %}>
+                                    <label class="form-check-label" for="remove">
+                                        Supprimer la catégorie des équipements (ils n'auront plus de catégorie)
+                                    </label>
+                                </div>
+                            </form>
+                        </div>
+                    {% else %}
+                        <form method="post" id="deleteForm">
+                            {% csrf_token %}
+                        </form>
+                    {% endif %}
+
+                    <div class="d-flex justify-content-between">
+                        <a href="{% url 'inventory:category_list' %}" class="btn btn-secondary">
+                            <i class="fas fa-arrow-left"></i> Annuler
+                        </a>
+                        <button type="submit" form="deleteForm" class="btn btn-danger">
+                            <i class="fas fa-trash"></i> Confirmer la suppression
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const reassignRadio = document.getElementById('reassign');
+    const removeRadio = document.getElementById('remove');
+    const reassignOptions = document.getElementById('reassignOptions');
+    const reassignSelect = document.querySelector('select[name="reassign_to"]');
+    
+    if (reassignRadio && removeRadio && reassignOptions) {
+        function toggleReassignOptions() {
+            if (reassignRadio.checked) {
+                reassignOptions.style.display = 'block';
+                reassignSelect.required = true;
+            } else {
+                reassignOptions.style.display = 'none';
+                reassignSelect.required = false;
+            }
+        }
+        
+        reassignRadio.addEventListener('change', toggleReassignOptions);
+        removeRadio.addEventListener('change', toggleReassignOptions);
+        
+        // Initial state
+        toggleReassignOptions();
+    }
+});
+</script>
+{% endblock %}

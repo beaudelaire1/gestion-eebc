@@ -1,0 +1,13 @@
+{% extends 'emails/base_email.html' %}
+{% block content %}
+<h2 style="color:#0A36FF;margin:0 0 15px;font-size:18px;">🎉 Bienvenue à l'EEBC !</h2>
+<p style="color:#333;font-size:15px;line-height:1.7;">Bonjour {{ user.first_name|default:"Frère/Sœur" }},</p>
+<p style="color:#333;font-size:15px;line-height:1.7;">Nous sommes heureux de vous accueillir au sein de l'Église Évangélique Baptiste de Cabassou.</p>
+<p style="color:#333;font-size:15px;line-height:1.7;">Votre compte a été créé avec succès. Vous pouvez désormais accéder à votre espace membre pour consulter les événements, les annonces et bien plus.</p>
+<div style="text-align:center;margin:25px 0;">
+    <a href="https://eglise-ebc.org/app/" style="background:linear-gradient(135deg,#0A36FF,#3b82f6);color:#fff;padding:14px 30px;border-radius:10px;text-decoration:none;font-weight:700;font-size:15px;display:inline-block;">Accéder à mon espace</a>
+</div>
+<div style="border-left:4px solid #d4a11e;padding:12px 16px;background:#fffdf5;border-radius:0 8px 8px 0;margin:20px 0;">
+    <p style="color:#5a4a1e;font-size:14px;font-style:italic;margin:0;">« Voici, je me tiens à la porte, et je frappe. » — Apocalypse 3:20</p>
+</div>
+{% endblock %}

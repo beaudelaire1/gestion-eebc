@@ -12,6 +12,7 @@ urlpatterns = [
     path('services/<int:pk>/', views.service_detail, name='service_detail'),
     path('services/create/', views.service_create, name='service_create'),
     path('services/<int:pk>/edit/', views.service_edit, name='service_edit'),
+    path('services/<int:pk>/delete/', views.service_delete, name='service_delete'),
     
     # Planification mensuelle (nouveau système)
     path('planning/', views.monthly_schedule_list, name='schedule_list'),
@@ -49,6 +50,19 @@ urlpatterns = [
     path('services/<int:pk>/run-sheet/', views.run_sheet_pdf, name='run_sheet_pdf'),
     
     # Templates
+    path('templates/', views.service_template_list, name='template_list'),
+    path('templates/create/', views.service_template_create, name='template_create'),
+    path('templates/<int:pk>/', views.service_template_detail, name='template_detail'),
+    path('templates/<int:pk>/edit/', views.service_template_update, name='template_update'),
+    path('templates/<int:pk>/delete/', views.service_template_delete, name='template_delete'),
+    
+    # Template Items
+    path('templates/<int:template_pk>/items/create/', views.template_item_create, name='template_item_create'),
+    path('template-items/<int:pk>/edit/', views.template_item_update, name='template_item_update'),
+    path('template-items/<int:pk>/delete/', views.template_item_delete, name='template_item_delete'),
+    path('templates/<int:template_pk>/reorder/', views.template_item_reorder, name='template_item_reorder'),
+    
+    # Apply Templates
     path('services/<int:service_pk>/apply-template/<int:template_pk>/', 
          views.apply_template, name='apply_template'),
 ]

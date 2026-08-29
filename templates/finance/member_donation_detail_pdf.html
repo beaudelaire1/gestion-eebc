@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<style>
+@page { size: A4; margin: 1.5cm; }
+body { font-family: "Segoe UI", Arial, sans-serif; font-size: 10pt; color: #333; }
+.header { text-align: center; margin-bottom: 15px; border-bottom: 3px solid #0A36FF; padding-bottom: 12px; }
+.header h1 { color: #0A36FF; font-size: 16pt; margin: 0; }
+.header p { color: #666; margin: 4px 0 0; font-size: 9pt; }
+.gold-bar { height: 3px; background: linear-gradient(90deg, #b8860b, #d4a11e, #f0c850); margin: 8px 0 15px; }
+.title { text-align: center; font-size: 13pt; font-weight: 700; color: #1e3a5f; margin-bottom: 5px; }
+.subtitle { text-align: center; font-size: 10pt; color: #666; margin-bottom: 20px; }
+.kpi-row { display: flex; gap: 10px; margin-bottom: 20px; }
+.kpi { flex: 1; text-align: center; padding: 10px; border: 1px solid #e2e8f0; border-radius: 6px; }
+.kpi .value { font-size: 14pt; font-weight: 700; }
+.kpi .label { font-size: 8pt; color: #888; }
+.green { color: #16a34a; } .blue { color: #0A36FF; } .orange { color: #d97706; }
+table { width: 100%; border-collapse: collapse; margin-bottom: 15px; }
+th { background: #f8f9fc; color: #333; font-size: 9pt; padding: 6px 8px; text-align: left; border-bottom: 2px solid #0A36FF; }
+td { padding: 5px 8px; font-size: 9pt; border-bottom: 1px solid #eee; }
+.text-right { text-align: right; }
+.fw-bold { font-weight: 700; }
+h2 { color: #0A36FF; font-size: 11pt; margin: 15px 0 8px; border-bottom: 1px solid #e2e8f0; padding-bottom: 4px; }
+.footer { text-align: center; margin-top: 25px; padding-top: 8px; border-top: 1px solid #e2e8f0; font-size: 8pt; color: #999; }
+</style>
+</head>
+<body>
+<div class="header">
+    <h1>Église Évangélique Baptiste de Cabassou</h1>
+    <p>11 lot Calimbé 2, rte de Cabassou, 97300 Cayenne — contact@eglise-ebc.org</p>
+</div>
+<div class="gold-bar"></div>
+
+<div class="title">Récapitulatif des dons — {{ year }}</div>
+<div class="subtitle">{{ member.full_name }} {% if member.member_id %}({{ member.member_id }}){% endif %}</div>
+
+<div class="kpi-row">
+    <div class="kpi"><div class="value green">{{ totals.dime|floatformat:2|default:"0.00" }}€</div><div class="label">Dîmes</div></div>
+    <div class="kpi"><div class="value blue">{{ totals.don|floatformat:2|default:"0.00" }}€</div><div class="label">Dons</div></div>
+    <div class="kpi"><div class="value orange">{{ totals.offrande|floatformat:2|default:"0.00" }}€</div><div class="label">Offrandes</div></div>
+    <div class="kpi"><div class="value" style="color:#0A36FF;">{{ grand_total|floatformat:2 }}€</div><div class="label">Total</div></div>
+</div>
+
+<h2>Détail des transactions</h2>
+<table>
+<thead><tr><th>Date</th><th>Référence</th><th>Type</th><th>Méthode</th><th class="text-right">Montant</th></tr></thead>
+<tbody>
+{% for t in transactions %}
+<tr>
+    <td>{{ t.transaction_date|date:"d/m/Y" }}</td>
+    <td>{{ t.reference }}</td>
+    <td>{{ t.get_transaction_type_display }}</td>
+    <td>{{ t.get_payment_method_display }}</td>
+    <td class="text-right fw-bold">{{ t.amount|floatformat:2 }}€</td>
+</tr>
+{% endfor %}
+<tr style="border-top:2px solid #0A36FF;">
+    <td colspan="4" class="fw-bold">Total</td>
+    <td class="text-right fw-bold" style="color:#0A36FF;">{{ grand_total|floatformat:2 }}€</td>
+</tr>
+</tbody>
+</table>
+
+<div class="footer">
+    Document généré automatiquement — Église Évangélique Baptiste de Cabassou — eglise-ebc.org
+</div>
+</body>
+</html>

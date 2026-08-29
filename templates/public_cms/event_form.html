@@ -1,0 +1,84 @@
+{% extends "base.html" %}
+{% load crispy_forms_tags %}
+
+{% block title %}{% if form.instance.pk %}Modifier{% else %}Nouvel{% endif %} événement - EEBC{% endblock %}
+
+{% block page_title %}{% if form.instance.pk %}Modifier l'événement{% else %}Nouvel événement{% endif %}{% endblock %}
+{% block page_subtitle %}Gestion des événements du site vitrine{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-10">
+        <div class="card border-0 shadow-sm">
+            <div class="card-body p-4">
+                <form method="post" enctype="multipart/form-data">
+                    {% csrf_token %}
+
+                    <div class="row">
+                        <div class="col-md-8">
+                            <h5 class="mb-3 text-primary">Informations</h5>
+                            {{ form.title|as_crispy_field }}
+                            {{ form.slug|as_crispy_field }}
+                            {{ form.description|as_crispy_field }}
+
+                            <h5 class="mb-3 mt-4 text-primary">Date & Lieu</h5>
+                            <div class="row">
+                                <div class="col-md-6">{{ form.start_date|as_crispy_field }}</div>
+                                <div class="col-md-6">{{ form.start_time|as_crispy_field }}</div>
+                            </div>
+                            <div class="row">
+                                <div class="col-md-6">{{ form.end_date|as_crispy_field }}</div>
+                                <div class="col-md-6">{{ form.end_time|as_crispy_field }}</div>
+                            </div>
+                            {{ form.location|as_crispy_field }}
+                            {{ form.address|as_crispy_field }}
+                        </div>
+
+                        <div class="col-md-4">
+                            <h5 class="mb-3 text-primary">Paramètres</h5>
+                            <div class="card bg-light border-0 mb-3">
+                                <div class="card-body">
+                                    {{ form.site|as_crispy_field }}
+                                    {{ form.is_published|as_crispy_field }}
+                                    {{ form.is_featured|as_crispy_field }}
+                                    {{ form.allow_registration|as_crispy_field }}
+                                </div>
+                            </div>
+
+                            <div class="card bg-light border-0 mb-3">
+                                <div class="card-body">
+                                    <h6 class="card-title">Image</h6>
+                                    {% if form.instance.image %}
+                                    <img src="{{ form.instance.image.url }}" class="img-fluid rounded mb-2" alt="Image actuelle">
+                                    {% endif %}
+                                    {{ form.image|as_crispy_field }}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="d-flex justify-content-end gap-2 mt-4">
+                        <a href="{% url 'public_cms:event_list' %}" class="btn btn-outline-secondary">Annuler</a>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="bi bi-save me-2"></i>{% if form.instance.pk %}Enregistrer{% else %}Créer l'événement{% endif %}
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    document.getElementById('id_title').addEventListener('input', function () {
+        if (!document.getElementById('id_slug').value) {
+            const slug = this.value.toLowerCase()
+                .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+                .replace(/[^\w ]+/g, '')
+                .replace(/ +/g, '-');
+            document.getElementById('id_slug').value = slug;
+        }
+    });
+</script>
+{% include 'includes/tinymce.html' with selector='.tinymce-editor' %}
+{% endblock %}

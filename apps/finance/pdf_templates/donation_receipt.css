@@ -1,0 +1,419 @@
+@page {
+    size: A4;
+    margin: 1cm 1.2cm;
+}
+
+html,
+body {
+    margin: 0;
+    padding: 0;
+}
+
+body {
+    font-family: "Aptos", "Segoe UI", Arial, sans-serif;
+    font-size: 10pt;
+    line-height: 1.42;
+    color: #132238;
+    background: #ffffff;
+}
+
+* {
+    box-sizing: border-box;
+}
+
+.sheet {
+    position: relative;
+    height: 27.7cm;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+}
+
+.sheet::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+    border-radius: 999px;
+    background: linear-gradient(90deg, #b8860b 0%, #d4a11e 45%, #f0c850 100%);
+}
+
+.sheet-watermark {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 7.4cm;
+    line-height: 1;
+    font-weight: 900;
+    letter-spacing: 0.35cm;
+    color: rgba(17, 46, 99, 0.028);
+}
+
+.top-zone {
+    flex: 0 0 auto;
+    padding-top: 0.35cm;
+}
+
+.header-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 0.55cm;
+}
+
+.brand-cluster {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.45cm;
+    flex: 1 1 auto;
+    min-width: 0;
+}
+
+.brand-logo-shell {
+    width: 4cm;
+    height: 4cm;
+    padding: 0.22cm;
+    border-radius: 18px;
+    border: 1px solid #dbe3ef;
+    background: #ffffff;
+    box-shadow: 0 10px 24px rgba(19, 34, 56, 0.08);
+    flex-shrink: 0;
+}
+
+.brand-logo-shell img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+}
+
+.brand-copy {
+    min-width: 0;
+    padding-top: 0.08cm;
+}
+
+.brand-kicker,
+.meta-card-label,
+.detail-label,
+.amount-eyebrow,
+.quote-ref,
+.legal-card strong,
+.footer-secondary {
+    text-transform: uppercase;
+    letter-spacing: 0.18em;
+}
+
+.brand-kicker {
+    margin-bottom: 0.12cm;
+    font-size: 7.2pt;
+    font-weight: 800;
+    color: #bf8c10;
+}
+
+.brand-copy h1 {
+    margin: 0 0 0.12cm;
+    font-size: 18.5pt;
+    line-height: 1.04;
+    font-weight: 800;
+    color: #112e63;
+}
+
+.brand-address,
+.brand-contact,
+.brand-registration {
+    font-size: 8.4pt;
+    line-height: 1.35;
+    color: #5b6b7d;
+}
+
+.brand-registration {
+    margin-top: 0.05cm;
+    color: #8b97a8;
+}
+
+.receipt-panel {
+    width: 5.15cm;
+    padding: 0.4cm 0.46cm;
+    border-radius: 18px;
+    background: linear-gradient(135deg, #112e63 0%, #1d478f 100%);
+    color: #ffffff;
+    box-shadow: 0 16px 34px rgba(17, 46, 99, 0.18);
+}
+
+.panel-label {
+    font-size: 8.8pt;
+    font-weight: 800;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+}
+
+.panel-number {
+    margin-top: 0.14cm;
+    font-family: "Consolas", "Courier New", monospace;
+    font-size: 11pt;
+    font-weight: 700;
+}
+
+.panel-date {
+    margin-top: 0.18cm;
+    font-size: 8.2pt;
+    color: #dae5f7;
+}
+
+.meta-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.45cm;
+    margin-top: 0.48cm;
+}
+
+.meta-card {
+    min-height: 2.95cm;
+    padding: 0.3cm 0.34cm;
+    border: 1px solid #dce4ef;
+    border-left: 4px solid #112e63;
+    border-radius: 0 14px 14px 0;
+    background: linear-gradient(180deg, #ffffff 0%, #f8fbff 100%);
+}
+
+.meta-card--accent {
+    border-left-color: #c99818;
+}
+
+.meta-card-label {
+    font-size: 7.1pt;
+    font-weight: 800;
+    color: #6b7b90;
+}
+
+.meta-card-name {
+    margin-top: 0.12cm;
+    font-size: 14pt;
+    line-height: 1.08;
+    font-weight: 800;
+    color: #11233f;
+}
+
+.meta-card-sub,
+.meta-card-foot {
+    margin-top: 0.08cm;
+    font-size: 8.6pt;
+    color: #5e6f84;
+}
+
+.details-grid {
+    display: grid;
+    grid-template-columns: 1.5cm 1fr;
+    row-gap: 0.12cm;
+    column-gap: 0.28cm;
+    margin-top: 0.12cm;
+}
+
+.detail-label {
+    font-size: 7pt;
+    font-weight: 800;
+    color: #73839a;
+}
+
+.detail-value {
+    font-size: 9.2pt;
+    line-height: 1.3;
+    font-weight: 700;
+    color: #11233f;
+}
+
+.hero-zone {
+    flex: 1 1 auto;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.amount-hero {
+    padding: 0.8cm 1cm;
+    border-radius: 24px;
+    border: 1px solid #1f4383;
+    background: linear-gradient(135deg, #112e63 0%, #1d478f 68%, #325fa7 100%);
+    box-shadow: 0 20px 40px rgba(17, 46, 99, 0.14);
+    text-align: center;
+    color: #ffffff;
+}
+
+.amount-eyebrow {
+    font-size: 7.8pt;
+    font-weight: 800;
+    color: #f0c850;
+}
+
+.amount-value {
+    margin-top: 0.16cm;
+    font-size: 35pt;
+    line-height: 1;
+    font-weight: 900;
+    letter-spacing: 0.01em;
+}
+
+.amount-value span {
+    font-size: 18pt;
+    font-weight: 600;
+}
+
+.amount-rule {
+    width: 2.1cm;
+    height: 2px;
+    margin: 0.24cm auto;
+    border-radius: 99px;
+    background: #f0c850;
+}
+
+.amount-words {
+    font-size: 10pt;
+    color: #e6eef9;
+    font-style: italic;
+}
+
+.bottom-zone {
+    flex: 0 0 auto;
+    margin-top: auto;
+    padding-bottom: 0.22cm;
+}
+
+.status-strip {
+    display: flex;
+    align-items: center;
+    gap: 0.28cm;
+    padding: 0.22cm 0.32cm;
+    border-radius: 14px;
+    border: 1px solid #97d8b2;
+    background: linear-gradient(90deg, #f2fff7 0%, #e6fff0 100%);
+}
+
+.status-badge {
+    width: 0.58cm;
+    height: 0.58cm;
+    flex-shrink: 0;
+    border-radius: 50%;
+    background: #18a957;
+    color: #ffffff;
+    text-align: center;
+    line-height: 0.58cm;
+    font-size: 10pt;
+    font-weight: 900;
+}
+
+.status-title {
+    font-size: 9.2pt;
+    font-weight: 800;
+    color: #0f7b3a;
+}
+
+.status-text {
+    margin-top: 0.02cm;
+    font-size: 7.7pt;
+    color: #3f7f5c;
+}
+
+.recurring-chip {
+    display: inline-block;
+    margin-top: 0.16cm;
+    padding: 0.12cm 0.24cm;
+    border-radius: 999px;
+    border: 1px solid #f2d28d;
+    background: #fff8eb;
+    font-size: 7.5pt;
+    color: #8b5f0a;
+}
+
+.insight-grid {
+    display: grid;
+    grid-template-columns: 1fr 1.45fr;
+    gap: 0.34cm;
+    margin-top: 0.24cm;
+}
+
+.quote-card,
+.legal-card {
+    min-height: 2.7cm;
+    padding: 0.24cm 0.3cm;
+    border-radius: 16px;
+    border: 1px solid #dde5f1;
+    background: #ffffff;
+}
+
+.quote-card {
+    background: linear-gradient(180deg, #ffffff 0%, #fbfdff 100%);
+}
+
+.quote-mark {
+    text-align: center;
+    font-size: 17pt;
+    line-height: 1;
+    color: #c99818;
+}
+
+.quote-text {
+    margin-top: 0.04cm;
+    text-align: center;
+    font-family: Georgia, "Times New Roman", serif;
+    font-size: 8.6pt;
+    line-height: 1.42;
+    font-style: italic;
+    color: #314860;
+}
+
+.quote-ref {
+    margin-top: 0.14cm;
+    text-align: center;
+    font-size: 7pt;
+    font-weight: 800;
+    color: #c99818;
+}
+
+.legal-card {
+    font-size: 7.8pt;
+    line-height: 1.42;
+    color: #5c6b7d;
+}
+
+.legal-card strong {
+    display: block;
+    margin-bottom: 0.1cm;
+    font-size: 7.5pt;
+    font-weight: 800;
+    color: #112e63;
+}
+
+.sheet-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+    gap: 0.36cm;
+    margin-top: 0.26cm;
+    padding: 0.38cm 0.48cm 0.3cm;
+    border-radius: 20px 20px 0 0;
+    background: linear-gradient(135deg, #112e63 0%, #193b73 55%, #244a8f 100%);
+    color: #ffffff;
+}
+
+.footer-org {
+    font-size: 8.9pt;
+    font-weight: 800;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+}
+
+.footer-meta {
+    margin-top: 0.04cm;
+    font-size: 7.9pt;
+    color: #dce6f7;
+}
+
+.footer-secondary {
+    text-align: right;
+    font-size: 7.4pt;
+    line-height: 1.46;
+    color: #dce6f7;
+}

@@ -4,6 +4,7 @@ from django.contrib.auth.password_validation import validate_password
 from django.core.exceptions import ValidationError
 from apps.core.forms import EnhancedForm
 from apps.core.validators import phone_validator
+from .widgets import MultipleRoleField
 
 User = get_user_model()
 
@@ -47,9 +48,10 @@ class UserCreationByTeamForm(EnhancedForm):
         })
     )
     
-    role = forms.ChoiceField(
-        choices=User.Role.choices,
-        label="Rôle"
+    roles = MultipleRoleField(
+        label="Rôles",
+        help_text="Sélectionnez un ou plusieurs rôles pour cet utilisateur",
+        required=True
     )
     
     def clean_email(self):
@@ -73,6 +75,49 @@ class UserCreationByTeamForm(EnhancedForm):
         if len(last_name) < 2:
             raise ValidationError("Le nom de famille doit contenir au moins 2 caractères.")
         return last_name.upper()
+    
+    def clean_roles(self):
+        roles = self.cleaned_data.get('roles', [])
+        if not roles:
+            raise ValidationError("Au moins un rôle doit être sélectionné.")
+        return roles
+
+
+class UserBulkImportForm(EnhancedForm):
+    """Formulaire d'import en masse d'utilisateurs depuis Excel/CSV."""
+
+    file = forms.FileField(
+        label="Fichier Excel ou CSV",
+        help_text="Formats acceptés : .xlsx, .xls, .csv. Colonnes requises : prénom, nom, email.",
+        widget=forms.ClearableFileInput(attrs={
+            'accept': '.xlsx,.xls,.csv',
+        }),
+    )
+
+    default_roles = MultipleRoleField(
+        label="Rôle(s) par défaut",
+        help_text="Appliqué uniquement aux lignes sans colonne « rôle ».",
+        required=False,
+    )
+
+    send_email = forms.BooleanField(
+        label="Envoyer l'email d'invitation à chaque utilisateur",
+        required=False,
+        initial=True,
+    )
+
+    def clean_file(self):
+        f = self.cleaned_data['file']
+        name = (f.name or '').lower()
+        if not name.endswith(('.xlsx', '.xls', '.csv', '.xlsm')):
+            raise ValidationError("Format non supporté. Utilisez .xlsx, .xls ou .csv.")
+        # Limite 5 Mo
+        if f.size > 5 * 1024 * 1024:
+            raise ValidationError("Fichier trop volumineux (max 5 Mo).")
+        return f
+
+    def clean_default_roles(self):
+        return self.cleaned_data.get('default_roles') or ['membre']
 
 
 class FirstLoginPasswordChangeForm(EnhancedForm):
@@ -114,3 +159,43 @@ class FirstLoginPasswordChangeForm(EnhancedForm):
                 raise ValidationError("Les deux mots de passe ne correspondent pas. Veuillez les saisir à nouveau.")
         
         return cleaned_data
+
+
+class ProfileForm(forms.ModelForm):
+    """Formulaire de mise à jour du profil utilisateur."""
+
+    phone = forms.CharField(
+        max_length=20,
+        min_length=10,
+        required=False,
+        label="Téléphone",
+        validators=[phone_validator],
+        widget=forms.TextInput(attrs={'placeholder': '0694 XX XX XX'})
+    )
+
+    class Meta:
+        model = User
+        fields = ['first_name', 'last_name', 'email', 'phone']
+        widgets = {
+            'first_name': forms.TextInput(attrs={'placeholder': 'Prénom'}),
+            'last_name': forms.TextInput(attrs={'placeholder': 'Nom de famille'}),
+            'email': forms.EmailInput(attrs={'placeholder': 'email@exemple.com'}),
+        }
+
+    def clean_email(self):
+        email = self.cleaned_data['email']
+        if User.objects.filter(email=email).exclude(pk=self.instance.pk).exists():
+            raise ValidationError("Un autre utilisateur utilise déjà cette adresse email.")
+        return email
+
+    def clean_first_name(self):
+        first_name = self.cleaned_data['first_name'].strip()
+        if not first_name:
+            raise ValidationError("Le prénom est obligatoire.")
+        return first_name.title()
+
+    def clean_last_name(self):
+        last_name = self.cleaned_data['last_name'].strip()
+        if not last_name:
+            raise ValidationError("Le nom de famille est obligatoire.")
+        return last_name.upper()

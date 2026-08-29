@@ -1,0 +1,45 @@
+{% extends 'emails/base_email.html' %}
+
+{% block content %}
+<h2 style="color:#ff9600;margin:0 0 15px;font-size:18px;">🚗 Chauffeur en route</h2>
+
+<p style="color:#333;font-size:15px;line-height:1.7;">Bonjour {{ requester_name|default:"" }},</p>
+
+<p style="color:#333;font-size:15px;line-height:1.7;">Votre chauffeur est en route pour vous chercher ! ⏱️</p>
+
+{% if transport_request and driver %}
+<table role="presentation" width="100%" style="background:#fffbf0;border-radius:10px;border:1px solid #f5d5c8;margin:20px 0;">
+<tr><td style="padding:20px;">
+    
+    <h3 style="color:#ff9600;margin:0 0 15px;font-size:16px;">📍 Détails</h3>
+    
+    <p style="color:#555;margin:8px 0;font-size:14px;">
+        <strong>Chauffeur :</strong> {{ driver.user.get_full_name }}
+    </p>
+    <p style="color:#555;margin:8px 0;font-size:14px;">
+        <strong>Véhicule :</strong> {{ driver.vehicle_type }}
+    </p>
+    {% if driver.user.profile.phone %}
+    <p style="color:#555;margin:8px 0;font-size:14px;">
+        <strong>Téléphone :</strong> 
+        <a href="tel:{{ driver.user.profile.phone }}" style="color:#0A36FF;text-decoration:none;">
+            {{ driver.user.profile.phone }}
+        </a>
+        (n'hésitez pas à appeler en cas de problème)
+    </p>
+    {% endif %}
+    <p style="color:#555;margin:12px 0;font-size:14px;">
+        <strong>Lieu de prise en charge :</strong><br />
+        {{ transport_request.pickup_address }}
+    </p>
+    
+</td></tr>
+</table>
+
+{% endif %}
+
+<p style="color:#666;font-size:14px;line-height:1.7;margin-top:20px;">
+Préparez-vous ! Le chauffeur arrivera bientôt. 🙏
+</p>
+
+{% endblock %}

@@ -1,0 +1,184 @@
+{% extends 'base.html' %}
+{% load crispy_forms_tags %}
+
+{% block title %}{{ title }} - Jeunesse - EEBC{% endblock %}
+{% block page_title %}{{ title }}{% endblock %}
+{% block page_subtitle %}
+    {% if is_creation %}
+        Inscrire un nouveau jeune dans le module Jeunesse
+    {% else %}
+        Modification de la fiche de {{ member.full_name }}
+    {% endif %}
+{% endblock %}
+
+{% block extra_css %}
+<style>
+    .form-card {
+        background: var(--eebc-white);
+        border-radius: 20px;
+        padding: 2rem;
+        box-shadow: 0 10px 40px rgba(11, 15, 25, 0.06);
+        border: none;
+    }
+
+    .form-section {
+        margin-bottom: 2rem;
+        padding-bottom: 1.5rem;
+        border-bottom: 1px solid var(--eebc-gray-100);
+    }
+
+    .form-section:last-child {
+        border-bottom: none;
+        margin-bottom: 0;
+    }
+
+    .form-section-title {
+        font-size: 1.1rem;
+        font-weight: 700;
+        color: var(--eebc-black);
+        margin-bottom: 1rem;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .form-section-title i {
+        color: var(--eebc-primary);
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-10">
+        <div class="form-card">
+            <form method="post" enctype="multipart/form-data" novalidate>
+                {% csrf_token %}
+
+                <!-- Identité -->
+                <div class="form-section">
+                    <div class="form-section-title">
+                        <i class="bi bi-person"></i> Identité
+                    </div>
+                    <div class="row g-3">
+                        <div class="col-md-4">{{ form.first_name|as_crispy_field }}</div>
+                        <div class="col-md-4">{{ form.last_name|as_crispy_field }}</div>
+                        <div class="col-md-4">{{ form.date_of_birth|as_crispy_field }}</div>
+                        <div class="col-md-4">{{ form.gender|as_crispy_field }}</div>
+                        <div class="col-md-4">{{ form.photo|as_crispy_field }}</div>
+                        <div class="col-md-4">{{ form.group|as_crispy_field }}</div>
+                    </div>
+                </div>
+
+                <!-- Lien église -->
+                <div class="form-section">
+                    <div class="form-section-title">
+                        <i class="bi bi-building"></i> Lien église
+                    </div>
+                    <div class="row g-3">
+                        <div class="col-md-4">{{ form.site|as_crispy_field }}</div>
+                        <div class="col-md-4">{{ form.family|as_crispy_field }}</div>
+                        <div class="col-md-4">{{ form.linked_member|as_crispy_field }}</div>
+                    </div>
+                </div>
+
+                <!-- Coordonnées -->
+                <div class="form-section">
+                    <div class="form-section-title">
+                        <i class="bi bi-telephone"></i> Coordonnées
+                    </div>
+                    <div class="row g-3">
+                        <div class="col-md-4">{{ form.phone|as_crispy_field }}</div>
+                        <div class="col-md-4">{{ form.email|as_crispy_field }}</div>
+                        <div class="col-md-12">{{ form.address|as_crispy_field }}</div>
+                        <div class="col-md-6">{{ form.city|as_crispy_field }}</div>
+                        <div class="col-md-6">{{ form.postal_code|as_crispy_field }}</div>
+                    </div>
+                </div>
+
+                <!-- Parent / Tuteur -->
+                <div class="form-section">
+                    <div class="form-section-title">
+                        <i class="bi bi-people"></i> Parent / Tuteur
+                    </div>
+                    <div class="row g-3">
+                        <div class="col-md-4">{{ form.parent_name|as_crispy_field }}</div>
+                        <div class="col-md-4">{{ form.parent_phone|as_crispy_field }}</div>
+                        <div class="col-md-4">{{ form.parent_email|as_crispy_field }}</div>
+                    </div>
+                </div>
+
+                <!-- Contact d'urgence -->
+                <div class="form-section">
+                    <div class="form-section-title">
+                        <i class="bi bi-exclamation-triangle"></i> Contact d'urgence
+                    </div>
+                    <div class="row g-3">
+                        <div class="col-md-6">{{ form.emergency_contact|as_crispy_field }}</div>
+                        <div class="col-md-6">{{ form.emergency_phone|as_crispy_field }}</div>
+                    </div>
+                </div>
+
+                <!-- Santé -->
+                <div class="form-section">
+                    <div class="form-section-title">
+                        <i class="bi bi-heart-pulse"></i> Santé
+                    </div>
+                    <div class="row g-3">
+                        <div class="col-md-6">{{ form.allergies|as_crispy_field }}</div>
+                        <div class="col-md-6">{{ form.medical_notes|as_crispy_field }}</div>
+                    </div>
+                </div>
+
+                <!-- Vie spirituelle -->
+                <div class="form-section">
+                    <div class="form-section-title">
+                        <i class="bi bi-book"></i> Vie spirituelle
+                    </div>
+                    <div class="row g-3">
+                        <div class="col-md-3">{{ form.is_baptized|as_crispy_field }}</div>
+                        <div class="col-md-3">{{ form.baptism_date|as_crispy_field }}</div>
+                        <div class="col-md-3">{{ form.is_born_again|as_crispy_field }}</div>
+                        <div class="col-md-3">{{ form.conversion_date|as_crispy_field }}</div>
+                    </div>
+                </div>
+
+                <!-- Transport -->
+                <div class="form-section">
+                    <div class="form-section-title">
+                        <i class="bi bi-truck"></i> Transport
+                    </div>
+                    <div class="row g-3">
+                        <div class="col-md-4">{{ form.needs_transport|as_crispy_field }}</div>
+                        <div class="col-md-4">{{ form.pickup_address|as_crispy_field }}</div>
+                        <div class="col-md-4">{{ form.assigned_driver|as_crispy_field }}</div>
+                    </div>
+                </div>
+
+                <!-- Statut & Notes -->
+                <div class="form-section">
+                    <div class="form-section-title">
+                        <i class="bi bi-info-circle"></i> Statut
+                    </div>
+                    <div class="row g-3">
+                        <div class="col-md-4">{{ form.status|as_crispy_field }}</div>
+                        <div class="col-md-8">{{ form.notes|as_crispy_field }}</div>
+                    </div>
+                </div>
+
+                <!-- Actions -->
+                <div class="d-flex justify-content-between mt-4">
+                    <a href="{% if is_creation %}{% url 'young:member_list' %}{% else %}{% url 'young:member_detail' member.pk %}{% endif %}"
+                       class="btn btn-outline-secondary">
+                        <i class="bi bi-arrow-left me-2"></i>Annuler
+                    </a>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="bi bi-check-lg me-2"></i>
+                        {% if is_creation %}Inscrire{% else %}Enregistrer{% endif %}
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

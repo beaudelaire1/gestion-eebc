@@ -5,9 +5,21 @@
 {% block page_subtitle %}Gérez les reçus fiscaux pour les donateurs{% endblock %}
 
 {% block page_actions %}
-<a href="{% url 'finance:tax_receipt_create' %}" class="btn btn-primary">
-    <i class="bi bi-plus-lg me-1"></i> Nouveau reçu
-</a>
+<div class="d-flex gap-2">
+    <a href="{% url 'finance:tax_receipt_create' %}" class="btn btn-primary">
+        <i class="bi bi-plus-lg me-1"></i> Nouveau reçu
+    </a>
+    <button type="button" class="btn btn-success" data-bs-toggle="modal" data-bs-target="#bulkGenerateModal">
+        <i class="bi bi-collection me-1"></i> Générer en masse
+    </button>
+    <form method="post" action="{% url 'finance:tax_receipt_bulk_send' %}" class="d-inline" id="bulkSendForm">
+        {% csrf_token %}
+        <input type="hidden" name="fiscal_year" value="{{ request.GET.year }}">
+        <button type="button" class="btn btn-outline-info" onclick="confirmBulkSend()">
+            <i class="bi bi-envelope me-1"></i> Envoyer en masse
+        </button>
+    </form>
+</div>
 {% endblock %}
 
 {% block content %}
@@ -112,4 +124,50 @@
         </div>
     </div>
 </div>
+
+<!-- Modal Génération en masse -->
+<div class="modal fade" id="bulkGenerateModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form method="post" action="{% url 'finance:tax_receipt_bulk_generate' %}">
+                {% csrf_token %}
+                <div class="modal-header">
+                    <h5 class="modal-title"><i class="bi bi-collection me-2"></i>Générer les relevés en masse</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <p>Cette action va créer un relevé fiscal pour <strong>chaque membre actif</strong> ayant effectué des dons (transactions, dons en ligne, dons de campagne) pendant l'année sélectionnée.</p>
+                    <p class="text-muted small">Les membres qui ont déjà un relevé pour cette année seront ignorés.</p>
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Année fiscale</label>
+                        <select name="fiscal_year" class="form-select">
+                            {% for y in years %}
+                            <option value="{{ y }}">{{ y }}</option>
+                            {% endfor %}
+                            <option value="{{ current_year }}" selected>{{ current_year }}</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Annuler</button>
+                    <button type="submit" class="btn btn-success">
+                        <i class="bi bi-collection me-1"></i> Générer
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function confirmBulkSend() {
+    const year = document.querySelector('#bulkSendForm input[name="fiscal_year"]').value;
+    const label = year ? `pour l'année ${year}` : '(toutes années)';
+    if (confirm(`Envoyer par email TOUS les reçus fiscaux émis ${label} ?\n\nSeuls les reçus au statut "Émis" avec une adresse email seront envoyés.`)) {
+        document.getElementById('bulkSendForm').submit();
+    }
+}
+</script>
 {% endblock %}

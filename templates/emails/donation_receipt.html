@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Reçu de don - EEBC</title>
+</head>
+<body style="margin:0;padding:0;background-color:#f4f6f9;font-family:'Segoe UI',Tahoma,Geneva,Verdana,sans-serif;">
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background-color:#f4f6f9;padding:30px 0;">
+<tr><td align="center">
+<table role="presentation" width="600" cellpadding="0" cellspacing="0" style="background:#ffffff;border-radius:12px;overflow:hidden;box-shadow:0 4px 20px rgba(0,0,0,0.08);">
+
+<!-- Header avec logo -->
+<tr>
+<td style="background:linear-gradient(135deg,#0A36FF 0%,#1e3a5f 100%);padding:30px 40px;text-align:center;">
+    <img src="https://eglise-ebc.org/static/images/eebc-logo.png" alt="EEBC" width="80" style="display:block;margin:0 auto 12px;">
+    <h1 style="color:#ffffff;margin:0;font-size:22px;font-weight:700;letter-spacing:0.5px;">
+        Église Évangélique Baptiste de Cabassou
+    </h1>
+    <p style="color:rgba(255,255,255,0.85);margin:6px 0 0;font-size:13px;">
+        11 lot Calimbé 2, rte de Cabassou, 97300 Cayenne, Guyane française
+    </p>
+</td>
+</tr>
+
+<!-- Bande dorée -->
+<tr>
+<td style="background:linear-gradient(90deg,#b8860b,#d4a11e,#f0c850);height:4px;"></td>
+</tr>
+
+<!-- Contenu principal -->
+<tr>
+<td style="padding:35px 40px;">
+    <h2 style="color:#0A36FF;margin:0 0 20px;font-size:20px;">Reçu de don</h2>
+
+    <p style="color:#333;font-size:15px;line-height:1.7;margin:0 0 20px;">
+        Bonjour <strong>{{ donor_name }}</strong>,
+    </p>
+
+    <p style="color:#333;font-size:15px;line-height:1.7;margin:0 0 25px;">
+        Nous vous remercions chaleureusement pour votre générosité envers l'œuvre de Dieu.
+        Votre {{ donation_type_label }} contribue à l'avancement de notre mission au sein de la communauté.
+    </p>
+
+    <!-- Récapitulatif du don -->
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f8f9fc;border-radius:10px;border:1px solid #e8ecf4;margin-bottom:25px;">
+    <tr>
+    <td style="padding:25px;">
+        <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
+        <tr>
+            <td style="padding:8px 0;color:#666;font-size:14px;border-bottom:1px solid #e8ecf4;">Montant</td>
+            <td style="padding:8px 0;color:#0A36FF;font-size:22px;font-weight:700;text-align:right;border-bottom:1px solid #e8ecf4;">{{ amount }}€</td>
+        </tr>
+        <tr>
+            <td style="padding:8px 0;color:#666;font-size:14px;border-bottom:1px solid #e8ecf4;">Type</td>
+            <td style="padding:8px 0;color:#333;font-size:14px;font-weight:600;text-align:right;border-bottom:1px solid #e8ecf4;">{{ donation_type_label }}</td>
+        </tr>
+        <tr>
+            <td style="padding:8px 0;color:#666;font-size:14px;border-bottom:1px solid #e8ecf4;">Référence</td>
+            <td style="padding:8px 0;color:#333;font-size:14px;font-weight:600;text-align:right;border-bottom:1px solid #e8ecf4;">{{ reference }}</td>
+        </tr>
+        <tr>
+            <td style="padding:8px 0;color:#666;font-size:14px;">Date</td>
+            <td style="padding:8px 0;color:#333;font-size:14px;font-weight:600;text-align:right;">{{ donation_date }}</td>
+        </tr>
+        </table>
+    </td>
+    </tr>
+    </table>
+
+    <p style="color:#555;font-size:13px;line-height:1.6;margin:0 0 15px;">
+        📎 Votre reçu de don au format PDF est joint à cet email.
+    </p>
+
+    <!-- Citation biblique -->
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="margin:25px 0;">
+    <tr>
+    <td style="border-left:4px solid #d4a11e;padding:15px 20px;background:#fffdf5;border-radius:0 8px 8px 0;">
+        <p style="color:#5a4a1e;font-size:14px;font-style:italic;margin:0 0 5px;line-height:1.6;">
+            « Chacun donne comme il l'a résolu en son cœur, sans tristesse ni contrainte ;
+            car Dieu aime celui qui donne avec joie. »
+        </p>
+        <p style="color:#8a7a3e;font-size:13px;margin:0;font-weight:600;">— 2 Corinthiens 9:7</p>
+    </td>
+    </tr>
+    </table>
+
+    <p style="color:#333;font-size:15px;line-height:1.7;margin:0;">
+        Que Dieu vous bénisse abondamment.
+    </p>
+</td>
+</tr>
+
+<!-- Séparateur -->
+<tr>
+<td style="padding:0 40px;">
+    <hr style="border:none;border-top:1px solid #e8ecf4;margin:0;">
+</td>
+</tr>
+
+<!-- Signature -->
+<tr>
+<td style="padding:25px 40px;">
+    <p style="color:#0A36FF;font-size:15px;font-weight:700;margin:0 0 4px;">
+        L'Équipe de Finance EEBC
+    </p>
+    <p style="color:#666;font-size:13px;margin:0;line-height:1.5;">
+        Église Évangélique Baptiste de Cabassou<br>
+        11 lot Calimbé 2, rte de Cabassou<br>
+        97300 Cayenne, Guyane française
+    </p>
+</td>
+</tr>
+
+<!-- Footer -->
+<tr>
+<td style="background:#1e3a5f;padding:20px 40px;text-align:center;">
+    <p style="color:rgba(255,255,255,0.7);font-size:12px;margin:0 0 8px;">
+        © 2026 Église Évangélique Baptiste de Cabassou. Tous droits réservés.
+    </p>
+    <p style="color:rgba(255,255,255,0.5);font-size:11px;margin:0;">
+        Cet email a été envoyé automatiquement suite à votre don en ligne.
+        <br>contact@eglise-ebc.org | eglise-ebc.org
+    </p>
+</td>
+</tr>
+
+</table>
+</td></tr>
+</table>
+</body>
+</html>

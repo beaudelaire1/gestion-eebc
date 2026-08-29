@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<style>
+@page { size: A4; margin: 1.5cm; }
+body { font-family: "Segoe UI", Arial, sans-serif; font-size: 10pt; color: #333; }
+.header { text-align: center; margin-bottom: 20px; border-bottom: 3px solid #0A36FF; padding-bottom: 15px; }
+.header h1 { color: #0A36FF; font-size: 18pt; margin: 0; }
+.header p { color: #666; margin: 4px 0 0; font-size: 9pt; }
+.gold-bar { height: 3px; background: linear-gradient(90deg, #b8860b, #d4a11e, #f0c850); margin: 10px 0 20px; }
+.period { text-align: center; font-size: 14pt; font-weight: 700; color: #1e3a5f; margin-bottom: 20px; }
+.kpi-row { display: flex; gap: 15px; margin-bottom: 20px; }
+.kpi { flex: 1; text-align: center; padding: 12px; border: 1px solid #e2e8f0; border-radius: 8px; }
+.kpi .value { font-size: 16pt; font-weight: 700; }
+.kpi .label { font-size: 8pt; color: #888; }
+.green { color: #16a34a; }
+.red { color: #dc2626; }
+.blue { color: #0A36FF; }
+table { width: 100%; border-collapse: collapse; margin-bottom: 20px; }
+th { background: #f8f9fc; color: #333; font-size: 9pt; padding: 8px; text-align: left; border-bottom: 2px solid #0A36FF; }
+td { padding: 6px 8px; font-size: 9pt; border-bottom: 1px solid #eee; }
+.text-right { text-align: right; }
+.fw-bold { font-weight: 700; }
+h2 { color: #0A36FF; font-size: 12pt; margin: 20px 0 10px; border-bottom: 1px solid #e2e8f0; padding-bottom: 5px; }
+.footer { text-align: center; margin-top: 30px; padding-top: 10px; border-top: 1px solid #e2e8f0; font-size: 8pt; color: #999; }
+</style>
+</head>
+<body>
+<div class="header">
+    <h1>Église Évangélique Baptiste de Cabassou</h1>
+    <p>11 lot Calimbé 2, rte de Cabassou, 97300 Cayenne — contact@eglise-ebc.org</p>
+</div>
+<div class="gold-bar"></div>
+<div class="period">Rapport financier — {% if month %}Mois {{ month }}/{% endif %}{{ year }}</div>
+
+<div class="kpi-row">
+    <div class="kpi"><div class="value green">{{ income_total|floatformat:2 }}€</div><div class="label">Recettes ({{ income_count }})</div></div>
+    <div class="kpi"><div class="value red">{{ expense_total|floatformat:2 }}€</div><div class="label">Dépenses ({{ expense_count }})</div></div>
+    <div class="kpi"><div class="value blue">{{ balance|floatformat:2 }}€</div><div class="label">Solde</div></div>
+    <div class="kpi"><div class="value">{{ transaction_count }}</div><div class="label">Transactions</div></div>
+</div>
+
+<h2>Répartition par type</h2>
+<table>
+<thead><tr><th>Type</th><th class="text-right">Montant</th><th class="text-right">Nombre</th></tr></thead>
+<tbody>
+{% for item in by_type %}
+<tr><td>{{ item.transaction_type }}</td><td class="text-right fw-bold">{{ item.total|floatformat:2 }}€</td><td class="text-right">{{ item.count }}</td></tr>
+{% endfor %}
+</tbody>
+</table>
+
+<h2>Par méthode de paiement</h2>
+<table>
+<thead><tr><th>Méthode</th><th class="text-right">Montant</th><th class="text-right">Nombre</th></tr></thead>
+<tbody>
+{% for item in by_method %}
+<tr><td>{{ item.payment_method }}</td><td class="text-right fw-bold">{{ item.total|floatformat:2 }}€</td><td class="text-right">{{ item.count }}</td></tr>
+{% endfor %}
+</tbody>
+</table>
+
+{% if monthly %}
+<h2>Évolution mensuelle {{ year }}</h2>
+<table>
+<thead><tr><th>Mois</th><th class="text-right">Recettes</th><th class="text-right">Dépenses</th><th class="text-right">Solde</th></tr></thead>
+<tbody>
+{% for m in monthly %}
+<tr>
+    <td>{{ m.month_name }}</td>
+    <td class="text-right green">{{ m.income|floatformat:2 }}€</td>
+    <td class="text-right red">{{ m.expense|floatformat:2 }}€</td>
+    <td class="text-right fw-bold">{{ m.balance|floatformat:2 }}€</td>
+</tr>
+{% endfor %}
+</tbody>
+</table>
+{% endif %}
+
+<div class="footer">
+    Document généré automatiquement — EEBC Gestion — eglise-ebc.org
+</div>
+</body>
+</html>

@@ -1,0 +1,65 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ title }} - Culte{% endblock %}
+{% block page_title %}{{ title }}{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-body">
+                <form method="post">
+                    {% csrf_token %}
+                    
+                    <div class="mb-3">
+                        <label for="name" class="form-label">Nom du modèle *</label>
+                        <input type="text" class="form-control" id="name" name="name" 
+                               value="{{ template.name|default:'' }}" required>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="service_type" class="form-label">Type de service *</label>
+                        <select class="form-select" id="service_type" name="service_type" required>
+                            <option value="">Sélectionner un type</option>
+                            {% for value, label in service_types %}
+                            <option value="{{ value }}" {% if template.service_type == value %}selected{% endif %}>
+                                {{ label }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="estimated_duration" class="form-label">Durée estimée (minutes)</label>
+                        <input type="number" class="form-control" id="estimated_duration" name="estimated_duration" 
+                               value="{{ template.estimated_duration|default:90 }}" min="1" max="300">
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="description" class="form-label">Description</label>
+                        <textarea class="form-control" id="description" name="description" rows="3">{{ template.description|default:'' }}</textarea>
+                    </div>
+                    
+                    {% if template %}
+                    <div class="mb-3">
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="is_active" name="is_active" 
+                                   {% if template.is_active %}checked{% endif %}>
+                            <label class="form-check-label" for="is_active">
+                                Modèle actif
+                            </label>
+                        </div>
+                    </div>
+                    {% endif %}
+                    
+                    <div class="d-flex gap-2">
+                        <button type="submit" class="btn btn-primary">{{ submit_text }}</button>
+                        <a href="{% if template %}{% url 'worship:template_detail' template.pk %}{% else %}{% url 'worship:template_list' %}{% endif %}" 
+                           class="btn btn-secondary">Annuler</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

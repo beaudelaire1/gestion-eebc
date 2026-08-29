@@ -1,11 +1,13 @@
 from django.shortcuts import render, get_object_or_404, redirect
+from django.contrib.auth import get_user_model
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.http import JsonResponse
 from django.utils import timezone
+from django.db import transaction
 from django.db.models import Count, Q
 from django.core.paginator import Paginator
-from datetime import date, timedelta
+from datetime import date, timedelta, datetime
 
 from .models import AgeGroup, BibleClass, Child, Session, Attendance, Monitor, DriverCheckIn
 from .forms import ChildForm, ChildSearchForm
@@ -16,14 +18,51 @@ from .permissions import (
     can_access_child, is_club_admin, is_club_staff
 )
 from .services import OptimizedBibleClubService
+import logging
+
+logger = logging.getLogger(__name__)
+
+DEFAULT_BIBLE_CLASS_CAPACITY = 15
+MONITOR_ROLE_CHOICES = (
+    ('moniteur', 'Moniteur'),
+    ('responsable', 'Moniteur principal'),
+)
+
+
+def _parse_bible_class_capacity(value):
+    if not value:
+        return DEFAULT_BIBLE_CLASS_CAPACITY
+    try:
+        capacity = int(value)
+    except (TypeError, ValueError):
+        raise ValueError('La capacité maximale doit être un nombre entier.')
+    if capacity < 1:
+        raise ValueError('La capacité maximale doit être supérieure ou égale à 1.')
+    return capacity
+
+
+def _bible_class_duplicate_exists(age_group, room, exclude_pk=None):
+    queryset = BibleClass.objects.filter(age_group=age_group, is_active=True)
+    room = (room or '').strip()
+    queryset = queryset.filter(room__iexact=room) if room else queryset.filter(room='')
+    if exclude_pk:
+        queryset = queryset.exclude(pk=exclude_pk)
+    return queryset.exists()
+
+
+def _format_bible_class_label(age_group, room):
+    return f"{age_group.name} - {room}" if room else age_group.name
+
+
+def _selected_ids(values):
+    return [value for value in values if str(value).isdigit()]
 
 
 @login_required
 @club_staff_required
 def bibleclub_home(request):
     """Page d'accueil du club biblique."""
-    from datetime import date as date_class, timedelta
-    today = date_class.today()
+    today = date.today()
     user = request.user
     
     # Récupérer les classes accessibles par l'utilisateur
@@ -121,7 +160,7 @@ def class_detail(request, pk):
     """Détail d'une classe avec ses enfants."""
     bible_class = get_object_or_404(BibleClass, pk=pk)
     children = bible_class.children.filter(is_active=True)
-    monitors = bible_class.monitors.filter(is_active=True)
+    monitors = bible_class.monitors.filter(is_active=True).select_related('user')
     
     context = {
         'bible_class': bible_class,
@@ -130,6 +169,70 @@ def class_detail(request, pk):
         'is_admin': is_club_admin(request.user),
     }
     return render(request, 'bibleclub/class_detail.html', context)
+
+
+@login_required
+@club_admin_required
+def class_add_monitors(request, pk):
+    """Ajoute un ou plusieurs moniteurs à une classe."""
+    bible_class = get_object_or_404(BibleClass, pk=pk, is_active=True)
+    User = get_user_model()
+
+    if request.method == 'POST':
+        user_ids = _selected_ids(request.POST.getlist('users'))
+        monitor_ids = _selected_ids(request.POST.getlist('monitors'))
+        role = request.POST.get('role', 'moniteur')
+
+        if not user_ids and not monitor_ids:
+            messages.error(request, 'Sélectionnez au moins un utilisateur ou un moniteur à ajouter.')
+        else:
+            with transaction.atomic():
+                users = User.objects.filter(
+                    pk__in=user_ids,
+                    is_active=True,
+                ).exclude(
+                    pk__in=Monitor.objects.values_list('user_id', flat=True)
+                )
+
+                created_count = 0
+                for user in users:
+                    Monitor.objects.create(
+                        user=user,
+                        bible_class=bible_class,
+                        is_lead=(role == 'responsable'),
+                        is_active=True,
+                    )
+                    created_count += 1
+
+                assigned_count = Monitor.objects.filter(
+                    pk__in=monitor_ids,
+                    is_active=True,
+                    bible_class__isnull=True,
+                ).update(bible_class=bible_class)
+
+            total_added = created_count + assigned_count
+            if total_added:
+                messages.success(request, f'{total_added} moniteur(s) ajouté(s) à "{bible_class}".')
+                return redirect('bibleclub:class_detail', pk=bible_class.pk)
+            messages.warning(request, 'Aucun moniteur disponible n’a été ajouté.')
+
+    existing_monitors = Monitor.objects.values_list('user_id', flat=True)
+    available_users = User.objects.filter(is_active=True).exclude(
+        pk__in=existing_monitors
+    ).order_by('last_name', 'first_name', 'username')
+    available_monitors = Monitor.objects.filter(
+        is_active=True,
+        bible_class__isnull=True,
+    ).select_related('user').order_by('user__last_name', 'user__first_name')
+
+    context = {
+        'bible_class': bible_class,
+        'available_users': available_users,
+        'available_monitors': available_monitors,
+        'role_choices': MONITOR_ROLE_CHOICES,
+        'title': f'Ajouter des moniteurs à {bible_class}',
+    }
+    return render(request, 'bibleclub/class_add_monitors.html', context)
 
 
 @login_required
@@ -332,6 +435,22 @@ def child_detail(request, pk):
 
 @login_required
 @club_staff_required
+@child_access_required
+def child_print_registration(request, pk):
+    """Télécharge la fiche d'inscription de l'enfant en PDF."""
+    from apps.core.pdf_service import PDFService
+    child = get_object_or_404(Child, pk=pk)
+    filename = f"fiche_inscription_enfant_{child.last_name}_{child.first_name}.pdf"
+    return PDFService.generate_pdf_download(
+        'bibleclub/pdf/registration_form.html',
+        {'child': child},
+        filename=filename,
+        request=request,
+    )
+
+
+@login_required
+@club_staff_required
 def session_list(request):
     """Liste des sessions."""
     sessions = Session.objects.annotate(
@@ -427,7 +546,6 @@ def take_attendance(request, session_pk, class_pk):
                 )
                 attendance.status = data['status']
                 if data.get('check_in_time'):
-                    from datetime import datetime
                     attendance.check_in_time = datetime.strptime(data['check_in_time'], '%H:%M').time()
                 attendance.notes = data.get('notes', '')
                 attendance.save()
@@ -469,7 +587,6 @@ def take_attendance(request, session_pk, class_pk):
                         stats=stats
                     )
         except Exception as e:
-            import logging
             logging.getLogger(__name__).error(f"Erreur notification appel: {e}")
         
         if request.htmx:
@@ -532,7 +649,6 @@ def create_session(request):
         
         if session_date:
             # Créer la session
-            from datetime import datetime
             session_date_obj = datetime.strptime(session_date, '%Y-%m-%d').date()
             
             session, created = Session.objects.get_or_create(
@@ -614,3 +730,401 @@ def my_class_children(request):
         'children': children,
         'bible_class': monitor.bible_class,
     })
+
+
+# =============================================================================
+# CRUD POUR LES CLASSES BIBLIQUES - OPÉRATIONS MANQUANTES
+# =============================================================================
+
+@login_required
+@club_admin_required
+def bible_class_create(request):
+    """Créer une nouvelle classe biblique."""
+    if request.method == 'POST':
+        age_group_id = request.POST.get('age_group')
+        room = request.POST.get('room', '').strip()
+        max_capacity = request.POST.get('max_capacity')
+
+        if not age_group_id:
+            messages.error(request, "La tranche d'\u00e2ge est requise.")
+        else:
+            try:
+                age_group = AgeGroup.objects.get(pk=age_group_id)
+                capacity = _parse_bible_class_capacity(max_capacity)
+
+                if _bible_class_duplicate_exists(age_group, room):
+                    messages.error(request, f'Une classe "{_format_bible_class_label(age_group, room)}" existe d\u00e9j\u00e0.')
+                else:
+                    bible_class = BibleClass.objects.create(
+                        age_group=age_group,
+                        room=room,
+                        max_capacity=capacity,
+                        is_active=True
+                    )
+                    messages.success(request, f'Classe "{bible_class}" cr\u00e9\u00e9e avec succ\u00e8s.')
+                    return redirect('bibleclub:class_detail', pk=bible_class.pk)
+            except AgeGroup.DoesNotExist:
+                messages.error(request, "La tranche d'\u00e2ge s\u00e9lectionn\u00e9e est invalide.")
+            except ValueError as e:
+                messages.error(request, str(e))
+            except Exception as e:
+                messages.error(request, f'Erreur lors de la cr\u00e9ation\u00a0: {e}')
+
+    age_groups = AgeGroup.objects.all().order_by('min_age')
+    context = {
+        'age_groups': age_groups,
+        'title': 'Nouvelle classe biblique',
+        'submit_text': 'Cr\u00e9er la classe',
+        'selected_age_group_id': request.POST.get('age_group') if request.method == 'POST' else None,
+        'submitted_room': request.POST.get('room', '') if request.method == 'POST' else '',
+        'submitted_capacity': request.POST.get('max_capacity', '') if request.method == 'POST' else '',
+    }
+    return render(request, 'bibleclub/bible_class_form.html', context)
+
+
+@login_required
+@club_admin_required
+def bible_class_update(request, pk):
+    """Modifier une classe biblique."""
+    bible_class = get_object_or_404(BibleClass, pk=pk)
+
+    if request.method == 'POST':
+        age_group_id = request.POST.get('age_group')
+        room = request.POST.get('room', '').strip()
+        max_capacity = request.POST.get('max_capacity')
+        is_active = 'is_active' in request.POST
+
+        if not age_group_id:
+            messages.error(request, "La tranche d'\u00e2ge est requise.")
+        else:
+            try:
+                age_group = AgeGroup.objects.get(pk=age_group_id)
+                capacity = _parse_bible_class_capacity(max_capacity)
+
+                if _bible_class_duplicate_exists(age_group, room, exclude_pk=pk):
+                    messages.error(request, f'Une classe "{_format_bible_class_label(age_group, room)}" existe d\u00e9j\u00e0.')
+                else:
+                    bible_class.age_group = age_group
+                    bible_class.room = room
+                    bible_class.max_capacity = capacity
+                    bible_class.is_active = is_active
+                    bible_class.save()
+                    messages.success(request, f'Classe "{bible_class}" modifi\u00e9e avec succ\u00e8s.')
+                    return redirect('bibleclub:class_detail', pk=bible_class.pk)
+            except AgeGroup.DoesNotExist:
+                messages.error(request, "La tranche d'\u00e2ge s\u00e9lectionn\u00e9e est invalide.")
+            except ValueError as e:
+                messages.error(request, str(e))
+            except Exception as e:
+                messages.error(request, f'Erreur lors de la modification\u00a0: {e}')
+
+    age_groups = AgeGroup.objects.all().order_by('min_age')
+    context = {
+        'bible_class': bible_class,
+        'age_groups': age_groups,
+        'title': f'Modifier {bible_class}',
+        'submit_text': 'Enregistrer les modifications',
+        'selected_age_group_id': request.POST.get('age_group', str(bible_class.age_group_id)) if request.method == 'POST' else str(bible_class.age_group_id),
+        'submitted_room': request.POST.get('room', bible_class.room) if request.method == 'POST' else bible_class.room,
+        'submitted_capacity': request.POST.get('max_capacity', bible_class.max_capacity) if request.method == 'POST' else bible_class.max_capacity,
+    }
+    return render(request, 'bibleclub/bible_class_form.html', context)
+
+
+@login_required
+@club_admin_required
+def bible_class_delete(request, pk):
+    """Supprimer une classe biblique (soft delete)."""
+    bible_class = get_object_or_404(BibleClass, pk=pk)
+    
+    # Vérifier s'il y a des enfants ou moniteurs liés
+    children_count = bible_class.children.filter(is_active=True).count()
+    monitors_count = bible_class.monitors.filter(is_active=True).count()
+    
+    if request.method == 'POST':
+        action = request.POST.get('action')
+        
+        if action == 'reassign' and (children_count > 0 or monitors_count > 0):
+            new_class_id = request.POST.get('new_class')
+            if new_class_id:
+                try:
+                    new_class = BibleClass.objects.get(pk=new_class_id, is_active=True)
+                    
+                    # Réassigner les enfants
+                    if children_count > 0:
+                        bible_class.children.filter(is_active=True).update(bible_class=new_class)
+                        messages.info(request, f'{children_count} enfant(s) réassigné(s) à "{new_class}".')
+                    
+                    # Réassigner les moniteurs
+                    if monitors_count > 0:
+                        bible_class.monitors.filter(is_active=True).update(bible_class=new_class)
+                        messages.info(request, f'{monitors_count} moniteur(s) réassigné(s) à "{new_class}".')
+                        
+                except BibleClass.DoesNotExist:
+                    messages.error(request, 'Classe de réassignation invalide.')
+                    return redirect('bibleclub:bible_class_delete', pk=pk)
+        
+        # Soft delete de la classe
+        class_name = str(bible_class)
+        bible_class.is_active = False
+        bible_class.save()
+        
+        messages.success(request, f'Classe "{class_name}" supprimée avec succès.')
+        return redirect('bibleclub:class_list')
+    
+    # Autres classes pour réassignation
+    other_classes = BibleClass.objects.filter(is_active=True).exclude(pk=pk)
+    
+    context = {
+        'bible_class': bible_class,
+        'children_count': children_count,
+        'monitors_count': monitors_count,
+        'other_classes': other_classes,
+    }
+    return render(request, 'bibleclub/bible_class_delete_confirm.html', context)
+
+
+# =============================================================================
+# CRUD POUR LES MONITEURS - OPÉRATIONS MANQUANTES
+# =============================================================================
+
+@login_required
+@club_admin_required
+def monitor_list(request):
+    """Liste des moniteurs."""
+    monitors = Monitor.objects.filter(is_active=True).select_related(
+        'user', 'bible_class', 'bible_class__age_group'
+    ).order_by('user__last_name', 'user__first_name')
+    
+    # Statistiques
+    total_monitors = monitors.count()
+    active_monitors = monitors.filter(is_active=True).count()
+    monitors_with_class = monitors.exclude(bible_class__isnull=True).count()
+    
+    context = {
+        'monitors': monitors,
+        'total_monitors': total_monitors,
+        'active_monitors': active_monitors,
+        'monitors_with_class': monitors_with_class,
+    }
+    
+    return render(request, 'bibleclub/monitor_list.html', context)
+
+
+@login_required
+@club_admin_required
+def monitor_create(request):
+    """Créer un nouveau moniteur."""
+    if request.method == 'POST':
+        user_id = request.POST.get('user')
+        bible_class_id = request.POST.get('bible_class')
+        role = request.POST.get('role', 'moniteur')
+        
+        if not user_id:
+            messages.error(request, 'Vous devez sélectionner un utilisateur.')
+        else:
+            try:
+                # Vérifier si l'utilisateur est déjà moniteur
+                if Monitor.objects.filter(user_id=user_id).exists():
+                    messages.error(request, 'Cet utilisateur est déjà moniteur.')
+                else:
+                    bible_class = BibleClass.objects.get(pk=bible_class_id) if bible_class_id else None
+                    
+                    monitor = Monitor.objects.create(
+                        user_id=user_id,
+                        bible_class=bible_class,
+                        is_lead=(role == 'responsable'),
+                        is_active=True
+                    )
+                    
+                    messages.success(request, f'Moniteur {monitor.user.get_full_name()} ajouté avec succès.')
+                    return redirect('bibleclub:monitor_list')
+            except Exception as e:
+                messages.error(request, f'Erreur lors de la création : {e}')
+    
+    User = get_user_model()
+    existing_monitors = Monitor.objects.values_list('user_id', flat=True)
+    users = User.objects.exclude(pk__in=existing_monitors).order_by('last_name', 'first_name')
+    
+    classes = BibleClass.objects.filter(is_active=True)
+    
+    context = {
+        'available_users': users,
+        'bible_classes': classes,
+        'role_choices': MONITOR_ROLE_CHOICES,
+        'title': 'Ajouter un moniteur',
+        'submit_text': 'Ajouter'
+    }
+    return render(request, 'bibleclub/monitor_form.html', context)
+
+
+@login_required
+@club_admin_required
+def monitor_update(request, pk):
+    """Modifier un moniteur."""
+    monitor = get_object_or_404(Monitor, pk=pk)
+    
+    if request.method == 'POST':
+        bible_class_id = request.POST.get('bible_class')
+        role = request.POST.get('role')
+        phone = request.POST.get('phone', '')
+        is_active = 'is_active' in request.POST
+        
+        try:
+            bible_class = BibleClass.objects.get(pk=bible_class_id) if bible_class_id else None
+            
+            monitor.bible_class = bible_class
+            monitor.is_lead = (role == 'responsable')
+            monitor.phone = phone
+            monitor.is_active = is_active
+            monitor.save()
+            
+            messages.success(request, f'Moniteur {monitor.user.get_full_name()} modifié avec succès.')
+            return redirect('bibleclub:monitor_list')
+        except Exception as e:
+            messages.error(request, f'Erreur lors de la modification : {e}')
+    
+    classes = BibleClass.objects.filter(is_active=True)
+    
+    context = {
+        'monitor': monitor,
+        'bible_classes': classes,
+        'role_choices': MONITOR_ROLE_CHOICES,
+        'title': f'Modifier {monitor.user.get_full_name()}',
+        'submit_text': 'Enregistrer'
+    }
+    return render(request, 'bibleclub/monitor_form.html', context)
+
+
+@login_required
+@club_admin_required
+def monitor_delete(request, pk):
+    """Supprimer (désactiver) un moniteur."""
+    monitor = get_object_or_404(Monitor, pk=pk)
+    
+    if request.method == 'POST':
+        monitor.is_active = False
+        monitor.save()
+        messages.success(request, f'Moniteur {monitor.user.get_full_name()} désactivé.')
+        return redirect('bibleclub:monitor_list')
+        
+    context = {
+        'monitor': monitor,
+        'title': f'Désactiver {monitor.user.get_full_name()}'
+    }
+    return render(request, 'bibleclub/monitor_delete_confirm.html', context)
+
+
+# =============================================================================
+# CRUD POUR LES TRANCHES D'ÂGE (CONFIGURATION)
+# =============================================================================
+
+@login_required
+@club_admin_required
+def age_group_list(request):
+    """Liste des tranches d'âge."""
+    age_groups = AgeGroup.objects.all().order_by('min_age')
+    
+    context = {
+        'age_groups': age_groups,
+        'is_admin': True,
+    }
+    return render(request, 'bibleclub/age_group_list.html', context)
+
+
+@login_required
+@club_admin_required
+def age_group_create(request):
+    """Créer une tranche d'âge."""
+    age_group = None  # objet temporaire pour pré-remplir le formulaire en cas d'erreur
+    if request.method == 'POST':
+        name = request.POST.get('name', '').strip()
+        min_age = request.POST.get('min_age', '').strip()
+        max_age = request.POST.get('max_age', '').strip()
+        description = request.POST.get('description', '')
+        color = request.POST.get('color', '#0d6efd')
+
+        error = None
+        if not name or not min_age or not max_age:
+            error = 'Veuillez remplir les champs obligatoires.'
+        elif int(min_age) >= int(max_age):
+            error = "L'\u00e2ge minimum doit \u00eatre inf\u00e9rieur \u00e0 l'\u00e2ge maximum."
+
+        if error:
+            messages.error(request, error)
+            from types import SimpleNamespace
+            age_group = SimpleNamespace(name=name, min_age=min_age, max_age=max_age,
+                                       description=description, color=color)
+        else:
+            AgeGroup.objects.create(
+                name=name, min_age=int(min_age), max_age=int(max_age),
+                description=description, color=color
+            )
+            messages.success(request, 'Tranche d\'\u00e2ge cr\u00e9\u00e9e avec succ\u00e8s.')
+            return redirect('bibleclub:age_group_list')
+
+    return render(request, 'bibleclub/age_group_form.html', {
+        'title': 'Nouvelle tranche d\'\u00e2ge',
+        'age_group': age_group,
+    })
+
+
+@login_required
+@club_admin_required
+def age_group_update(request, pk):
+    """Modifier une tranche d'âge."""
+    age_group = get_object_or_404(AgeGroup, pk=pk)
+
+    if request.method == 'POST':
+        name = request.POST.get('name', '').strip()
+        min_age = request.POST.get('min_age', '').strip()
+        max_age = request.POST.get('max_age', '').strip()
+        description = request.POST.get('description', '')
+        color = request.POST.get('color', age_group.color)
+
+        # Mettre à jour en mémoire pour pré-remplir le template en cas d'erreur
+        age_group.name = name
+        age_group.description = description
+        age_group.color = color
+        if min_age:
+            age_group.min_age = int(min_age)
+        if max_age:
+            age_group.max_age = int(max_age)
+
+        if not name or not min_age or not max_age:
+            messages.error(request, 'Veuillez remplir les champs obligatoires.')
+        elif int(min_age) >= int(max_age):
+            messages.error(request, "L'\u00e2ge minimum doit \u00eatre inf\u00e9rieur \u00e0 l'\u00e2ge maximum.")
+        else:
+            age_group.save()
+            messages.success(request, 'Tranche d\'\u00e2ge mise \u00e0 jour.')
+            return redirect('bibleclub:age_group_list')
+
+    return render(request, 'bibleclub/age_group_form.html', {
+        'age_group': age_group,
+        'title': f'Modifier {age_group.name}'
+    })
+
+
+@login_required
+@club_admin_required
+def age_group_delete(request, pk):
+    """Supprimer une tranche d'âge."""
+    age_group = get_object_or_404(AgeGroup, pk=pk)
+    
+    # Vérifier utilisation
+    classes_count = age_group.classes.count()
+    
+    if request.method == 'POST':
+        if classes_count > 0:
+            messages.error(request, f'Impossible de supprimer : {classes_count} classe(s) liée(s).')
+        else:
+            age_group.delete()
+            messages.success(request, 'Tranche d\'âge supprimée.')
+            return redirect('bibleclub:age_group_list')
+            
+    return render(request, 'bibleclub/age_group_confirm_delete.html', {
+        'age_group': age_group,
+        'classes_count': classes_count
+    })
+

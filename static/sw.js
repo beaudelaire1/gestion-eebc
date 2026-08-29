@@ -4,7 +4,7 @@
  * Gère le cache et le mode offline
  */
 
-const CACHE_NAME = 'eebc-cache-v1';
+const CACHE_NAME = 'eebc-cache-v5';
 const OFFLINE_URL = '/offline/';
 
 // Ressources à mettre en cache immédiatement
@@ -12,10 +12,12 @@ const PRECACHE_URLS = [
     '/',
     '/offline/',
     '/static/manifest.json',
-    'https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css',
-    'https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css',
-    'https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap',
-    'https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js',
+    '/static/vendor/bootstrap/bootstrap.min.css',
+    '/static/vendor/bootstrap/bootstrap.bundle.min.js',
+    '/static/vendor/bootstrap-icons/bootstrap-icons.css',
+    '/static/css/public.css',
+    '/static/css/luxe-design.css',
+    '/static/css/animated-verse-banner.css',
 ];
 
 // Installation du Service Worker
@@ -46,7 +48,20 @@ self.addEventListener('activate', event => {
                         return caches.delete(cacheName);
                     })
             );
-        }).then(() => self.clients.claim())
+        })
+        .then(() => self.clients.claim())
+        .then(() => self.clients.matchAll({ type: 'window', includeUncontrolled: true }))
+        .then(clients => {
+            return Promise.all(clients.map(client => {
+                const clientUrl = new URL(client.url);
+                if (clientUrl.pathname.startsWith('/admin/') ||
+                    clientUrl.pathname.startsWith('/app/') ||
+                    clientUrl.pathname.includes('/api/')) {
+                    return Promise.resolve();
+                }
+                return client.navigate(client.url);
+            }));
+        })
     );
 });
 
@@ -62,6 +77,25 @@ self.addEventListener('fetch', event => {
     if (url.pathname.startsWith('/admin/') || 
         url.pathname.startsWith('/app/') ||
         url.pathname.includes('/api/')) {
+        return;
+    }
+
+    if (event.request.headers.get('accept')?.includes('text/html')) {
+        event.respondWith(
+            fetch(event.request)
+                .then(response => {
+                    if (response && response.status === 200 && response.type === 'basic') {
+                        const responseToCache = response.clone();
+                        caches.open(CACHE_NAME).then(cache => {
+                            cache.put(event.request, responseToCache);
+                        });
+                    }
+                    return response;
+                })
+                .catch(() => caches.match(event.request).then(cachedResponse => {
+                    return cachedResponse || caches.match(OFFLINE_URL);
+                }))
+        );
         return;
     }
     

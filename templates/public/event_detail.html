@@ -1,6 +1,44 @@
 {% extends 'public/base.html' %}
+{% load sanitize_tags %}
 
 {% block title %}{{ event.title }} - {{ settings.site_name|default:'EEBC' }}{% endblock %}
+
+{% block meta_description %}{{ event.description|truncatewords:30|default:'Événement de '|add:settings.site_name }}{% endblock %}
+
+{% block og_title %}{{ event.title }}{% endblock %}
+{% block og_description %}{{ event.description|truncatewords:30|default:settings.meta_description }}{% endblock %}
+{% block og_image %}{{ event.image.url|default:settings.og_image_url|default:'/static/img/og-image.png' }}{% endblock %}
+{% block og_type %}event{% endblock %}
+
+{% block json_ld %}
+{{ block.super }}
+<script type="application/ld+json">
+{
+    "@context": "https://schema.org",
+    "@type": "Event",
+    "name": "{{ event.title|escapejs }}",
+    "description": "{{ event.description|truncatewords:30|escapejs }}",
+    "startDate": "{{ event.start_date|date:'Y-m-d' }}{% if event.start_time %}T{{ event.start_time|time:'H:i' }}{% endif %}",
+    {% if event.end_date %}"endDate": "{{ event.end_date|date:'Y-m-d' }}{% if event.end_time %}T{{ event.end_time|time:'H:i' }}{% endif %}",{% endif %}
+    {% if event.image %}"image": "{{ request.scheme }}://{{ request.get_host }}{{ event.image.url }}",{% endif %}
+    "eventStatus": "https://schema.org/EventScheduled",
+    "eventAttendanceMode": "https://schema.org/OfflineEventAttendanceMode",
+    "location": {
+        "@type": "Place",
+        "name": "{{ event.location|default:settings.site_name|default:'EEBC'|escapejs }}",
+        "address": {
+            "@type": "PostalAddress",
+            "addressLocality": "Cabassou",
+            "addressCountry": "GF"
+        }
+    },
+    "organizer": {
+        "@type": "Organization",
+        "name": "{{ settings.site_name|default:'EEBC'|escapejs }}"
+    }
+}
+</script>
+{% endblock %}
 
 {% block content %}
 <!-- Header -->
@@ -29,7 +67,7 @@
                     <div class="card-body p-4">
                         <h4 class="mb-4">Description</h4>
                         <div class="event-content">
-                            {{ event.description|safe|linebreaks }}
+                            {{ event.description|sanitize|linebreaks }}
                         </div>
                     </div>
                 </div>

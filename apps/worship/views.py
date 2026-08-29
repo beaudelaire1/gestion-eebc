@@ -3,13 +3,14 @@
 from django.shortcuts import render, get_object_or_404, redirect
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
+from django.core.paginator import Paginator
 from django.http import JsonResponse, HttpResponse
 from django.template.loader import render_to_string
 from django.views.decorators.http import require_POST
 from django.db import models
 from datetime import date, timedelta
 
-from .models import WorshipService, ServiceRole, ServicePlanItem, ServiceTemplate
+from .models import WorshipService, ServiceRole, ServicePlanItem, ServiceTemplate, ServiceTemplateItem
 from .forms import WorshipServiceForm, ServiceRoleForm, ServicePlanItemForm
 from apps.core.permissions import role_required
 
@@ -26,8 +27,12 @@ def service_list(request):
     if upcoming_only:
         services = services.filter(event__start_date__gte=date.today())
     
+    paginator = Paginator(services, 25)
+    page_obj = paginator.get_page(request.GET.get('page', 1))
+    
     context = {
-        'services': services,
+        'services': page_obj,
+        'page_obj': page_obj,
         'upcoming_only': upcoming_only,
     }
     
@@ -60,14 +65,29 @@ def service_create(request):
     if request.method == 'POST':
         form = WorshipServiceForm(request.POST)
         if form.is_valid():
+            from apps.events.models import Event
+            service_date = form.cleaned_data['service_date']
             service = form.save(commit=False)
             service.created_by = request.user
+            # Créer automatiquement un Event associé au service
+            event_title = (
+                service.sermon_title
+                or service.theme
+                or service.get_service_type_display()
+                or 'Service de culte'
+            )
+            event = Event.objects.create(
+                title=event_title,
+                start_date=service_date,
+                visibility='members',
+            )
+            service.event = event
             service.save()
             messages.success(request, "Service créé avec succès.")
             return redirect('worship:service_detail', pk=service.pk)
     else:
         form = WorshipServiceForm()
-    
+
     return render(request, 'worship/service_form.html', {'form': form})
 
 
@@ -76,16 +96,24 @@ def service_create(request):
 def service_edit(request, pk):
     """Modifier un service."""
     service = get_object_or_404(WorshipService, pk=pk)
-    
+
     if request.method == 'POST':
         form = WorshipServiceForm(request.POST, instance=service)
         if form.is_valid():
+            service_date = form.cleaned_data['service_date']
+            # Mettre à jour la date de l'Event associé
+            if service.event:
+                service.event.start_date = service_date
+                service.event.save(update_fields=['start_date'])
             form.save()
             messages.success(request, "Service mis à jour.")
             return redirect('worship:service_detail', pk=pk)
     else:
         form = WorshipServiceForm(instance=service)
-    
+        # Pré-remplir service_date depuis l'Event lié
+        if service.event:
+            form.fields['service_date'].initial = service.event.start_date
+
     return render(request, 'worship/service_form.html', {'form': form, 'service': service})
 
 
@@ -261,6 +289,9 @@ def apply_template(request, service_pk, template_pk):
 # =============================================================================
 
 from .models import MonthlySchedule, ScheduledService, ServiceNotification
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 @login_required
@@ -466,7 +497,6 @@ def scheduled_service_edit(request, pk):
     service = get_object_or_404(ScheduledService, pk=pk)
     
     from apps.members.models import Member
-    
     if request.method == 'POST':
         service.theme = request.POST.get('theme', '')
         service.bible_text = request.POST.get('bible_text', '')
@@ -511,3 +541,321 @@ def scheduled_service_edit(request, pk):
     }
     
     return render(request, 'worship/culte_edit.html', context)
+
+
+# =============================================================================
+# CRUD POUR LES MODÈLES DE SERVICE - OPÉRATIONS MANQUANTES
+# =============================================================================
+
+@login_required
+@role_required('admin', 'responsable_groupe')
+def service_template_list(request):
+    """Liste des modèles de service."""
+    templates = ServiceTemplate.objects.filter(is_active=True).prefetch_related('items').order_by('name')
+    
+    # Statistiques
+    total_templates = templates.count()
+    by_type = {}
+    for template in templates:
+        service_type = template.get_service_type_display()
+        by_type[service_type] = by_type.get(service_type, 0) + 1
+    
+    context = {
+        'templates': templates,
+        'total_templates': total_templates,
+        'by_type': by_type,
+    }
+    
+    return render(request, 'worship/template_list.html', context)
+
+
+@login_required
+@role_required('admin', 'responsable_groupe')
+def service_template_create(request):
+    """Créer un nouveau modèle de service."""
+    if request.method == 'POST':
+        name = request.POST.get('name', '').strip()
+        description = request.POST.get('description', '').strip()
+        service_type = request.POST.get('service_type')
+        estimated_duration = request.POST.get('estimated_duration')
+        
+        if not name:
+            messages.error(request, 'Le nom du modèle est requis.')
+        else:
+            # Vérifier l'unicité
+            if ServiceTemplate.objects.filter(name__iexact=name, is_active=True).exists():
+                messages.error(request, f'Un modèle "{name}" existe déjà.')
+            else:
+                try:
+                    template = ServiceTemplate.objects.create(
+                        name=name,
+                        description=description,
+                        service_type=service_type,
+                        estimated_duration=int(estimated_duration) if estimated_duration else 90,
+                        is_active=True
+                    )
+                    
+                    messages.success(request, f'Modèle "{template.name}" créé avec succès.')
+                    return redirect('worship:template_detail', pk=template.pk)
+                except Exception as e:
+                    messages.error(request, f'Erreur lors de la création : {e}')
+    
+    service_types = WorshipService.ServiceType.choices
+    
+    context = {
+        'service_types': service_types,
+        'title': 'Nouveau modèle de service',
+        'submit_text': 'Créer le modèle'
+    }
+    return render(request, 'worship/template_form.html', context)
+
+
+@login_required
+def service_template_detail(request, pk):
+    """Détail d'un modèle de service."""
+    template = get_object_or_404(
+        ServiceTemplate.objects.prefetch_related('items'),
+        pk=pk
+    )
+    
+    items = template.items.all().order_by('order')
+    
+    context = {
+        'template': template,
+        'items': items,
+        'total_duration': sum(item.duration_minutes for item in items),
+    }
+    
+    return render(request, 'worship/template_detail.html', context)
+
+
+@login_required
+@role_required('admin', 'responsable_groupe')
+def service_template_update(request, pk):
+    """Modifier un modèle de service."""
+    template = get_object_or_404(ServiceTemplate, pk=pk)
+    
+    if request.method == 'POST':
+        name = request.POST.get('name', '').strip()
+        description = request.POST.get('description', '').strip()
+        service_type = request.POST.get('service_type')
+        estimated_duration = request.POST.get('estimated_duration')
+        is_active = 'is_active' in request.POST
+        
+        if not name:
+            messages.error(request, 'Le nom du modèle est requis.')
+        else:
+            # Vérifier l'unicité (exclure le modèle actuel)
+            if ServiceTemplate.objects.filter(name__iexact=name, is_active=True).exclude(pk=pk).exists():
+                messages.error(request, f'Un modèle "{name}" existe déjà.')
+            else:
+                try:
+                    template.name = name
+                    template.description = description
+                    template.service_type = service_type
+                    template.estimated_duration = int(estimated_duration) if estimated_duration else 90
+                    template.is_active = is_active
+                    template.save()
+                    
+                    messages.success(request, f'Modèle "{template.name}" modifié avec succès.')
+                    return redirect('worship:template_detail', pk=template.pk)
+                except Exception as e:
+                    messages.error(request, f'Erreur lors de la modification : {e}')
+    
+    service_types = WorshipService.ServiceType.choices
+    
+    context = {
+        'template': template,
+        'service_types': service_types,
+        'title': f'Modifier {template.name}',
+        'submit_text': 'Enregistrer les modifications'
+    }
+    return render(request, 'worship/template_form.html', context)
+
+
+@login_required
+@role_required('admin', 'responsable_groupe')
+def service_template_delete(request, pk):
+    """Supprimer un modèle de service (soft delete)."""
+    template = get_object_or_404(ServiceTemplate, pk=pk)
+    
+    # Vérifier s'il y a des éléments liés
+    items_count = template.items.count()
+    
+    if request.method == 'POST':
+        # Soft delete du modèle
+        template_name = template.name
+        template.is_active = False
+        template.save()
+        
+        messages.success(request, f'Modèle "{template_name}" supprimé avec succès.')
+        return redirect('worship:template_list')
+    
+    context = {
+        'template': template,
+        'items_count': items_count,
+    }
+    return render(request, 'worship/template_delete_confirm.html', context)
+
+
+# =============================================================================
+# CRUD POUR LES ÉLÉMENTS DE MODÈLE - OPÉRATIONS MANQUANTES
+# =============================================================================
+
+@login_required
+@role_required('admin', 'responsable_groupe')
+def template_item_create(request, template_pk):
+    """Créer un nouvel élément de modèle."""
+    template = get_object_or_404(ServiceTemplate, pk=template_pk)
+    
+    if request.method == 'POST':
+        item_type = request.POST.get('item_type')
+        title = request.POST.get('title', '').strip()
+        duration_minutes = request.POST.get('duration_minutes')
+        notes = request.POST.get('notes', '').strip()
+        
+        if not item_type:
+            messages.error(request, 'Le type d\'élément est requis.')
+        else:
+            try:
+                # Auto-incrémenter l'ordre
+                max_order = template.items.aggregate(
+                    max_order=models.Max('order')
+                )['max_order'] or 0
+                
+                item = ServiceTemplateItem.objects.create(
+                    template=template,
+                    item_type=item_type,
+                    title=title,
+                    order=max_order + 1,
+                    duration_minutes=int(duration_minutes) if duration_minutes else 5,
+                    notes=notes
+                )
+                
+                messages.success(request, f'Élément "{item.get_item_type_display()}" ajouté avec succès.')
+                return redirect('worship:template_detail', pk=template.pk)
+            except Exception as e:
+                messages.error(request, f'Erreur lors de la création : {e}')
+    
+    item_types = ServicePlanItem.ItemType.choices
+    
+    context = {
+        'template': template,
+        'item_types': item_types,
+        'title': f'Nouvel élément - {template.name}',
+        'submit_text': 'Ajouter l\'élément'
+    }
+    return render(request, 'worship/template_item_form.html', context)
+
+
+@login_required
+@role_required('admin', 'responsable_groupe')
+def template_item_update(request, pk):
+    """Modifier un élément de modèle."""
+    item = get_object_or_404(ServiceTemplateItem, pk=pk)
+    template = item.template
+    
+    if request.method == 'POST':
+        item_type = request.POST.get('item_type')
+        title = request.POST.get('title', '').strip()
+        duration_minutes = request.POST.get('duration_minutes')
+        notes = request.POST.get('notes', '').strip()
+        order = request.POST.get('order')
+        
+        if not item_type:
+            messages.error(request, 'Le type d\'élément est requis.')
+        else:
+            try:
+                item.item_type = item_type
+                item.title = title
+                item.duration_minutes = int(duration_minutes) if duration_minutes else 5
+                item.notes = notes
+                item.order = int(order) if order else item.order
+                item.save()
+                
+                messages.success(request, f'Élément "{item.get_item_type_display()}" modifié avec succès.')
+                return redirect('worship:template_detail', pk=template.pk)
+            except Exception as e:
+                messages.error(request, f'Erreur lors de la modification : {e}')
+    
+    item_types = ServicePlanItem.ItemType.choices
+    
+    context = {
+        'item': item,
+        'template': template,
+        'item_types': item_types,
+        'title': f'Modifier élément - {template.name}',
+        'submit_text': 'Enregistrer les modifications'
+    }
+    return render(request, 'worship/template_item_form.html', context)
+
+
+@login_required
+@role_required('admin', 'responsable_groupe')
+def template_item_delete(request, pk):
+    """Supprimer un élément de modèle."""
+    item = get_object_or_404(ServiceTemplateItem, pk=pk)
+    template = item.template
+    
+    if request.method == 'POST':
+        item_type = item.get_item_type_display()
+        item.delete()
+        
+        messages.success(request, f'Élément "{item_type}" supprimé avec succès.')
+        return redirect('worship:template_detail', pk=template.pk)
+    
+    context = {
+        'item': item,
+        'template': template,
+    }
+    return render(request, 'worship/template_item_delete_confirm.html', context)
+
+
+@login_required
+@role_required('admin', 'responsable_groupe')
+def template_item_reorder(request, template_pk):
+    """Réorganiser l'ordre des éléments (HTMX)."""
+    template = get_object_or_404(ServiceTemplate, pk=template_pk)
+    
+    if request.method == 'POST':
+        item_ids = request.POST.getlist('item_ids')
+        
+        for index, item_id in enumerate(item_ids, 1):
+            ServiceTemplateItem.objects.filter(
+                pk=item_id, 
+                template=template
+            ).update(order=index)
+        
+        
+        messages.success(request, 'Ordre des éléments mis à jour.')
+    
+    return HttpResponse("")
+
+
+@login_required
+@role_required('admin', 'responsable_groupe')
+def service_delete(request, pk):
+    """Supprimer un service de culte (suppression de l'événement)."""
+    service = get_object_or_404(WorshipService, pk=pk)
+    event = service.event
+    
+    if request.method == 'POST':
+        # Suppression de l'événement (cascade vers le service)
+        # OU Soft delete via is_cancelled
+        if request.POST.get('action') == 'delete':
+            event.delete()
+            messages.success(request, "Service et événement supprimés définitivement.")
+        else:
+            event.is_cancelled = True
+            event.save()
+            messages.success(request, "Service annulé avec succès.")
+            
+        return redirect('worship:service_list')
+    
+    context = {
+        'service': service,
+        'event': event,
+    }
+    return render(request, 'worship/service_delete_confirm.html', context)
+    
+    return redirect('worship:template_detail', pk=template_pk)

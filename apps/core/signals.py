@@ -351,3 +351,40 @@ def audit_user_login_failed(sender, credentials, request=None, **kwargs):
                 'attempted_username': username
             }
         )
+
+
+@receiver(post_save, sender='core.VisitorRegistration')
+def notify_new_visitor(sender, instance, created, **kwargs):
+    """Notifie les admins quand un visiteur s'inscrit via le site public."""
+    if not created:
+        return
+
+    try:
+        from apps.communication.models import Notification
+        from apps.accounts.models import User
+        from django.db.models import Q
+
+        staff = User.objects.filter(
+            is_active=True
+        ).filter(
+            Q(role__icontains='admin') | Q(role__icontains='secretariat') | Q(is_superuser=True)
+        ).distinct()
+
+        interest = instance.get_interest_display()
+        site = str(instance.preferred_site) if instance.preferred_site else 'Non précisé'
+
+        for user in staff:
+            Notification.objects.create(
+                user=user,
+                title=f"🆕 Nouveau visiteur : {instance.first_name} {instance.last_name}",
+                message=(
+                    f"Un visiteur s'est inscrit via le site public.\n"
+                    f"Intérêt : {interest}\n"
+                    f"Site préféré : {site}\n"
+                    f"Email : {instance.email}\n"
+                    f"{'Tél : ' + instance.phone if instance.phone else ''}"
+                ),
+                notification_type='info',
+            )
+    except Exception:
+        pass

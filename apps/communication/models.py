@@ -52,6 +52,10 @@ class EmailLog(models.Model):
         verbose_name = "Log email"
         verbose_name_plural = "Logs emails"
         ordering = ['-created_at']
+        indexes = [
+            models.Index(fields=['status'], name='comm_emaillog_status_idx'),
+            models.Index(fields=['sent_at'], name='comm_emaillog_sent_at_idx'),
+        ]
     
     def __str__(self):
         return f"{self.recipient_email} - {self.subject}"
@@ -155,6 +159,9 @@ class Announcement(models.Model):
         verbose_name = "Annonce"
         verbose_name_plural = "Annonces"
         ordering = ['-is_pinned', '-created_at']
+        indexes = [
+            models.Index(fields=['is_active', 'start_date', 'end_date'], name='comm_annonce_active_idx'),
+        ]
     
     def __str__(self):
         return self.title
@@ -216,9 +223,13 @@ class Notification(models.Model):
         verbose_name = "Notification"
         verbose_name_plural = "Notifications"
         ordering = ['-created_at']
+        indexes = [
+            models.Index(fields=['user', 'is_read'], name='comm_notif_user_read_idx'),
+        ]
     
     def __str__(self):
-        return f"{self.user.username} - {self.title}"
+        username = self.user.username if self.user else "Système"
+        return f"{username} - {self.title}"
     
     def mark_as_read(self):
         """Marque la notification comme lue."""
@@ -303,6 +314,83 @@ class EmailTemplate(models.Model):
             ).exclude(pk=self.pk).update(is_default=False)
         
         super().save(*args, **kwargs)
+
+
+class EmailSenderDepartment(models.Model):
+    """
+    Département expéditeur pour l'éditeur d'e-mails.
+    Détermine l'adresse d'envoi et la signature dynamique.
+    """
+    
+    name = models.CharField(max_length=100, unique=True, verbose_name="Nom du département")
+    from_email = models.EmailField(verbose_name="Adresse d'envoi")
+    phone = models.CharField(max_length=30, blank=True, verbose_name="Téléphone")
+    is_active = models.BooleanField(default=True, verbose_name="Actif")
+    order = models.PositiveSmallIntegerField(default=0, verbose_name="Ordre d'affichage")
+    
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    
+    class Meta:
+        verbose_name = "Département expéditeur"
+        verbose_name_plural = "Départements expéditeurs"
+        ordering = ['order', 'name']
+    
+    def __str__(self):
+        return f"{self.name} <{self.from_email}>"
+    
+    @property
+    def sender_header(self):
+        """En-tête expéditeur formaté pour l'envoi SMTP."""
+        return f'"{self.name} — EEBC" <{self.from_email}>'
+    
+    @property
+    def smtp_password_env_name(self):
+        """Nom de la variable d'environnement contenant le mot de passe de la boîte.
+        
+        Convention : EMAIL_PASSWORD_<LOCALPART_EN_MAJUSCULES>
+        Exemples :
+          communication@eglise-ebc.org  -> EMAIL_PASSWORD_COMMUNICATION
+          secretariat@eglise-ebc.org    -> EMAIL_PASSWORD_SECRETARIAT
+          contact@eglise-ebc.org        -> EMAIL_PASSWORD_CONTACT
+          multimedia@eglise-ebc.org     -> EMAIL_PASSWORD_MULTIMEDIA
+        
+        Si la variable est absente, l'envoi utilise le backend SMTP
+        par défaut (contact@) défini dans les settings.
+        """
+        local_part = self.from_email.split('@')[0]
+        normalized = ''.join(c if c.isalnum() else '_' for c in local_part).upper()
+        return f'EMAIL_PASSWORD_{normalized}'
+
+    @property
+    def smtp_password_legacy_env_name(self):
+        """Alias legacy demandé: EMAIL_BACKEND_<LOCALPART>."""
+        local_part = self.from_email.split('@')[0]
+        normalized = ''.join(c if c.isalnum() else '_' for c in local_part).upper()
+        return f'EMAIL_BACKEND_{normalized}'
+    
+    def get_smtp_connection(self):
+        """Retourne une connexion SMTP dédiée à la boîte du département.
+        
+        Logique de sélection :
+             1. Lecture de EMAIL_PASSWORD_<LOCALPART> dans l'environnement.
+             2. Si absente, fallback sur EMAIL_BACKEND_<LOCALPART> (alias legacy).
+             3. Si présente  → connexion authentifiée sur la boite du département
+             (from_email/password) : le mail part depuis la vraie boîte.
+             4. Si absente   → None, la vue utilise la connexion par défaut
+             (contact@ via settings) ; le From: conserve le nom d'affichage
+             du département et un Reply-To pointe vers la vraie boîte.
+        """
+        import os
+
+        from django.core.mail import get_connection
+        
+        password = os.environ.get(self.smtp_password_env_name, '')
+        if not password:
+            password = os.environ.get(self.smtp_password_legacy_env_name, '')
+        if not password:
+            return None
+        return get_connection(username=self.from_email, password=password)
 
 
 class SMSLog(models.Model):

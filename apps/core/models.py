@@ -86,6 +86,10 @@ class Site(models.Model):
         verbose_name = "Site"
         verbose_name_plural = "Sites"
         ordering = ['-is_main_site', 'name']
+        indexes = [
+            models.Index(fields=['code'], name='site_code_idx'),
+            models.Index(fields=['is_active'], name='site_active_idx'),
+        ]
     
     def __str__(self):
         return f"{self.name} ({self.code})"
@@ -599,6 +603,13 @@ class NewsArticle(models.Model):
         verbose_name = "Article"
         verbose_name_plural = "Articles"
         ordering = ['-publish_date']
+        indexes = [
+            models.Index(fields=['publish_date'], name='article_pubdate_idx'),
+            models.Index(fields=['is_published'], name='article_published_idx'),
+            models.Index(fields=['is_featured'], name='article_featured_idx'),
+            models.Index(fields=['category'], name='article_category_idx'),
+            models.Index(fields=['is_published', '-publish_date'], name='article_pub_date_idx'),
+        ]
     
     def __str__(self):
         status = "✓" if self.is_published else "○"
@@ -1382,3 +1393,85 @@ class DatabaseBackup(models.Model):
                 
                 # Supprimer l'enregistrement
                 record.delete()
+
+# =============================================================================
+# EXTENSIONS SITE VITRINE
+# =============================================================================
+
+class Testimony(models.Model):
+    """
+    Témoignage publié sur le site vitrine.
+    """
+    author_name = models.CharField(max_length=200, verbose_name="Nom de l'auteur")
+    author_photo = models.ImageField(
+        upload_to='public/testimonies/',
+        blank=True, null=True,
+        verbose_name="Photo"
+    )
+    
+    title = models.CharField(max_length=200, blank=True, verbose_name="Titre")
+    content = models.TextField(verbose_name="Témoignage")
+    
+    # Lien avec un membre (optionnel)
+    member = models.ForeignKey(
+        'members.Member',
+        on_delete=models.SET_NULL,
+        null=True, blank=True,
+        related_name='testimonies',
+        verbose_name="Membre"
+    )
+    
+    # Publication
+    is_published = models.BooleanField(default=False, verbose_name="Publié")
+    is_featured = models.BooleanField(default=False, verbose_name="À la une")
+    publish_date = models.DateField(null=True, blank=True, verbose_name="Date de publication")
+    
+    # Métadonnées
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    
+    class Meta:
+        verbose_name = "Témoignage"
+        verbose_name_plural = "Témoignages"
+        ordering = ['-publish_date', '-created_at']
+    
+    def __str__(self):
+        return f"Témoignage de {self.author_name}"
+
+
+class WorshipSchedule(models.Model):
+    """
+    Horaire de culte affiché sur le site vitrine.
+    """
+    class DayOfWeek(models.IntegerChoices):
+        MONDAY = 1, 'Lundi'
+        TUESDAY = 2, 'Mardi'
+        WEDNESDAY = 3, 'Mercredi'
+        THURSDAY = 4, 'Jeudi'
+        FRIDAY = 5, 'Vendredi'
+        SATURDAY = 6, 'Samedi'
+        SUNDAY = 7, 'Dimanche'
+    
+    site = models.ForeignKey(
+        'core.Site',
+        on_delete=models.CASCADE,
+        related_name='worship_schedules_list',
+        verbose_name="Site"
+    )
+    
+    name = models.CharField(max_length=100, verbose_name="Nom du service")
+    day_of_week = models.IntegerField(choices=DayOfWeek.choices, verbose_name="Jour")
+    start_time = models.TimeField(verbose_name="Heure de début")
+    end_time = models.TimeField(blank=True, null=True, verbose_name="Heure de fin")
+    
+    description = models.TextField(blank=True, verbose_name="Description")
+    is_active = models.BooleanField(default=True, verbose_name="Actif")
+    
+    class Meta:
+        verbose_name = "Horaire de culte"
+        verbose_name_plural = "Horaires de culte"
+        ordering = ['site', 'day_of_week', 'start_time']
+    
+    def __str__(self):
+        return f"{self.site.name} - {self.get_day_of_week_display()} {self.start_time}"
+

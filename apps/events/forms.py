@@ -29,9 +29,9 @@ class EventForm(EnhancedModelForm):
                 'rows': 4,
                 'placeholder': 'Description de l\'événement'
             }),
-            'start_date': forms.DateInput(attrs={'type': 'date'}),
+            'start_date': forms.DateInput(format='%Y-%m-%d', attrs={'type': 'date'}),
             'start_time': forms.TimeInput(attrs={'type': 'time'}),
-            'end_date': forms.DateInput(attrs={'type': 'date'}),
+            'end_date': forms.DateInput(format='%Y-%m-%d', attrs={'type': 'date'}),
             'end_time': forms.TimeInput(attrs={'type': 'time'}),
             'location': forms.TextInput(attrs={
                 'placeholder': 'Lieu de l\'événement'
@@ -40,7 +40,7 @@ class EventForm(EnhancedModelForm):
                 'rows': 2,
                 'placeholder': 'Adresse complète'
             }),
-            'recurrence_end_date': forms.DateInput(attrs={'type': 'date'}),
+            'recurrence_end_date': forms.DateInput(format='%Y-%m-%d', attrs={'type': 'date'}),
             'organizers': forms.SelectMultiple(attrs={'size': '4'}),
             'notify_before': forms.NumberInput(attrs={
                 'min': '0',
@@ -122,7 +122,7 @@ class EventDuplicateForm(EnhancedForm):
     
     new_start_date = forms.DateField(
         label="Nouvelle date de début",
-        widget=forms.DateInput(attrs={'type': 'date'})
+        widget=forms.DateInput(format='%Y-%m-%d', attrs={'type': 'date'})
     )
     
     new_start_time = forms.TimeField(
@@ -184,13 +184,13 @@ class EventSearchForm(EnhancedForm):
     start_date = forms.DateField(
         label="À partir du",
         required=False,
-        widget=forms.DateInput(attrs={'type': 'date'})
+        widget=forms.DateInput(format='%Y-%m-%d', attrs={'type': 'date'})
     )
     
     end_date = forms.DateField(
         label="Jusqu'au",
         required=False,
-        widget=forms.DateInput(attrs={'type': 'date'})
+        widget=forms.DateInput(format='%Y-%m-%d', attrs={'type': 'date'})
     )
     
     visibility = forms.ChoiceField(
@@ -203,3 +203,17 @@ class EventSearchForm(EnhancedForm):
         label="Inclure les événements annulés",
         required=False
     )
+
+
+class EventCategoryForm(EnhancedModelForm):
+    """Formulaire de gestion des catégories d'événements."""
+    
+    class Meta:
+        model = EventCategory
+        fields = ['name', 'description', 'color', 'icon']
+        widgets = {
+            'name': forms.TextInput(attrs={'placeholder': 'Nom de la catégorie'}),
+            'description': forms.Textarea(attrs={'rows': 3, 'placeholder': 'Description...'}),
+            'color': forms.TextInput(attrs={'type': 'color'}),
+            'icon': forms.TextInput(attrs={'placeholder': 'Nom de l\'icône (ex: bi-calendar)'}),
+        }

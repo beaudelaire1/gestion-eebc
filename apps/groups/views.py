@@ -1,6 +1,7 @@
 from django.shortcuts import render, get_object_or_404, redirect
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
+from django.core.paginator import Paginator
 from django.http import JsonResponse
 from django.db.models import Count, Avg
 from django.utils import timezone
@@ -9,6 +10,10 @@ from apps.core.permissions import role_required
 from .models import Group, GroupMeeting
 from .forms import GroupForm, GroupMembersForm, GroupMeetingForm, GroupMeetingAttendanceForm
 from .services import GroupService, GroupMeetingService
+import logging
+
+logger = logging.getLogger(__name__)
+
 
 
 @login_required
@@ -20,8 +25,12 @@ def group_list(request):
     if group_type:
         groups = groups.filter(group_type=group_type)
     
+    paginator = Paginator(groups, 25)
+    page_obj = paginator.get_page(request.GET.get('page', 1))
+    
     context = {
-        'groups': groups,
+        'groups': page_obj,
+        'page_obj': page_obj,
         'group_types': Group.GroupType.choices,
     }
     return render(request, 'groups/group_list.html', context)
@@ -30,7 +39,7 @@ def group_list(request):
 @login_required
 def group_detail(request, pk):
     """Détail d'un groupe."""
-    group = get_object_or_404(Group, pk=pk)
+    group = get_object_or_404(Group.objects.select_related('leader'), pk=pk)
     members = group.members.all()
     recent_meetings = GroupMeetingService.get_recent_meetings(group)
     
@@ -54,6 +63,9 @@ def group_create(request):
         form = GroupForm(request.POST, request.FILES)
         if form.is_valid():
             group = form.save()
+            # Sauver les membres (M2M)
+            if form.cleaned_data.get('members'):
+                group.members.set(form.cleaned_data['members'])
             messages.success(request, f'Le groupe "{group.name}" a été créé avec succès.')
             return redirect('groups:detail', pk=group.pk)
     else:
@@ -73,17 +85,12 @@ def group_update(request, pk):
     """Modifier un groupe."""
     group = get_object_or_404(Group, pk=pk)
     
-    # Vérifier si l'utilisateur peut modifier ce groupe
-    if (request.user.role == 'responsable_groupe' and 
-        group.leader != request.user and 
-        request.user.role != 'admin'):
-        messages.error(request, "Vous ne pouvez modifier que vos propres groupes.")
-        return redirect('groups:detail', pk=pk)
-    
     if request.method == 'POST':
         form = GroupForm(request.POST, request.FILES, instance=group)
         if form.is_valid():
             group = form.save()
+            # Sauver les membres (M2M)
+            group.members.set(form.cleaned_data.get('members', []))
             messages.success(request, f'Le groupe "{group.name}" a été modifié avec succès.')
             return redirect('groups:detail', pk=group.pk)
     else:
@@ -103,13 +110,6 @@ def group_update(request, pk):
 def group_members_manage(request, pk):
     """Gérer les membres d'un groupe."""
     group = get_object_or_404(Group, pk=pk)
-    
-    # Vérifier si l'utilisateur peut gérer ce groupe
-    if (request.user.role == 'responsable_groupe' and 
-        group.leader != request.user and 
-        request.user.role != 'admin'):
-        messages.error(request, "Vous ne pouvez gérer que vos propres groupes.")
-        return redirect('groups:detail', pk=pk)
     
     if request.method == 'POST':
         form = GroupMembersForm(request.POST, group=group)
@@ -136,9 +136,9 @@ def group_meeting_create(request, group_pk):
     group = get_object_or_404(Group, pk=group_pk)
     
     # Vérifier si l'utilisateur peut gérer ce groupe
-    if (request.user.role == 'responsable_groupe' and 
+    if (request.user.has_role('responsable_groupe') and 
         group.leader != request.user and 
-        request.user.role != 'admin'):
+        not request.user.has_role('admin')):
         messages.error(request, "Vous ne pouvez gérer que vos propres groupes.")
         return redirect('groups:detail', pk=group_pk)
     
@@ -170,9 +170,9 @@ def group_meeting_update(request, group_pk, meeting_pk):
     meeting = get_object_or_404(GroupMeeting, pk=meeting_pk, group=group)
     
     # Vérifier si l'utilisateur peut gérer ce groupe
-    if (request.user.role == 'responsable_groupe' and 
+    if (request.user.has_role('responsable_groupe') and 
         group.leader != request.user and 
-        request.user.role != 'admin'):
+        not request.user.has_role('admin')):
         messages.error(request, "Vous ne pouvez gérer que vos propres groupes.")
         return redirect('groups:detail', pk=group_pk)
     
@@ -223,9 +223,9 @@ def group_generate_meetings(request, pk):
     group = get_object_or_404(Group, pk=pk)
     
     # Vérifier si l'utilisateur peut gérer ce groupe
-    if (request.user.role == 'responsable_groupe' and 
+    if (request.user.has_role('responsable_groupe') and 
         group.leader != request.user and 
-        request.user.role != 'admin'):
+        not request.user.has_role('admin')):
         messages.error(request, "Vous ne pouvez gérer que vos propres groupes.")
         return redirect('groups:detail', pk=pk)
     
@@ -270,7 +270,7 @@ def groups_dashboard(request):
     groups = Group.objects.filter(is_active=True).select_related('leader')
     
     # Filtrer par responsable si nécessaire
-    if request.user.role == 'responsable_groupe':
+    if request.user.has_role('responsable_groupe'):
         groups = groups.filter(leader=request.user)
     
     # Calculer les statistiques pour chaque groupe
@@ -308,4 +308,83 @@ def groups_dashboard(request):
     }
     
     return render(request, 'groups/dashboard.html', context)
+
+
+# =============================================================================
+# OPÉRATIONS DE SUPPRESSION MANQUANTES
+# =============================================================================
+
+@login_required
+@role_required('admin', 'secretariat', 'responsable_groupe')
+def group_delete(request, pk):
+    """Supprimer un groupe (soft delete)."""
+    group = get_object_or_404(Group, pk=pk)
+    
+    # Vérifier si l'utilisateur peut supprimer ce groupe
+    if (request.user.has_role('responsable_groupe') and 
+        group.leader != request.user and 
+        not request.user.has_role('admin')):
+        messages.error(request, "Vous ne pouvez supprimer que vos propres groupes.")
+        return redirect('groups:detail', pk=pk)
+    
+    # Vérifier s'il y a des réunions liées
+    meetings_count = group.meetings.count()
+    future_meetings_count = group.meetings.filter(
+        date__gte=timezone.now().date(),
+        is_cancelled=False
+    ).count()
+    
+    if request.method == 'POST':
+        group_name = group.name
+        
+        # Soft delete - marquer comme inactif
+        group.is_active = False
+        group.save()
+        
+        # Optionnellement annuler les réunions futures
+        if request.POST.get('cancel_future_meetings') == 'on':
+            future_meetings = group.meetings.filter(
+                date__gte=timezone.now().date(),
+                is_cancelled=False
+            )
+            future_meetings.update(is_cancelled=True)
+            messages.info(request, f'{future_meetings_count} réunion(s) future(s) annulée(s).')
+        
+        messages.success(request, f'Groupe "{group_name}" supprimé avec succès.')
+        return redirect('groups:list')
+    
+    context = {
+        'group': group,
+        'meetings_count': meetings_count,
+        'future_meetings_count': future_meetings_count,
+    }
+    return render(request, 'groups/group_delete_confirm.html', context)
+
+
+@login_required
+@role_required('admin', 'secretariat', 'responsable_groupe')
+def meeting_delete(request, group_pk, meeting_pk):
+    """Supprimer une réunion."""
+    group = get_object_or_404(Group, pk=group_pk)
+    meeting = get_object_or_404(GroupMeeting, pk=meeting_pk, group=group)
+    
+    # Vérifier si l'utilisateur peut supprimer cette réunion
+    if (request.user.has_role('responsable_groupe') and 
+        group.leader != request.user and 
+        not request.user.has_role('admin')):
+        messages.error(request, "Vous ne pouvez supprimer que les réunions de vos propres groupes.")
+        return redirect('groups:detail', pk=group_pk)
+    
+    if request.method == 'POST':
+        meeting_date = meeting.date
+        meeting.delete()
+        
+        messages.success(request, f'Réunion du {meeting_date.strftime("%d/%m/%Y")} supprimée avec succès.')
+        return redirect('groups:detail', pk=group.pk)
+    
+    context = {
+        'group': group,
+        'meeting': meeting,
+    }
+    return render(request, 'groups/meeting_delete_confirm.html', context)
 

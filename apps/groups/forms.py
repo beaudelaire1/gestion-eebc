@@ -1,5 +1,6 @@
 from django import forms
 from django.contrib.auth import get_user_model
+from django.db.models import Q
 from .models import Group, GroupMeeting
 from apps.members.models import Member
 
@@ -8,12 +9,23 @@ User = get_user_model()
 
 class GroupForm(forms.ModelForm):
     """Formulaire pour créer/modifier un groupe."""
-    
+
+    members = forms.ModelMultipleChoiceField(
+        queryset=Member.objects.filter(status='actif').order_by('last_name', 'first_name'),
+        widget=forms.SelectMultiple(attrs={
+            'class': 'form-select tom-select',
+            'data-placeholder': 'Rechercher des membres...',
+            'multiple': 'multiple',
+        }),
+        required=False,
+        label="Membres du groupe",
+    )
+
     class Meta:
         model = Group
         fields = [
-            'name', 'description', 'group_type', 'leader', 
-            'meeting_day', 'meeting_time', 'meeting_location', 
+            'name', 'description', 'group_type', 'leader',
+            'meeting_day', 'meeting_time', 'meeting_location',
             'meeting_frequency', 'color', 'image'
         ]
         widgets = {
@@ -27,7 +39,7 @@ class GroupForm(forms.ModelForm):
                 'placeholder': 'Description du groupe'
             }),
             'group_type': forms.Select(attrs={'class': 'form-select'}),
-            'leader': forms.Select(attrs={'class': 'form-select'}),
+            'leader': forms.Select(attrs={'class': 'form-select tom-select', 'data-placeholder': 'Rechercher un responsable...'}),
             'meeting_day': forms.Select(attrs={'class': 'form-select'}),
             'meeting_time': forms.TimeInput(attrs={
                 'class': 'form-control',
@@ -44,14 +56,18 @@ class GroupForm(forms.ModelForm):
             }),
             'image': forms.FileInput(attrs={'class': 'form-control'})
         }
-    
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        # Filtrer les utilisateurs pour ne montrer que ceux avec des rôles appropriés
-        self.fields['leader'].queryset = User.objects.filter(
-            role__in=['admin', 'responsable_groupe', 'secretariat']
-        ).order_by('first_name', 'last_name')
+        # Leader = n'importe quel membre actif
+        self.fields['leader'].queryset = Member.objects.filter(
+            status='actif'
+        ).order_by('last_name', 'first_name')
         self.fields['leader'].empty_label = "Sélectionner un responsable"
+
+        # Pré-remplir les membres si édition
+        if self.instance and self.instance.pk:
+            self.fields['members'].initial = self.instance.members.all()
 
 
 class GroupMembersForm(forms.Form):
@@ -59,7 +75,11 @@ class GroupMembersForm(forms.Form):
     
     members = forms.ModelMultipleChoiceField(
         queryset=Member.objects.filter(status='actif'),
-        widget=forms.CheckboxSelectMultiple(attrs={'class': 'form-check-input'}),
+        widget=forms.SelectMultiple(attrs={
+            'class': 'form-select tom-select',
+            'data-placeholder': 'Rechercher des membres...',
+            'multiple': 'multiple',
+        }),
         required=False,
         label="Membres"
     )
@@ -84,7 +104,7 @@ class GroupMeetingForm(forms.ModelForm):
         model = GroupMeeting
         fields = ['date', 'time', 'location', 'topic', 'notes']
         widgets = {
-            'date': forms.DateInput(attrs={
+            'date': forms.DateInput(format='%Y-%m-%d', attrs={
                 'class': 'form-control',
                 'type': 'date'
             }),

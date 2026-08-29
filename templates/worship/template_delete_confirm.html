@@ -1,0 +1,45 @@
+{% extends 'base.html' %}
+
+{% block title %}Supprimer {{ template.name }} - Modèles de Service{% endblock %}
+{% block page_title %}Supprimer le modèle{% endblock %}
+{% block page_subtitle %}{{ template.name }}{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-6">
+        <div class="card border-danger">
+            <div class="card-header bg-danger text-white">
+                <h5 class="mb-0">
+                    <i class="bi bi-exclamation-triangle me-2"></i>
+                    Confirmation de suppression
+                </h5>
+            </div>
+            <div class="card-body">
+                <p>Êtes-vous sûr de vouloir supprimer le modèle de service <strong>{{ template.name }}</strong> ?</p>
+                
+                {% if items_count > 0 %}
+                <div class="alert alert-warning">
+                    <i class="bi bi-info-circle me-2"></i>
+                    Ce modèle contient <strong>{{ items_count }} élément(s)</strong> qui seront également supprimés.
+                </div>
+                {% endif %}
+                
+                <div class="alert alert-info">
+                    <i class="bi bi-info-circle me-2"></i>
+                    Cette action désactivera le modèle (suppression logique). Les services existants utilisant ce modèle ne seront pas affectés.
+                </div>
+                
+                <form method="post" class="d-inline">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-danger me-2">
+                        <i class="bi bi-trash me-2"></i>Confirmer la suppression
+                    </button>
+                    <a href="{% url 'worship:template_detail' template.pk %}" class="btn btn-secondary">
+                        Annuler
+                    </a>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

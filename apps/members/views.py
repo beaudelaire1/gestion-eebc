@@ -2,24 +2,36 @@ from django.shortcuts import render, get_object_or_404, redirect
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.core.paginator import Paginator
-from django.db.models import Q
+from django.db.models import Q, Count
 from django.http import HttpResponse
 from datetime import date, timedelta
 from .models import Member, LifeEvent, VisitationLog
 from apps.core.permissions import role_required
+from apps.core.optimization import get_optimized_queryset
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 @login_required
 def member_list(request):
     """Liste des membres avec recherche et filtrage."""
-    members_qs = Member.objects.all()
+    # Optimiser les requêtes avec select_related
+    members_qs = Member.objects.select_related('site', 'family').all()
     
-    # Statistiques
-    total_count = members_qs.count()
-    actifs_count = members_qs.filter(status='actif').count()
-    baptises_count = members_qs.filter(is_baptized=True).count()
-    hommes_count = members_qs.filter(gender='M').count()
-    femmes_count = members_qs.filter(gender='F').count()
+    # Statistiques (une seule requête d'agrégation)
+    member_stats = members_qs.aggregate(
+        total=Count('id'),
+        actifs=Count('id', filter=Q(status='actif')),
+        baptises=Count('id', filter=Q(is_baptized=True)),
+        hommes=Count('id', filter=Q(gender='M')),
+        femmes=Count('id', filter=Q(gender='F')),
+    )
+    total_count = member_stats['total']
+    actifs_count = member_stats['actifs']
+    baptises_count = member_stats['baptises']
+    hommes_count = member_stats['hommes']
+    femmes_count = member_stats['femmes']
     
     # Recherche
     search = request.GET.get('search', '')
@@ -41,7 +53,7 @@ def member_list(request):
     sort_order = request.GET.get('order', 'asc')
     
     # Champs de tri autorisés
-    allowed_sort_fields = ['last_name', 'first_name', 'email', 'city', 'status', 'birth_date']
+    allowed_sort_fields = ['last_name', 'first_name', 'email', 'city', 'status', 'date_of_birth']
     if sort_by not in allowed_sort_fields:
         sort_by = 'last_name'
     
@@ -68,6 +80,11 @@ def member_list(request):
         'femmes_count': femmes_count,
         'current_sort': request.GET.get('sort', 'last_name'),
         'current_order': request.GET.get('order', 'asc'),
+        'can_view_member_details': (
+            request.user.is_superuser
+            or getattr(request.user, 'is_admin', False)
+            or request.user.has_any_role('admin', 'secretariat', 'encadrant')
+        ),
     }
     
     if request.htmx:
@@ -77,25 +94,40 @@ def member_list(request):
 
 @login_required
 def member_detail(request, pk):
-    """Détail d'un membre."""
+    """Détail d'un membre. Réservé aux rôles admin/secretariat/encadrant."""
+    from apps.core.permissions import has_role
+
+    if not (request.user.is_superuser or has_role(request.user, 'admin', 'secretariat', 'encadrant')):
+        messages.error(request, "Vous n'avez pas les permissions pour consulter le détail d'un membre.")
+        return redirect('members:list')
+
     member = get_object_or_404(Member, pk=pk)
-    
+
+    life_events = member.life_events.all().order_by('-event_date')[:5]
+    visits = member.visits_received.all().order_by('-visit_date')[:5]
+
     context = {
         'member': member,
+        'life_events': life_events,
+        'visits': visits,
+        'can_view_pastoral_data': True,
     }
-    
-    # Récupérer les événements de vie et visites seulement pour les rôles autorisés
-    from apps.core.permissions import has_role
-    if has_role(request.user, 'admin', 'secretariat', 'encadrant'):
-        life_events = member.life_events.all().order_by('-event_date')[:5]
-        visits = member.visits_received.all().order_by('-visit_date')[:5]
-        context.update({
-            'life_events': life_events,
-            'visits': visits,
-            'can_view_pastoral_data': True,
-        })
-    
+
     return render(request, 'members/member_detail.html', context)
+
+
+@login_required
+def member_print_registration(request, pk):
+    """Télécharge la fiche d'inscription du membre en PDF."""
+    from apps.core.pdf_service import PDFService
+    member = get_object_or_404(Member, pk=pk)
+    filename = f"fiche_inscription_{member.last_name}_{member.first_name}.pdf"
+    return PDFService.generate_pdf_download(
+        'members/pdf/registration_form.html',
+        {'member': member},
+        filename=filename,
+        request=request,
+    )
 
 
 @login_required
@@ -133,6 +165,11 @@ def member_edit(request, pk):
             member = form.save()
             messages.success(request, f"Membre {member.full_name} modifié avec succès.")
             return redirect('members:detail', pk=member.pk)
+        else:
+            # Afficher les erreurs de validation
+            for field, errors in form.errors.items():
+                for error in errors:
+                    messages.error(request, f"{field}: {error}")
     else:
         form = MemberForm(instance=member)
     
@@ -321,7 +358,6 @@ def visit_list(request):
 def visit_create(request):
     """Créer une visite pastorale."""
     from .forms import VisitationLogForm
-    
     if request.method == 'POST':
         form = VisitationLogForm(request.POST)
         if form.is_valid():
@@ -378,9 +414,12 @@ def visit_complete(request, pk):
 
 
 @login_required
-@role_required('admin', 'secretariat', 'encadrant')
+@role_required('admin', 'pasteur', 'ancien', 'diacre')
 def members_needing_visit(request):
-    """Liste des membres nécessitant une visite (pas visités depuis 6 mois)."""
+    """Liste des membres nécessitant une visite (pas visités depuis 6 mois).
+    
+    Réservé aux pasteurs, anciens et diacres.
+    """
     members = []
     six_months_ago = date.today() - timedelta(days=180)
     

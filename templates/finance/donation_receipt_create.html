@@ -1,0 +1,121 @@
+{% extends 'base.html' %}
+
+{% block title %}Reçu de don - EEBC{% endblock %}
+{% block page_title %}Générer un reçu de don{% endblock %}
+{% block page_subtitle %}Remplissez les informations du donateur pour générer le reçu PDF{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-8">
+        <div class="card border-0 shadow-sm">
+            <div class="card-body p-4">
+                <form method="post" target="_blank">
+                    {% csrf_token %}
+
+                    <!-- Sélection membre -->
+                    <div class="mb-4">
+                        <label class="form-label fw-bold">
+                            <i class="bi bi-person-check me-1"></i> Pré-remplir depuis un membre
+                        </label>
+                        {{ form.member }}
+                        <small class="text-muted">Optionnel — les champs seront remplis automatiquement.</small>
+                    </div>
+
+                    <hr class="my-4">
+
+                    <!-- Infos donateur -->
+                    <h6 class="fw-bold text-primary mb-3">
+                        <i class="bi bi-person me-1"></i> Informations du donateur
+                    </h6>
+                    <div class="row g-3 mb-4">
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold">Nom du donateur *</label>
+                            {{ form.donor_name }}
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold">Email</label>
+                            {{ form.donor_email }}
+                        </div>
+                        <div class="col-12">
+                            <label class="form-label fw-bold">Adresse</label>
+                            {{ form.donor_address }}
+                        </div>
+                    </div>
+
+                    <!-- Infos don -->
+                    <h6 class="fw-bold text-primary mb-3">
+                        <i class="bi bi-cash-coin me-1"></i> Détails du don
+                    </h6>
+                    <div class="row g-3 mb-4">
+                        <div class="col-md-4">
+                            <label class="form-label fw-bold">Montant (€) *</label>
+                            {{ form.amount }}
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label fw-bold">Type *</label>
+                            {{ form.donation_type }}
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label fw-bold">Mode de paiement *</label>
+                            {{ form.payment_method }}
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label fw-bold">Date du don *</label>
+                            {{ form.donation_date }}
+                        </div>
+                    </div>
+
+                    {% if form.errors %}
+                    <div class="alert alert-danger">
+                        <i class="bi bi-exclamation-triangle me-2"></i>
+                        Veuillez corriger les erreurs ci-dessous :
+                        <ul class="mb-0 mt-1">
+                            {% for field, errors in form.errors.items %}
+                            {% for error in errors %}
+                            <li>{{ error }}</li>
+                            {% endfor %}
+                            {% endfor %}
+                        </ul>
+                    </div>
+                    {% endif %}
+
+                    <div class="d-flex justify-content-between">
+                        <a href="{% url 'finance:tax_receipt_list' %}" class="btn btn-outline-secondary">
+                            <i class="bi bi-arrow-left me-1"></i> Retour
+                        </a>
+                        <button type="submit" class="btn btn-primary btn-lg">
+                            <i class="bi bi-file-earmark-pdf me-2"></i> Générer le reçu PDF
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const memberSelect = document.querySelector('[name="member"]');
+    if (!memberSelect) return;
+
+    memberSelect.addEventListener('change', function () {
+        const memberId = this.value;
+        if (!memberId) return;
+
+        fetch(`/app/finance/donation-receipts/member-info/${memberId}/`)
+            .then(r => r.json())
+            .then(data => {
+                const nameField = document.querySelector('[name="donor_name"]');
+                const emailField = document.querySelector('[name="donor_email"]');
+                const addressField = document.querySelector('[name="donor_address"]');
+                if (nameField) nameField.value = data.name || '';
+                if (emailField) emailField.value = data.email || '';
+                if (addressField) addressField.value = data.address || '';
+            })
+            .catch(() => {});
+    });
+});
+</script>
+{% endblock %}

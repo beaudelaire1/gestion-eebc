@@ -770,7 +770,7 @@ class GroupsExportView(ExportPermissionMixin, BaseExportView):
         return {
             'Nom': group.name,
             'Type': group.get_group_type_display(),
-            'Responsable': group.leader.get_full_name() if group.leader else '',
+            'Responsable': group.leader.full_name if group.leader else '',
             'Nb Membres': group.member_count,
             'Jour de réunion': dict(group._meta.get_field('meeting_day').choices).get(group.meeting_day, ''),
             'Heure': group.meeting_time.strftime('%H:%M') if group.meeting_time else '',

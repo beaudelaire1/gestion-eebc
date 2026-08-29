@@ -89,6 +89,10 @@
     .export-icon.csv {
         background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
     }
+
+    .export-icon.import {
+        background: linear-gradient(135deg, #14b8a6 0%, #0f766e 100%);
+    }
     
     .export-title {
         font-size: 1.1rem;
@@ -121,6 +125,11 @@
     
     .export-btn.pdf {
         background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+        color: white;
+    }
+
+    .export-btn.import {
+        background: linear-gradient(135deg, #14b8a6 0%, #0f766e 100%);
         color: white;
     }
     
@@ -217,6 +226,7 @@
         text-decoration: none;
         font-weight: 500;
         transition: all 0.2s ease;
+        -webkit-backdrop-filter: blur(10px);
         backdrop-filter: blur(10px);
     }
     
@@ -224,6 +234,11 @@
         background: rgba(255, 255, 255, 0.3);
         color: white;
         text-decoration: none;
+    }
+
+    .import-highlight {
+        border-color: rgba(20, 184, 166, 0.25);
+        background: linear-gradient(180deg, rgba(240, 253, 250, 0.95) 0%, rgba(255, 255, 255, 1) 100%);
     }
 </style>
 {% endblock %}
@@ -233,7 +248,7 @@
 <div class="stats-overview">
     <div class="stat-card">
         <div class="stat-value">{{ export_stats.total }}</div>
-        <div class="stat-label">Exports disponibles</div>
+        <div class="stat-label">Acces disponibles</div>
     </div>
     <div class="stat-card">
         <div class="stat-value">{{ export_stats.by_format.excel|default:0 }}</div>
@@ -258,6 +273,9 @@
         </a>
         <a href="{% url 'imports:create' %}" class="quick-action-link">
             <i class="bi bi-upload me-2"></i>Nouvel import
+        </a>
+        <a href="{% url 'finance:import_excel' %}" class="quick-action-link">
+            <i class="bi bi-file-earmark-arrow-up me-2"></i>Import finance Excel
         </a>
         <a href="{% url 'imports:template' 'members' %}" class="quick-action-link">
             <i class="bi bi-download me-2"></i>Template membres
@@ -288,7 +306,7 @@
     
     <div class="export-grid">
         {% for export_key, export_config in exports %}
-        <div class="export-card {% if export_config.sensitive %}sensitive{% endif %}">
+        <div class="export-card {% if export_config.sensitive %}sensitive{% endif %} {% if export_config.format_type == 'import' %}import-highlight{% endif %}">
             <div class="export-icon {{ export_config.format_type }}">
                 <i class="{{ export_config.icon }}"></i>
             </div>
@@ -297,9 +315,15 @@
             <p class="export-description">{{ export_config.description }}</p>
             
             <a href="{{ export_config.get_url }}" class="btn export-btn {{ export_config.format_type }}">
-                <i class="bi bi-download me-2"></i>
+                {% if export_config.format_type == 'import' %}
+                    <i class="bi bi-box-arrow-up-right me-2"></i>
+                {% else %}
+                    <i class="bi bi-download me-2"></i>
+                {% endif %}
                 {% if export_config.format_type == 'excel' %}
                     Exporter Excel
+                {% elif export_config.format_type == 'import' %}
+                    Ouvrir l'import
                 {% elif export_config.format_type == 'pdf' %}
                     Télécharger PDF
                 {% else %}

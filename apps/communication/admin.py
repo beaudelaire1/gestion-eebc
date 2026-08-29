@@ -1,7 +1,15 @@
 from django.contrib import admin
 from django import forms
-from .models import Notification, EmailLog, SMSLog, Announcement, EmailTemplate
+from .models import Notification, EmailLog, SMSLog, Announcement, EmailSenderDepartment, EmailTemplate
 from apps.core.widgets import TinyMCEWidget
+
+
+@admin.register(EmailSenderDepartment)
+class EmailSenderDepartmentAdmin(admin.ModelAdmin):
+    """Admin des départements expéditeurs de l'éditeur d'e-mails."""
+    list_display = ['name', 'from_email', 'phone', 'is_active', 'order']
+    list_editable = ['is_active', 'order']
+    search_fields = ['name', 'from_email']
 
 
 class AnnouncementAdminForm(forms.ModelForm):
@@ -62,10 +70,6 @@ class EmailLogAdmin(admin.ModelAdmin):
             'classes': ('collapse',)
         }),
     )
-    
-    def get_queryset(self, request):
-        """Optimiser les requêtes."""
-        return super().get_queryset(request).select_related()
     
     def has_add_permission(self, request):
         """Empêcher l'ajout manuel de logs."""
@@ -212,5 +216,5 @@ class AnnouncementAdmin(admin.ModelAdmin):
     date_hierarchy = 'created_at'
     
     class Media:
-        js = ('https://cdn.tiny.cloud/1/6qr0im1d33wizm1ytimh1kpwbugqeb8r4fq1gebb03rme6hv/tinymce/6/tinymce.min.js',)
+        js = ('https://cdn.jsdelivr.net/npm/tinymce@6/tinymce.min.js',)
 

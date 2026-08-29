@@ -1,0 +1,125 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ member.full_name }} — Dons {{ year }}{% endblock %}
+{% block page_title %}{{ member.full_name }}{% endblock %}
+{% block page_subtitle %}Récapitulatif des dons — {{ year }}{% endblock %}
+
+{% block page_actions %}
+<a href="{% url 'finance:member_donation_detail_pdf' member.pk %}?year={{ year }}" class="btn btn-sm btn-outline-danger" target="_blank">
+    <i class="bi bi-file-pdf me-1"></i>PDF
+</a>
+<a href="{% url 'finance:member_annual_summary' %}?year={{ year }}" class="btn btn-sm btn-outline-secondary">
+    <i class="bi bi-arrow-left me-1"></i>Retour
+</a>
+{% endblock %}
+
+{% block content %}
+<!-- KPIs -->
+<div class="row g-3 mb-4">
+    <div class="col-md-3">
+        <div class="card border-0 shadow-sm">
+            <div class="card-body text-center">
+                <div class="text-primary fs-3 fw-bold">{{ grand_total|floatformat:2 }}€</div>
+                <div class="text-muted small">Total {{ year }}</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card border-0 shadow-sm">
+            <div class="card-body text-center">
+                <div class="text-success fs-3 fw-bold">{{ totals.dime.total|floatformat:2|default:"0.00" }}€</div>
+                <div class="text-muted small">Dîmes ({{ totals.dime.count|default:"0" }})</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card border-0 shadow-sm">
+            <div class="card-body text-center">
+                <div class="text-info fs-3 fw-bold">{{ totals.don.total|floatformat:2|default:"0.00" }}€</div>
+                <div class="text-muted small">Dons ({{ totals.don.count|default:"0" }})</div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card border-0 shadow-sm">
+            <div class="card-body text-center">
+                <div class="text-warning fs-3 fw-bold">{{ totals.offrande.total|floatformat:2|default:"0.00" }}€</div>
+                <div class="text-muted small">Offrandes ({{ totals.offrande.count|default:"0" }})</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row g-4">
+    <!-- Évolution mensuelle -->
+    <div class="col-md-5">
+        <div class="card border-0 shadow-sm">
+            <div class="card-header bg-white"><h6 class="mb-0 fw-bold">Par mois</h6></div>
+            <div class="card-body p-0">
+                <table class="table table-sm mb-0">
+                    <thead><tr><th>Mois</th><th class="text-end">Montant</th><th class="text-end">Nb</th></tr></thead>
+                    <tbody>
+                    {% for m in monthly %}
+                    {% if m.total > 0 %}
+                    <tr>
+                        <td>{{ m.month_name }}</td>
+                        <td class="text-end fw-bold">{{ m.total|floatformat:2 }}€</td>
+                        <td class="text-end text-muted">{{ m.count }}</td>
+                    </tr>
+                    {% endif %}
+                    {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Transactions -->
+    <div class="col-md-7">
+        <div class="card border-0 shadow-sm">
+            <div class="card-header bg-white"><h6 class="mb-0 fw-bold">Transactions ({{ transactions|length }})</h6></div>
+            <div class="card-body p-0">
+                <table class="table table-hover table-sm mb-0">
+                    <thead><tr><th>Date</th><th>Réf</th><th>Type</th><th>Méthode</th><th class="text-end">Montant</th></tr></thead>
+                    <tbody>
+                    {% for t in transactions %}
+                    <tr>
+                        <td class="small">{{ t.transaction_date|date:"d/m/Y" }}</td>
+                        <td><a href="{% url 'finance:transaction_detail' t.pk %}">{{ t.reference }}</a></td>
+                        <td>
+                            {% if t.transaction_type == 'dime' %}<span class="badge bg-success">Dîme</span>
+                            {% elif t.transaction_type == 'don' %}<span class="badge bg-primary">Don</span>
+                            {% else %}<span class="badge bg-warning text-dark">Offrande</span>{% endif %}
+                        </td>
+                        <td class="small">{{ t.get_payment_method_display }}</td>
+                        <td class="text-end fw-bold">{{ t.amount }}€</td>
+                    </tr>
+                    {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        {% if online_donations %}
+        <div class="card border-0 shadow-sm mt-3">
+            <div class="card-header bg-white"><h6 class="mb-0 fw-bold">Dons en ligne ({{ online_donations|length }}) — {{ online_total|floatformat:2 }}€</h6></div>
+            <div class="card-body p-0">
+                <table class="table table-hover table-sm mb-0">
+                    <thead><tr><th>Date</th><th>Type</th><th class="text-end">Montant</th><th>Statut</th></tr></thead>
+                    <tbody>
+                    {% for d in online_donations %}
+                    <tr>
+                        <td class="small">{{ d.created_at|date:"d/m/Y" }}</td>
+                        <td>{{ d.get_donation_type_display }}</td>
+                        <td class="text-end fw-bold">{{ d.amount }}€</td>
+                        <td><span class="badge bg-success">{{ d.get_status_display }}</span></td>
+                    </tr>
+                    {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

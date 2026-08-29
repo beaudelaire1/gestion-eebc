@@ -1,0 +1,81 @@
+{% extends "base.html" %}
+
+{% block title %}Pages - EEBC{% endblock %}
+
+{% block page_title %}Pages{% endblock %}
+{% block page_subtitle %}Gestion des pages statiques{% endblock %}
+
+{% block content %}
+<div class="card border-0 shadow-sm">
+    <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
+        <h6 class="mb-0 fw-bold">Liste des pages</h6>
+        <a href="{% url 'public_cms:page_create' %}" class="btn btn-primary btn-sm">
+            <i class="bi bi-plus-lg me-2"></i>Nouvelle page
+        </a>
+    </div>
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="bg-light">
+                    <tr>
+                        <th class="ps-4">Titre</th>
+                        <th>Type</th>
+                        <th>URL</th>
+                        <th>Menu</th>
+                        <th>Ordre</th>
+                        <th>Statut</th>
+                        <th class="text-end pe-4">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for page in pages %}
+                    <tr>
+                        <td class="ps-4 fw-medium">{{ page.title }}</td>
+                        <td><span class="badge bg-secondary">{{ page.get_page_type_display }}</span></td>
+                        <td><code class="text-muted">/{{ page.slug }}</code></td>
+                        <td>
+                            {% if page.show_in_menu %}
+                            <i class="bi bi-check-circle-fill text-success"></i>
+                            {% else %}
+                            <i class="bi bi-circle text-muted"></i>
+                            {% endif %}
+                        </td>
+                        <td>{{ page.menu_order }}</td>
+                        <td>
+                            {% if page.is_published %}
+                            <span class="badge bg-success">Publié</span>
+                            {% else %}
+                            <span class="badge bg-light text-dark border">Brouillon</span>
+                            {% endif %}
+                        </td>
+                        <td class="text-end pe-4">
+                            <div class="btn-group">
+                                <a href="{% url 'public_cms:page_update' page.pk %}"
+                                    class="btn btn-sm btn-outline-primary" title="Modifier">
+                                    <i class="bi bi-pencil"></i>
+                                </a>
+                                <a href="{% url 'public_cms:page_delete' page.pk %}"
+                                    class="btn btn-sm btn-outline-danger" title="Supprimer">
+                                    <i class="bi bi-trash"></i>
+                                </a>
+                                <a href="{% url 'public:page' page.slug %}" target="_blank"
+                                    class="btn btn-sm btn-outline-secondary" title="Voir">
+                                    <i class="bi bi-eye"></i>
+                                </a>
+                            </div>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="7" class="text-center py-5 text-muted">
+                            <i class="bi bi-file-earmark-x fs-1 d-block mb-3"></i>
+                            Aucune page trouvée.
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

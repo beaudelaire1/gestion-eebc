@@ -5,7 +5,7 @@
 {% block page_subtitle %}Informations importantes{% endblock %}
 
 {% block page_actions %}
-{% if user.is_staff %}
+{% if user.is_admin or user.role == 'admin' or user.role == 'secretariat' %}
 <a href="{% url 'communication:announcement_create' %}" class="btn btn-primary">
     <i class="bi bi-plus-lg me-1"></i> Nouvelle annonce
 </a>
@@ -13,23 +13,59 @@
 {% endblock %}
 
 {% block content %}
+<!-- Bouton d'ajout d'annonce pour les admins -->
+{% if user.is_admin or user.role == 'admin' or user.role == 'secretariat' %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h1 class="h3 mb-0">Annonces</h1>
+        <p class="text-muted">Informations importantes</p>
+    </div>
+    <a href="{% url 'communication:announcement_create' %}" class="btn btn-primary">
+        <i class="bi bi-plus-lg me-1"></i> Nouvelle annonce
+    </a>
+</div>
+{% endif %}
+
 <!-- Annonces épinglées -->
 {% for announcement in announcements %}
 {% if announcement.is_pinned %}
 <div class="card border-0 shadow-sm mb-4 border-start border-4 border-warning">
     <div class="card-body">
         <div class="d-flex justify-content-between align-items-start">
-            <div>
+            <div class="flex-grow-1">
                 <h5 class="card-title">
                     <i class="bi bi-pin-angle text-warning me-2"></i>
                     {{ announcement.title }}
                 </h5>
                 <p class="card-text">{{ announcement.content|linebreaks }}</p>
                 <small class="text-muted">
-                    Par {{ announcement.author.get_full_name|default:announcement.author.username }} 
-                    • {{ announcement.created_at|date:"d/m/Y" }}
+                    {% if announcement.created_by %}
+                        Par {{ announcement.created_by.get_full_name|default:announcement.created_by.username }} 
+                        • {{ announcement.created_at|date:"d/m/Y" }}
+                    {% else %}
+                        {{ announcement.created_at|date:"d/m/Y" }}
+                    {% endif %}
                 </small>
             </div>
+            {% if user.is_staff %}
+            <div class="dropdown">
+                <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                    <i class="bi bi-three-dots"></i>
+                </button>
+                <ul class="dropdown-menu">
+                    <li><a class="dropdown-item" href="{% url 'communication:announcement_detail' announcement.pk %}">
+                        <i class="bi bi-eye me-2"></i>Voir
+                    </a></li>
+                    <li><a class="dropdown-item" href="{% url 'communication:announcement_edit' announcement.pk %}">
+                        <i class="bi bi-pencil me-2"></i>Modifier
+                    </a></li>
+                    <li><hr class="dropdown-divider"></li>
+                    <li><a class="dropdown-item text-danger" href="{% url 'communication:announcement_delete' announcement.pk %}">
+                        <i class="bi bi-trash me-2"></i>Supprimer
+                    </a></li>
+                </ul>
+            </div>
+            {% endif %}
         </div>
     </div>
 </div>
@@ -46,13 +82,30 @@
                 <h5 class="card-title">{{ announcement.title }}</h5>
                 <p class="card-text text-muted">{{ announcement.content|truncatechars:200 }}</p>
             </div>
-            <div class="card-footer bg-transparent border-0">
+            <div class="card-footer bg-transparent border-0 d-flex justify-content-between align-items-center">
                 <small class="text-muted">
                     {{ announcement.created_at|date:"d/m/Y" }}
                 </small>
-                <a href="{% url 'communication:announcement_detail' announcement.pk %}" class="btn btn-sm btn-outline-primary float-end">
-                    Lire plus
-                </a>
+                <div>
+                    <a href="{% url 'communication:announcement_detail' announcement.pk %}" class="btn btn-sm btn-outline-primary">
+                        Lire plus
+                    </a>
+                    {% if user.is_admin or user.role == 'admin' or user.role == 'secretariat' %}
+                    <div class="btn-group ms-2">
+                        <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                            <i class="bi bi-three-dots"></i>
+                        </button>
+                        <ul class="dropdown-menu">
+                            <li><a class="dropdown-item" href="{% url 'communication:announcement_edit' announcement.pk %}">
+                                <i class="bi bi-pencil me-2"></i>Modifier
+                            </a></li>
+                            <li><a class="dropdown-item text-danger" href="{% url 'communication:announcement_delete' announcement.pk %}">
+                                <i class="bi bi-trash me-2"></i>Supprimer
+                            </a></li>
+                        </ul>
+                    </div>
+                    {% endif %}
+                </div>
             </div>
         </div>
     </div>
@@ -70,7 +123,7 @@
     {% endfor %}
 </div>
 
-{% if all_announcements and user.is_staff %}
+{% if all_announcements and user.is_admin or user.role == 'admin' or user.role == 'secretariat' %}
 <hr class="my-5">
 <h4>Toutes les annonces (Admin)</h4>
 <div class="card border-0 shadow-sm">
@@ -82,6 +135,7 @@
                     <th>Auteur</th>
                     <th>Dates</th>
                     <th>Statut</th>
+                    <th>Actions</th>
                 </tr>
             </thead>
             <tbody>
@@ -89,9 +143,17 @@
                 <tr>
                     <td>
                         {% if a.is_pinned %}<i class="bi bi-pin-angle text-warning me-1"></i>{% endif %}
-                        {{ a.title }}
+                        <a href="{% url 'communication:announcement_detail' a.pk %}" class="text-decoration-none">
+                            {{ a.title }}
+                        </a>
                     </td>
-                    <td>{{ a.author.get_full_name|default:a.author.username }}</td>
+                    <td>
+                        {% if a.created_by %}
+                            {{ a.created_by.get_full_name|default:a.created_by.username }}
+                        {% else %}
+                            <em class="text-muted">Auteur inconnu</em>
+                        {% endif %}
+                    </td>
                     <td>
                         {{ a.start_date|date:"d/m"|default:"—" }} → {{ a.end_date|date:"d/m"|default:"—" }}
                     </td>
@@ -101,6 +163,19 @@
                         {% else %}
                         <span class="badge bg-secondary">Inactive</span>
                         {% endif %}
+                    </td>
+                    <td>
+                        <div class="btn-group btn-group-sm">
+                            <a href="{% url 'communication:announcement_detail' a.pk %}" class="btn btn-outline-primary" title="Voir">
+                                <i class="bi bi-eye"></i>
+                            </a>
+                            <a href="{% url 'communication:announcement_edit' a.pk %}" class="btn btn-outline-secondary" title="Modifier">
+                                <i class="bi bi-pencil"></i>
+                            </a>
+                            <a href="{% url 'communication:announcement_delete' a.pk %}" class="btn btn-outline-danger" title="Supprimer">
+                                <i class="bi bi-trash"></i>
+                            </a>
+                        </div>
                     </td>
                 </tr>
                 {% endfor %}

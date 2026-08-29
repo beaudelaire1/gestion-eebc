@@ -1,7 +1,12 @@
 {% extends 'public/base.html' %}
 
-{% block title %}Contact - {{ settings.site_name|default:'EEBC' }}{% endblock %}
-
+{% block title %}Contact - {{ settings.site_name|default:'EEBC' }}{% endblock %}{% block meta_description %}Contactez {{ settings.site_name|default:'EEBC' }} pour toute question ou prendre rendez-vous.{% endblock %}
+{% block og_title %}Contactez-nous{% endblock %}
+{% block extra_head_js %}
+{% if turnstile_site_key %}
+<script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
+{% endif %}
+{% endblock %}
 {% block content %}
 <section class="hero-section py-5">
     <div class="container text-center">
@@ -15,6 +20,9 @@
         <div class="row">
             <!-- Formulaire -->
             <div class="col-lg-7 mb-4">
+                <!-- Bannière de verset biblique -->
+                <div class="animated-verse-banner mb-4"></div>
+                
                 <div class="card">
                     <div class="card-body p-4">
                         <h4 class="mb-4">Envoyez-nous un message</h4>
@@ -63,6 +71,10 @@
                                 <textarea class="form-control" id="id_message" name="message" rows="5" required></textarea>
                             </div>
                             
+                            {% if turnstile_site_key %}
+                            <div class="cf-turnstile mb-3" data-sitekey="{{ turnstile_site_key }}" data-theme="light"></div>
+                            {% endif %}
+
                             <button type="submit" class="btn btn-primary btn-lg">
                                 <i class="bi bi-send me-2"></i>Envoyer
                             </button>
@@ -128,15 +140,105 @@
                         
                         {% for site in sites %}
                         <div class="{% if not forloop.last %}mb-4 pb-4 border-bottom{% endif %}">
+                            <!-- En-tête avec nom -->
                             <h5><i class="bi bi-church text-primary me-2"></i>{{ site.name }}</h5>
+                            
+                            <!-- Adresse -->
                             {% if site.address %}
-                            <p class="mb-1"><i class="bi bi-geo-alt me-2 text-muted"></i>{{ site.address }}, {{ site.city }}</p>
+                            <div class="mb-3">
+                                <h6 class="text-muted mb-2">Adresse</h6>
+                                <p class="mb-0"><i class="bi bi-geo-alt me-2 text-muted"></i>{{ site.address }}, {{ site.city }}</p>
+                            </div>
                             {% endif %}
+                            
+                            <!-- Horaires -->
                             {% if site.worship_schedule %}
-                            <p class="mb-1"><i class="bi bi-clock me-2 text-muted"></i>{{ site.worship_schedule }}</p>
+                            <div class="mb-3">
+                                <h6 class="text-muted mb-2">Horaires</h6>
+                                {% if site.code == 'CAB' %}
+                                    <!-- Mise en forme structurée pour Cayenne -->
+                                    <div class="schedule-organized">
+                                        <h6 class="schedule-title"><i class="bi bi-calendar-week me-2"></i>Horaires des activités</h6>
+                                        <div class="activities-list">
+                                            <div class="activity-item">
+                                                <div class="activity-icon">
+                                                    <i class="bi bi-church"></i>
+                                                </div>
+                                                <div class="activity-details">
+                                                    <strong>Culte</strong>
+                                                    <span>Dimanche 9h30-12h00</span>
+                                                </div>
+                                            </div>
+                                            <div class="activity-item">
+                                                <div class="activity-icon">
+                                                    <i class="bi bi-book"></i>
+                                                </div>
+                                                <div class="activity-details">
+                                                    <strong>Étude biblique</strong>
+                                                    <span>Mercredi 19h00</span>
+                                                </div>
+                                            </div>
+                                            <div class="activity-item">
+                                                <div class="activity-icon">
+                                                    <i class="bi bi-heart"></i>
+                                                </div>
+                                                <div class="activity-details">
+                                                    <strong>Réunion de prière</strong>
+                                                    <span>Vendredi 19h00</span>
+                                                </div>
+                                            </div>
+                                            <div class="activity-item">
+                                                <div class="activity-icon">
+                                                    <i class="bi bi-people"></i>
+                                                </div>
+                                                <div class="activity-details">
+                                                    <strong>Groupe de jeunes</strong>
+                                                    <span>Samedi 16h00-18h00</span>
+                                                </div>
+                                            </div>
+                                            <div class="activity-item">
+                                                <div class="activity-icon">
+                                                    <i class="bi bi-mortarboard"></i>
+                                                </div>
+                                                <div class="activity-details">
+                                                    <strong>Club biblique</strong>
+                                                    <span>Samedi 15h00-16h30</span>
+                                                </div>
+                                            </div>
+                                            <div class="activity-item">
+                                                <div class="activity-icon">
+                                                    <i class="bi bi-music-note-beamed"></i>
+                                                </div>
+                                                <div class="activity-details">
+                                                    <strong>Chorale</strong>
+                                                    <span>Samedi 17h30-19h30</span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                {% else %}
+                                    <!-- Affichage simple pour Macouria -->
+                                    <div class="schedule-organized">
+                                        <h6 class="schedule-title"><i class="bi bi-calendar-week me-2"></i>Horaires des activités</h6>
+                                        <div class="activities-list">
+                                            <div class="activity-item">
+                                                <div class="activity-icon">
+                                                    <i class="bi bi-church"></i>
+                                                </div>
+                                                <div class="activity-details">
+                                                    <strong>Culte</strong>
+                                                    <span>Dimanche 9h30</span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                {% endif %}
+                            </div>
                             {% endif %}
+                            
+                            <!-- Contact -->
                             {% if site.phone %}
-                            <p class="mb-0"><i class="bi bi-telephone me-2 text-muted"></i>{{ site.phone }}</p>
+                            <p class="mb-0 mt-3"><i class="bi bi-telephone me-2 text-muted"></i>{{ site.phone }}</p>
                             {% endif %}
                         </div>
                         {% endfor %}

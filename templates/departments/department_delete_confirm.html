@@ -1,0 +1,57 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Supprimer le département {{ department.name }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row justify-content-center">
+        <div class="col-md-8 col-lg-6">
+            <div class="card border-danger">
+                <div class="card-header bg-danger text-white">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-exclamation-triangle"></i> Confirmer la suppression
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="alert alert-warning">
+                        <i class="fas fa-warning"></i>
+                        <strong>Attention !</strong> Cette action marquera le département comme inactif.
+                    </div>
+
+                    <p>Êtes-vous sûr de vouloir supprimer le département <strong>"{{ department.name }}"</strong> ?</p>
+
+                    {% if members_count > 0 %}
+                        <div class="alert alert-info">
+                            <i class="fas fa-info-circle"></i>
+                            Ce département a <strong>{{ members_count }} membre{{ members_count|pluralize }}</strong> assigné{{ members_count|pluralize }}.
+                            Ils seront automatiquement retirés du département mais resteront dans le système.
+                        </div>
+                    {% endif %}
+
+                    <form method="post" id="deleteForm">
+                        {% csrf_token %}
+                        
+                        <div class="alert alert-secondary">
+                            <small>
+                                <i class="fas fa-info-circle"></i>
+                                <strong>Note :</strong> Le département sera marqué comme inactif mais les données historiques seront conservées.
+                                Les membres ne seront pas supprimés du système, seulement retirés de ce département.
+                            </small>
+                        </div>
+                    </form>
+
+                    <div class="d-flex justify-content-between">
+                        <a href="{% url 'departments:detail' department.pk %}" class="btn btn-secondary">
+                            <i class="fas fa-arrow-left"></i> Annuler
+                        </a>
+                        <button type="submit" form="deleteForm" class="btn btn-danger">
+                            <i class="fas fa-trash"></i> Confirmer la suppression
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

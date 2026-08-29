@@ -15,6 +15,7 @@ class ChildForm(forms.ModelForm):
             'first_name', 'last_name', 'date_of_birth', 'gender', 'photo',
             'bible_class', 'father_name', 'father_phone', 'father_email',
             'mother_name', 'mother_phone', 'mother_email',
+            'address', 'city', 'postal_code',
             'emergency_contact', 'emergency_phone', 'allergies', 'medical_notes',
             'needs_transport', 'pickup_address', 'assigned_driver', 'notes'
         ]
@@ -28,9 +29,10 @@ class ChildForm(forms.ModelForm):
                 'class': 'form-control',
                 'placeholder': 'Nom de famille'
             }),
-            'date_of_birth': forms.DateInput(attrs={
+            'date_of_birth': forms.DateInput(format='%Y-%m-%d', attrs={
                 'class': 'form-control',
-                'type': 'date'
+                'type': 'date',
+                'placeholder': ' '
             }),
             'gender': forms.Select(attrs={
                 'class': 'form-select'
@@ -65,6 +67,18 @@ class ChildForm(forms.ModelForm):
             'mother_email': forms.EmailInput(attrs={
                 'class': 'form-control',
                 'placeholder': 'email@exemple.com'
+            }),
+            'address': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'Adresse postale complète'
+            }),
+            'city': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'Ville'
+            }),
+            'postal_code': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'Code postal'
             }),
             'emergency_contact': forms.TextInput(attrs={
                 'class': 'form-control',
@@ -115,6 +129,9 @@ class ChildForm(forms.ModelForm):
             'mother_name': 'Nom de la mère',
             'mother_phone': 'Téléphone de la mère',
             'mother_email': 'Email de la mère',
+            'address': 'Adresse postale',
+            'city': 'Ville',
+            'postal_code': 'Code postal',
             'emergency_contact': 'Contact d\'urgence',
             'emergency_phone': 'Téléphone d\'urgence',
             'allergies': 'Allergies',
@@ -128,20 +145,24 @@ class ChildForm(forms.ModelForm):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         
-        # Filtrer les classes actives
-        self.fields['bible_class'].queryset = BibleClass.objects.filter(is_active=True)
+        # Filtrer les classes actives + inclure la classe actuelle si inactive
+        current_class = getattr(self.instance, 'bible_class', None) if self.instance and self.instance.pk else None
+        qs = BibleClass.objects.filter(is_active=True)
+        if current_class and not current_class.is_active:
+            qs = (qs | BibleClass.objects.filter(pk=current_class.pk)).distinct()
+        self.fields['bible_class'].queryset = qs
         self.fields['bible_class'].empty_label = "Sélectionner une classe"
         
         # Filtrer les chauffeurs actifs
         try:
             self.fields['assigned_driver'].queryset = DriverProfile.objects.filter(is_active=True)
             self.fields['assigned_driver'].empty_label = "Aucun chauffeur"
-        except:
+        except Exception:
             # Si le modèle DriverProfile n'existe pas encore
             self.fields['assigned_driver'].widget = forms.HiddenInput()
         
         # Champs obligatoires
-        required_fields = ['first_name', 'last_name', 'date_of_birth', 'gender', 'father_name', 'father_phone']
+        required_fields = ['first_name', 'last_name', 'date_of_birth', 'gender']
         for field_name in required_fields:
             if field_name in self.fields:
                 self.fields[field_name].required = True
@@ -149,6 +170,20 @@ class ChildForm(forms.ModelForm):
     
     def clean(self):
         cleaned_data = super().clean()
+        
+        # Au moins un parent (père ou mère) doit être renseigné avec nom + téléphone
+        father_name = cleaned_data.get('father_name', '').strip()
+        father_phone = cleaned_data.get('father_phone', '').strip()
+        mother_name = cleaned_data.get('mother_name', '').strip()
+        mother_phone = cleaned_data.get('mother_phone', '').strip()
+        
+        has_father = bool(father_name and father_phone)
+        has_mother = bool(mother_name and mother_phone)
+        
+        if not has_father and not has_mother:
+            raise ValidationError(
+                "Veuillez renseigner au moins un parent (nom + téléphone du père ou de la mère)."
+            )
         
         # Validation du transport
         needs_transport = cleaned_data.get('needs_transport')

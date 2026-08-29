@@ -278,11 +278,20 @@ class HostingerEmailBackend(BaseEmailBackend):
         log = self._create_email_log(email_message)
         
         try:
+            # Hostinger impose que l'enveloppe SMTP (MAIL FROM) soit le compte authentifié.
+            # Si l'adresse From du message ne correspond pas, on remplace l'adresse
+            # mais on CONSERVE le nom d'affichage du département afin que le destinataire
+            # voit bien "Communication — EEBC <contact@...>" et non juste contact@.
+            from email.utils import formataddr, parseaddr
+            display_name, from_address = parseaddr(email_message.from_email or '')
+            if from_address.lower() != self.username.lower():
+                email_message.from_email = formataddr((display_name, self.username)) if display_name else self.username
+            
             # Préparer le message MIME
             msg = self._prepare_mime_message(email_message)
             
-            # Envoyer via SMTP
-            from_email = email_message.from_email or self.username
+            # Envoyer via SMTP (enveloppe = compte authentifié)
+            from_email = self.username
             recipients = email_message.recipients()
             
             self.connection.sendmail(from_email, recipients, msg.as_string())
@@ -311,7 +320,7 @@ class HostingerEmailBackend(BaseEmailBackend):
         """
         Prépare le message MIME à partir du message Django.
         """
-        if email_message.alternatives:
+        if hasattr(email_message, 'alternatives') and email_message.alternatives:
             # Message avec alternatives (HTML + texte)
             msg = MIMEMultipart('alternative')
             
@@ -341,7 +350,8 @@ class HostingerEmailBackend(BaseEmailBackend):
             msg['Reply-To'] = ', '.join(email_message.reply_to)
         
         # Pièces jointes
-        if hasattr(email_message, 'attachments') and email_message.attachments:
+        attachments = getattr(email_message, 'attachments', None)
+        if isinstance(attachments, (list, tuple)) and attachments:
             if not isinstance(msg, MIMEMultipart):
                 # Convertir en multipart pour les pièces jointes
                 original_msg = msg
@@ -352,7 +362,7 @@ class HostingerEmailBackend(BaseEmailBackend):
                 for key, value in original_msg.items():
                     msg[key] = value
             
-            for attachment in email_message.attachments:
+            for attachment in attachments:
                 self._attach_file(msg, attachment)
         
         return msg
@@ -377,6 +387,12 @@ class HostingerEmailBackend(BaseEmailBackend):
         """
         Crée un log pour l'email avant l'envoi.
         """
+        existing_log_id = getattr(email_message, '_eebc_email_log_id', None)
+        if existing_log_id:
+            existing_log = EmailLog.objects.filter(pk=existing_log_id).first()
+            if existing_log:
+                return existing_log
+
         recipients = email_message.recipients()
         recipient_email = recipients[0] if recipients else ''
         
@@ -453,6 +469,7 @@ class HostingerEmailService:
             from_email=from_email,
             to=[recipient_email]
         )
+        email._eebc_email_log_id = log.id
         
         # Ajouter le contenu HTML
         if html_content:

@@ -1,11 +1,19 @@
 from django.shortcuts import render, get_object_or_404, redirect
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
-from django.http import JsonResponse
+from django.core.paginator import Paginator
+from django.http import JsonResponse, HttpResponse
 from django.views.decorators.http import require_http_methods
+from django.urls import reverse
+from django.core import signing
+from urllib.parse import quote_plus
 from apps.core.permissions import role_required
 from .models import Campaign, Donation
 from .forms import CampaignForm, DonationForm
+import logging
+
+logger = logging.getLogger(__name__)
+
 
 
 @login_required
@@ -18,8 +26,12 @@ def campaign_list(request):
     if active_only:
         campaigns = campaigns.filter(is_active=True)
     
+    paginator = Paginator(campaigns, 25)
+    page_obj = paginator.get_page(request.GET.get('page', 1))
+    
     context = {
-        'campaigns': campaigns,
+        'campaigns': page_obj,
+        'page_obj': page_obj,
         'active_only': active_only,
     }
     return render(request, 'campaigns/campaign_list.html', context)
@@ -30,10 +42,17 @@ def campaign_detail(request, pk):
     """Détail d'une campagne."""
     campaign = get_object_or_404(Campaign, pk=pk)
     donations = campaign.donations.all()[:20]
+
+    campaign_token = signing.dumps({'campaign_id': campaign.pk}, salt='campaign-donation')
+    donation_path = f"{reverse('public:donation')}?c={campaign_token}"
+    public_donation_url = request.build_absolute_uri(donation_path)
+    qr_code_url = f"https://quickchart.io/qr?size=280&text={quote_plus(public_donation_url)}"
     
     context = {
         'campaign': campaign,
         'donations': donations,
+        'public_donation_url': public_donation_url,
+        'qr_code_url': qr_code_url,
     }
     return render(request, 'campaigns/campaign_detail.html', context)
 
@@ -118,13 +137,29 @@ def campaign_donate(request, pk=None):
     else:
         form = DonationForm(campaign_id=pk)
     
+    from apps.members.models import Member
+    members = Member.objects.filter(status='actif').order_by('last_name', 'first_name')
+
     context = {
         'form': form,
         'campaign': campaign,
+        'members': members,
         'title': f'Nouveau don{" pour " + campaign.name if campaign else ""}',
         'submit_text': 'Enregistrer le don'
     }
     return render(request, 'campaigns/donation_form.html', context)
+
+
+@login_required
+@role_required('admin', 'finance', 'secretariat')
+@require_http_methods(["GET"])
+def member_info_api(request, pk):
+    """API JSON pour pré-remplir le nom du donateur depuis un membre."""
+    from apps.members.models import Member
+    member = get_object_or_404(Member, pk=pk)
+    return JsonResponse({
+        'name': member.full_name,
+    })
 
 
 @login_required
@@ -143,4 +178,70 @@ def campaign_progress_api(request, pk):
     }
     
     return JsonResponse(data)
+
+
+@login_required
+@role_required('admin', 'finance')
+def campaign_delete(request, pk):
+    """Supprimer une campagne (soft delete)."""
+    campaign = get_object_or_404(Campaign, pk=pk)
+    
+    # Vérifier l'activité
+    donations_count = campaign.donations.count()
+    
+    if request.method == 'POST':
+        campaign.is_active = False
+        campaign.save()
+        messages.success(request, f'La campagne "{campaign.name}" a été supprimée (archivée) avec succès.')
+        return redirect('campaigns:list')
+    
+    context = {
+        'campaign': campaign,
+        'donations_count': donations_count,
+    }
+    return render(request, 'campaigns/campaign_delete_confirm.html', context)
+
+
+@login_required
+@role_required('admin', 'finance')
+def donation_cancel(request, pk):
+    """Annuler un don."""
+    donation = get_object_or_404(Donation, pk=pk)
+    campaign = donation.campaign
+    
+    if request.method == 'POST':
+        if not donation.is_cancelled:
+            donation.is_cancelled = True
+            donation.save()
+            messages.success(request, f'Le don de {donation.amount}€ a été annulé avec succès.')
+        else:
+            donation.is_cancelled = False
+            donation.save()
+            messages.success(request, f'Le don de {donation.amount}€ a été réactivé avec succès.')
+            
+        return redirect('campaigns:detail', pk=campaign.pk)
+    
+    context = {
+        'donation': donation,
+        'campaign': campaign,
+    }
+    return render(request, 'campaigns/donation_cancel_confirm.html', context)
+
+
+@login_required
+@role_required('admin', 'finance')
+def donation_receipt_pdf(request, pk):
+    """Génère un reçu PDF pour un don de campagne."""
+    donation = get_object_or_404(Donation, pk=pk)
+
+    if donation.is_cancelled:
+        messages.error(request, "Impossible de générer un reçu pour un don annulé.")
+        return redirect('campaigns:detail', pk=donation.campaign.pk)
+
+    from apps.finance.pdf_service import generate_campaign_donation_receipt_pdf
+    pdf_bytes, receipt_number = generate_campaign_donation_receipt_pdf(donation)
+
+    response = HttpResponse(pdf_bytes, content_type='application/pdf')
+    response['Content-Disposition'] = f'inline; filename="recu_{receipt_number}.pdf"'
+    return response
 

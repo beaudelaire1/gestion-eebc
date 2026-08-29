@@ -1,0 +1,49 @@
+{% extends 'base.html' %}
+
+{% block title %}Supprimer {{ site.name }} - EEBC{% endblock %}
+{% block page_title %}Supprimer un site{% endblock %}
+{% block page_subtitle %}Confirmation de suppression{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-6">
+        <div class="card border-0 shadow-sm">
+            <div class="card-header bg-danger text-white">
+                <h6 class="card-title mb-0">
+                    <i class="bi bi-exclamation-triangle me-2"></i>Confirmer la suppression
+                </h6>
+            </div>
+            <div class="card-body text-center">
+                <div class="rounded-circle bg-danger bg-opacity-10 d-inline-flex align-items-center justify-content-center mb-3" style="width:80px;height:80px;">
+                    <i class="bi bi-building fs-1 text-danger"></i>
+                </div>
+                <h5>{{ site.name }}</h5>
+                <span class="badge bg-light text-dark mb-3">{{ site.code }}</span>
+
+                {% if member_count > 0 %}
+                <div class="alert alert-warning text-start">
+                    <i class="bi bi-exclamation-triangle me-2"></i>
+                    <strong>Attention :</strong> Ce site compte <strong>{{ member_count }}</strong> membre{{ member_count|pluralize }} associé{{ member_count|pluralize }}.
+                    La suppression ne sera effective que si vous avez réaffecté ces membres.
+                </div>
+                {% endif %}
+
+                <p class="text-muted">
+                    Êtes-vous sûr de vouloir supprimer ce site ? Cette action est irréversible.
+                </p>
+            </div>
+            <div class="card-footer d-flex justify-content-between">
+                <a href="{% url 'core:site_detail' pk=site.pk %}" class="btn btn-outline-secondary">
+                    <i class="bi bi-arrow-left me-1"></i>Annuler
+                </a>
+                <form method="post" class="d-inline">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-danger">
+                        <i class="bi bi-trash me-1"></i>Supprimer définitivement
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

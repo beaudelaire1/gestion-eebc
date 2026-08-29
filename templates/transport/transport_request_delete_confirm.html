@@ -1,0 +1,68 @@
+{% extends 'base.html' %}
+
+{% block title %}Supprimer la demande - Transport{% endblock %}
+{% block page_title %}Supprimer la demande de transport{% endblock %}
+{% block page_subtitle %}{{ transport_request.requester_name }}{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-6">
+        <div class="card border-danger">
+            <div class="card-header bg-danger text-white">
+                <h5 class="mb-0">
+                    <i class="bi bi-exclamation-triangle me-2"></i>
+                    Confirmation de suppression
+                </h5>
+            </div>
+            <div class="card-body">
+                <p>Êtes-vous sûr de vouloir supprimer cette demande de transport ?</p>
+                
+                <div class="alert alert-info">
+                    <strong>Détails de la demande :</strong><br>
+                    <i class="bi bi-person me-2"></i><strong>Demandeur :</strong> {{ transport_request.requester_name }}<br>
+                    <i class="bi bi-calendar me-2"></i><strong>Date :</strong> {{ transport_request.event_date|date:"d/m/Y" }}<br>
+                    <i class="bi bi-clock me-2"></i><strong>Heure :</strong> {{ transport_request.event_time|time:"H:i" }}<br>
+                    <i class="bi bi-people me-2"></i><strong>Passagers :</strong> {{ transport_request.passengers_count }}<br>
+                    {% if transport_request.event_name %}
+                    <i class="bi bi-calendar-event me-2"></i><strong>Événement :</strong> {{ transport_request.event_name }}<br>
+                    {% endif %}
+                    <i class="bi bi-badge-tm me-2"></i><strong>Statut :</strong> 
+                    <span class="badge 
+                        {% if transport_request.status == 'pending' %}bg-warning
+                        {% elif transport_request.status == 'confirmed' %}bg-success
+                        {% elif transport_request.status == 'completed' %}bg-info
+                        {% elif transport_request.status == 'cancelled' %}bg-danger
+                        {% endif %}">
+                        {{ transport_request.get_status_display }}
+                    </span><br>
+                    {% if transport_request.driver %}
+                    <i class="bi bi-person-check me-2"></i><strong>Chauffeur assigné :</strong> {{ transport_request.driver.user.get_full_name }}
+                    {% endif %}
+                </div>
+                
+                {% if transport_request.status == 'confirmed' and transport_request.requester_email %}
+                <div class="alert alert-warning">
+                    <i class="bi bi-envelope me-2"></i>
+                    Un email d'annulation sera automatiquement envoyé au demandeur ({{ transport_request.requester_email }}).
+                </div>
+                {% endif %}
+                
+                <div class="alert alert-danger">
+                    <i class="bi bi-exclamation-triangle me-2"></i>
+                    Cette action est irréversible. La demande de transport sera définitivement supprimée.
+                </div>
+                
+                <form method="post" class="d-inline">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-danger me-2">
+                        <i class="bi bi-trash me-2"></i>Confirmer la suppression
+                    </button>
+                    <a href="{% url 'transport:request_detail' transport_request.pk %}" class="btn btn-secondary">
+                        Annuler
+                    </a>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

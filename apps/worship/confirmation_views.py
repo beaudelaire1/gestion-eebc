@@ -10,10 +10,12 @@ from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.http import Http404
 from django.utils import timezone
+from django.conf import settings
 
 from .models import RoleAssignment, ScheduledService, MonthlySchedule
 from apps.members.models import Member
 from apps.core.permissions import role_required
+from apps.core.utils.turnstile import validate_turnstile_with_ip
 
 
 def confirm_role(request, token):
@@ -37,6 +39,16 @@ def confirm_role(request, token):
         })
     
     if request.method == 'POST':
+        # Valider le CAPTCHA Turnstile
+        is_valid, error = validate_turnstile_with_ip(request)
+        if not is_valid:
+            return render(request, 'worship/confirmation/confirm.html', {
+                'assignment': assignment,
+                'service': assignment.scheduled_service,
+                'schedule': assignment.scheduled_service.schedule,
+                'turnstile_site_key': getattr(settings, 'TURNSTILE_SITE_KEY', ''),
+                'captcha_error': error or 'Vérification de sécurité échouée.',
+            })
         assignment.accept()
         return render(request, 'worship/confirmation/confirmed.html', {
             'assignment': assignment,
@@ -46,6 +58,7 @@ def confirm_role(request, token):
         'assignment': assignment,
         'service': assignment.scheduled_service,
         'schedule': assignment.scheduled_service.schedule,
+        'turnstile_site_key': getattr(settings, 'TURNSTILE_SITE_KEY', ''),
     })
 
 
@@ -70,6 +83,21 @@ def decline_role(request, token):
         })
     
     if request.method == 'POST':
+        # Valider le CAPTCHA Turnstile
+        is_valid, error = validate_turnstile_with_ip(request)
+        if not is_valid:
+            potential_replacements = Member.objects.filter(
+                status='actif'
+            ).exclude(pk=assignment.member.pk).order_by('last_name', 'first_name')[:20]
+            return render(request, 'worship/confirmation/decline.html', {
+                'assignment': assignment,
+                'service': assignment.scheduled_service,
+                'schedule': assignment.scheduled_service.schedule,
+                'potential_replacements': potential_replacements,
+                'turnstile_site_key': getattr(settings, 'TURNSTILE_SITE_KEY', ''),
+                'captcha_error': error or 'Vérification de sécurité échouée.',
+            })
+
         reason = request.POST.get('reason', '')
         replacement_id = request.POST.get('suggested_replacement')
         
@@ -96,6 +124,7 @@ def decline_role(request, token):
         'service': assignment.scheduled_service,
         'schedule': assignment.scheduled_service.schedule,
         'potential_replacements': potential_replacements,
+        'turnstile_site_key': getattr(settings, 'TURNSTILE_SITE_KEY', ''),
     })
 
 

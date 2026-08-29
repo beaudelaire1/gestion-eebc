@@ -2,7 +2,8 @@ from django.urls import path
 from . import views
 from apps.finance.donation_views import (
     DonationPageView, CreateDonationSessionView,
-    DonationSuccessView, DonationCancelView, StripeWebhookView
+    DonationSuccessView, DonationCancelView, StripeWebhookView,
+    DonationReceiptPDFView
 )
 
 app_name = 'public'
@@ -23,6 +24,7 @@ urlpatterns = [
     path('don/creer-session/', CreateDonationSessionView.as_view(), name='donation_create_session'),
     path('don/succes/', DonationSuccessView.as_view(), name='donation_success'),
     path('don/annule/', DonationCancelView.as_view(), name='donation_cancel'),
+    path('don/recu/<str:session_id>/', DonationReceiptPDFView.as_view(), name='donation_receipt_pdf'),
     path('webhooks/stripe/', StripeWebhookView.as_view(), name='stripe_webhook'),
     
     # Carte interactive

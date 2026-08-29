@@ -1,18 +1,25 @@
 from django.shortcuts import render, get_object_or_404, redirect
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
+from django.core.paginator import Paginator
 from django.db import transaction
 from apps.core.permissions import role_required
 from apps.members.models import Member
 from .models import Department
 from .forms import DepartmentForm, DepartmentMembersForm
+import logging
+
+logger = logging.getLogger(__name__)
+
 
 
 @login_required
 def department_list(request):
     """Liste des départements."""
-    departments = Department.objects.filter(is_active=True)
-    return render(request, 'departments/department_list.html', {'departments': departments})
+    departments = Department.objects.filter(is_active=True).select_related('leader')
+    paginator = Paginator(departments, 25)
+    page_obj = paginator.get_page(request.GET.get('page', 1))
+    return render(request, 'departments/department_list.html', {'departments': page_obj, 'page_obj': page_obj})
 
 
 @login_required
@@ -123,4 +130,38 @@ def department_members(request, pk):
         'department': department,
         'current_members': department.members.all()
     })
+
+
+@login_required
+@role_required('admin', 'secretariat')
+def department_delete(request, pk):
+    """
+    Supprimer un département (soft delete).
+    Requirements: 12.5
+    """
+    department = get_object_or_404(Department, pk=pk)
+    
+    # Vérifier s'il y a des membres assignés
+    members_count = department.members.count()
+    
+    if request.method == 'POST':
+        department_name = department.name
+        
+        # Soft delete - marquer comme inactif
+        department.is_active = False
+        department.save()
+        
+        # Les membres restent dans le système mais ne sont plus assignés au département
+        if members_count > 0:
+            department.members.clear()
+            messages.info(request, f'{members_count} membre(s) retiré(s) du département.')
+        
+        messages.success(request, f'Département "{department_name}" supprimé avec succès.')
+        return redirect('departments:list')
+    
+    context = {
+        'department': department,
+        'members_count': members_count,
+    }
+    return render(request, 'departments/department_delete_confirm.html', context)
 

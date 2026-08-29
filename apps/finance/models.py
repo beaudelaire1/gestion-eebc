@@ -9,9 +9,24 @@ Ce module gère :
 """
 
 from django.db import models
+from django.db.models import Sum
 from django.conf import settings
 from django.core.validators import MinValueValidator
 from decimal import Decimal
+
+
+class NotDeletedManager(models.Manager):
+    """Manager qui exclut les soft-deleted par défaut."""
+    
+    def get_queryset(self):
+        return super().get_queryset().filter(is_deleted=False)
+
+
+class AllTransactionsManager(models.Manager):
+    """Manager qui inclut les soft-deleted (admin only)."""
+    
+    def get_queryset(self):
+        return super().get_queryset()
 
 
 class FinancialTransaction(models.Model):
@@ -42,6 +57,10 @@ class FinancialTransaction(models.Model):
         EN_ATTENTE = 'en_attente', 'En attente'
         VALIDE = 'valide', 'Validé'
         ANNULE = 'annule', 'Annulé'
+    
+    # Managers
+    objects = NotDeletedManager()  # Par défaut, exclure les soft-deleted
+    all_objects = AllTransactionsManager()  # Include soft-deleted
     
     # Informations principales
     reference = models.CharField(
@@ -162,14 +181,39 @@ class FinancialTransaction(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     
+    # Soft-delete (audit trail)
+    is_deleted = models.BooleanField(
+        default=False,
+        verbose_name="Supprimé",
+        help_text="Soft-delete : les données restent en BD pour l'audit"
+    )
+    deleted_at = models.DateTimeField(
+        null=True,
+        blank=True,
+        verbose_name="Date de suppression"
+    )
+    deleted_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='deleted_transactions',
+        verbose_name="Supprimé par"
+    )
+    
     class Meta:
         verbose_name = "Transaction"
         verbose_name_plural = "Transactions"
         ordering = ['-transaction_date', '-created_at']
         indexes = [
-            models.Index(fields=['transaction_date']),
-            models.Index(fields=['transaction_type']),
-            models.Index(fields=['status']),
+            models.Index(fields=['transaction_date'], name='fin_trans_date_idx'),
+            models.Index(fields=['transaction_type'], name='fin_trans_type_idx'),
+            models.Index(fields=['status'], name='fin_trans_status_idx'),
+            models.Index(fields=['member'], name='fin_trans_member_idx'),
+            models.Index(fields=['category'], name='fin_trans_category_idx'),
+            models.Index(fields=['is_deleted'], name='fin_trans_deleted_idx'),
+            models.Index(fields=['transaction_date', 'status'], name='fin_trans_date_status_idx'),
+            models.Index(fields=['member', 'transaction_date'], name='fin_trans_memb_date_idx'),
         ]
     
     def __str__(self):
@@ -207,6 +251,41 @@ class FinancialTransaction(models.Model):
         if self.is_income:
             return self.amount
         return -self.amount
+    
+    def soft_delete(self, user):
+        """
+        Soft-delete : marquer comme supprimé sans détruire les données.
+        Permet l'audit et la récupération en cas d'erreur.
+        """
+        from django.utils import timezone
+        
+        self.is_deleted = True
+        self.deleted_at = timezone.now()
+        self.deleted_by = user
+        self.save(update_fields=['is_deleted', 'deleted_at', 'deleted_by', 'updated_at'])
+    
+    def restore(self):
+        """Restaurer une transaction supprimée."""
+        from django.utils import timezone
+        
+        self.is_deleted = False
+        self.deleted_at = None
+        self.deleted_by = None
+        self.save(update_fields=['is_deleted', 'deleted_at', 'deleted_by', 'updated_at'])
+    
+    def delete(self, *args, **kwargs):
+        """
+        Surcharger delete() pour faire un soft-delete par défaut.
+        Utiliser hard_delete() pour vraiment supprimer.
+        """
+        raise NotImplementedError(
+            "Utiliser soft_delete(user) pour les transactions. "
+            "Utiliser hard_delete() pour vraiment supprimer."
+        )
+    
+    def hard_delete(self, *args, **kwargs):
+        """Hard-delete : vraiment supprimer de la DB (admin seulement)."""
+        super().delete(*args, **kwargs)
 
 
 class FinanceCategory(models.Model):
@@ -405,6 +484,11 @@ class BudgetLine(models.Model):
         verbose_name_plural = "Lignes budgétaires"
         unique_together = ['category', 'year', 'month']
         ordering = ['-year', 'month', 'category__name']
+        indexes = [
+            models.Index(fields=['year'], name='budgetline_year_idx'),
+            models.Index(fields=['category'], name='budgetline_category_idx'),
+            models.Index(fields=['year', 'month'], name='budgetline_year_month_idx'),
+        ]
     
     def __str__(self):
         period = f"{self.year}"
@@ -560,6 +644,21 @@ class OnlineDonation(models.Model):
     
     created_at = models.DateTimeField(auto_now_add=True, verbose_name="Créé le")
     completed_at = models.DateTimeField(null=True, blank=True, verbose_name="Complété le")
+
+    # Suivi d'envoi du reçu email
+    receipt_email_sent_at = models.DateTimeField(
+        null=True,
+        blank=True,
+        verbose_name="Reçu email envoyé le"
+    )
+    receipt_email_attempts = models.PositiveSmallIntegerField(
+        default=0,
+        verbose_name="Tentatives d'envoi du reçu"
+    )
+    receipt_email_last_error = models.TextField(
+        blank=True,
+        verbose_name="Dernière erreur d'envoi du reçu"
+    )
     
     class Meta:
         verbose_name = "Don en ligne"
@@ -707,13 +806,21 @@ Merci pour votre générosité.
 EEBC - Église Évangélique Baptiste de Cabassou
 """
         
-        # TODO: Ajouter la pièce jointe PDF
-        notification_service.send_notification(
-            recipient={'email': self.donor_email, 'name': self.donor_name},
-            message=message,
+        # Envoyer avec pièce jointe PDF
+        from django.core.mail import EmailMessage as DjangoEmailMessage
+        email_msg = DjangoEmailMessage(
             subject=f"Reçu fiscal {self.receipt_number} - EEBC",
-            channels=['email']
+            body=message,
+            from_email=settings.DEFAULT_FROM_EMAIL,
+            to=[self.donor_email],
         )
+        if self.pdf_file:
+            email_msg.attach(
+                f"recu_fiscal_{self.receipt_number}.pdf",
+                self.pdf_file.read(),
+                'application/pdf'
+            )
+        email_msg.send()
         
         self.status = self.Status.SENT
         self.sent_date = timezone.now().date()
@@ -1111,3 +1218,165 @@ class BudgetRequest(models.Model):
         if self.needed_by and self.status == self.Status.PENDING:
             return date.today() > self.needed_by
         return False
+
+
+# =============================================================================
+# PRÉVISIONNEL BUDGÉTAIRE
+# =============================================================================
+
+class BudgetForecast(models.Model):
+    """
+    Prévisionnel budgétaire annuel.
+    
+    Permet de planifier les recettes et dépenses mois par mois
+    avec comparaison au réalisé et suivi des écarts.
+    """
+    
+    class Scenario(models.TextChoices):
+        REALISTIC = 'realiste', 'Réaliste'
+        ACTUAL = 'realise', 'Réalisé'
+        OPTIMISTIC = 'optimiste', 'Optimiste'
+        PESSIMISTIC = 'pessimiste', 'Pessimiste'
+    
+    name = models.CharField(max_length=200, verbose_name="Nom du prévisionnel")
+    year = models.PositiveIntegerField(verbose_name="Année")
+    scenario = models.CharField(
+        max_length=15,
+        choices=Scenario.choices,
+        default=Scenario.REALISTIC,
+        verbose_name="Scénario"
+    )
+    description = models.TextField(blank=True, verbose_name="Description / hypothèses")
+    
+    is_active = models.BooleanField(
+        default=True,
+        verbose_name="Actif",
+        help_text="Un seul prévisionnel actif par année et scénario"
+    )
+    
+    created_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        related_name='created_forecasts',
+        verbose_name="Créé par"
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    
+    class Meta:
+        verbose_name = "Prévisionnel budgétaire"
+        verbose_name_plural = "Prévisionnels budgétaires"
+        ordering = ['-year', 'scenario']
+        unique_together = ['year', 'scenario']
+    
+    def __str__(self):
+        return f"Prévisionnel {self.year} — {self.get_scenario_display()}"
+
+    def _get_total_forecast(self, line_type, annotated_attr):
+        annotated_total = getattr(self, annotated_attr, None)
+        if annotated_total is not None:
+            return annotated_total
+
+        total_expression = (
+            Sum('jan') + Sum('feb') + Sum('mar') + Sum('apr') +
+            Sum('may') + Sum('jun') + Sum('jul') + Sum('aug') +
+            Sum('sep') + Sum('oct') + Sum('nov') + Sum('dec')
+        )
+        return self.lines.filter(line_type=line_type).aggregate(
+            total=total_expression
+        )['total'] or Decimal('0.00')
+    
+    @property
+    def total_income_forecast(self):
+        return self._get_total_forecast(
+            ForecastLine.LineType.INCOME,
+            'annotated_total_income',
+        )
+    
+    @property
+    def total_expense_forecast(self):
+        return self._get_total_forecast(
+            ForecastLine.LineType.EXPENSE,
+            'annotated_total_expense',
+        )
+    
+    @property
+    def net_forecast(self):
+        annotated_total = getattr(self, 'annotated_net_forecast', None)
+        if annotated_total is not None:
+            return annotated_total
+        return self.total_income_forecast - self.total_expense_forecast
+
+
+class ForecastLine(models.Model):
+    """
+    Ligne de prévisionnel : une entrée par catégorie/mois.
+    """
+    
+    class LineType(models.TextChoices):
+        INCOME = 'income', 'Recette'
+        EXPENSE = 'expense', 'Dépense'
+    
+    forecast = models.ForeignKey(
+        BudgetForecast,
+        on_delete=models.CASCADE,
+        related_name='lines',
+        verbose_name="Prévisionnel"
+    )
+    
+    label = models.CharField(max_length=200, verbose_name="Libellé")
+    line_type = models.CharField(
+        max_length=10,
+        choices=LineType.choices,
+        verbose_name="Type"
+    )
+    category = models.ForeignKey(
+        FinanceCategory,
+        on_delete=models.SET_NULL,
+        null=True, blank=True,
+        related_name='forecast_lines',
+        verbose_name="Catégorie financière"
+    )
+    
+    # Montants mensuels
+    jan = models.DecimalField(max_digits=12, decimal_places=2, default=0, verbose_name="Janvier")
+    feb = models.DecimalField(max_digits=12, decimal_places=2, default=0, verbose_name="Février")
+    mar = models.DecimalField(max_digits=12, decimal_places=2, default=0, verbose_name="Mars")
+    apr = models.DecimalField(max_digits=12, decimal_places=2, default=0, verbose_name="Avril")
+    may = models.DecimalField(max_digits=12, decimal_places=2, default=0, verbose_name="Mai")
+    jun = models.DecimalField(max_digits=12, decimal_places=2, default=0, verbose_name="Juin")
+    jul = models.DecimalField(max_digits=12, decimal_places=2, default=0, verbose_name="Juillet")
+    aug = models.DecimalField(max_digits=12, decimal_places=2, default=0, verbose_name="Août")
+    sep = models.DecimalField(max_digits=12, decimal_places=2, default=0, verbose_name="Septembre")
+    oct = models.DecimalField(max_digits=12, decimal_places=2, default=0, verbose_name="Octobre")
+    nov = models.DecimalField(max_digits=12, decimal_places=2, default=0, verbose_name="Novembre")
+    dec = models.DecimalField(max_digits=12, decimal_places=2, default=0, verbose_name="Décembre")
+    
+    notes = models.TextField(blank=True, verbose_name="Notes")
+    
+    MONTH_FIELDS = ['jan', 'feb', 'mar', 'apr', 'may', 'jun',
+                    'jul', 'aug', 'sep', 'oct', 'nov', 'dec']
+    
+    class Meta:
+        verbose_name = "Ligne de prévisionnel"
+        verbose_name_plural = "Lignes de prévisionnel"
+        ordering = ['line_type', 'label']
+    
+    def __str__(self):
+        return f"{self.get_line_type_display()} — {self.label}"
+    
+    @property
+    def amount(self):
+        """Total annuel de cette ligne."""
+        return sum(getattr(self, m) for m in self.MONTH_FIELDS)
+    
+    def get_month_value(self, month_number):
+        """Retourne le montant pour un mois donné (1-12)."""
+        if 1 <= month_number <= 12:
+            return getattr(self, self.MONTH_FIELDS[month_number - 1])
+        return Decimal('0.00')
+    
+    def get_monthly_values(self):
+        """Retourne la liste des 12 montants mensuels."""
+        return [getattr(self, m) for m in self.MONTH_FIELDS]

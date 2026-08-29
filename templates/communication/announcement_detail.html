@@ -17,9 +17,11 @@
                 <h3 class="mb-3">{{ announcement.title }}</h3>
                 
                 <div class="text-muted small mb-4">
-                    <i class="bi bi-person me-1"></i> 
-                    {{ announcement.author.get_full_name|default:announcement.author.username }}
-                    <span class="mx-2">·</span>
+                    {% if announcement.created_by %}
+                        <i class="bi bi-person me-1"></i> 
+                        {{ announcement.created_by.get_full_name|default:announcement.created_by.username }}
+                        <span class="mx-2">·</span>
+                    {% endif %}
                     <i class="bi bi-calendar me-1"></i>
                     {{ announcement.created_at|date:"d/m/Y H:i" }}
                     {% if announcement.start_date or announcement.end_date %}
@@ -40,6 +42,28 @@
             <a href="{% url 'communication:announcements' %}" class="btn btn-outline-secondary">
                 <i class="bi bi-arrow-left me-1"></i> Retour aux annonces
             </a>
+            
+            {% if user.is_staff %}
+            <div class="btn-group ms-2">
+                <a href="{% url 'communication:announcement_edit' announcement.pk %}" class="btn btn-primary">
+                    <i class="bi bi-pencil me-1"></i> Modifier
+                </a>
+                <button type="button" class="btn btn-primary dropdown-toggle dropdown-toggle-split" data-bs-toggle="dropdown">
+                    <span class="visually-hidden">Toggle Dropdown</span>
+                </button>
+                <ul class="dropdown-menu">
+                    <li><a class="dropdown-item" href="{% url 'communication:announcement_toggle_active' announcement.pk %}" 
+                           onclick="return confirm('Changer le statut de cette annonce ?')">
+                        <i class="bi bi-{% if announcement.is_active %}eye-slash{% else %}eye{% endif %} me-2"></i>
+                        {% if announcement.is_active %}Désactiver{% else %}Activer{% endif %}
+                    </a></li>
+                    <li><hr class="dropdown-divider"></li>
+                    <li><a class="dropdown-item text-danger" href="{% url 'communication:announcement_delete' announcement.pk %}">
+                        <i class="bi bi-trash me-2"></i>Supprimer
+                    </a></li>
+                </ul>
+            </div>
+            {% endif %}
         </div>
     </div>
 </div>

@@ -1,0 +1,375 @@
+{% extends 'base.html' %}
+{% load humanize %}
+
+{% block title %}Comparatif {{ year_n }} / {{ year_n1 }} - EEBC{% endblock %}
+{% block page_title %}Comparatif Annuel{% endblock %}
+{% block page_subtitle %}{{ year_n }} vs {{ year_n1 }}{% endblock %}
+
+{% block extra_css %}
+<style>
+    .comp-page { padding: 1rem; }
+    .comp-header { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: .5rem; margin-bottom: 1.5rem; }
+    .comp-header h2 { font-size: 1.5rem; margin: 0; }
+    .comp-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; margin-bottom: 1.5rem; }
+    .comp-card {
+        border-radius: 12px; padding: 1rem 1.2rem; text-align: center;
+        border: 1px solid #e5e7eb;
+    }
+    .comp-card h4 { font-size: 1.6rem; margin: .3rem 0 0; }
+    .comp-card small { font-weight: 600; font-size: .8rem; }
+    .comp-card .badge-var { display: inline-block; margin-top: .3rem; padding: .15rem .5rem; border-radius: 20px; font-size: .7rem; font-weight: 700; }
+    .comp-chart-wrap { background: #fff; border-radius: 12px; border: 1px solid #e5e7eb; padding: 1rem; margin-bottom: 1.5rem; }
+    .comp-chart-wrap canvas { max-height: 420px; }
+    .comp-table-wrap { overflow-x: auto; border-radius: 10px; border: 1px solid #d1d5db; }
+    .comp-table { width: 100%; border-collapse: collapse; font-size: .82rem; white-space: nowrap; }
+    .comp-table th, .comp-table td { padding: .5rem .6rem; text-align: right; }
+    .comp-table th:first-child, .comp-table td:first-child { text-align: left; position: sticky; left: 0; background: inherit; z-index: 1; min-width: 130px; }
+    .comp-table thead th { background: #1e293b; color: #fff; font-weight: 700; font-size: .75rem; text-transform: uppercase; letter-spacing: .03em; }
+    .comp-table tbody tr:nth-child(even) { background: #f8fafc; }
+    .comp-table tbody tr:nth-child(odd) { background: #fff; }
+    .comp-table tbody tr:hover { background: #e2e8f0; }
+    .comp-table tfoot td { background: #1e293b; color: #fff; font-weight: 700; }
+    .var-pos { color: #059669; }
+    .var-neg { color: #dc2626; }
+    @media (max-width: 576px) {
+        .comp-page { padding: .5rem; }
+        .comp-header h2 { font-size: 1.15rem; }
+        .comp-card h4 { font-size: 1.2rem; }
+        .comp-table { font-size: .72rem; }
+    }
+    @media print { .btn, .comp-header select { display: none !important; } }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="comp-page">
+    <div class="comp-header">
+        <h2><i class="bi bi-bar-chart-line me-2"></i>Comparatif {{ year_n }} / {{ year_n1 }}</h2>
+        <div class="d-flex gap-2 align-items-center flex-wrap">
+            <form method="get" class="d-flex gap-2 align-items-center">
+                <select name="year" class="form-select form-select-sm" style="width:auto" onchange="this.form.submit()">
+                    {% for y in available_years %}
+                    <option value="{{ y }}" {% if y == selected_year %}selected{% endif %}>{{ y }}</option>
+                    {% endfor %}
+                </select>
+            </form>
+            <a href="{% url 'finance:dashboard' %}" class="btn btn-outline-secondary btn-sm">
+                <i class="bi bi-arrow-left me-1"></i>Trésorerie
+            </a>
+        </div>
+    </div>
+
+    <div class="alert alert-info py-2 px-3 mb-3 small">
+        Les recettes affichées correspondent aux recettes de fonctionnement, hors fonds dédiés, pour rester cohérentes avec le tableau de bord trésorerie.
+    </div>
+
+    <!-- Cartes résumé -->
+    <div class="comp-cards">
+        <div class="comp-card" style="background: linear-gradient(135deg, #d1fae5, #ecfdf5); border-color: #6ee7b7;">
+            <small class="text-success">Recettes {{ year_n }}</small>
+            <h4 class="text-success">{{ total_income_n|floatformat:0|intcomma }} €</h4>
+            {% with diff=total_income_n|add:total_income_n1|add:0 %}
+            {% endwith %}
+        </div>
+        <div class="comp-card" style="background: linear-gradient(135deg, #cffafe, #ecfeff); border-color: #67e8f9;">
+            <small style="color:#0891b2">Recettes {{ year_n1 }}</small>
+            <h4 style="color:#0891b2">{{ total_income_n1|floatformat:0|intcomma }} €</h4>
+        </div>
+        <div class="comp-card" style="background: linear-gradient(135deg, #fee2e2, #fef2f2); border-color: #fca5a5;">
+            <small class="text-danger">Dépenses {{ year_n }}</small>
+            <h4 class="text-danger">{{ total_expense_n|floatformat:0|intcomma }} €</h4>
+        </div>
+        <div class="comp-card" style="background: linear-gradient(135deg, #ffedd5, #fff7ed); border-color: #fdba74;">
+            <small style="color:#ea580c">Dépenses {{ year_n1 }}</small>
+            <h4 style="color:#ea580c">{{ total_expense_n1|floatformat:0|intcomma }} €</h4>
+        </div>
+    </div>
+
+    <!-- Graphiques -->
+    <div class="row g-3 mb-4">
+        <div class="col-lg-6">
+            <div class="comp-chart-wrap">
+                <h6 class="mb-3 fw-bold"><i class="bi bi-graph-up text-success me-1"></i>Recettes mensuelles</h6>
+                <canvas id="chartIncome"></canvas>
+            </div>
+        </div>
+        <div class="col-lg-6">
+            <div class="comp-chart-wrap">
+                <h6 class="mb-3 fw-bold"><i class="bi bi-graph-down text-danger me-1"></i>Dépenses mensuelles</h6>
+                <canvas id="chartExpense"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <!-- Graphique courbes annuelles -->
+    <div class="comp-chart-wrap mb-4">
+        <h6 class="mb-2 fw-bold"><i class="bi bi-activity text-primary me-1"></i>Solde net cumulé sur l'année</h6>
+        <p class="text-muted small mb-3">Le graphique montre le cumul année en cours. Cela évite une chute artificielle quand des charges historiques ont été importées en une seule écriture en décembre.</p>
+        <canvas id="chartNet"></canvas>
+    </div>
+
+    <!-- Tableau détaillé -->
+    <div class="comp-table-wrap">
+        <table class="comp-table">
+            <thead>
+                <tr>
+                    <th></th>
+                    {% for m in months %}
+                    <th>{{ m }}</th>
+                    {% endfor %}
+                    <th>Total</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td class="fw-bold text-success">Recettes {{ year_n }}</td>
+                    {% for v in income_n %}
+                    <td>{{ v|floatformat:0|intcomma }}</td>
+                    {% endfor %}
+                    <td class="fw-bold">{{ total_income_n|floatformat:0|intcomma }}</td>
+                </tr>
+                <tr>
+                    <td class="fw-bold" style="color:#0891b2">Recettes {{ year_n1 }}</td>
+                    {% for v in income_n1 %}
+                    <td style="color:#0891b2">{{ v|floatformat:0|intcomma }}</td>
+                    {% endfor %}
+                    <td class="fw-bold" style="color:#0891b2">{{ total_income_n1|floatformat:0|intcomma }}</td>
+                </tr>
+                <tr>
+                    <td class="fw-bold text-danger">Dépenses {{ year_n }}</td>
+                    {% for v in expense_n %}
+                    <td>{{ v|floatformat:0|intcomma }}</td>
+                    {% endfor %}
+                    <td class="fw-bold">{{ total_expense_n|floatformat:0|intcomma }}</td>
+                </tr>
+                <tr>
+                    <td class="fw-bold" style="color:#ea580c">Dépenses {{ year_n1 }}</td>
+                    {% for v in expense_n1 %}
+                    <td style="color:#ea580c">{{ v|floatformat:0|intcomma }}</td>
+                    {% endfor %}
+                    <td class="fw-bold" style="color:#ea580c">{{ total_expense_n1|floatformat:0|intcomma }}</td>
+                </tr>
+            </tbody>
+            <tfoot>
+                <tr>
+                    <td>Solde net {{ year_n }}</td>
+                    {% for v in income_n %}
+                    <td>—</td>
+                    {% endfor %}
+                    <td>{{ net_total_n|floatformat:0|intcomma }}</td>
+                </tr>
+                <tr>
+                    <td>Solde net {{ year_n1 }}</td>
+                    {% for v in income_n1 %}
+                    <td>—</td>
+                    {% endfor %}
+                    <td>{{ net_total_n1|floatformat:0|intcomma }}</td>
+                </tr>
+            </tfoot>
+        </table>
+    </div>
+</div>
+
+{{ income_n|json_script:"income-n" }}
+{{ expense_n|json_script:"expense-n" }}
+{{ income_n1|json_script:"income-n1" }}
+{{ expense_n1|json_script:"expense-n1" }}
+{{ months|json_script:"months-labels" }}
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    var months = JSON.parse(document.getElementById('months-labels').textContent);
+    var incomeN = JSON.parse(document.getElementById('income-n').textContent);
+    var expenseN = JSON.parse(document.getElementById('expense-n').textContent);
+    var incomeN1 = JSON.parse(document.getElementById('income-n1').textContent);
+    var expenseN1 = JSON.parse(document.getElementById('expense-n1').textContent);
+    var yearN = '{{ year_n }}';
+    var yearN1 = '{{ year_n1 }}';
+
+    var palette = {
+        incomeNBar: 'rgba(22, 163, 74, 0.78)',
+        incomeNBorder: '#166534',
+        incomeNLine: '#15803d',
+        incomeN1Bar: 'rgba(245, 158, 11, 0.42)',
+        incomeN1Border: '#b45309',
+        incomeN1Line: '#d97706',
+        expenseNBar: 'rgba(220, 38, 38, 0.78)',
+        expenseNBorder: '#b91c1c',
+        expenseNLine: '#991b1b',
+        expenseN1Bar: 'rgba(124, 58, 237, 0.34)',
+        expenseN1Border: '#6d28d9',
+        expenseN1Line: '#7c3aed',
+        netN: '#0f766e',
+        netNFill: 'rgba(15, 118, 110, 0.12)',
+        netN1: '#d97706',
+        netN1Fill: 'rgba(217, 119, 6, 0.08)'
+    };
+
+    var commonOpts = {
+        responsive: true,
+        maintainAspectRatio: true,
+        interaction: { intersect: false, mode: 'index' },
+        plugins: {
+            colors: { enabled: false },
+            themeManager: { preserveDatasetColors: true },
+            legend: {
+                position: 'bottom',
+                labels: {
+                    usePointStyle: false,
+                    boxWidth: 18,
+                    boxHeight: 10,
+                    padding: 14,
+                    font: { size: 12 }
+                }
+            },
+            tooltip: {
+                callbacks: {
+                    label: function(ctx) {
+                        return ctx.dataset.label + ' : ' + new Intl.NumberFormat('fr-FR').format(ctx.raw) + ' €';
+                    }
+                }
+            }
+        },
+        scales: {
+            y: {
+                beginAtZero: true,
+                ticks: { callback: function(v) { return new Intl.NumberFormat('fr-FR', {notation: 'compact'}).format(v) + ' €'; } },
+                grid: { color: 'rgba(0,0,0,0.06)' }
+            },
+            x: { grid: { display: false } }
+        }
+    };
+
+    function buildBarDataset(label, data, backgroundColor, borderColor) {
+        return {
+            label: label,
+            type: 'bar',
+            data: data,
+            backgroundColor: backgroundColor,
+            borderColor: borderColor,
+            hoverBackgroundColor: backgroundColor,
+            hoverBorderColor: borderColor,
+            borderWidth: 1,
+            borderRadius: 4,
+            maxBarThickness: 22,
+            order: 2,
+        };
+    }
+
+    function buildLineDataset(label, data, color, dashed) {
+        return {
+            label: label,
+            type: 'line',
+            data: data,
+            borderColor: color,
+            backgroundColor: 'transparent',
+            borderWidth: 3,
+            pointRadius: 4,
+            pointHoverRadius: 6,
+            pointBackgroundColor: color,
+            pointBorderColor: '#ffffff',
+            pointBorderWidth: 2,
+            tension: 0.35,
+            fill: false,
+            spanGaps: true,
+            borderDash: dashed ? [7, 4] : [],
+            order: 1,
+        };
+    }
+
+    // Recettes - 2 bâtons par mois : 2026 et 2025
+    new Chart(document.getElementById('chartIncome'), {
+        type: 'bar',
+        data: {
+            labels: months,
+            datasets: [
+                buildBarDataset('Recettes ' + yearN + ' (barres)', incomeN, palette.incomeNBar, palette.incomeNBorder),
+                buildBarDataset('Recettes ' + yearN1 + ' (barres)', incomeN1, palette.incomeN1Bar, palette.incomeN1Border)
+            ]
+        },
+        options: {
+            ...commonOpts,
+            datasets: {
+                bar: {
+                    categoryPercentage: 0.72,
+                    barPercentage: 0.88
+                }
+            }
+        }
+    });
+
+    // Dépenses - 2 bâtons par mois : 2026 et 2025
+    new Chart(document.getElementById('chartExpense'), {
+        type: 'bar',
+        data: {
+            labels: months,
+            datasets: [
+                buildBarDataset('Dépenses ' + yearN + ' (barres)', expenseN, palette.expenseNBar, palette.expenseNBorder),
+                buildBarDataset('Dépenses ' + yearN1 + ' (barres)', expenseN1, palette.expenseN1Bar, palette.expenseN1Border)
+            ]
+        },
+        options: {
+            ...commonOpts,
+            datasets: {
+                bar: {
+                    categoryPercentage: 0.72,
+                    barPercentage: 0.88
+                }
+            }
+        }
+    });
+
+    // Courbes annuelles - cumul du solde net mois après mois
+    function buildCumulativeNet(income, expense) {
+        var running = 0;
+        return income.map(function(v, i) {
+            running += v - expense[i];
+            return running;
+        });
+    }
+
+    var netN = buildCumulativeNet(incomeN, expenseN);
+    var netN1 = buildCumulativeNet(incomeN1, expenseN1);
+
+    var netOpts = JSON.parse(JSON.stringify(commonOpts));
+    netOpts.scales.y.beginAtZero = false;
+
+    new Chart(document.getElementById('chartNet'), {
+        type: 'line',
+        data: {
+            labels: months,
+            datasets: [
+                {
+                    label: 'Solde net cumulé ' + yearN,
+                    data: netN,
+                    borderColor: palette.netN,
+                    backgroundColor: 'transparent',
+                    borderWidth: 3,
+                    pointRadius: 5,
+                    pointBackgroundColor: palette.netN,
+                    pointBorderColor: '#fff',
+                    pointBorderWidth: 2,
+                    fill: false,
+                    tension: 0.3,
+                },
+                {
+                    label: 'Solde net cumulé ' + yearN1,
+                    data: netN1,
+                    borderColor: palette.netN1,
+                    backgroundColor: 'transparent',
+                    borderWidth: 2.5,
+                    pointRadius: 4,
+                    pointBackgroundColor: palette.netN1,
+                    pointBorderColor: '#fff',
+                    pointBorderWidth: 2,
+                    borderDash: [6, 3],
+                    fill: false,
+                    tension: 0.3,
+                }
+            ]
+        },
+        options: netOpts
+    });
+});
+</script>
+{% endblock %}

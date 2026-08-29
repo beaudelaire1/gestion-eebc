@@ -6,3 +6,6 @@ class CampaignsConfig(AppConfig):
     name = 'apps.campaigns'
     verbose_name = 'Campagnes'
 
+    def ready(self):
+        import apps.campaigns.signals  # noqa: F401
+

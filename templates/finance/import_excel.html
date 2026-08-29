@@ -1,0 +1,99 @@
+{% extends 'base.html' %}
+
+{% block title %}Import Excel Finance{% endblock %}
+{% block page_title %}Import Excel Finance{% endblock %}
+{% block page_subtitle %}Importer catégories, budgets, prévisionnels et transactions{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row g-4">
+        <div class="col-lg-5">
+            <div class="card shadow-sm h-100">
+                <div class="card-header bg-transparent">
+                    <h5 class="mb-0"><i class="bi bi-upload me-2 text-success"></i>Importer un classeur</h5>
+                </div>
+                <div class="card-body">
+                    <p class="text-muted">
+                        Utilisez le modèle fourni. Chaque onglet correspond à une section métier et peut être rempli seul.
+                    </p>
+                    <div class="d-flex gap-2 mb-4 flex-wrap">
+                        <a href="{% url 'finance:import_excel_template' %}" class="btn btn-outline-primary">
+                            <i class="bi bi-download me-1"></i>Télécharger le modèle
+                        </a>
+                        <a href="{% url 'finance:dashboard' %}" class="btn btn-outline-secondary">
+                            <i class="bi bi-arrow-left me-1"></i>Retour finance
+                        </a>
+                    </div>
+
+                    {% if form.non_field_errors %}
+                    <div class="alert alert-danger">
+                        {% for error in form.non_field_errors %}
+                        <div>{{ error }}</div>
+                        {% endfor %}
+                    </div>
+                    {% endif %}
+
+                    <form method="post" enctype="multipart/form-data">
+                        {% csrf_token %}
+                        <div class="mb-3">
+                            <label for="{{ form.file.id_for_label }}" class="form-label fw-semibold">{{ form.file.label }}</label>
+                            {{ form.file }}
+                            <div class="form-text">{{ form.file.help_text }}</div>
+                            {% if form.file.errors %}
+                            <div class="invalid-feedback d-block">
+                                {% for error in form.file.errors %}
+                                <div>{{ error }}</div>
+                                {% endfor %}
+                            </div>
+                            {% endif %}
+                        </div>
+
+                        <div class="form-check mb-4">
+                            {{ form.dry_run }}
+                            <label class="form-check-label" for="{{ form.dry_run.id_for_label }}">{{ form.dry_run.label }}</label>
+                            <div class="form-text">{{ form.dry_run.help_text }}</div>
+                        </div>
+
+                        <button type="submit" class="btn btn-success">
+                            <i class="bi bi-play-circle me-1"></i>Lancer l'import
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-7">
+            <div class="card shadow-sm h-100">
+                <div class="card-header bg-transparent">
+                    <h5 class="mb-0"><i class="bi bi-table me-2 text-primary"></i>Onglets attendus</h5>
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-hover mb-0 align-middle">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Onglet</th>
+                                    <th>Section</th>
+                                    <th>Colonnes obligatoires</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for spec in sheet_specs %}
+                                <tr>
+                                    <td>
+                                        <div class="fw-semibold">{{ spec.name }}</div>
+                                        <small class="text-muted">{{ spec.description }}</small>
+                                    </td>
+                                    <td><span class="badge bg-secondary">{{ spec.section }}</span></td>
+                                    <td><small>{{ spec.required_columns|join:", " }}</small></td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

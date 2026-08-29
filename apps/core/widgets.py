@@ -5,19 +5,19 @@ from django import forms
 from django.utils.safestring import mark_safe
 from django.conf import settings
 
-# Clé API TinyMCE
-TINYMCE_API_KEY = '6qr0im1d33wizm1ytimh1kpwbugqeb8r4fq1gebb03rme6hv'
+# TinyMCE Self-Hosted CDN (sans clé API, sans restriction de domaine)
+TINYMCE_CDN_URL = 'https://cdn.jsdelivr.net/npm/tinymce@6/tinymce.min.js'
 
 
 class TinyMCEWidget(forms.Textarea):
     """
     Widget TinyMCE pour les champs de texte riche.
-    Utilise TinyMCE Cloud avec clé API pour toutes les fonctionnalités.
+    Utilise TinyMCE Self-Hosted via CDN jsDelivr (gratuit, sans restriction).
     """
     
     class Media:
         js = (
-            f'https://cdn.tiny.cloud/1/{TINYMCE_API_KEY}/tinymce/6/tinymce.min.js',
+            TINYMCE_CDN_URL,
         )
     
     def __init__(self, attrs=None, config=None):
@@ -57,11 +57,18 @@ class TinyMCEWidget(forms.Textarea):
                 'bold italic underline forecolor backcolor | '
                 'alignleft aligncenter alignright alignjustify | '
                 'bullist numlist outdent indent | '
-                'link image emoticons charmap | '
+                'link image media emoticons charmap | '
                 'table | removeformat code fullscreen | help'
             ),
             'entity_encoding': 'raw',
             'link_default_target': '_blank',
+            'media_live_embeds': True,
+            'extended_valid_elements': (
+                'span[*],i[*],em[*],strong[*],a[*],p[*],br,ul,ol,li,'
+                'h1,h2,h3,h4,h5,h6,blockquote,pre,code,img[*],'
+                'table[*],tr[*],td[*],th[*],thead,tbody,tfoot,figure,figcaption,'
+                'iframe[*],video[*],audio[*],source[*]'
+            ),
             'content_style': '''
                 @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap');
                 body { 
@@ -73,6 +80,21 @@ class TinyMCEWidget(forms.Textarea):
                 }
                 h1, h2, h3, h4 { color: #0A36FF; font-weight: 600; }
                 a { color: #0A36FF; }
+                iframe, video {
+                    display: block;
+                    width: 100%;
+                    max-width: 100%;
+                    margin: 1rem 0;
+                    border: 0;
+                    border-radius: 12px;
+                    background: #0B0F19;
+                }
+                iframe {
+                    aspect-ratio: 16 / 9;
+                    height: auto;
+                    min-height: 220px;
+                }
+                video { height: auto; }
                 blockquote {
                     border-left: 4px solid #0A36FF;
                     padding: 0.5em 1em;

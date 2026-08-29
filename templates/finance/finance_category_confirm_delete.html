@@ -1,0 +1,85 @@
+{% extends 'base.html' %}
+
+{% block title %}Supprimer une catégorie{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-6">
+        <div class="card border-danger shadow-sm">
+            <div class="card-header bg-danger text-white">
+                <h5 class="mb-0"><i class="bi bi-exclamation-triangle me-2"></i>Confirmation de suppression</h5>
+            </div>
+            <div class="card-body p-4">
+                <p class="lead">Voulez-vous vraiment supprimer la catégorie <strong>"{{ category.name }}"</strong> ?</p>
+
+                {% if transactions_count > 0 %}
+                <div class="alert alert-warning">
+                    <i class="bi bi-info-circle me-2"></i>
+                    Cette catégorie est utilisée par <strong>{{ transactions_count }} transaction(s)</strong>.
+                </div>
+
+                <form method="post">
+                    {% csrf_token %}
+
+                    <div class="mb-4">
+                        <label class="form-label fw-bold">Action sur les transactions liées :</label>
+
+                        {% if other_categories %}
+                        <div class="form-check mb-2">
+                            <input class="form-check-input" type="radio" name="action" id="action_delete" value="delete"
+                                checked>
+                            <label class="form-check-label" for="action_delete">
+                                Retirer la catégorie (laisser vide)
+                            </label>
+                        </div>
+
+                        <div class="form-check">
+                            <label class="form-check-label mb-2" for="reassign_select">
+                                Réassigner à une autre catégorie :
+                            </label>
+                            <select name="reassign_to" id="reassign_select" class="form-select"
+                                onfocus="document.getElementById('reassign_select_radio').checked = true;">
+                                <option value="" selected disabled>Choisir une catégorie...</option>
+                                {% for cat in other_categories %}
+                                <option value="{{ cat.pk }}">{{ cat.name }}</option>
+                                {% endfor %}
+                            </select>
+                            <input type="radio" name="action" id="reassign_select_radio" value="reassign"
+                                class="d-none">
+                        </div>
+                        {% else %}
+                        <p class="text-muted small">Aucune autre catégorie disponible. Les transactions seront
+                            découplées.</p>
+                        <input type="hidden" name="action" value="delete">
+                        {% endif %}
+                    </div>
+
+                    <div class="d-flex justify-content-end gap-2">
+                        <a href="{% url 'finance:finance_category_list' %}" class="btn btn-secondary">Annuler</a>
+                        <button type="submit" class="btn btn-danger">
+                            <i class="bi bi-trash me-2"></i>Confirmer la suppression
+                        </button>
+                    </div>
+                </form>
+                {% else %}
+                <div class="alert alert-success">
+                    <i class="bi bi-check-circle me-2"></i>
+                    Cette catégorie n'est utilisée par aucune transaction.
+                </div>
+
+                <form method="post">
+                    {% csrf_token %}
+                    <input type="hidden" name="action" value="delete">
+                    <div class="d-flex justify-content-end gap-2">
+                        <a href="{% url 'finance:finance_category_list' %}" class="btn btn-secondary">Annuler</a>
+                        <button type="submit" class="btn btn-danger">
+                            <i class="bi bi-trash me-2"></i>Confirmer la suppression
+                        </button>
+                    </div>
+                </form>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -3,6 +3,7 @@ Django settings - Production (Render)
 """
 
 import os
+import secrets
 import dj_database_url
 from .base import *
 
@@ -11,6 +12,11 @@ from .base import *
 # =============================================================================
 DEBUG = False
 ALLOWED_HOSTS = os.environ.get('ALLOWED_HOSTS', '').split(',')
+
+_env_secret = os.environ.get('SECRET_KEY', '')
+if not _env_secret or _env_secret.startswith('django-insecure-') or len(set(_env_secret)) < 5 or len(_env_secret) < 50:
+    # Evite l'utilisation d'une cle faible en production.
+    SECRET_KEY = secrets.token_urlsafe(64)
 
 # Render specific
 RENDER_EXTERNAL_HOSTNAME = os.environ.get('RENDER_EXTERNAL_HOSTNAME')
@@ -25,7 +31,10 @@ CSRF_TRUSTED_ORIGINS = [
 ]
 
 # HTTPS
+# Render gère SSL en edge, mais on force tout de meme la redirection HTTPS
+# pour le trafic applicatif, en exemptant les endpoints de health check.
 SECURE_SSL_REDIRECT = True
+SECURE_REDIRECT_EXEMPT = [r'^health/?$', r'^health/lite/?$', r'^healthz/?$', r'^healthz/lite/?$']
 SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
 SESSION_COOKIE_SECURE = True
 CSRF_COOKIE_SECURE = True
@@ -133,11 +142,90 @@ TWILIO_AUTH_TOKEN = os.environ.get('TWILIO_AUTH_TOKEN', '')
 TWILIO_PHONE_NUMBER = os.environ.get('TWILIO_PHONE_NUMBER', '')
 TWILIO_WHATSAPP_NUMBER = os.environ.get('TWILIO_WHATSAPP_NUMBER', '')
 
+# =============================================================================
+# META WHATSAPP CLOUD API
+# =============================================================================
+META_WHATSAPP_ACCESS_TOKEN = os.environ.get('META_WHATSAPP_ACCESS_TOKEN', '')
+META_WHATSAPP_PHONE_NUMBER_ID = os.environ.get('META_WHATSAPP_PHONE_NUMBER_ID', '')
+META_WHATSAPP_VERIFY_TOKEN = os.environ.get('META_WHATSAPP_VERIFY_TOKEN', '')
+META_WHATSAPP_APP_SECRET = os.environ.get('META_WHATSAPP_APP_SECRET', '')
+META_WHATSAPP_API_VERSION = os.environ.get('META_WHATSAPP_API_VERSION', 'v23.0')
+
+
+# =============================================================================
+# CAPTCHA CONFIGURATION - CloudFlare Turnstile (recommandé)
+# =============================================================================
+# CloudFlare Turnstile (gratuit illimité, meilleur UX que reCAPTCHA)
+TURNSTILE_SITE_KEY = os.environ.get('TURNSTILE_SITE_KEY', '')
+TURNSTILE_SECRET_KEY = os.environ.get('TURNSTILE_SECRET_KEY', '')
+
+# Google reCAPTCHA v3 (legacy - à désactiver après migration vers Turnstile)
+RECAPTCHA_PUBLIC_KEY = os.environ.get('RECAPTCHA_PUBLIC_KEY', '')
+RECAPTCHA_PRIVATE_KEY = os.environ.get('RECAPTCHA_PRIVATE_KEY', '')
+RECAPTCHA_REQUIRED_SCORE = float(os.environ.get('RECAPTCHA_REQUIRED_SCORE', 0.5))
+
 
 # =============================================================================
 # STATIC FILES - WhiteNoise pour Render
 # =============================================================================
-STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
+# Django 4.2+ utilise STORAGES au lieu de STATICFILES_STORAGE (deprecated/supprimé en 6.x)
+#
+# Jazzmin embarque des CSS Bootswatch qui référencent des .map inexistants.
+# WhiteNoise lève MissingFileError pendant post_process (son propre check,
+# pas celui de Django). On override post_process pour ignorer ces erreurs.
+import logging as _logging
+from whitenoise.storage import (
+    CompressedManifestStaticFilesStorage as _WhiteNoiseBase,
+    MissingFileError as _MissingFileError,
+)
+
+class _SafeWhiteNoiseStorage(_WhiteNoiseBase):
+    manifest_strict = False
+
+    def post_process(self, *args, **kwargs):
+        _log = _logging.getLogger('whitenoise.storage')
+        for entry in super().post_process(*args, **kwargs):
+            name, hashed_name, processed = entry
+            if isinstance(processed, Exception):
+                _log.warning('Ignoring post-process error for %s: %s', name, processed)
+                yield name, hashed_name, True  # report success → collectstatic won't crash
+                continue
+            yield entry
+
+STORAGES = {
+    "staticfiles": {
+        "BACKEND": "gestion_eebc.settings.prod._SafeWhiteNoiseStorage",
+    },
+}
+
+# Stockage médias : Cloudinary si configuré, sinon filesystem local
+CLOUDINARY_URL = os.environ.get('CLOUDINARY_URL', '')
+if CLOUDINARY_URL:
+    INSTALLED_APPS += ['cloudinary_storage', 'cloudinary']
+    STORAGES["default"] = {
+        "BACKEND": "cloudinary_storage.storage.MediaCloudinaryStorage",
+    }
+    # django-cloudinary-storage parse CLOUDINARY_URL automatiquement
+    # Format: cloudinary://API_KEY:API_SECRET@CLOUD_NAME
+    import re as _re
+    _match = _re.match(r'cloudinary://(\w+):(\w+)@(\w+)', CLOUDINARY_URL)
+    if _match:
+        CLOUDINARY_STORAGE = {
+            'CLOUD_NAME': _match.group(3),
+            'API_KEY': _match.group(1),
+            'API_SECRET': _match.group(2),
+        }
+    else:
+        # Fallback: variables séparées
+        CLOUDINARY_STORAGE = {
+            'CLOUD_NAME': os.environ.get('CLOUDINARY_CLOUD_NAME', ''),
+            'API_KEY': os.environ.get('CLOUDINARY_API_KEY', ''),
+            'API_SECRET': os.environ.get('CLOUDINARY_API_SECRET', ''),
+        }
+else:
+    STORAGES["default"] = {
+        "BACKEND": "django.core.files.storage.FileSystemStorage",
+    }
 
 # WhiteNoise middleware (doit être après SecurityMiddleware)
 MIDDLEWARE.insert(2, 'whitenoise.middleware.WhiteNoiseMiddleware')
@@ -167,6 +255,8 @@ if SENTRY_DSN:
         environment='production',
     )
 
+# En production sur Render, le filesystem est éphémère.
+# On utilise uniquement le handler console (stdout/stderr capturé par Render).
 LOGGING = {
     'version': 1,
     'disable_existing_loggers': False,
@@ -181,24 +271,19 @@ LOGGING = {
             'class': 'logging.StreamHandler',
             'formatter': 'verbose',
         },
-        'file': {
-            'class': 'logging.FileHandler',
-            'filename': BASE_DIR / 'logs' / 'django.log',
-            'formatter': 'verbose',
-        },
     },
     'root': {
-        'handlers': ['console', 'file'],
+        'handlers': ['console'],
         'level': 'WARNING',
     },
     'loggers': {
         'django': {
-            'handlers': ['console', 'file'],
+            'handlers': ['console'],
             'level': 'WARNING',
             'propagate': False,
         },
         'apps': {
-            'handlers': ['console', 'file'],
+            'handlers': ['console'],
             'level': 'INFO',
             'propagate': False,
         },

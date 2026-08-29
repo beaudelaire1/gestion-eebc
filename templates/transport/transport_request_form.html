@@ -2,11 +2,14 @@
 
 {% block title %}{{ title }} - EEBC{% endblock %}
 {% block page_title %}{{ title }}{% endblock %}
-{% block page_subtitle %}Gestion des demandes de transport{% endblock %}
+{% block page_subtitle %}Ouvert à tous : membres, jeunesse, club biblique, covoiturage{% endblock %}
 
 {% block content %}
 <div class="row justify-content-center">
     <div class="col-lg-8">
+        <!-- Bannière de verset biblique -->
+        <div class="animated-verse-banner mb-4"></div>
+
         <div class="card">
             <div class="card-header">
                 <h5 class="mb-0">{{ title }}</h5>
@@ -14,7 +17,39 @@
             <div class="card-body">
                 <form method="post">
                     {% csrf_token %}
-                    
+
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="{{ form.request_type.id_for_label }}" class="form-label">
+                                {{ form.request_type.label }}
+                            </label>
+                            {{ form.request_type }}
+                            <div class="form-text">
+                                Choisissez « Covoiturage entre membres » si vous demandez un trajet entre membres.
+                            </div>
+                            {% if form.request_type.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {{ form.request_type.errors.0 }}
+                                </div>
+                            {% endif %}
+                        </div>
+
+                        <div class="col-md-6 mb-3">
+                            <label for="{{ form.requester_member.id_for_label }}" class="form-label">
+                                {{ form.requester_member.label }}
+                            </label>
+                            {{ form.requester_member }}
+                            <div class="form-text">
+                                Optionnel. Rempli automatiquement si vous êtes connecté avec une fiche membre.
+                            </div>
+                            {% if form.requester_member.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {{ form.requester_member.errors.0 }}
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+
                     <div class="row">
                         <div class="col-md-4 mb-3">
                             <label for="{{ form.requester_name.id_for_label }}" class="form-label">
@@ -59,13 +94,47 @@
                             {{ form.pickup_address.label }} <span class="text-danger">*</span>
                         </label>
                         {{ form.pickup_address }}
+                        {% if form.pickup_address.help_text %}
+                            <div class="form-text">{{ form.pickup_address.help_text }}</div>
+                        {% endif %}
                         {% if form.pickup_address.errors %}
                             <div class="invalid-feedback d-block">
                                 {{ form.pickup_address.errors.0 }}
                             </div>
                         {% endif %}
                     </div>
-                    
+
+                    <div class="row">
+                        <div class="col-md-8 mb-3">
+                            <label for="{{ form.pickup_city.id_for_label }}" class="form-label">
+                                {{ form.pickup_city.label }}
+                            </label>
+                            {{ form.pickup_city }}
+                            {% if form.pickup_city.help_text %}
+                                <div class="form-text">{{ form.pickup_city.help_text }}</div>
+                            {% endif %}
+                            {% if form.pickup_city.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {{ form.pickup_city.errors.0 }}
+                                </div>
+                            {% endif %}
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label for="{{ form.pickup_postal_code.id_for_label }}" class="form-label">
+                                {{ form.pickup_postal_code.label }}
+                            </label>
+                            {{ form.pickup_postal_code }}
+                            {% if form.pickup_postal_code.help_text %}
+                                <div class="form-text">{{ form.pickup_postal_code.help_text }}</div>
+                            {% endif %}
+                            {% if form.pickup_postal_code.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {{ form.pickup_postal_code.errors.0 }}
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+
                     <div class="row">
                         <div class="col-md-4 mb-3">
                             <label for="{{ form.event_date.id_for_label }}" class="form-label">

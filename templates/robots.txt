@@ -1,0 +1,8 @@
+User-agent: *
+Allow: /
+Disallow: /admin/
+Disallow: /app/
+Disallow: /api/
+Disallow: /static/admin/
+
+Sitemap: https://eglise-ebc.org/sitemap.xml

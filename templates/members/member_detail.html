@@ -4,14 +4,51 @@
 {% block page_title %}{{ member.full_name }}{% endblock %}
 {% block page_subtitle %}Fiche membre{% endblock %}
 
+{% block extra_css %}
+<style>
+    .member-photo-large {
+        width: 200px;
+        height: 200px;
+        object-fit: cover;
+        border-radius: 20px;
+        box-shadow: 0 10px 30px rgba(10, 54, 255, 0.15);
+        border: 4px solid #fff;
+        outline: 1px solid rgba(10, 54, 255, 0.12);
+    }
+    @media (max-width: 576px) {
+        .member-photo-large { width: 160px; height: 160px; }
+    }
+</style>
+{% endblock %}
+
 {% block content %}
+<div class="d-flex justify-content-start mb-3">
+    <a href="{% url 'members:list' %}" class="btn btn-outline-secondary">
+        <i class="bi bi-arrow-left me-2"></i>Retour à la liste
+    </a>
+</div>
+
 <div class="row g-4">
     <div class="col-lg-4">
         <div class="card mb-4">
             <div class="card-body text-center">
-                <div class="avatar mx-auto mb-3" style="width: 100px; height: 100px; font-size: 2.5rem;">
+                <!-- Identifiant membre -->
+                {% if member.member_id %}
+                <div class="mb-3">
+                    <span class="badge bg-primary px-3 py-2 fs-6">{{ member.member_id }}</span>
+                </div>
+                {% endif %}
+                
+                {% if member.photo %}
+                <img src="{{ member.photo.url }}"
+                     alt="Photo de {{ member.full_name }}"
+                     class="mx-auto mb-3 d-block member-photo-large">
+                {% else %}
+                <div class="avatar mx-auto mb-3 {% if member.gender == 'M' %}avatar--primary{% else %}avatar--purple{% endif %}"
+                     style="width: 160px; height: 160px; font-size: 3rem; border-radius: 20px;">
                     {{ member.first_name|slice:":1"|upper }}{{ member.last_name|slice:":1"|upper }}
                 </div>
+                {% endif %}
                 <h4 class="mb-1">{{ member.first_name }} {{ member.last_name }}</h4>
                 {% if member.age %}<p class="text-muted mb-3">{{ member.age }} ans</p>{% endif %}
                 
@@ -19,9 +56,12 @@
                     {{ member.get_status_display }}
                 </span>
                 
-                <div class="d-flex justify-content-center gap-2 mt-3">
+                <div class="d-flex justify-content-center gap-2 mt-3 flex-wrap">
                     <a href="{% url 'members:edit' member.pk %}" class="btn btn-primary">
                         <i class="bi bi-pencil me-2"></i>Modifier
+                    </a>
+                    <a href="{% url 'members:print_registration' member.pk %}" class="btn btn-outline-success" title="Télécharger la fiche d'inscription en PDF">
+                        <i class="bi bi-printer me-2"></i>Imprimer la fiche
                     </a>
                     <a href="{% url 'members:delete' member.pk %}" class="btn btn-outline-danger">
                         <i class="bi bi-trash me-2"></i>Supprimer
