@@ -462,8 +462,8 @@ class TransportRequest(models.Model):
 
 **Frontend (CSS + JS)**
 ```
-static/css/components.css     — Centralized, minified
-static/css/dark-mode.css      — Override variables
+static/css/themes.css         — Définitions des variables (22 thèmes)
+static/css/components.css     — Composants + couche d'application des thèmes
 static/js/toasts.js           — Single source (no duplication)
 ```
 

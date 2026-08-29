@@ -41,7 +41,7 @@ gestion-eebc/
 ├── apps/public/        # Public endpoints (don, landing)
 ├── apps/{finance,members,…}/ # Private apps (admin + authenticated)
 ├── templates/          # Base + app-specific
-├── static/css/         # Centralized: components.css + dark-mode.css
+├── static/css/         # Centralized: themes.css + components.css
 ├── static/js/          # Single toast.js, no duplication
 └── manage.py          # Django standard
 ```
@@ -323,7 +323,7 @@ Notation : **0-100** (target: **95** pour tous domaines critiques)
 |----------|-----------|----------|
 | Stripe → Celery async + sync fallback | Reliability if broker down | Slower if Celery needed |
 | EmailMultiAlternatives (not plain EmailMessage) | Support PDF + HTML + future MMS | Slight overhead |
-| CSS centralized (components.css + dark-mode.css) | Reduce duplication, improve maintainability | Larger single files |
+| CSS centralized (themes.css + components.css) | Reduce duplication, improve maintainability | Larger single files |
 | No full template refactoring | Scope control, risk mitigation | Legacy HTML mixed new |
 | Django messages → JS toast system | UX consistency | Dual system while migrating |
 

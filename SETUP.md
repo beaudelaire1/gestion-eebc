@@ -208,8 +208,9 @@ gestion-eebc/
 │   └── ...
 ├── static/                # CSS, JS, images
 │   ├── css/
+│   │   ├── themes.css
 │   │   ├── components.css
-│   │   └── dark-mode.css
+│   │   └── theme-selector.css
 │   ├── js/
 │   │   └── toasts.js
 │   └── images/
