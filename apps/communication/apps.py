@@ -7,6 +7,6 @@ class CommunicationConfig(AppConfig):
     verbose_name = 'Communication'
     
     def ready(self):
-        # Importer les signaux pour les activer
-        import apps.communication.signals  # noqa
-
+        # Importer les signaux et les tâches de canal pour les enregistrer.
+        import apps.communication.channel_tasks  # noqa: F401
+        import apps.communication.signals  # noqa: F401
