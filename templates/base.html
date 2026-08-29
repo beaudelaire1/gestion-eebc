@@ -32,10 +32,10 @@
     <!-- Skeleton Loaders -->
     <link rel="stylesheet" href="{% static 'css/skeletons.css' %}">
 
-    <!-- Components CSS -->
+    <!-- Components CSS (inclut la couche d'application des thèmes, ex theme-overrides.css) -->
     <link rel="stylesheet" href="{% static 'css/components.css' %}">
 
-    <!-- Themes CSS -->
+    <!-- Themes CSS (source unique des variables de thème, inclut le mapping sombre ex dark-mode.css) -->
     <link rel="stylesheet" href="{% static 'css/themes.css' %}">
 
     <!-- Theme Selector CSS -->
@@ -44,25 +44,20 @@
     <!-- Animated Verse Banner CSS -->
     <link rel="stylesheet" href="{% static 'css/animated-verse-banner.css' %}">
 
-    <!-- Dark Mode CSS (Legacy support) -->
-    <link rel="stylesheet" href="{% static 'css/dark-mode.css' %}">
-
-    <!-- Theme Overrides CSS (Force theme application) -->
-    <link rel="stylesheet" href="{% static 'css/theme-overrides.css' %}">
-
     {% block extra_css %}{% endblock %}
 
     <!-- Theme initialization (prevent flash) -->
     <script>
         (function () {
+            // Nettoyage silencieux des anciennes clés de thème (ex. migration theme-fix.js)
+            ['theme', 'eebc_theme', 'dashboard-theme'].forEach(function (key) {
+                localStorage.removeItem(key);
+            });
             const theme = localStorage.getItem('eebc-theme') ||
                 (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'darkly' : 'default');
             document.documentElement.setAttribute('data-theme', theme);
         })();
     </script>
-
-    <!-- Theme Fix Script (temporary) -->
-    <script src="{% static 'js/theme-fix.js' %}" defer></script>
 </head>
 
 <body>
@@ -545,54 +540,6 @@
 
     <!-- Bootstrap JS -->
     <script src="{% static 'vendor/bootstrap/bootstrap.bundle.min.js' %}"></script>
-
-    <!-- Theme Toggle Script -->
-    <script>
-        function toggleTheme() {
-            const html = document.documentElement;
-            const currentTheme = html.getAttribute('data-theme');
-            const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
-
-            html.setAttribute('data-theme', newTheme);
-            localStorage.setItem('theme', newTheme);
-
-            // Update Chart.js colors if charts exist
-            updateChartsTheme(newTheme);
-        }
-
-        function updateChartsTheme(theme) {
-            if (typeof Chart !== 'undefined') {
-                const textColor = theme === 'dark' ? '#f1f5f9' : '#333';
-                const gridColor = theme === 'dark' ? '#334155' : '#e5e7eb';
-
-                Chart.defaults.color = textColor;
-                Chart.defaults.borderColor = gridColor;
-
-                // Update all existing charts
-                Object.values(Chart.instances).forEach(chart => {
-                    if (chart.options.scales) {
-                        Object.values(chart.options.scales).forEach(scale => {
-                            if (scale.ticks) scale.ticks.color = textColor;
-                            if (scale.grid) scale.grid.color = gridColor;
-                        });
-                    }
-                    if (chart.options.plugins && chart.options.plugins.legend) {
-                        chart.options.plugins.legend.labels.color = textColor;
-                    }
-                    chart.update();
-                });
-            }
-        }
-
-        // Listen for system theme changes
-        window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', (e) => {
-            if (!localStorage.getItem('theme')) {
-                const newTheme = e.matches ? 'dark' : 'light';
-                document.documentElement.setAttribute('data-theme', newTheme);
-                updateChartsTheme(newTheme);
-            }
-        });
-    </script>
 
     <!-- HTMX Config -->
     <script>
