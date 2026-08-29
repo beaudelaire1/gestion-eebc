@@ -1,0 +1,139 @@
+{% if form.non_field_errors %}
+<div class="alert alert-danger" role="alert">
+    {% for error in form.non_field_errors %}
+    <div>{{ error }}</div>
+    {% endfor %}
+</div>
+{% endif %}
+
+<div class="card border-0 shadow-sm mb-4">
+    <div class="card-header bg-transparent border-0 pt-4 px-4">
+        <div class="d-flex align-items-center gap-3">
+            <span class="d-inline-flex align-items-center justify-content-center rounded-circle bg-primary-subtle text-primary" style="width:42px;height:42px;">
+                <i class="bi bi-megaphone"></i>
+            </span>
+            <div>
+                <h2 class="h5 mb-1">Contenu de l'annonce</h2>
+                <p class="text-muted small mb-0">Le même contenu alimente le portail, l'email et le message WhatsApp.</p>
+            </div>
+        </div>
+    </div>
+    <div class="card-body p-4">
+        <div class="mb-4">
+            <label class="form-label fw-semibold" for="{{ form.title.id_for_label }}">Titre</label>
+            {{ form.title }}
+            {% for error in form.title.errors %}<div class="invalid-feedback d-block">{{ error }}</div>{% endfor %}
+        </div>
+
+        <div class="mb-0">
+            <label class="form-label fw-semibold" for="{{ form.content.id_for_label }}">Message</label>
+            {{ form.content }}
+            <div class="form-text">Écrivez le message complet. La version WhatsApp sera automatiquement convertie en texte lisible.</div>
+            {% for error in form.content.errors %}<div class="invalid-feedback d-block">{{ error }}</div>{% endfor %}
+        </div>
+    </div>
+</div>
+
+<div class="card border-0 shadow-sm mb-4">
+    <div class="card-header bg-transparent border-0 pt-4 px-4">
+        <h2 class="h5 mb-1">Audience et publication</h2>
+        <p class="text-muted small mb-0">Définissez qui peut voir l'annonce et pendant quelle période.</p>
+    </div>
+    <div class="card-body p-4">
+        <div class="row g-3">
+            <div class="col-md-6">
+                <label class="form-label fw-semibold" for="{{ form.priority.id_for_label }}">Priorité</label>
+                {{ form.priority }}
+                {% for error in form.priority.errors %}<div class="invalid-feedback d-block">{{ error }}</div>{% endfor %}
+            </div>
+            <div class="col-md-6">
+                <label class="form-label fw-semibold" for="{{ form.visibility.id_for_label }}">Audience</label>
+                {{ form.visibility }}
+                {% for error in form.visibility.errors %}<div class="invalid-feedback d-block">{{ error }}</div>{% endfor %}
+            </div>
+            <div class="col-md-6">
+                <label class="form-label fw-semibold" for="{{ form.start_date.id_for_label }}">Début de publication</label>
+                {{ form.start_date }}
+                {% for error in form.start_date.errors %}<div class="invalid-feedback d-block">{{ error }}</div>{% endfor %}
+            </div>
+            <div class="col-md-6">
+                <label class="form-label fw-semibold" for="{{ form.end_date.id_for_label }}">Fin de publication</label>
+                {{ form.end_date }}
+                <div class="form-text">Laissez vide pour ne pas définir de date de fin.</div>
+                {% for error in form.end_date.errors %}<div class="invalid-feedback d-block">{{ error }}</div>{% endfor %}
+            </div>
+        </div>
+
+        <div class="form-check form-switch mt-4">
+            {{ form.is_pinned }}
+            <label class="form-check-label fw-semibold" for="{{ form.is_pinned.id_for_label }}">Épingler l'annonce</label>
+            <div class="form-text">L'annonce reste mise en avant dans le centre d'annonces.</div>
+        </div>
+    </div>
+</div>
+
+{% if mode == 'create' %}
+<div class="card border-0 shadow-sm mb-4">
+    <div class="card-header bg-transparent border-0 pt-4 px-4">
+        <div class="d-flex align-items-start justify-content-between gap-3 flex-wrap">
+            <div>
+                <h2 class="h5 mb-1">Diffusion multicanal</h2>
+                <p class="text-muted small mb-0">Une seule publication, deux canaux déclenchés simultanément.</p>
+            </div>
+            <span class="badge text-bg-light border px-3 py-2">Respect des préférences membres</span>
+        </div>
+    </div>
+    <div class="card-body p-4">
+        {{ form.notify_by_sms }}
+        <div class="form-check form-switch mb-4">
+            {{ form.notify_by_email }}
+            <label class="form-check-label fw-semibold" for="{{ form.notify_by_email.id_for_label }}">
+                Notifier les destinataires par email + WhatsApp
+            </label>
+            <div class="form-text">EEBC enverra les deux canaux après la publication, uniquement aux membres ayant autorisé chacun d'eux.</div>
+            {% for error in form.notify_by_email.errors %}<div class="invalid-feedback d-block">{{ error }}</div>{% endfor %}
+        </div>
+
+        <div class="row g-3">
+            <div class="col-md-6">
+                <div class="border rounded-3 p-3 h-100">
+                    <div class="d-flex align-items-center gap-3 mb-2">
+                        <span class="d-inline-flex align-items-center justify-content-center rounded-circle bg-primary-subtle text-primary" style="width:38px;height:38px;">
+                            <i class="bi bi-envelope"></i>
+                        </span>
+                        <div>
+                            <div class="fw-semibold">Email</div>
+                            <div class="text-muted small">Message complet et mis en forme</div>
+                        </div>
+                    </div>
+                    <p class="small text-muted mb-0">Destinataires actifs avec email renseigné, notifications email autorisées et sans désabonnement applicable.</p>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="border rounded-3 p-3 h-100">
+                    <div class="d-flex align-items-center gap-3 mb-2">
+                        <span class="d-inline-flex align-items-center justify-content-center rounded-circle bg-success-subtle text-success" style="width:38px;height:38px;">
+                            <i class="bi bi-whatsapp"></i>
+                        </span>
+                        <div>
+                            <div class="fw-semibold">WhatsApp</div>
+                            <div class="text-muted small">Notification Meta Cloud API</div>
+                        </div>
+                    </div>
+                    <p class="small text-muted mb-0">Destinataires actifs avec numéro WhatsApp renseigné et consentement WhatsApp activé.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% else %}
+{% if announcement.notify_by_email %}<input type="hidden" name="notify_by_email" value="on">{% endif %}
+{% if announcement.notify_by_sms %}<input type="hidden" name="notify_by_sms" value="on">{% endif %}
+<div class="alert alert-light border d-flex gap-3 align-items-start" role="status">
+    <i class="bi bi-info-circle text-primary mt-1"></i>
+    <div>
+        <div class="fw-semibold">La modification ne renvoie pas la notification.</div>
+        <div class="small text-muted">Les canaux ont été déclenchés lors de la publication initiale. Modifier le contenu met à jour l'annonce affichée sans provoquer un second envoi.</div>
+    </div>
+</div>
+{% endif %}
