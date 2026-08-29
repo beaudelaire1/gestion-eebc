@@ -12,8 +12,35 @@ from django.db.models import Q
 from django.utils.http import url_has_allowed_host_and_scheme
 
 
-MEMBER_SENSITIVE_ROLES = ('admin', 'secretariat', 'encadrant')
-PASTORAL_CONFIDENTIAL_ROLES = ('admin', 'pasteur')
+VALID_USER_ROLES = frozenset({
+    'admin',
+    'pasteur',
+    'ancien',
+    'diacre',
+    'responsable_club',
+    'moniteur',
+    'chauffeur',
+    'responsable_groupe',
+    'secretariat',
+    'finance',
+    'encadrant',
+    'membre',
+})
+PRIVILEGED_USER_ROLES = VALID_USER_ROLES - {'membre'}
+MEMBER_SENSITIVE_ROLES = ('admin', 'secretariat', 'encadrant', 'pasteur')
+# The data model does not currently distinguish a "pasteur principal" from
+# other pastors. Confidential pastoral records therefore require the explicit
+# pastor role (superusers retain emergency access), not a generic admin role.
+PASTORAL_CONFIDENTIAL_ROLES = ('pasteur',)
+
+
+def get_user_roles(user) -> set[str]:
+    if not user or not getattr(user, 'is_authenticated', False):
+        return set()
+    if hasattr(user, 'get_roles_list'):
+        return {str(role).strip() for role in user.get_roles_list() if str(role).strip()}
+    raw = getattr(user, 'role', '') or ''
+    return {item.strip() for item in raw.split(',') if item.strip()}
 
 
 def user_has_any_role(user, *roles: str) -> bool:
@@ -21,11 +48,8 @@ def user_has_any_role(user, *roles: str) -> bool:
         return False
     if getattr(user, 'is_superuser', False):
         return True
-    if hasattr(user, 'has_any_role'):
-        return user.has_any_role(*roles)
-    raw = getattr(user, 'role', '') or ''
-    user_roles = {item.strip() for item in raw.split(',') if item.strip()}
-    return bool(user_roles.intersection(roles)) or 'admin' in user_roles
+    requested = {str(role).strip() for role in roles if str(role).strip()}
+    return bool(get_user_roles(user).intersection(requested))
 
 
 def can_view_sensitive_member_data(user) -> bool:
@@ -37,21 +61,38 @@ def can_view_confidential_pastoral_data(user) -> bool:
 
 
 def can_assign_role(actor, role: str) -> bool:
-    """Only administrators may grant the administrator role."""
-    if role != 'admin':
-        return bool(actor and getattr(actor, 'is_authenticated', False))
-    return user_has_any_role(actor, 'admin')
+    """Return whether ``actor`` may grant ``role`` to another account.
+
+    Account administration is deliberately asymmetric: an administrator may
+    assign any declared role; secretariat account managers may create/manage
+    ordinary member accounts but may not grant any privileged role. This also
+    prevents self-promotion to finance, pastor, secretariat, etc.
+    """
+    normalized = str(role or '').strip()
+    if normalized not in VALID_USER_ROLES:
+        return False
+    if user_has_any_role(actor, 'admin'):
+        return True
+    return normalized == 'membre'
 
 
 def can_manage_account(actor, target) -> bool:
-    """Non-admin account managers may never mutate an administrator account."""
+    """Limit non-admin account managers to ordinary member accounts.
+
+    Resetting the password, disabling, reactivating or editing a privileged
+    account is itself a privilege-escalation path, even if its role is not
+    changed. Only administrators can operate on such targets.
+    """
     if user_has_any_role(actor, 'admin'):
         return True
     if not actor or not getattr(actor, 'is_authenticated', False):
         return False
     if target is None:
         return True
-    return not (getattr(target, 'is_superuser', False) or user_has_any_role(target, 'admin'))
+    if getattr(target, 'is_superuser', False):
+        return False
+    roles = get_user_roles(target)
+    return bool(roles) and roles.isdisjoint(PRIVILEGED_USER_ROLES)
 
 
 def event_visibility_q(user):
@@ -126,12 +167,12 @@ def get_trusted_client_ip(request) -> str:
     except ValueError:
         return remote
 
-    if not any(remote_ip in network for network in _trusted_proxy_networks()):
+    trusted = _trusted_proxy_networks()
+    if not any(remote_ip in network for network in trusted):
         return remote
 
     candidates = [part.strip() for part in forwarded.split(',') if part.strip()]
     # Walk right-to-left and return the first address which is not a trusted proxy.
-    trusted = _trusted_proxy_networks()
     for candidate in reversed(candidates):
         try:
             candidate_ip = ip_address(candidate)
