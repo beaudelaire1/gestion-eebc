@@ -27,9 +27,11 @@ class CoreConfig(AppConfig):
             10 * 1024 * 1024,
         )
 
-        # Security counters must be shared between Gunicorn workers in prod.
         settings_module = os.environ.get('DJANGO_SETTINGS_MODULE', '')
-        if settings_module.endswith('.prod'):
+        is_production = settings_module.endswith('.prod')
+
+        # Security counters must be shared between Gunicorn workers in prod.
+        if is_production:
             backend = settings.CACHES.get('default', {}).get('BACKEND', '')
             if 'locmem' in backend.lower():
                 raise ImproperlyConfigured(
@@ -37,7 +39,21 @@ class CoreConfig(AppConfig):
                     'LocMemCache cannot provide reliable rate limiting across workers.'
                 )
 
-        # Do not trust an arbitrary X-Forwarded-For supplied by the client.
+        # Forwarded client addresses are trusted only from explicitly configured
+        # reverse proxies. CIDR notation is supported, e.g. 10.0.0.0/8.
+        proxy_env = os.environ.get('TRUSTED_PROXY_IPS', '').strip()
+        if proxy_env:
+            settings.TRUSTED_PROXY_IPS = [
+                value.strip() for value in proxy_env.split(',') if value.strip()
+            ]
+        elif is_production:
+            raise ImproperlyConfigured(
+                'Configure TRUSTED_PROXY_IPS with the IP/CIDR of the reverse proxy. '
+                'X-Forwarded-For is intentionally ignored without this trust boundary.'
+            )
+        else:
+            settings.TRUSTED_PROXY_IPS = ['127.0.0.1/32', '::1/128']
+
         from apps.core.security import get_trusted_client_ip
         from apps.core.middleware import RateLimitMiddleware, SessionTimeoutMiddleware
         RateLimitMiddleware._get_client_ip = staticmethod(get_trusted_client_ip)
@@ -49,7 +65,6 @@ class CoreConfig(AppConfig):
         except Exception:
             pass
 
-        # Public API form throttles use the same trusted-proxy resolver.
         try:
             from apps.api import views as api_views
             api_views._get_client_ip = get_trusted_client_ip
