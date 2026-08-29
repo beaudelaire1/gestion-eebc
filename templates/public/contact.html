@@ -85,28 +85,36 @@
             
             <!-- Informations de contact -->
             <div class="col-lg-5">
-                <div class="card bg-primary text-white mb-4">
+                <div class="card card-on-primary bg-primary text-white mb-4">
                     <div class="card-body p-4">
                         <h4 class="mb-4">Informations de contact</h4>
-                        
+
                         {% if settings.email %}
                         <div class="d-flex mb-3">
-                            <i class="bi bi-envelope fs-4 me-3"></i>
+                            <i class="bi bi-envelope fs-4 me-3" aria-hidden="true"></i>
                             <div>
                                 <strong>Email</strong><br>
                                 <a href="mailto:{{ settings.email }}" class="text-white">{{ settings.email }}</a>
                             </div>
                         </div>
                         {% endif %}
-                        
+
                         {% if settings.phone %}
                         <div class="d-flex mb-3">
-                            <i class="bi bi-telephone fs-4 me-3"></i>
+                            <i class="bi bi-telephone fs-4 me-3" aria-hidden="true"></i>
                             <div>
                                 <strong>Téléphone</strong><br>
                                 <a href="tel:{{ settings.phone }}" class="text-white">{{ settings.phone }}</a>
                             </div>
                         </div>
+                        {% endif %}
+
+                        {% if not settings.email and not settings.phone %}
+                        <p class="mb-0">
+                            <i class="bi bi-chat-dots me-2" aria-hidden="true"></i>
+                            Le formulaire ci-contre est le moyen le plus direct de nous joindre :
+                            nous vous répondrons dans les meilleurs délais.
+                        </p>
                         {% endif %}
                         
                         {% if settings.facebook_url or settings.youtube_url or settings.instagram_url %}

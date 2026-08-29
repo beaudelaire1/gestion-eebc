@@ -196,6 +196,18 @@
             0%, 100% { transform: translate(0, 0); }
             50% { transform: translate(20px, 20px); }
         }
+
+        /* Respect des préférences de mouvement réduit */
+        @media (prefers-reduced-motion: reduce) {
+            .bg-pattern,
+            .floating-shape {
+                animation: none;
+            }
+
+            .btn-login:hover {
+                transform: none;
+            }
+        }
     </style>
 </head>
 <body>
@@ -222,37 +234,50 @@
             
             <form method="post" id="loginForm">
                 {% csrf_token %}
-                
-                {# Support CloudFlare Turnstile (moderne) #}
-                {% if turnstile_site_key %}
-                <div class="cf-turnstile" data-sitekey="{{ turnstile_site_key }}" data-theme="dark"></div>
-                {% endif %}
-                
+
                 {# Fallback reCAPTCHA v3 (legacy) #}
                 {% if not turnstile_site_key and recaptcha_site_key %}
                 <input type="hidden" name="recaptcha_token" id="recaptcha_token">
                 {% endif %}
-                
+
                 <div class="form-floating">
-                    <input type="text" class="form-control" id="username" name="username" placeholder="Nom d'utilisateur" required autofocus>
-                    <label for="username"><i class="bi bi-person me-2"></i>Nom d'utilisateur</label>
+                    <input type="text" class="form-control" id="username" name="username" placeholder="Nom d'utilisateur" autocomplete="username" required autofocus>
+                    <label for="username"><i class="bi bi-person me-2" aria-hidden="true"></i>Nom d'utilisateur</label>
                 </div>
-                
-                <div class="form-floating mb-4">
-                    <input type="password" class="form-control" id="password" name="password" placeholder="Mot de passe" required>
-                    <label for="password"><i class="bi bi-lock me-2"></i>Mot de passe</label>
+
+                <div class="form-floating mb-3">
+                    <input type="password" class="form-control" id="password" name="password" placeholder="Mot de passe" autocomplete="current-password" required>
+                    <label for="password"><i class="bi bi-lock me-2" aria-hidden="true"></i>Mot de passe</label>
                 </div>
-                
+
+                {# Vérification anti-robot : après les identifiants, dans l'ordre logique du formulaire #}
+                {% if turnstile_site_key %}
+                <div class="cf-turnstile mb-3" data-sitekey="{{ turnstile_site_key }}" data-theme="dark" data-language="fr"></div>
+                {% endif %}
+
                 <button type="submit" class="btn btn-login">
-                    <i class="bi bi-box-arrow-in-right me-2"></i>
+                    <i class="bi bi-box-arrow-in-right me-2" aria-hidden="true"></i>
                     Se connecter
                 </button>
+
+                <p class="text-center mt-3 mb-0">
+                    <small style="color: var(--eebc-text-muted);">
+                        Mot de passe oublié ?
+                        <a href="{% url 'public:contact' %}" style="color: var(--eebc-accent);">Contactez le secrétariat</a>
+                    </small>
+                </p>
             </form>
-            
+
+            <div class="text-center mt-4">
+                <a href="{% url 'public:home' %}" style="color: var(--eebc-text-muted); text-decoration: none; font-size: 0.85rem;">
+                    <i class="bi bi-arrow-left me-1" aria-hidden="true"></i>Retour au site public
+                </a>
+            </div>
+
             <div class="text-center mt-4">
                 <small class="text-muted">
                     © {% now "Y" %} EEBC - Tous droits réservés<br>
-                    développé par <a href="https://www.traitdunion.it" target="_blank" rel="noopener noreferrer">Trait d'Union Studio</a> (www.traitdunion.it)
+                    développé par <a href="https://www.traitdunion.it" target="_blank" rel="noopener noreferrer">Trait d'Union Studio</a>
                 </small>
             </div>
         </div>
@@ -273,4 +298,3 @@
     {% endif %}
 </body>
 </html>
-
