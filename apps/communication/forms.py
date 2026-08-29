@@ -263,7 +263,7 @@ class ComposeEmailForm(forms.Form):
         required=False,
         label="Destinataires (équipes)",
         help_text="Comptes d'équipe (responsables, diacres, pasteurs, secrétariat...).",
-        widget=forms.SelectMultiple(attrs={'class': 'form-select', 'size': '8'})
+        widget=forms.CheckboxSelectMultiple(attrs={'class': 'form-check-input'})
     )
     
     external_recipients = forms.CharField(

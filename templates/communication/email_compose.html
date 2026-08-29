@@ -30,8 +30,17 @@
                     
                     <div class="row mb-2">
                         <div class="col-md-6">
-                            {% render_field form.recipients %}
-                            <small class="text-muted">Maintenez Ctrl (ou Cmd) pour sélectionner plusieurs destinataires.</small>
+                            <span class="form-label d-block" id="recipients-label">{{ form.recipients.label }}</span>
+                            <div class="check-list" data-check-list>
+                                <input type="search" class="form-control check-list__search" data-check-list-search placeholder="Filtrer…" aria-label="Filtrer la liste des destinataires">
+                                <div class="check-list__items" role="group" aria-labelledby="recipients-label">
+                                    {{ form.recipients }}
+                                    <p class="check-list__empty">Aucun résultat pour cette recherche.</p>
+                                </div>
+                                <div class="check-list__footer"><span data-check-list-count aria-live="polite"></span></div>
+                            </div>
+                            {% if form.recipients.help_text %}<small class="text-muted">{{ form.recipients.help_text }}</small>{% endif %}
+                            {% if form.recipients.errors %}<div class="text-danger small">{{ form.recipients.errors.0 }}</div>{% endif %}
                         </div>
                         <div class="col-md-6">
                             {% render_field form.external_recipients %}
