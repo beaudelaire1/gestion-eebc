@@ -1,67 +1,84 @@
 {% extends 'base.html' %}
+{% load sanitize_tags %}
 
 {% block title %}{{ announcement.title }} - EEBC{% endblock %}
 {% block page_title %}Annonce{% endblock %}
 
 {% block content %}
 <div class="row justify-content-center">
-    <div class="col-lg-8">
-        <div class="card border-0 shadow-sm">
-            <div class="card-body p-4">
-                {% if announcement.is_pinned %}
-                <span class="badge bg-warning text-dark mb-2">
-                    <i class="bi bi-pin-angle me-1"></i> Épinglée
-                </span>
-                {% endif %}
-                
-                <h3 class="mb-3">{{ announcement.title }}</h3>
-                
-                <div class="text-muted small mb-4">
+    <div class="col-xl-9">
+        <div class="d-flex flex-wrap align-items-center gap-2 mb-3">
+            {% if announcement.is_pinned %}
+            <span class="badge bg-warning-subtle text-warning-emphasis border border-warning-subtle">
+                <i class="bi bi-pin-angle me-1"></i>Épinglée
+            </span>
+            {% endif %}
+            <span class="badge text-bg-light border">{{ announcement.get_priority_display }}</span>
+            <span class="badge text-bg-light border">
+                <i class="bi bi-people me-1"></i>{{ announcement.get_visibility_display }}
+            </span>
+            {% if not announcement.is_active %}
+            <span class="badge bg-secondary">Inactive</span>
+            {% endif %}
+        </div>
+
+        <article class="card border-0 shadow-sm mb-4">
+            <div class="card-body p-4 p-lg-5">
+                <h1 class="h2 mb-3">{{ announcement.title }}</h1>
+                <div class="text-muted small d-flex flex-wrap gap-2 mb-4">
                     {% if announcement.created_by %}
-                        <i class="bi bi-person me-1"></i> 
-                        {{ announcement.created_by.get_full_name|default:announcement.created_by.username }}
-                        <span class="mx-2">·</span>
+                    <span><i class="bi bi-person me-1"></i>{{ announcement.created_by.get_full_name|default:announcement.created_by.username }}</span>
                     {% endif %}
-                    <i class="bi bi-calendar me-1"></i>
-                    {{ announcement.created_at|date:"d/m/Y H:i" }}
-                    {% if announcement.start_date or announcement.end_date %}
-                    <span class="mx-2">·</span>
-                    <i class="bi bi-clock me-1"></i>
-                    {% if announcement.start_date %}Du {{ announcement.start_date|date:"d/m/Y" }}{% endif %}
-                    {% if announcement.end_date %}au {{ announcement.end_date|date:"d/m/Y" }}{% endif %}
+                    <span><i class="bi bi-calendar3 me-1"></i>{{ announcement.created_at|date:'d/m/Y à H:i' }}</span>
+                    {% if announcement.start_date %}
+                    <span><i class="bi bi-clock me-1"></i>Visible à partir du {{ announcement.start_date|date:'d/m/Y à H:i' }}</span>
+                    {% endif %}
+                    {% if announcement.end_date %}
+                    <span>jusqu'au {{ announcement.end_date|date:'d/m/Y à H:i' }}</span>
                     {% endif %}
                 </div>
-                
-                <div class="announcement-content">
-                    {{ announcement.content|linebreaks }}
+
+                <div class="announcement-content lh-lg">
+                    {{ announcement.content|sanitize }}
+                </div>
+            </div>
+        </article>
+
+        {% if user.is_admin or user.role == 'admin' or user.role == 'secretariat' %}
+        <div class="card border-0 shadow-sm mb-4">
+            <div class="card-body p-4">
+                <div class="d-flex justify-content-between align-items-start gap-3 flex-wrap">
+                    <div>
+                        <h2 class="h6 mb-1">Diffusion</h2>
+                        <p class="text-muted small mb-0">Canaux demandés lors de la publication initiale.</p>
+                    </div>
+                    {% if announcement.notify_by_email %}
+                    <span class="badge bg-primary-subtle text-primary-emphasis border border-primary-subtle px-3 py-2">
+                        <i class="bi bi-envelope me-1"></i>Email
+                        <span class="mx-1">+</span>
+                        <i class="bi bi-whatsapp me-1"></i>WhatsApp
+                    </span>
+                    {% else %}
+                    <span class="badge text-bg-light border px-3 py-2">Portail uniquement</span>
+                    {% endif %}
                 </div>
             </div>
         </div>
-        
-        <div class="mt-3">
+        {% endif %}
+
+        <div class="d-flex flex-wrap justify-content-between gap-2">
             <a href="{% url 'communication:announcements' %}" class="btn btn-outline-secondary">
-                <i class="bi bi-arrow-left me-1"></i> Retour aux annonces
+                <i class="bi bi-arrow-left me-1"></i>Retour aux annonces
             </a>
-            
-            {% if user.is_staff %}
-            <div class="btn-group ms-2">
+
+            {% if user.is_admin or user.role == 'admin' or user.role == 'secretariat' %}
+            <div class="d-flex gap-2">
                 <a href="{% url 'communication:announcement_edit' announcement.pk %}" class="btn btn-primary">
-                    <i class="bi bi-pencil me-1"></i> Modifier
+                    <i class="bi bi-pencil me-1"></i>Modifier
                 </a>
-                <button type="button" class="btn btn-primary dropdown-toggle dropdown-toggle-split" data-bs-toggle="dropdown">
-                    <span class="visually-hidden">Toggle Dropdown</span>
-                </button>
-                <ul class="dropdown-menu">
-                    <li><a class="dropdown-item" href="{% url 'communication:announcement_toggle_active' announcement.pk %}" 
-                           onclick="return confirm('Changer le statut de cette annonce ?')">
-                        <i class="bi bi-{% if announcement.is_active %}eye-slash{% else %}eye{% endif %} me-2"></i>
-                        {% if announcement.is_active %}Désactiver{% else %}Activer{% endif %}
-                    </a></li>
-                    <li><hr class="dropdown-divider"></li>
-                    <li><a class="dropdown-item text-danger" href="{% url 'communication:announcement_delete' announcement.pk %}">
-                        <i class="bi bi-trash me-2"></i>Supprimer
-                    </a></li>
-                </ul>
+                <a href="{% url 'communication:announcement_delete' announcement.pk %}" class="btn btn-outline-danger">
+                    <i class="bi bi-trash me-1"></i>Supprimer
+                </a>
             </div>
             {% endif %}
         </div>
