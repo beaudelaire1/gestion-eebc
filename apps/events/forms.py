@@ -41,7 +41,7 @@ class EventForm(EnhancedModelForm):
                 'placeholder': 'Adresse complète'
             }),
             'recurrence_end_date': forms.DateInput(format='%Y-%m-%d', attrs={'type': 'date'}),
-            'organizers': forms.SelectMultiple(attrs={'size': '4'}),
+            'organizers': forms.CheckboxSelectMultiple(attrs={'class': 'form-check-input'}),
             'notify_before': forms.NumberInput(attrs={
                 'min': '0',
                 'max': '30',

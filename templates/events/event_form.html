@@ -151,11 +151,20 @@
                                 <div class="row mb-3">
                                     <div class="col-md-6">
                                         <label for="{{ form.organizers.id_for_label }}" class="form-label">{{ form.organizers.label }}</label>
-                                        {{ form.organizers }}
+                                        <div class="check-list" data-check-list>
+                                            <input type="search" class="form-control check-list__search" data-check-list-search
+                                                   placeholder="Filtrer…" aria-label="Filtrer la liste des organisateurs">
+                                            <div class="check-list__items" role="group" aria-label="{{ form.organizers.label }}">
+                                                {{ form.organizers }}
+                                                <p class="check-list__empty">Aucun résultat pour cette recherche.</p>
+                                            </div>
+                                            <div class="check-list__footer">
+                                                <span data-check-list-count aria-live="polite"></span>
+                                            </div>
+                                        </div>
                                         {% if form.organizers.errors %}
                                             <div class="text-danger small">{{ form.organizers.errors.0 }}</div>
                                         {% endif %}
-                                        <div class="form-text">Maintenez Ctrl (Cmd sur Mac) pour sélectionner plusieurs organisateurs</div>
                                     </div>
                                     <div class="col-md-3">
                                         <label for="{{ form.visibility.id_for_label }}" class="form-label">{{ form.visibility.label }}</label>
