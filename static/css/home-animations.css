@@ -672,7 +672,6 @@
 }
 
 .verse-typewriter-dark .verse-ref { color: #f8b500; }
-.verse-typewriter-dark .typewriter-cursor { background: #f8b500; }
 .verse-typewriter-dark { min-height: 4em; }
 
 /* =============================================
@@ -701,21 +700,28 @@
     font-weight: 600;
     color: #f8b500;
     text-shadow: 0 0 8px rgba(248, 181, 0, 0.2);
-    transition: opacity 0.6s ease;
 }
 
-.typewriter-cursor {
-    display: inline-block;
-    width: 2px; height: 1.1em;
-    background: #f8b500;
-    vertical-align: text-bottom;
-    margin-left: 2px;
-    animation: cursorBlink 0.8s step-end infinite;
+/* Rotation en fondu (remplace l'effet machine à écrire) */
+.verse-typewriter {
+    opacity: 1;
+    transition: opacity 0.4s ease;
 }
 
-@keyframes cursorBlink {
-    0%, 100% { opacity: 1; }
-    50%      { opacity: 0; }
+.verse-typewriter--fading {
+    opacity: 0;
+}
+
+/* État initial avant hydratation JS : évite un bloc vide */
+.verse-typewriter:not(.verse-typewriter--ready) .verse-text:empty::before {
+    content: '\00ab\00a0Car Dieu a tant aimé le monde…\00a0\00bb';
+}
+
+/* Mouvement réduit : aucune transition */
+@media (prefers-reduced-motion: reduce) {
+    .verse-typewriter {
+        transition: none;
+    }
 }
 
 /* =============================================
