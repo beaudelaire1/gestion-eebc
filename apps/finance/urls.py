@@ -19,14 +19,14 @@ urlpatterns = [
     path('proofs/<int:pk>/upload/', sv.proof_upload, name='proof_upload'),
     path('budget/', views.budget_overview, name='budget_overview'),
     path('reports/', views.reports, name='reports'),
-    path('import/excel/', views.finance_import_excel, name='import_excel'),
+    path('import/excel/', sv.finance_import_excel, name='import_excel'),
     path('import/excel/template/', views.finance_import_excel_template, name='import_excel_template'),
 
     # Reçus fiscaux
     path('tax-receipts/', views.tax_receipt_list, name='tax_receipt_list'),
     path('tax-receipts/create/', views.tax_receipt_create, name='tax_receipt_create'),
     path('tax-receipts/<int:pk>/', views.tax_receipt_detail, name='tax_receipt_detail'),
-    path('tax-receipts/<int:pk>/pdf/', views.tax_receipt_pdf, name='tax_receipt_pdf'),
+    path('tax-receipts/<int:pk>/pdf/', sv.tax_receipt_pdf, name='tax_receipt_pdf'),
     path('tax-receipts/<int:pk>/send/', sv.tax_receipt_send, name='tax_receipt_send'),
     path('tax-receipts/bulk-generate/', sv.tax_receipt_bulk_generate, name='tax_receipt_bulk_generate'),
     path('tax-receipts/bulk-send/', sv.tax_receipt_bulk_send, name='tax_receipt_bulk_send'),
