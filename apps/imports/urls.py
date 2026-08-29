@@ -10,11 +10,11 @@ urlpatterns = [
 
     # Imports traditionnels
     path('imports/', views.import_list, name='list'),
-    path('imports/create/', views.import_create, name='create'),
+    path('imports/create/', sv.import_create, name='create'),
     path('imports/<int:pk>/', views.import_detail, name='detail'),
     path('imports/<int:pk>/status/', views.import_status, name='status'),
-    path('imports/<int:pk>/delete/', views.import_delete, name='delete'),
-    path('imports/bulk-delete/', views.import_bulk_delete, name='bulk_delete'),
+    path('imports/<int:pk>/delete/', sv.import_delete, name='delete'),
+    path('imports/bulk-delete/', sv.import_bulk_delete, name='bulk_delete'),
     path('template/<str:import_type>/', views.download_template, name='template'),
 
     # Exports sensibles
