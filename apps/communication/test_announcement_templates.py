@@ -66,8 +66,7 @@ def test_whatsapp_content_is_plain_text():
     assert _plain_content(announcement) == "Bonjour EEBC Rendez-vous & informations"
 
 
-def test_member_preferences_keep_email_and_whatsapp_independent(client):
-    admin = make_admin()
+def test_member_preferences_keep_email_and_whatsapp_independent():
     member = Member.objects.create(
         first_name="Marie",
         last_name="Canaux",
