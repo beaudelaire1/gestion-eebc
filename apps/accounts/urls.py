@@ -1,6 +1,7 @@
 from django.urls import path
 from . import views
 from . import security_views as sv
+from . import import_security as import_sv
 from .two_factor_views import (
     TwoFactorSetupView,
     TwoFactorDisableView,
@@ -27,7 +28,7 @@ urlpatterns = [
     # Gestion des utilisateurs
     path('users/', views.user_list_view, name='user_list'),
     path('users/create/', sv.secure_create_user_view, name='create_user'),
-    path('users/import/', sv.secure_user_bulk_import_view, name='user_bulk_import'),
+    path('users/import/', import_sv.secure_user_bulk_import_view, name='user_bulk_import'),
     path('users/import/template/', views.user_bulk_import_template, name='user_bulk_import_template'),
     path('users/<int:user_id>/', views.user_detail_view, name='user_detail'),
     path('users/<int:user_id>/edit/', sv.secure_user_update_view, name='user_update'),
