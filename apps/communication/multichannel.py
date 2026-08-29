@@ -7,12 +7,14 @@ notification sources.
 """
 from __future__ import annotations
 
+import html
 import logging
 import os
 from typing import Dict, List
 
 import requests
 from django.utils import timezone
+from django.utils.html import strip_tags
 
 from apps.members.models import Member
 
@@ -98,6 +100,12 @@ def _priority_label(announcement: Announcement) -> str:
     }.get(announcement.priority, "Annonce")
 
 
+def _plain_content(announcement: Announcement) -> str:
+    """Convert rich editor markup to readable WhatsApp text."""
+    raw = strip_tags(announcement.content or "")
+    return " ".join(html.unescape(raw).split())
+
+
 def send_announcement_email(announcement: Announcement) -> Dict[str, int]:
     recipients = get_announcement_email_recipients(announcement)
     sent = 0
@@ -137,9 +145,9 @@ def _send_whatsapp_template(
     recipient: Dict[str, str], announcement: Announcement
 ) -> bool:
     normalized_phone = WhatsAppMetaService._normalize_phone(recipient["phone"])
+    plain_content = _plain_content(announcement)
     message_summary = (
-        f"{_priority_label(announcement)}: {announcement.title} — "
-        f"{announcement.content}"
+        f"{_priority_label(announcement)}: {announcement.title} — {plain_content}"
     )
     log = SMSLog.objects.create(
         recipient_phone=normalized_phone,
@@ -170,7 +178,7 @@ def _send_whatsapp_template(
                             "text": recipient["name"] or "Membre EEBC",
                         },
                         {"type": "text", "text": announcement.title},
-                        {"type": "text", "text": announcement.content},
+                        {"type": "text", "text": plain_content},
                     ],
                 }
             ],
@@ -216,6 +224,7 @@ def send_announcement_whatsapp(announcement: Announcement) -> Dict[str, int]:
     sent = 0
     failed = 0
     template_name = _whatsapp_template_name()
+    plain_content = _plain_content(announcement)
 
     for recipient in recipients:
         if template_name:
@@ -229,7 +238,7 @@ def send_announcement_whatsapp(announcement: Announcement) -> Dict[str, int]:
                 recipient_name=recipient["name"],
                 message=(
                     f"[{_priority_label(announcement)}] {announcement.title}\n\n"
-                    f"{announcement.content}\n\nEEBC"
+                    f"{plain_content}\n\nEEBC"
                 ),
             )
             success = bool(result.get("success"))
