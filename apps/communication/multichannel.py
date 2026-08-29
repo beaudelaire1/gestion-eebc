@@ -9,10 +9,9 @@ from __future__ import annotations
 
 import logging
 import os
-from typing import Dict, Iterable, List
+from typing import Dict, List
 
 import requests
-from django.conf import settings
 from django.utils import timezone
 
 from apps.members.models import Member
@@ -58,7 +57,9 @@ def _email_unsubscribed(email: str) -> bool:
     ).exists()
 
 
-def get_announcement_email_recipients(announcement: Announcement) -> List[Dict[str, str]]:
+def get_announcement_email_recipients(
+    announcement: Announcement,
+) -> List[Dict[str, str]]:
     recipients: List[Dict[str, str]] = []
     seen = set()
     for member in _eligible_members(announcement):
@@ -73,7 +74,9 @@ def get_announcement_email_recipients(announcement: Announcement) -> List[Dict[s
     return recipients
 
 
-def get_announcement_whatsapp_recipients(announcement: Announcement) -> List[Dict[str, str]]:
+def get_announcement_whatsapp_recipients(
+    announcement: Announcement,
+) -> List[Dict[str, str]]:
     recipients: List[Dict[str, str]] = []
     seen = set()
     for member in _eligible_members(announcement):
@@ -114,7 +117,7 @@ def send_announcement_email(announcement: Announcement) -> Dict[str, int]:
             },
             fail_silently=True,
         )
-        if log.status == log.Status.SENT:
+        if log.status == "sent":
             sent += 1
         else:
             failed += 1
@@ -130,15 +133,26 @@ def _whatsapp_template_language() -> str:
     return os.environ.get("META_WHATSAPP_TEMPLATE_LANGUAGE", "fr").strip() or "fr"
 
 
-def _send_whatsapp_template(recipient: Dict[str, str], announcement: Announcement) -> bool:
+def _send_whatsapp_template(
+    recipient: Dict[str, str], announcement: Announcement
+) -> bool:
     normalized_phone = WhatsAppMetaService._normalize_phone(recipient["phone"])
-    message_summary = f"{_priority_label(announcement)}: {announcement.title} — {announcement.content}"
+    message_summary = (
+        f"{_priority_label(announcement)}: {announcement.title} — "
+        f"{announcement.content}"
+    )
     log = SMSLog.objects.create(
         recipient_phone=normalized_phone,
         recipient_name=recipient["name"],
         message=message_summary,
         status=SMSLog.Status.PENDING,
     )
+
+    if not WhatsAppMetaService._is_configured():
+        log.status = SMSLog.Status.FAILED
+        log.error_message = "Meta WhatsApp non configuré."
+        log.save(update_fields=["status", "error_message"])
+        return False
 
     payload = {
         "messaging_product": "whatsapp",
@@ -151,7 +165,10 @@ def _send_whatsapp_template(recipient: Dict[str, str], announcement: Announcemen
                 {
                     "type": "body",
                     "parameters": [
-                        {"type": "text", "text": recipient["name"] or "Membre EEBC"},
+                        {
+                            "type": "text",
+                            "text": recipient["name"] or "Membre EEBC",
+                        },
                         {"type": "text", "text": announcement.title},
                         {"type": "text", "text": announcement.content},
                     ],
@@ -178,7 +195,9 @@ def _send_whatsapp_template(recipient: Dict[str, str], announcement: Announcemen
 
         error_message = f"HTTP {response.status_code}"
         try:
-            error_message = response.json().get("error", {}).get("message", error_message)
+            error_message = response.json().get("error", {}).get(
+                "message", error_message
+            )
         except (TypeError, ValueError):
             pass
         log.status = SMSLog.Status.FAILED
@@ -198,16 +217,13 @@ def send_announcement_whatsapp(announcement: Announcement) -> Dict[str, int]:
     failed = 0
     template_name = _whatsapp_template_name()
 
-    if template_name and not WhatsAppMetaService._is_configured():
-        logger.error("WhatsApp template configured but Meta Cloud API credentials are missing")
-
     for recipient in recipients:
         if template_name:
             success = _send_whatsapp_template(recipient, announcement)
         else:
-            # Compatibility fallback for installations that already use the 24h
-            # customer-service window. Production proactive notifications should
-            # configure META_WHATSAPP_ANNOUNCEMENT_TEMPLATE.
+            # Compatibility fallback for installations that still use the
+            # 24-hour customer-service window. Proactive production messages
+            # should configure META_WHATSAPP_ANNOUNCEMENT_TEMPLATE.
             result = WhatsAppMetaService.send_text_message(
                 recipient_phone=recipient["phone"],
                 recipient_name=recipient["name"],
