@@ -761,67 +761,71 @@
 }
 
 /* =============================================================================
-   THEME-SPECIFIC COMPONENT OVERRIDES
+   THÈMES SOMBRES — MAPPING --eebc-* ET AJUSTEMENTS COMPOSANTS
+   Garantit la cohérence des composants utilisant les variables --eebc-*
+   (components.css) avec les thèmes sombres Bootswatch.
    ============================================================================= */
+[data-theme="darkly"],
+[data-theme="cyborg"],
+[data-theme="slate"],
+[data-theme="solar"],
+[data-theme="superhero"] {
+    /* Couleurs de marque : bleu lumineux lisible sur fond sombre */
+    --eebc-primary: #3b82f6;
+    --eebc-primary-dark: #2563eb;
+    --eebc-primary-light: #60a5fa;
 
-/* Neon Theme Glow Effects */
-[data-theme="neon"] .btn-primary,
-[data-theme="neony"] .btn-primary {
-    box-shadow: 0 0 10px rgba(0, 255, 136, 0.5);
+    /* Niveaux de gris adaptés aux variables du thème actif */
+    --eebc-white: var(--bg-card);
+    --eebc-black: var(--text-primary);
+    --eebc-gray-50: var(--bg-card);
+    --eebc-gray-100: var(--bg-tertiary);
+    --eebc-gray-200: var(--border-color);
+    --eebc-gray-300: var(--text-muted);
+    --eebc-gray-400: var(--text-secondary);
+    --eebc-gray-500: var(--text-secondary);
+    --eebc-gray-600: var(--text-primary);
+    --eebc-gray-700: var(--text-primary);
+    --eebc-gray-800: var(--text-inverse);
+    --eebc-success: var(--accent-success);
+    --eebc-warning: var(--accent-warning);
+    --eebc-danger: var(--accent-danger);
+    --eebc-info: var(--accent-info);
 }
 
-[data-theme="neon"] .btn-primary:hover,
-[data-theme="neony"] .btn-primary:hover {
-    box-shadow: 0 0 20px rgba(0, 255, 136, 0.7);
+/* Bouton de fermeture visible sur fond sombre */
+[data-theme="darkly"] .btn-close,
+[data-theme="cyborg"] .btn-close,
+[data-theme="slate"] .btn-close,
+[data-theme="solar"] .btn-close,
+[data-theme="superhero"] .btn-close {
+    filter: invert(1) grayscale(100%) brightness(200%);
 }
 
-[data-theme="neon"] .card,
-[data-theme="neony"] .card {
-    border: 1px solid var(--accent-primary);
-    box-shadow: 0 0 5px rgba(0, 255, 136, 0.2);
+/* Utilitaires Bootstrap fréquents, adaptés aux thèmes sombres */
+[data-theme="darkly"] .bg-white,
+[data-theme="cyborg"] .bg-white,
+[data-theme="slate"] .bg-white,
+[data-theme="solar"] .bg-white,
+[data-theme="superhero"] .bg-white {
+    background-color: var(--bg-card) !important;
 }
 
-/* Flat Theme - Remove shadows and rounded corners */
-[data-theme="flat"] .card,
-[data-theme="flatty"] .card {
-    border-radius: 0;
-    box-shadow: none;
-    border: 1px solid var(--border-color);
+[data-theme="darkly"] .bg-light,
+[data-theme="cyborg"] .bg-light,
+[data-theme="slate"] .bg-light,
+[data-theme="solar"] .bg-light,
+[data-theme="superhero"] .bg-light {
+    background-color: var(--bg-tertiary) !important;
 }
 
-[data-theme="flat"] .btn,
-[data-theme="flatty"] .btn {
-    border-radius: 0;
-    box-shadow: none;
-}
-
-[data-theme="flat"] .sidebar,
-[data-theme="flatty"] .sidebar {
-    border-radius: 0;
-    box-shadow: none;
-}
-
-/* Ocean Theme - Wave-like borders */
-[data-theme="ocean"] .card::before,
-[data-theme="oceany"] .card::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    height: 3px;
-    background: linear-gradient(90deg, var(--accent-primary), var(--accent-info));
-    border-radius: 10px 10px 0 0;
-}
-
-/* Sunset Theme - Gradient backgrounds */
-[data-theme="sunset"] .sidebar__brand,
-[data-theme="sunsety"] .sidebar__brand {
-    background: linear-gradient(135deg, var(--accent-primary), var(--accent-warning));
-}
-
-/* Forest Theme - Natural borders */
-[data-theme="forest"] .card,
-[data-theme="foresty"] .card {
-    border-left: 4px solid var(--accent-primary);
+/* Conteneurs de graphiques */
+[data-theme="darkly"] .chart-container,
+[data-theme="cyborg"] .chart-container,
+[data-theme="slate"] .chart-container,
+[data-theme="solar"] .chart-container,
+[data-theme="superhero"] .chart-container {
+    background-color: var(--bg-card);
+    border-radius: 12px;
+    padding: 1rem;
 }
