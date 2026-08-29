@@ -16,6 +16,7 @@ SECURITY_FIELDS = {
     'is_active',
     'is_staff',
     'is_superuser',
+    'must_change_password',
     'two_factor_enabled',
     'two_factor_secret',
 }
