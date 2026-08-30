@@ -4,6 +4,8 @@ from django.apps import AppConfig
 from django.conf import settings
 from django.core.exceptions import ImproperlyConfigured
 
+from gestion_eebc.runtime_env import is_static_asset_build
+
 
 class CoreConfig(AppConfig):
     default_auto_field = 'django.db.models.BigAutoField'
@@ -27,10 +29,13 @@ class CoreConfig(AppConfig):
         )
 
         settings_module = os.environ.get('DJANGO_SETTINGS_MODULE', '')
-        is_production = settings_module.endswith('.prod')
+        static_build = is_static_asset_build()
+        is_production_runtime = settings_module.endswith('.prod') and not static_build
 
-        # Security counters must be shared between Gunicorn workers in prod.
-        if is_production:
+        # Security counters must be shared between Gunicorn/Celery workers in
+        # production runtime. collectstatic is an immutable build operation and
+        # deliberately has no dependency on Redis.
+        if is_production_runtime:
             backend = settings.CACHES.get('default', {}).get('BACKEND', '')
             if 'locmem' in backend.lower():
                 raise ImproperlyConfigured(
@@ -38,35 +43,36 @@ class CoreConfig(AppConfig):
                     'LocMemCache cannot provide reliable rate limiting across workers.'
                 )
 
-        # Client IP trust boundary.
-        # - Traditional reverse proxies: trust X-Forwarded-For only when the socket
-        #   peer belongs to an explicitly configured CIDR.
-        # - Render: trust only Cloudflare's overwrite-safe CF-Connecting-IP header.
-        proxy_env = os.environ.get('TRUSTED_PROXY_IPS', '').strip()
-        trusted_header = str(
-            getattr(settings, 'TRUSTED_CLIENT_IP_HEADER', '') or ''
-        ).strip()
-
-        if trusted_header and trusted_header != 'HTTP_CF_CONNECTING_IP':
-            raise ImproperlyConfigured(
-                'Unsupported TRUSTED_CLIENT_IP_HEADER. '
-                'Only HTTP_CF_CONNECTING_IP is accepted as a dedicated trusted header.'
-            )
-
-        if proxy_env:
-            settings.TRUSTED_PROXY_IPS = [
-                value.strip() for value in proxy_env.split(',') if value.strip()
-            ]
-        elif is_production and not trusted_header:
-            raise ImproperlyConfigured(
-                'Configure TRUSTED_CLIENT_IP_HEADER=HTTP_CF_CONNECTING_IP on Render '
-                'or TRUSTED_PROXY_IPS with explicit reverse-proxy CIDRs. '
-                'X-Forwarded-For is intentionally ignored without a trust boundary.'
-            )
-        elif is_production:
+        # Client IP trust is a runtime concern. During collectstatic there is no
+        # inbound request path, so proxy configuration must not gate the build.
+        if static_build:
             settings.TRUSTED_PROXY_IPS = []
         else:
-            settings.TRUSTED_PROXY_IPS = ['127.0.0.1/32', '::1/128']
+            proxy_env = os.environ.get('TRUSTED_PROXY_IPS', '').strip()
+            trusted_header = str(
+                getattr(settings, 'TRUSTED_CLIENT_IP_HEADER', '') or ''
+            ).strip()
+
+            if trusted_header and trusted_header != 'HTTP_CF_CONNECTING_IP':
+                raise ImproperlyConfigured(
+                    'Unsupported TRUSTED_CLIENT_IP_HEADER. '
+                    'Only HTTP_CF_CONNECTING_IP is accepted as a dedicated trusted header.'
+                )
+
+            if proxy_env:
+                settings.TRUSTED_PROXY_IPS = [
+                    value.strip() for value in proxy_env.split(',') if value.strip()
+                ]
+            elif is_production_runtime and not trusted_header:
+                raise ImproperlyConfigured(
+                    'Configure TRUSTED_CLIENT_IP_HEADER=HTTP_CF_CONNECTING_IP on Render '
+                    'or TRUSTED_PROXY_IPS with explicit reverse-proxy CIDRs. '
+                    'X-Forwarded-For is intentionally ignored without a trust boundary.'
+                )
+            elif is_production_runtime:
+                settings.TRUSTED_PROXY_IPS = []
+            else:
+                settings.TRUSTED_PROXY_IPS = ['127.0.0.1/32', '::1/128']
 
         from apps.core.security import get_trusted_client_ip
         from apps.core.middleware import RateLimitMiddleware, SessionTimeoutMiddleware
