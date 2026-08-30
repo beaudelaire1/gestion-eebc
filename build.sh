@@ -2,15 +2,16 @@
 # =============================================================================
 # Build Render - Gestion EEBC
 # =============================================================================
-# A build prepares an immutable application artifact. Database mutations,
-# notifications and backups belong to pre-deploy/cron phases, not here.
+# A build prepares an immutable application artifact only. It must not depend
+# on runtime services such as PostgreSQL, Redis, Cloudinary, SMTP or Celery.
+# Runtime production invariants are enforced by settings.prod/start.sh.
 # =============================================================================
 
 set -o errexit
 set -o nounset
 set -o pipefail
 
-export DJANGO_SETTINGS_MODULE="${DJANGO_SETTINGS_MODULE:-gestion_eebc.settings.prod}"
+export DJANGO_SETTINGS_MODULE="gestion_eebc.settings.build"
 
 echo "=== Python runtime ==="
 python --version
@@ -30,10 +31,10 @@ if not pdf.startswith(b'%PDF'):
 print(f'WeasyPrint OK ({len(pdf)} bytes)')
 PY
 
+echo "=== Vérification Django (build) ==="
+python manage.py check --fail-level ERROR
+
 echo "=== Collecte des fichiers statiques ==="
 python manage.py collectstatic --noinput
-
-echo "=== Vérification Django ==="
-python manage.py check --deploy --fail-level ERROR
 
 echo "=== Build terminé ==="
