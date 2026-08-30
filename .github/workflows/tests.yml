@@ -27,7 +27,7 @@ jobs:
 
     strategy:
       matrix:
-        python-version: ['3.10', '3.11']
+        python-version: ['3.11', '3.13']
 
     steps:
     - uses: actions/checkout@v4
@@ -60,7 +60,7 @@ jobs:
       env:
         DATABASE_URL: postgresql://eebc_test:eebc_test_password@localhost:5432/eebc_test
         DJANGO_SETTINGS_MODULE: gestion_eebc.settings.test
-        SECRET_KEY: test-secret-key-for-ci
+        SECRET_KEY: ci-test-secret-key-that-is-long-enough-2026
       run: |
         pytest --cov=apps --cov-report=xml --cov-report=term-missing
 
@@ -81,7 +81,7 @@ jobs:
     - name: Set up Python
       uses: actions/setup-python@v5
       with:
-        python-version: '3.11'
+        python-version: '3.13'
         cache: 'pip'
 
     - name: Install dependencies
@@ -102,12 +102,14 @@ jobs:
     - name: Django security checks
       env:
         DJANGO_SETTINGS_MODULE: gestion_eebc.settings.prod
-        SECRET_KEY: test-secret-key-for-ci
+        SECRET_KEY: ci-production-secret-key-that-is-long-enough-2026
+        DATABASE_URL: postgresql://eebc_test:eebc_test_password@localhost:5432/eebc_test
         REDIS_URL: redis://127.0.0.1:6379/0
         TRUSTED_PROXY_IPS: 127.0.0.1/32
         ALLOWED_HOSTS: localhost,127.0.0.1
+        CLOUDINARY_URL: cloudinary://ci_key:ci_secret@ci_cloud
       run: |
-        python manage.py check --deploy
+        python manage.py check --deploy --fail-level ERROR
 
   build:
     runs-on: ubuntu-latest
@@ -121,7 +123,7 @@ jobs:
     - name: Set up Python
       uses: actions/setup-python@v5
       with:
-        python-version: '3.11'
+        python-version: '3.13'
 
     - name: Install dependencies
       run: |
@@ -131,9 +133,11 @@ jobs:
     - name: Collect static files
       env:
         DJANGO_SETTINGS_MODULE: gestion_eebc.settings.prod
-        SECRET_KEY: test-secret-key-for-ci
+        SECRET_KEY: ci-production-secret-key-that-is-long-enough-2026
+        DATABASE_URL: postgresql://eebc_test:eebc_test_password@localhost:5432/eebc_test
         REDIS_URL: redis://127.0.0.1:6379/0
         TRUSTED_PROXY_IPS: 127.0.0.1/32
         ALLOWED_HOSTS: localhost,127.0.0.1
+        CLOUDINARY_URL: cloudinary://ci_key:ci_secret@ci_cloud
       run: |
         python manage.py collectstatic --noinput --dry-run
