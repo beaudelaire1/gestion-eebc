@@ -15,22 +15,20 @@ export DJANGO_SETTINGS_MODULE="${DJANGO_SETTINGS_MODULE:-gestion_eebc.settings.p
 echo "=== Python runtime ==="
 python --version
 
-echo "=== Installation des dépendances système (WeasyPrint/PDF) ==="
-if command -v apt-get >/dev/null 2>&1; then
-    apt-get update -qq
-    apt-get install -y -qq --no-install-recommends \
-        libcairo2 \
-        libpango-1.0-0 \
-        libpangocairo-1.0-0 \
-        libgdk-pixbuf2.0-0 \
-        libffi-dev \
-        shared-mime-info
-fi
-
 echo "=== Installation des dépendances Python ==="
 python -m pip install --upgrade pip
 python -m pip install -r requirements/prod.txt
 python -m pip check
+
+echo "=== Smoke test WeasyPrint ==="
+python - <<'PY'
+from weasyprint import HTML
+
+pdf = HTML(string='<html><body><p>EEBC PDF runtime check</p></body></html>').write_pdf()
+if not pdf.startswith(b'%PDF'):
+    raise RuntimeError('WeasyPrint did not produce a valid PDF payload')
+print(f'WeasyPrint OK ({len(pdf)} bytes)')
+PY
 
 echo "=== Collecte des fichiers statiques ==="
 python manage.py collectstatic --noinput
