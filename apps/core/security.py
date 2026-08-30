@@ -151,13 +151,38 @@ def _trusted_proxy_networks():
     return networks
 
 
-def get_trusted_client_ip(request) -> str:
-    """Resolve a client IP without blindly trusting X-Forwarded-For.
+def _validated_single_ip(value: str) -> str | None:
+    """Return a canonical IP only when the header contains exactly one address."""
+    candidate = str(value or '').strip()
+    if not candidate or ',' in candidate:
+        return None
+    try:
+        return str(ip_address(candidate))
+    except ValueError:
+        return None
 
-    X-Forwarded-For is accepted only when REMOTE_ADDR belongs to an explicitly
-    configured trusted proxy/network. Otherwise REMOTE_ADDR is authoritative.
+
+def get_trusted_client_ip(request) -> str:
+    """Resolve a client IP without blindly trusting proxy-supplied headers.
+
+    On platforms that provide a dedicated, overwrite-safe client-IP header
+    (Render's Cloudflare edge uses ``CF-Connecting-IP``), production settings
+    may explicitly name that WSGI ``META`` key via ``TRUSTED_CLIENT_IP_HEADER``.
+    The value must contain one valid IP address.
+
+    Otherwise, ``X-Forwarded-For`` is accepted only when ``REMOTE_ADDR``
+    belongs to an explicitly configured trusted proxy/network.
     """
     remote = (request.META.get('REMOTE_ADDR') or '0.0.0.0').strip()
+
+    trusted_header = str(
+        getattr(settings, 'TRUSTED_CLIENT_IP_HEADER', '') or ''
+    ).strip()
+    if trusted_header:
+        trusted_value = _validated_single_ip(request.META.get(trusted_header, ''))
+        if trusted_value:
+            return trusted_value
+
     forwarded = request.META.get('HTTP_X_FORWARDED_FOR', '')
     if not forwarded:
         return remote
@@ -179,5 +204,5 @@ def get_trusted_client_ip(request) -> str:
         except ValueError:
             continue
         if not any(candidate_ip in network for network in trusted):
-            return candidate
+            return str(candidate_ip)
     return candidates[0] if candidates else remote
