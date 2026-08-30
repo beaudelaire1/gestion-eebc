@@ -39,18 +39,33 @@ class CoreConfig(AppConfig):
                     'LocMemCache cannot provide reliable rate limiting across workers.'
                 )
 
-        # Forwarded client addresses are trusted only from explicitly configured
-        # reverse proxies. CIDR notation is supported, e.g. 10.0.0.0/8.
+        # Client IP trust boundary.
+        # - Traditional reverse proxies: trust X-Forwarded-For only when the socket
+        #   peer belongs to an explicitly configured CIDR.
+        # - Render: trust only Cloudflare's overwrite-safe CF-Connecting-IP header.
         proxy_env = os.environ.get('TRUSTED_PROXY_IPS', '').strip()
+        trusted_header = str(
+            getattr(settings, 'TRUSTED_CLIENT_IP_HEADER', '') or ''
+        ).strip()
+
+        if trusted_header and trusted_header != 'HTTP_CF_CONNECTING_IP':
+            raise ImproperlyConfigured(
+                'Unsupported TRUSTED_CLIENT_IP_HEADER. '
+                'Only HTTP_CF_CONNECTING_IP is accepted as a dedicated trusted header.'
+            )
+
         if proxy_env:
             settings.TRUSTED_PROXY_IPS = [
                 value.strip() for value in proxy_env.split(',') if value.strip()
             ]
-        elif is_production:
+        elif is_production and not trusted_header:
             raise ImproperlyConfigured(
-                'Configure TRUSTED_PROXY_IPS with the IP/CIDR of the reverse proxy. '
-                'X-Forwarded-For is intentionally ignored without this trust boundary.'
+                'Configure TRUSTED_CLIENT_IP_HEADER=HTTP_CF_CONNECTING_IP on Render '
+                'or TRUSTED_PROXY_IPS with explicit reverse-proxy CIDRs. '
+                'X-Forwarded-For is intentionally ignored without a trust boundary.'
             )
+        elif is_production:
+            settings.TRUSTED_PROXY_IPS = []
         else:
             settings.TRUSTED_PROXY_IPS = ['127.0.0.1/32', '::1/128']
 
