@@ -1,11 +1,12 @@
 # =============================================================================
 # RENDER BLUEPRINT - Gestion EEBC
 # =============================================================================
-# Production invariants:
-# - Django always uses the production settings module.
-# - Redis/Render Key Value is shared by cache, sessions and Celery.
-# - Client IPs come from Render's Cloudflare edge header.
-# - Scheduled jobs are declared as services, never under databases.
+# Production topology:
+# - paid web service: SMTP + pre-deploy migrations are required by this project
+# - paid worker: Celery background processing
+# - persistent Render Key Value: shared cache + durable Celery broker
+# - paid PostgreSQL: no 30-day expiry + managed point-in-time recovery
+# - Python version is pinned once in .python-version
 # =============================================================================
 
 services:
@@ -16,16 +17,15 @@ services:
     name: gestion-eebc
     runtime: python
     region: frankfurt
-    plan: free
+    plan: 0.5c-512mb
     buildCommand: ./build.sh
+    preDeployCommand: python manage.py migrate --noinput && python manage.py setup_sites
     startCommand: ./start.sh
     healthCheckPath: /healthz/ping/
     autoDeploy: true
     envVars:
       - key: PORT
         value: "10000"
-      - key: PYTHON_VERSION
-        value: "3.13.15"
       - key: DJANGO_SETTINGS_MODULE
         value: gestion_eebc.settings.prod
       - key: DEBUG
@@ -69,10 +69,10 @@ services:
       - key: DEFAULT_FROM_EMAIL
         value: "EEBC <contact@eglise-ebc.org>"
 
-      # Observabilité / stockage médias
-      - key: SENTRY_DSN
-        sync: false
+      # Persistent media storage / observability
       - key: CLOUDINARY_URL
+        sync: false
+      - key: SENTRY_DSN
         sync: false
 
       # Stripe
@@ -113,19 +113,16 @@ services:
 
   # ---------------------------------------------------------------------------
   # Celery worker
-  # Background workers do not support Render's free compute plan.
   # ---------------------------------------------------------------------------
   - type: worker
     name: gestion-eebc-worker
     runtime: python
     region: frankfurt
-    plan: starter
+    plan: 0.5c-512mb
     buildCommand: pip install -r requirements/prod.txt
     startCommand: celery -A gestion_eebc worker --loglevel=info --concurrency=2
     autoDeploy: true
     envVars:
-      - key: PYTHON_VERSION
-        value: "3.13.15"
       - key: DJANGO_SETTINGS_MODULE
         value: gestion_eebc.settings.prod
       - key: SECRET_KEY
@@ -149,6 +146,11 @@ services:
           property: connectionString
       - key: TRUSTED_CLIENT_IP_HEADER
         value: HTTP_CF_CONNECTING_IP
+      - key: CLOUDINARY_URL
+        fromService:
+          type: web
+          name: gestion-eebc
+          envVarKey: CLOUDINARY_URL
       - key: EMAIL_BACKEND
         value: hostinger
       - key: HOSTINGER_API_KEY
@@ -181,30 +183,29 @@ services:
           envVarKey: SENTRY_DSN
 
   # ---------------------------------------------------------------------------
-  # Shared Redis-compatible cache and Celery broker
-  # No public access: Render services use the private connection string.
+  # Shared Redis-compatible cache and Celery broker.
+  # Persistent because queued Celery jobs must not disappear on a restart.
   # ---------------------------------------------------------------------------
   - type: keyvalue
     name: eebc-redis
     region: frankfurt
-    plan: free
+    plan: 256mb
     ipAllowList: []
     maxmemoryPolicy: allkeys-lru
+    persistenceMode: journal-snapshot
 
   # ---------------------------------------------------------------------------
-  # Scheduled tasks
+  # Daily notification job
   # ---------------------------------------------------------------------------
   - type: cron
     name: eebc-daily-notifications
     runtime: python
     region: frankfurt
-    plan: starter
+    plan: 0.5c-512mb
     schedule: "0 7 * * *"
     buildCommand: pip install -r requirements/prod.txt
     startCommand: python manage.py run_notifications --all
     envVars:
-      - key: PYTHON_VERSION
-        value: "3.13.15"
       - key: DJANGO_SETTINGS_MODULE
         value: gestion_eebc.settings.prod
       - key: DATABASE_URL
@@ -223,6 +224,11 @@ services:
           type: web
           name: gestion-eebc
           envVarKey: SECRET_KEY
+      - key: CLOUDINARY_URL
+        fromService:
+          type: web
+          name: gestion-eebc
+          envVarKey: CLOUDINARY_URL
       - key: SENTRY_DSN
         fromService:
           type: web
@@ -254,65 +260,13 @@ services:
       - key: DEFAULT_FROM_EMAIL
         value: "EEBC <contact@eglise-ebc.org>"
 
-  - type: cron
-    name: eebc-daily-backup
-    runtime: python
-    region: frankfurt
-    plan: starter
-    schedule: "0 2 * * *"
-    buildCommand: pip install -r requirements/prod.txt
-    startCommand: python manage.py backup_db
-    envVars:
-      - key: PYTHON_VERSION
-        value: "3.13.15"
-      - key: DJANGO_SETTINGS_MODULE
-        value: gestion_eebc.settings.prod
-      - key: DATABASE_URL
-        fromDatabase:
-          name: eebc-db
-          property: connectionString
-      - key: REDIS_URL
-        fromService:
-          type: keyvalue
-          name: eebc-redis
-          property: connectionString
-      - key: TRUSTED_CLIENT_IP_HEADER
-        value: HTTP_CF_CONNECTING_IP
-      - key: SECRET_KEY
-        fromService:
-          type: web
-          name: gestion-eebc
-          envVarKey: SECRET_KEY
-      - key: SENTRY_DSN
-        fromService:
-          type: web
-          name: gestion-eebc
-          envVarKey: SENTRY_DSN
-      - key: EMAIL_BACKEND
-        value: hostinger
-      - key: HOSTINGER_EMAIL_HOST
-        value: smtp.hostinger.com
-      - key: HOSTINGER_EMAIL_PORT
-        value: "587"
-      - key: HOSTINGER_EMAIL_USE_TLS
-        value: "True"
-      - key: HOSTINGER_EMAIL_HOST_USER
-        fromService:
-          type: web
-          name: gestion-eebc
-          envVarKey: HOSTINGER_EMAIL_HOST_USER
-      - key: HOSTINGER_EMAIL_HOST_PASSWORD
-        fromService:
-          type: web
-          name: gestion-eebc
-          envVarKey: HOSTINGER_EMAIL_HOST_PASSWORD
-
 # =============================================================================
 # PostgreSQL
+# Paid instance avoids the 30-day free-database expiry and enables Render PITR.
 # =============================================================================
 databases:
   - name: eebc-db
     region: frankfurt
-    plan: free
+    plan: 0.1c-256mb
     databaseName: eebc
     user: eebc_user
