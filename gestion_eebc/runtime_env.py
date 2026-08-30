@@ -1,10 +1,26 @@
 """Runtime environment compatibility helpers.
 
-Keep infrastructure aliases in one place so every Django/Celery entry point
-sees the same production environment before settings are imported.
+Keep deployment-context detection and infrastructure aliases in one place so
+every Django/Celery entry point applies the same rules before settings load.
 """
 
 import os
+import sys
+
+
+STATIC_BUILD_COMMANDS = {'collectstatic'}
+
+
+def is_static_asset_build() -> bool:
+    """Return True only for Django commands that build static assets.
+
+    Static asset compilation must not require runtime infrastructure such as
+    PostgreSQL, Redis, Cloudinary or SMTP. Runtime commands (migrate, shell,
+    custom management commands, Gunicorn/Celery bootstrap, etc.) are never
+    classified as build-only operations.
+    """
+
+    return len(sys.argv) > 1 and sys.argv[1] in STATIC_BUILD_COMMANDS
 
 
 def normalize_runtime_environment() -> None:
