@@ -1,46 +1,38 @@
 #!/usr/bin/env bash
 # =============================================================================
-# Script de démarrage pour Render - Gestion EEBC
-# =============================================================================
-# IMPORTANT : PAS de --preload !
-# Avec --preload, gunicorn charge l'app AVANT d'ouvrir le port.
-# Si un import échoue (ex: librairie C manquante), le port n'est jamais
-# ouvert et Render affiche "No open HTTP ports detected on 0.0.0.0".
-# Sans --preload, gunicorn bind le port d'abord, puis charge l'app dans
-# chaque worker. Le port est visible immédiatement par Render.
+# Démarrage Render - Gestion EEBC
 # =============================================================================
 
 set -o errexit
+set -o nounset
+set -o pipefail
 
-# Port : utiliser PORT de Render, sinon fallback 10000 (default Render Free tier)
 PORT="${PORT:-10000}"
 WORKERS="${WEB_CONCURRENCY:-2}"
+export DJANGO_SETTINGS_MODULE="${DJANGO_SETTINGS_MODULE:-gestion_eebc.settings.prod}"
 
-echo "=== Configuration Gunicorn ==="
-echo "PORT: $PORT"
-echo "WORKERS: $WORKERS"
-echo "PYTHON VERSION: $(python --version)"
-echo "DJANGO SETTINGS: ${DJANGO_SETTINGS_MODULE:-gestion_eebc.settings.prod}"
+echo "=== Préflight production ==="
+echo "Python: $(python --version 2>&1)"
+echo "Port: ${PORT}"
+echo "Workers: ${WORKERS}"
+echo "Settings: ${DJANGO_SETTINGS_MODULE}"
 
-# Vérification rapide que Django se charge sans erreur fatale
-echo "=== Vérification pré-démarrage ==="
-python -c "
-import os, sys
-os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'gestion_eebc.settings.prod')
-try:
-    import django
-    django.setup()
-    print('✓ Django setup OK')
-except Exception as e:
-    print(f'⚠ Django setup warning: {e}', file=sys.stderr)
-    # On continue quand même — gunicorn affichera l'erreur détaillée
-" || true
+# Fail before Gunicorn if settings, cache, storage or other production
+# invariants are invalid. Do not swallow startup exceptions.
+python manage.py check --deploy --fail-level ERROR
 
-echo "=== Démarrage du serveur Gunicorn sur 0.0.0.0:${PORT} ==="
+# Verify Django can fully initialise with the production configuration.
+python - <<'PY'
+import django
 
+django.setup()
+print('Django setup OK')
+PY
+
+echo "=== Démarrage Gunicorn ==="
 exec gunicorn gestion_eebc.wsgi:application \
     --bind "0.0.0.0:${PORT}" \
-    --workers "$WORKERS" \
+    --workers "${WORKERS}" \
     --worker-class gthread \
     --threads 2 \
     --timeout 120 \
@@ -48,7 +40,6 @@ exec gunicorn gestion_eebc.wsgi:application \
     --keep-alive 5 \
     --max-requests 1000 \
     --max-requests-jitter 50 \
-    --log-file - \
-    --log-level info \
     --access-logfile - \
-    --error-logfile -
+    --error-logfile - \
+    --log-level info
