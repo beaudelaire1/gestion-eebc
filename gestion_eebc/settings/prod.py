@@ -2,16 +2,11 @@
 Django settings - Production (Render)
 """
 
-import logging as _logging
 import os
 import re as _re
 
 import dj_database_url
 from django.core.exceptions import ImproperlyConfigured
-from whitenoise.storage import (
-    CompressedManifestStaticFilesStorage as _WhiteNoiseBase,
-    MissingFileError as _MissingFileError,
-)
 
 from .base import *
 
@@ -58,7 +53,6 @@ SECURE_HSTS_SECONDS = 31536000
 SECURE_HSTS_INCLUDE_SUBDOMAINS = True
 SECURE_HSTS_PRELOAD = True
 SECURE_CONTENT_TYPE_NOSNIFF = True
-SECURE_BROWSER_XSS_FILTER = True
 X_FRAME_OPTIONS = 'DENY'
 
 CSRF_TRUSTED_ORIGINS = [
@@ -189,23 +183,9 @@ RECAPTCHA_REQUIRED_SCORE = float(os.environ.get('RECAPTCHA_REQUIRED_SCORE', 0.5)
 # =============================================================================
 # STATIC FILES - WhiteNoise
 # =============================================================================
-class _SafeWhiteNoiseStorage(_WhiteNoiseBase):
-    manifest_strict = False
-
-    def post_process(self, *args, **kwargs):
-        _log = _logging.getLogger('whitenoise.storage')
-        for entry in super().post_process(*args, **kwargs):
-            name, hashed_name, processed = entry
-            if isinstance(processed, Exception):
-                _log.warning('Ignoring post-process error for %s: %s', name, processed)
-                yield name, hashed_name, True
-                continue
-            yield entry
-
-
 STORAGES = {
     'staticfiles': {
-        'BACKEND': 'gestion_eebc.settings.prod._SafeWhiteNoiseStorage',
+        'BACKEND': 'whitenoise.storage.CompressedManifestStaticFilesStorage',
     },
 }
 
