@@ -6,6 +6,7 @@ import os
 import re as _re
 
 import dj_database_url
+from csp.constants import NONE, SELF, UNSAFE_INLINE
 from django.core.exceptions import ImproperlyConfigured
 
 from .base import *
@@ -60,6 +61,64 @@ CSRF_TRUSTED_ORIGINS = [
     'https://eglise-ebc.org',
     'https://www.eglise-ebc.org',
 ]
+
+# django-csp 4.0 uses a single dict-based policy. The legacy CSP_* settings
+# inherited from base.py are removed from this production module so checks do
+# not silently accept a configuration format that django-csp 4 no longer uses.
+for _legacy_csp_setting in (
+    'CSP_DEFAULT_SRC',
+    'CSP_SCRIPT_SRC',
+    'CSP_STYLE_SRC',
+    'CSP_FONT_SRC',
+    'CSP_IMG_SRC',
+    'CSP_CONNECT_SRC',
+    'CSP_FRAME_SRC',
+):
+    globals().pop(_legacy_csp_setting, None)
+
+if 'csp' not in INSTALLED_APPS:
+    INSTALLED_APPS.insert(INSTALLED_APPS.index('django.contrib.staticfiles'), 'csp')
+
+CONTENT_SECURITY_POLICY = {
+    'DIRECTIVES': {
+        'default-src': [SELF],
+        'script-src': [
+            SELF,
+            UNSAFE_INLINE,
+            'https://cdn.jsdelivr.net',
+            'https://unpkg.com',
+            'https://challenges.cloudflare.com',
+            'https://js.stripe.com',
+        ],
+        'style-src': [
+            SELF,
+            UNSAFE_INLINE,
+            'https://cdn.jsdelivr.net',
+            'https://fonts.googleapis.com',
+        ],
+        'font-src': [
+            SELF,
+            'https://fonts.gstatic.com',
+            'https://cdn.jsdelivr.net',
+        ],
+        'img-src': [SELF, 'data:', 'https:'],
+        'media-src': [SELF, 'https:'],
+        'connect-src': [
+            SELF,
+            'https://challenges.cloudflare.com',
+            'https://api.stripe.com',
+        ],
+        'frame-src': [
+            SELF,
+            'https://challenges.cloudflare.com',
+            'https://js.stripe.com',
+            'https://hooks.stripe.com',
+        ],
+        'object-src': [NONE],
+        'base-uri': [SELF],
+        'frame-ancestors': [NONE],
+    }
+}
 
 # Client IP resolution. On Render, Cloudflare overwrites CF-Connecting-IP at
 # the edge. The AppConfig validates that only this dedicated header can be
@@ -197,7 +256,17 @@ if not CLOUDINARY_URL:
         'storage is ephemeral.'
     )
 
-INSTALLED_APPS += ['cloudinary_storage', 'cloudinary']
+# django-cloudinary-storage overrides collectstatic, so it must be located
+# before django.contrib.staticfiles. Static files still use WhiteNoise; only
+# user media uses Cloudinary.
+if 'cloudinary_storage' not in INSTALLED_APPS:
+    INSTALLED_APPS.insert(
+        INSTALLED_APPS.index('django.contrib.staticfiles'),
+        'cloudinary_storage',
+    )
+if 'cloudinary' not in INSTALLED_APPS:
+    INSTALLED_APPS.append('cloudinary')
+
 STORAGES['default'] = {
     'BACKEND': 'cloudinary_storage.storage.MediaCloudinaryStorage',
 }
