@@ -1,53 +1,58 @@
 """
 URL configuration for Gestion EEBC project.
 """
-from django.contrib import admin
-from django.urls import path, include
 from django.conf import settings
 from django.conf.urls.static import static
+from django.contrib import admin
 from django.contrib.sitemaps.views import sitemap
+from django.urls import include, path
 from django.views.generic import TemplateView
 
-# Import des vues admin personnalisées
-from apps.members.admin_views import members_map_view, members_map_data
-# Import des vues de confirmation publiques
-from apps.worship.confirmation_views import confirm_role, decline_role
-from apps.finance import views as views_finance
-# Webhook WhatsApp Meta
 from apps.communication.views import whatsapp_webhook
-# SEO sitemaps
 from apps.core.sitemaps import sitemaps
+from apps.finance import views as views_finance
+from apps.members.admin_views import members_map_data, members_map_view
+from apps.worship.confirmation_views import confirm_role, decline_role
 
 urlpatterns = [
     # SEO
-    path('sitemap.xml', sitemap, {'sitemaps': sitemaps}, name='django.contrib.sitemaps.views.sitemap'),
-    path('robots.txt', TemplateView.as_view(template_name='robots.txt', content_type='text/plain'), name='robots_txt'),
+    path(
+        'sitemap.xml',
+        sitemap,
+        {'sitemaps': sitemaps},
+        name='django.contrib.sitemaps.views.sitemap',
+    ),
+    path(
+        'robots.txt',
+        TemplateView.as_view(template_name='robots.txt', content_type='text/plain'),
+        name='robots_txt',
+    ),
 
-    # Site vitrine public (page d'accueil par défaut)
+    # Site vitrine public
     path('', include('apps.core.urls')),
-    
-    # Health checks (avant tout le reste)
+
+    # Health checks
     path('health/', include('apps.core.health_urls')),
     path('healthz/', include('apps.core.health_urls', namespace='core_healthz')),
-    
-    # API REST pour application mobile
+
+    # API REST
     path('api/v1/', include('apps.api.urls')),
-    
-    # Webhook WhatsApp Meta (endpoint public pour Meta)
+
+    # Webhook WhatsApp Meta
     path('webhooks/whatsapp/', whatsapp_webhook, name='whatsapp_webhook'),
 
-    # Confirmation des rôles (accessible sans connexion)
+    # Confirmation des rôles (publique)
     path('worship/confirm/<uuid:token>/', confirm_role, name='public_confirm_role'),
     path('worship/decline/<uuid:token>/', decline_role, name='public_decline_role'),
-    
-    # Vues admin personnalisées (avant route admin principale)
+
+    # Vues admin personnalisées
     path('gestion-eebc/members/map/', members_map_view, name='admin_members_map'),
     path('gestion-eebc/members/map/data/', members_map_data, name='admin_members_map_data'),
-    
-    # Administration Django (route durcie)
+
+    # Administration Django
     path('gestion-eebc/', admin.site.urls),
-    
-    # Application interne (après connexion)
+
+    # Application interne
     path('app/', include('apps.dashboard.urls')),
     path('app/accounts/', include('apps.accounts.urls')),
     path('app/members/', include('apps.members.urls')),
@@ -62,42 +67,35 @@ urlpatterns = [
     path('app/finance/', include('apps.finance.urls')),
     path('app/comparison/', views_finance.yearly_comparison, name='app_yearly_comparison'),
     path('app/worship/', include('apps.worship.urls')),
-    path('app/cms/', include('apps.public.urls')),  # CMS Public
-    path('app/imports/', include('apps.imports.urls')),  # Import Excel
-    path('app/young/', include('apps.young.urls')),  # Module Jeunesse
-    path('app/documents/', include('apps.documents.urls')),  # Documents & Médias
-    path('app/sites/', include('apps.core.site_urls')),  # CRUD Sites
-    
+    path('app/cms/', include('apps.public.urls')),
+    path('app/imports/', include('apps.imports.urls')),
+    path('app/young/', include('apps.young.urls')),
+    path('app/documents/', include('apps.documents.urls')),
+    path('app/sites/', include('apps.core.site_urls')),
+
     # Exports et impressions
     path('app/exports/', include('apps.core.export_urls')),
 ]
 
+# django.conf.urls.static.static() is development-only. In production,
+# the configured storage backend (Cloudinary) owns media URLs and delivery.
 if settings.DEBUG:
     urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
     urlpatterns += static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
 
-    # Django Debug Toolbar (développement uniquement)
     try:
         import debug_toolbar
+    except ImportError:
+        pass
+    else:
         urlpatterns = [
             path('__debug__/', include('debug_toolbar.urls')),
         ] + urlpatterns
-    except ImportError:
-        pass
-else:
-    # En production, servir les médias via Django (Render filesystem)
-    urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
 
-# Admin site customization
 admin.site.site_header = "Gestion EEBC"
 admin.site.site_title = "EEBC Admin"
 admin.site.index_title = "Tableau de bord administrateur"
 
-# Configuration des handlers d'erreurs personnalisés
-from .error_views import handler403, handler404, handler500
-
-# Handlers d'erreurs (actifs uniquement en production, DEBUG=False)
 handler403 = 'gestion_eebc.error_views.handler403'
 handler404 = 'gestion_eebc.error_views.handler404'
 handler500 = 'gestion_eebc.error_views.handler500'
-
