@@ -3,7 +3,6 @@ import os
 from django.apps import AppConfig
 from django.conf import settings
 from django.core.exceptions import ImproperlyConfigured
-from django.utils.safestring import mark_safe
 
 
 class CoreConfig(AppConfig):
@@ -71,32 +70,20 @@ class CoreConfig(AppConfig):
 
         from apps.core.security import get_trusted_client_ip
         from apps.core.middleware import RateLimitMiddleware, SessionTimeoutMiddleware
+
         RateLimitMiddleware._get_client_ip = staticmethod(get_trusted_client_ip)
         SessionTimeoutMiddleware._get_client_ip = staticmethod(get_trusted_client_ip)
 
         try:
             from apps.accounts.services import AuthenticationService
+
             AuthenticationService.get_client_ip = staticmethod(get_trusted_client_ip)
-        except Exception:
+        except ImportError:
             pass
 
         try:
             from apps.api import views as api_views
+
             api_views._get_client_ip = get_trusted_client_ip
-        except Exception:
-            pass
-
-        # Hotfix Jazzmin pagination: certaines versions appellent format_html sans args.
-        try:
-            from jazzmin.templatetags import jazzmin as jazzmin_tags
-
-            original_format_html = jazzmin_tags.format_html
-
-            def _safe_jazzmin_format_html(format_string, *args, **kwargs):
-                if not args and not kwargs:
-                    return mark_safe(format_string)
-                return original_format_html(format_string, *args, **kwargs)
-
-            jazzmin_tags.format_html = _safe_jazzmin_format_html
-        except Exception:
+        except ImportError:
             pass
