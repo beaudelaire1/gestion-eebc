@@ -2,58 +2,80 @@
 Django settings - Production (Render)
 """
 
+import logging as _logging
 import os
-import secrets
+import re as _re
+
 import dj_database_url
+from django.core.exceptions import ImproperlyConfigured
+from whitenoise.storage import (
+    CompressedManifestStaticFilesStorage as _WhiteNoiseBase,
+    MissingFileError as _MissingFileError,
+)
+
 from .base import *
 
 # =============================================================================
 # SECURITY
 # =============================================================================
 DEBUG = False
-ALLOWED_HOSTS = os.environ.get('ALLOWED_HOSTS', '').split(',')
 
-_env_secret = os.environ.get('SECRET_KEY', '')
-if not _env_secret or _env_secret.startswith('django-insecure-') or len(set(_env_secret)) < 5 or len(_env_secret) < 50:
-    # Evite l'utilisation d'une cle faible en production.
-    SECRET_KEY = secrets.token_urlsafe(64)
-
-# Render specific
-RENDER_EXTERNAL_HOSTNAME = os.environ.get('RENDER_EXTERNAL_HOSTNAME')
-if RENDER_EXTERNAL_HOSTNAME:
-    ALLOWED_HOSTS.append(RENDER_EXTERNAL_HOSTNAME)
-
-# CSRF Trusted Origins (requis pour Django 4+)
-CSRF_TRUSTED_ORIGINS = [
-    'https://gestion-eebc.onrender.com',
-    'https://eglise-ebc.org',
-    'https://www.eglise-ebc.org',
+ALLOWED_HOSTS = [
+    host.strip()
+    for host in os.environ.get('ALLOWED_HOSTS', '').split(',')
+    if host.strip()
 ]
 
-# HTTPS
-# Render gère SSL en edge, mais on force tout de meme la redirection HTTPS
-# pour le trafic applicatif, en exemptant les endpoints de health check.
+RENDER_EXTERNAL_HOSTNAME = os.environ.get('RENDER_EXTERNAL_HOSTNAME', '').strip()
+if RENDER_EXTERNAL_HOSTNAME and RENDER_EXTERNAL_HOSTNAME not in ALLOWED_HOSTS:
+    ALLOWED_HOSTS.append(RENDER_EXTERNAL_HOSTNAME)
+if not ALLOWED_HOSTS:
+    raise ImproperlyConfigured('ALLOWED_HOSTS must be configured in production.')
+
+# Production processes must all share exactly the same signing key. Never
+# generate a process-local fallback here: doing so invalidates sessions/JWTs
+# across Gunicorn workers and after restarts.
+_env_secret = os.environ.get('SECRET_KEY', '').strip()
+if (
+    not _env_secret
+    or _env_secret.startswith('django-insecure-')
+    or len(_env_secret) < 32
+    or len(set(_env_secret)) < 5
+):
+    raise ImproperlyConfigured(
+        'SECRET_KEY must be a stable production secret with at least 32 characters.'
+    )
+SECRET_KEY = _env_secret
+
+# Render terminates TLS at its edge.
 SECURE_SSL_REDIRECT = True
 SECURE_REDIRECT_EXEMPT = [r'^health/?$', r'^health/lite/?$', r'^healthz/?$', r'^healthz/lite/?$']
 SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
 SESSION_COOKIE_SECURE = True
 CSRF_COOKIE_SECURE = True
 
-# HSTS
-SECURE_HSTS_SECONDS = 31536000  # 1 an
+SECURE_HSTS_SECONDS = 31536000
 SECURE_HSTS_INCLUDE_SUBDOMAINS = True
 SECURE_HSTS_PRELOAD = True
-
-# Autres
 SECURE_CONTENT_TYPE_NOSNIFF = True
 SECURE_BROWSER_XSS_FILTER = True
 X_FRAME_OPTIONS = 'DENY'
 
+CSRF_TRUSTED_ORIGINS = [
+    'https://gestion-eebc.onrender.com',
+    'https://eglise-ebc.org',
+    'https://www.eglise-ebc.org',
+]
+
+# Client IP resolution. On Render, Cloudflare overwrites CF-Connecting-IP at
+# the edge. The AppConfig validates that only this dedicated header can be
+# selected; arbitrary forwarded headers are not trusted.
+TRUSTED_CLIENT_IP_HEADER = os.environ.get('TRUSTED_CLIENT_IP_HEADER', '').strip()
 
 # =============================================================================
 # DATABASE - PostgreSQL via DATABASE_URL (Render)
 # =============================================================================
-DATABASE_URL = os.environ.get('DATABASE_URL')
+DATABASE_URL = os.environ.get('DATABASE_URL', '').strip()
 if DATABASE_URL:
     DATABASES = {
         'default': dj_database_url.config(
@@ -63,66 +85,71 @@ if DATABASE_URL:
         )
     }
 else:
+    required_db_env = ('DB_NAME', 'DB_USER', 'DB_PASSWORD', 'DB_HOST')
+    missing_db_env = [name for name in required_db_env if not os.environ.get(name)]
+    if missing_db_env:
+        raise ImproperlyConfigured(
+            'Configure DATABASE_URL or all explicit database variables. Missing: '
+            + ', '.join(missing_db_env)
+        )
     DATABASES = {
         'default': {
             'ENGINE': 'django.db.backends.postgresql',
-            'NAME': os.environ.get('DB_NAME', 'eebc'),
-            'USER': os.environ.get('DB_USER', 'eebc'),
-            'PASSWORD': os.environ.get('DB_PASSWORD', ''),
-            'HOST': os.environ.get('DB_HOST', 'localhost'),
+            'NAME': os.environ['DB_NAME'],
+            'USER': os.environ['DB_USER'],
+            'PASSWORD': os.environ['DB_PASSWORD'],
+            'HOST': os.environ['DB_HOST'],
             'PORT': os.environ.get('DB_PORT', '5432'),
-            'CONN_MAX_AGE': 60,
+            'CONN_MAX_AGE': 600,
+            'CONN_HEALTH_CHECKS': True,
         }
     }
 
+# =============================================================================
+# CACHE / SESSIONS - shared Redis-compatible Render Key Value
+# =============================================================================
+REDIS_URL = os.environ.get('REDIS_URL', '').strip()
+if not REDIS_URL:
+    raise ImproperlyConfigured(
+        'REDIS_URL is required in production. Security counters and rate limits '
+        'must use a cache shared by every application worker.'
+    )
 
-# =============================================================================
-# CACHE - En mémoire pour le plan gratuit (pas de Redis)
-# =============================================================================
-REDIS_URL = os.environ.get('REDIS_URL')
-if REDIS_URL:
-    CACHES = {
-        'default': {
-            'BACKEND': 'django.core.cache.backends.redis.RedisCache',
-            'LOCATION': REDIS_URL,
-        }
+CACHES = {
+    'default': {
+        'BACKEND': 'django.core.cache.backends.redis.RedisCache',
+        'LOCATION': REDIS_URL,
+        'OPTIONS': {
+            'socket_connect_timeout': 5,
+            'socket_timeout': 5,
+        },
     }
-    # Sessions en cache Redis
-    SESSION_ENGINE = 'django.contrib.sessions.backends.cache'
-    SESSION_CACHE_ALIAS = 'default'
-else:
-    # Cache en mémoire locale (plan gratuit)
-    CACHES = {
-        'default': {
-            'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
-            'LOCATION': 'unique-snowflake',
-        }
-    }
-    # Sessions en base de données
-    SESSION_ENGINE = 'django.contrib.sessions.backends.db'
+}
 
+# cached_db keeps sessions durable in PostgreSQL while using Redis for speed.
+# A cache restart therefore does not invalidate every authenticated session.
+SESSION_ENGINE = 'django.contrib.sessions.backends.cached_db'
+SESSION_CACHE_ALIAS = 'default'
 
 # =============================================================================
-# CELERY (optionnel - si Redis disponible)
+# CELERY
 # =============================================================================
-CELERY_BROKER_URL = os.environ.get('CELERY_BROKER_URL', os.environ.get('REDIS_URL'))
-if CELERY_BROKER_URL:
-    CELERY_RESULT_BACKEND = os.environ.get('CELERY_RESULT_BACKEND', CELERY_BROKER_URL)
-    CELERY_ACCEPT_CONTENT = ['json']
-    CELERY_TASK_SERIALIZER = 'json'
-    CELERY_RESULT_SERIALIZER = 'json'
-    CELERY_TIMEZONE = 'America/Cayenne'
-    CELERY_ENABLE_UTC = True
-    CELERY_TASK_TRACK_STARTED = True
-    CELERY_TASK_TIME_LIMIT = 30 * 60
-
+CELERY_BROKER_URL = os.environ.get('CELERY_BROKER_URL', REDIS_URL).strip()
+CELERY_RESULT_BACKEND = os.environ.get('CELERY_RESULT_BACKEND', REDIS_URL).strip()
+CELERY_ACCEPT_CONTENT = ['json']
+CELERY_TASK_SERIALIZER = 'json'
+CELERY_RESULT_SERIALIZER = 'json'
+CELERY_TIMEZONE = 'America/Cayenne'
+CELERY_ENABLE_UTC = True
+CELERY_TASK_TRACK_STARTED = True
+CELERY_TASK_TIME_LIMIT = 30 * 60
+CELERY_BROKER_CONNECTION_RETRY_ON_STARTUP = True
 
 # =============================================================================
-# EMAIL - Hostinger en production
+# EMAIL - Hostinger
 # =============================================================================
-# Le backend email est configuré dans base.py via EMAIL_BACKEND dans .env
-# Pour utiliser Hostinger, définir EMAIL_BACKEND=hostinger dans .env
-
+# The backend itself is selected in base.py via EMAIL_BACKEND.
+# Render's paid web/worker services are required for direct SMTP on port 587.
 
 # =============================================================================
 # STRIPE
@@ -132,7 +159,6 @@ STRIPE_SECRET_KEY = os.environ.get('STRIPE_SECRET_KEY', '')
 STRIPE_WEBHOOK_SECRET = os.environ.get('STRIPE_WEBHOOK_SECRET', '')
 STRIPE_SUCCESS_URL = os.environ.get('STRIPE_SUCCESS_URL', '')
 STRIPE_CANCEL_URL = os.environ.get('STRIPE_CANCEL_URL', '')
-
 
 # =============================================================================
 # TWILIO
@@ -151,34 +177,18 @@ META_WHATSAPP_VERIFY_TOKEN = os.environ.get('META_WHATSAPP_VERIFY_TOKEN', '')
 META_WHATSAPP_APP_SECRET = os.environ.get('META_WHATSAPP_APP_SECRET', '')
 META_WHATSAPP_API_VERSION = os.environ.get('META_WHATSAPP_API_VERSION', 'v23.0')
 
-
 # =============================================================================
-# CAPTCHA CONFIGURATION - CloudFlare Turnstile (recommandé)
+# CAPTCHA
 # =============================================================================
-# CloudFlare Turnstile (gratuit illimité, meilleur UX que reCAPTCHA)
 TURNSTILE_SITE_KEY = os.environ.get('TURNSTILE_SITE_KEY', '')
 TURNSTILE_SECRET_KEY = os.environ.get('TURNSTILE_SECRET_KEY', '')
-
-# Google reCAPTCHA v3 (legacy - à désactiver après migration vers Turnstile)
 RECAPTCHA_PUBLIC_KEY = os.environ.get('RECAPTCHA_PUBLIC_KEY', '')
 RECAPTCHA_PRIVATE_KEY = os.environ.get('RECAPTCHA_PRIVATE_KEY', '')
 RECAPTCHA_REQUIRED_SCORE = float(os.environ.get('RECAPTCHA_REQUIRED_SCORE', 0.5))
 
-
 # =============================================================================
-# STATIC FILES - WhiteNoise pour Render
+# STATIC FILES - WhiteNoise
 # =============================================================================
-# Django 4.2+ utilise STORAGES au lieu de STATICFILES_STORAGE (deprecated/supprimé en 6.x)
-#
-# Jazzmin embarque des CSS Bootswatch qui référencent des .map inexistants.
-# WhiteNoise lève MissingFileError pendant post_process (son propre check,
-# pas celui de Django). On override post_process pour ignorer ces erreurs.
-import logging as _logging
-from whitenoise.storage import (
-    CompressedManifestStaticFilesStorage as _WhiteNoiseBase,
-    MissingFileError as _MissingFileError,
-)
-
 class _SafeWhiteNoiseStorage(_WhiteNoiseBase):
     manifest_strict = False
 
@@ -188,65 +198,55 @@ class _SafeWhiteNoiseStorage(_WhiteNoiseBase):
             name, hashed_name, processed = entry
             if isinstance(processed, Exception):
                 _log.warning('Ignoring post-process error for %s: %s', name, processed)
-                yield name, hashed_name, True  # report success → collectstatic won't crash
+                yield name, hashed_name, True
                 continue
             yield entry
 
+
 STORAGES = {
-    "staticfiles": {
-        "BACKEND": "gestion_eebc.settings.prod._SafeWhiteNoiseStorage",
+    'staticfiles': {
+        'BACKEND': 'gestion_eebc.settings.prod._SafeWhiteNoiseStorage',
     },
 }
 
-# Stockage médias : Cloudinary si configuré, sinon filesystem local
-CLOUDINARY_URL = os.environ.get('CLOUDINARY_URL', '')
-if CLOUDINARY_URL:
-    INSTALLED_APPS += ['cloudinary_storage', 'cloudinary']
-    STORAGES["default"] = {
-        "BACKEND": "cloudinary_storage.storage.MediaCloudinaryStorage",
+# Render's filesystem is ephemeral. Media must use persistent cloud storage.
+CLOUDINARY_URL = os.environ.get('CLOUDINARY_URL', '').strip()
+if not CLOUDINARY_URL:
+    raise ImproperlyConfigured(
+        'CLOUDINARY_URL is required in production because Render local media '
+        'storage is ephemeral.'
+    )
+
+INSTALLED_APPS += ['cloudinary_storage', 'cloudinary']
+STORAGES['default'] = {
+    'BACKEND': 'cloudinary_storage.storage.MediaCloudinaryStorage',
+}
+
+_match = _re.match(r'cloudinary://([^:]+):([^@]+)@(.+)', CLOUDINARY_URL)
+if _match:
+    CLOUDINARY_STORAGE = {
+        'CLOUD_NAME': _match.group(3),
+        'API_KEY': _match.group(1),
+        'API_SECRET': _match.group(2),
     }
-    # django-cloudinary-storage parse CLOUDINARY_URL automatiquement
-    # Format: cloudinary://API_KEY:API_SECRET@CLOUD_NAME
-    import re as _re
-    _match = _re.match(r'cloudinary://(\w+):(\w+)@(\w+)', CLOUDINARY_URL)
-    if _match:
-        CLOUDINARY_STORAGE = {
-            'CLOUD_NAME': _match.group(3),
-            'API_KEY': _match.group(1),
-            'API_SECRET': _match.group(2),
-        }
-    else:
-        # Fallback: variables séparées
-        CLOUDINARY_STORAGE = {
-            'CLOUD_NAME': os.environ.get('CLOUDINARY_CLOUD_NAME', ''),
-            'API_KEY': os.environ.get('CLOUDINARY_API_KEY', ''),
-            'API_SECRET': os.environ.get('CLOUDINARY_API_SECRET', ''),
-        }
 else:
-    STORAGES["default"] = {
-        "BACKEND": "django.core.files.storage.FileSystemStorage",
+    CLOUDINARY_STORAGE = {
+        'CLOUD_NAME': os.environ.get('CLOUDINARY_CLOUD_NAME', ''),
+        'API_KEY': os.environ.get('CLOUDINARY_API_KEY', ''),
+        'API_SECRET': os.environ.get('CLOUDINARY_API_SECRET', ''),
     }
 
-# WhiteNoise middleware (doit être après SecurityMiddleware)
 MIDDLEWARE.insert(2, 'whitenoise.middleware.WhiteNoiseMiddleware')
 
-# Optionnel: AWS S3 pour les médias
-# AWS_ACCESS_KEY_ID = os.environ.get('AWS_ACCESS_KEY_ID', '')
-# AWS_SECRET_ACCESS_KEY = os.environ.get('AWS_SECRET_ACCESS_KEY', '')
-# AWS_STORAGE_BUCKET_NAME = os.environ.get('AWS_STORAGE_BUCKET_NAME', '')
-# AWS_S3_REGION_NAME = os.environ.get('AWS_S3_REGION_NAME', 'eu-west-3')
-# DEFAULT_FILE_STORAGE = 'storages.backends.s3boto3.S3Boto3Storage'
-
-
 # =============================================================================
-# LOGGING - Sentry en production
+# SENTRY / LOGGING
 # =============================================================================
-SENTRY_DSN = os.environ.get('SENTRY_DSN', '')
+SENTRY_DSN = os.environ.get('SENTRY_DSN', '').strip()
 if SENTRY_DSN:
     import sentry_sdk
-    from sentry_sdk.integrations.django import DjangoIntegration
     from sentry_sdk.integrations.celery import CeleryIntegration
-    
+    from sentry_sdk.integrations.django import DjangoIntegration
+
     sentry_sdk.init(
         dsn=SENTRY_DSN,
         integrations=[DjangoIntegration(), CeleryIntegration()],
@@ -255,8 +255,6 @@ if SENTRY_DSN:
         environment='production',
     )
 
-# En production sur Render, le filesystem est éphémère.
-# On utilise uniquement le handler console (stdout/stderr capturé par Render).
 LOGGING = {
     'version': 1,
     'disable_existing_loggers': False,
