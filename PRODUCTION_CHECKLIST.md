@@ -1,225 +1,146 @@
-# Checklist Pré-Production - Gestion EEBC
+# Checklist pré-production — Gestion EEBC
 
-## ✅ Sécurité
+Cette checklist ne remplace pas les tests. Une case ne doit être cochée que si elle a été vérifiée sur l'environnement concerné.
 
-### HTTPS & SSL
-- [ ] Certificat SSL valide sur Render
-- [ ] SECURE_SSL_REDIRECT = True en production
-- [ ] SECURE_HSTS_SECONDS = 31536000
-- [ ] SESSION_COOKIE_SECURE = True
-- [ ] DEBUG = False en production
+## Configuration et sécurité
 
-### Authentification & Autorisations
-- [ ] Tous les endpoints requièrent @login_required
-- [ ] Vérifier @role_required sur endpoints sensibles
-- [ ] 2FA/TOTP activé pour admins
-- [ ] Rate limiting actif sur login
-- [ ] Tokens sécurisés pour password reset
+- [ ] `DJANGO_SETTINGS_MODULE=gestion_eebc.settings.prod`
+- [ ] `DEBUG=False`
+- [ ] `SECRET_KEY` stable, non triviale et fournie par Render
+- [ ] `ALLOWED_HOSTS` contient uniquement les hôtes nécessaires
+- [ ] HTTPS et HSTS vérifiés
+- [ ] cookies session/CSRF sécurisés
+- [ ] `TRUSTED_CLIENT_IP_HEADER=HTTP_CF_CONNECTING_IP` sur Render
+- [ ] aucun `TRUSTED_PROXY_IPS=0.0.0.0/0` ou `::/0`
+- [ ] CSP réellement présente dans les réponses
+- [ ] CORS limité aux origines attendues
+- [ ] Sentry ne collecte pas de PII par défaut
 
-### Données sensibles
-- [ ] Pas de secrets en code ou git
-- [ ] Variables d'environnement pour: SECRET_KEY, BD password, API keys
-- [ ] .env non commité (.gitignore)
-- [ ] Pas de logs contenant mots de passe/tokens
+## Cache, sessions et rate limiting
 
-### CORS & CSRF
-- [ ] CORS_ORIGIN_ALLOW_ALL = False en production
-- [ ] CORS_ALLOWED_ORIGINS whitelist défini
-- [ ] CSRF_TRUSTED_ORIGINS configuré
-- [ ] CSRF tokens dans tous les formulaires
+- [ ] `REDIS_URL` pointe vers Render Key Value
+- [ ] aucune utilisation de `LocMemCache` en production
+- [ ] plusieurs workers voient le même cache
+- [ ] session durable vérifiée avec le backend `cached_db`
+- [ ] rate limiting vérifié avec plusieurs requêtes et plusieurs workers
+- [ ] redémarrage Redis testé sans perte durable des sessions PostgreSQL
 
-## ✅ Performance
+## Base de données
 
-### Optimisation BD
-- [ ] Migrations d'indexes appliquées (core 0002)
-- [ ] select_related() appliqué aux vues list principales
-- [ ] prefetch_related() appliqué aux relations many-to-many
-- [ ] Pas de N+1 problems identifiés
-- [ ] Django Debug Toolbar confirm OK localement
+- [ ] `DATABASE_URL` injectée depuis Render Postgres
+- [ ] `python manage.py migrate --check` ne signale rien après pre-deploy
+- [ ] `python manage.py showmigrations` cohérent
+- [ ] restauration PostgreSQL testée sur un environnement isolé
+- [ ] stratégie de récupération Render documentée
+- [ ] aucune sauvegarde de production dépend uniquement du filesystem local du service web
 
-### Caching
-- [ ] Redis ou LocMemCache configuré
-- [ ] Cache timeouts définis (court/moyen/long/day)
-- [ ] Static files minifiés et compressés
-- [ ] CDN configuré pour images si possible
+## Médias et fichiers statiques
 
-### Pagination & Limites
-- [ ] Toutes les listes avec Paginator (max 25-100 items/page)
-- [ ] Imports & exports avec batch processing
-- [ ] Requêtes de masse avec bulk_update() pas loop
-- [ ] Timeouts DB définis
+- [ ] `CLOUDINARY_URL` définie
+- [ ] upload d'un média réussi
+- [ ] média relu après redéploiement/redémarrage
+- [ ] aucun routage Django de `/media/` en production
+- [ ] `collectstatic` réussit avec WhiteNoise
+- [ ] fichiers statiques servis correctement avec hash/manifest
 
-## ✅ Tests
+## PDF / WeasyPrint
 
-### Couverture de code
-- [ ] Coverage ≥ 80%
-- [ ] Tous les CRUD testés
-- [ ] Tous les formulaires testés
-- [ ] Permissions testées
-- [ ] Edge cases testés
+- [ ] smoke test WeasyPrint du build réussi
+- [ ] génération d'un document métier réel réussie
+- [ ] rendu visuel contrôlé
+- [ ] si le runtime natif Render manque de bibliothèques système, migration Docker traitée au lieu de masquer l'erreur
 
-### Tests de sécurité
-- [ ] CSRF tests
-- [ ] SQL injection tests
-- [ ] XSS tests
-- [ ] Authentication tests
-- [ ] Authorization tests
+## Email et tâches asynchrones
 
-### Tests d'intégration
-- [ ] Workflows utilisateur complets testés
-- [ ] API endpoints testés
-- [ ] Email sending testé
-- [ ] Notifications testées
+- [ ] credentials Hostinger valides
+- [ ] connexion SMTP 587 réussie depuis le service Render payé
+- [ ] email de test réellement reçu
+- [ ] `CELERY_BROKER_URL` pointe vers le même Key Value partagé
+- [ ] worker Celery en état `ready`
+- [ ] tâche Celery de test exécutée une fois
+- [ ] absence de duplication d'envoi lors d'un retry
 
-## ✅ Déploiement
+## Cron
 
-### CI/CD
-- [ ] All GitHub Actions workflows passing
-- [ ] Tests passent sur branches de développement
-- [ ] Linting (black, flake8, isort) passant
-- [ ] Bandit security checks passant
-- [ ] Django check --deploy passant
+- [ ] cron des notifications présent dans le Blueprint
+- [ ] expression `0 10 * * *` confirmée pour 07:00 Guyane
+- [ ] exécution observée dans les logs Render
+- [ ] résultat métier du cron vérifié
 
-### Base de données
-- [ ] Migrations appliquées en production
-- [ ] Backup automatique activé
-- [ ] Connection pooling configuré
-- [ ] Logs de requêtes BD activés
+## Build et démarrage
 
-### Monitoring & Logging
-- [ ] Sentry configuré pour error tracking
-- [ ] Logs applicatif en fichier rotatif
-- [ ] Logs d'accès HTTP activés
-- [ ] Alertes critiques configurées
-- [ ] Dashboard de monitoring visible
+- [ ] `./build.sh` réussit sans `|| true` masquant une erreur critique
+- [ ] `pip check` réussit
+- [ ] `collectstatic` réussit
+- [ ] `python manage.py check --deploy --fail-level ERROR` réussit
+- [ ] le build n'exécute ni migration, ni notification, ni backup métier
+- [ ] le `preDeployCommand` applique migrations + `setup_sites`
+- [ ] `./start.sh` réussit
+- [ ] Gunicorn reste actif sans boucle de restart
+- [ ] `/healthz/ping/` répond correctement
 
-## ✅ Documentation
+## Versions et dépendances
 
-### Code
-- [ ] Docstrings sur toutes les fonctions publiques
-- [ ] Commentaires sur la logique complexe
-- [ ] Type hints sur fonctions critiques
-- [ ] README.md à jour
-- [ ] IMPLEMENTATION_GUIDE.md complète
+- [ ] Python correspond à `.python-version`
+- [ ] Django correspond à `requirements/base.txt`
+- [ ] production installe `requirements/prod.txt`
+- [ ] `requirements.txt` ne contient pas de snapshot concurrent
+- [ ] `django-csp` utilise le format v4 `CONTENT_SECURITY_POLICY`
+- [ ] aucun `django-cryptography` inutilisé/résiduel
 
-### Opérations
-- [ ] Guide de déploiement écrit
-- [ ] Guide de recovery en cas de crash
-- [ ] Runbook des tasks administrateur
-- [ ] Contact support défini
-- [ ] SLA documenté
+## CI
 
-## ✅ Données
+- [ ] GitHub Actions obtient réellement un runner
+- [ ] les jobs contiennent des étapes exécutées (`steps` non vide)
+- [ ] tests Python 3.11 exécutés
+- [ ] tests Python 3.13 exécutés
+- [ ] lint exécuté
+- [ ] contrôles sécurité exécutés
+- [ ] `check --deploy` exécuté en CI
+- [ ] aucun statut « tests passés » déduit d'un workflow qui n'a jamais démarré
 
-### Intégrité
-- [ ] Backup quotidien configuré
-- [ ] Restore tests effectués
-- [ ] Archivage des anciennes données
-- [ ] RGPD: droit à l'oubli implementé
-- [ ] Audit trail pour modif critiques
+## Fonctionnel critique
 
-### Validation
-- [ ] Constraints BDD OK
-- [ ] Validations formulaire OK
-- [ ] Validations métier OK
-- [ ] Gestion des erreurs OK
-- [ ] Transactions ACID OK
+- [ ] page publique accessible
+- [ ] login/logout
+- [ ] changement de mot de passe
+- [ ] 2FA pour un compte concerné
+- [ ] permissions par rôles
+- [ ] données membres sensibles protégées
+- [ ] export sensible protégé
+- [ ] événements privés non exposés
+- [ ] création/lecture document ou média
+- [ ] finance : parcours critique
+- [ ] webhook Stripe si activé
+- [ ] webhook Meta WhatsApp si activé
 
-## ✅ Infrastructure
+## Observabilité
 
-### Render
-- [ ] Plan optimal choisi (compute + memory requirements)
-- [ ] Build command défini (./build.sh)
-- [ ] Start command défini (gunicorn ...)
-- [ ] Environment variables tous définis
-- [ ] Cron jobs configurés (si nécessaire)
+- [ ] erreurs 5xx visibles dans les logs
+- [ ] Sentry configuré si retenu
+- [ ] aucune donnée sensible dans les logs
+- [ ] alertes sur indisponibilité web/DB/worker définies
+- [ ] suivi CPU/mémoire disponible
 
-### Ressources
-- [ ] DB storage déterminé
-- [ ] File storage configuré (S3/Render storage)
-- [ ] Email quotas vérifiés
-- [ ] Rate limits suffisants
-- [ ] CDN setup pour assets statiques
+## Déploiement Render
 
-## ✅ Incidents & Support
+- [ ] `render.yaml` relu avant sync
+- [ ] branche `develop` confirmée pour web/worker/cron
+- [ ] `autoDeployTrigger: commit` confirmé
+- [ ] plans payants et impact de facturation explicitement acceptés avant sync
+- [ ] PostgreSQL et Key Value dans la même région que les services
+- [ ] secrets `sync: false` renseignés
+- [ ] aucune variable manuelle du Dashboard ne contredit le Blueprint
 
-### Monitoring
-- [ ] Alertes sur erreurs 5xx
-- [ ] Alertes sur DB slow queries
-- [ ] Alertes sur CPU/memory élevé
-- [ ] Alertes sur disk space
-- [ ] Alertes sur certificat expiry
+## Verdict
 
-### Documentation incident
-- [ ] Procédure rollback définie
-- [ ] Procédure recovery définie
-- [ ] Contacts escalade listés
-- [ ] SLA pour différents severity
-- [ ] Postmortem process défini
+Un déploiement ne peut être déclaré validé que si :
 
-## ✅ Compliance & Legal
+1. le build et le pre-deploy ont réellement réussi ;
+2. la CI a réellement exécuté ses étapes ou une validation équivalente documentée a été réalisée ;
+3. le health check est sain ;
+4. les parcours critiques ont été testés ;
+5. les mécanismes de persistance (PostgreSQL, Redis, Cloudinary) ont été vérifiés ;
+6. les coûts Render liés à la topologie ont été acceptés.
 
-### RGPD
-- [ ] Politique de confidentialité affichée
-- [ ] Cookies consent actif
-- [ ] Data export capability
-- [ ] Account deletion capability
-- [ ] Data retention policy
-
-### Audit
-- [ ] Logs de modification de données sensibles
-- [ ] Logs de login/logout
-- [ ] Logs de permission changes
-- [ ] Logs de data exports
-- [ ] Archivage des logs
-
-## ✅ Performance Tests
-
-### Load Testing
-- [ ] Test avec 100 utilisateurs simultanés
-- [ ] Test des pics de charge
-- [ ] Test du timeout de session
-- [ ] Test du cache avec haute concurrence
-- [ ] Résultats documentés
-
-### Stress Testing
-- [ ] ✅ Système stable sous charge critique
-- [ ] ✅ Pas de memory leaks
-- [ ] ✅ Pas de DB connection leaks
-- [ ] ✅ Graceful degradation
-
-## ✅ Post-Lancement
-
-### Monitoring (1ère semaine)
-- [ ] Surveiller les erreurs 5xx
-- [ ] Vérifier les performances (p95, p99)
-- [ ] Valider le trafic attendu
-- [ ] Vérifier les emails arrivent
-- [ ] Vérifier les notifications
-- [ ] Feedback utilisateurs
-
-### Optimisations continues
-- [ ] Identifier les slow queries
-- [ ] Optimiser requêtes BD problématiques
-- [ ] Augmenter cache hits
-- [ ] Réduire temps de chargement
-- [ ] Améliorer UX based on logs
-
----
-
-## Score de Préparation
-
-Nombre de checkboxes complètes: ___ / 60
-
-**Minimum pour launch**: 55/60 (91%)
-
-- 55-60 ✅ Ready for production
-- 50-54 ⚠️ Review before launch
-- < 50 ❌ Not ready
-
----
-
-**Préparé par**: [Votre nom]  
-**Date**: ________  
-**Validé par**: ________  
-**Date validation**: ________
+Aucun score arbitraire de type « 10/10 » ne remplace ces preuves.
