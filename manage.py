@@ -3,9 +3,12 @@
 import os
 import sys
 
+from gestion_eebc.runtime_env import normalize_runtime_environment
+
 
 def main():
     """Run administrative tasks."""
+    normalize_runtime_environment()
     os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'gestion_eebc.settings')
     try:
         from django.core.management import execute_from_command_line
@@ -20,4 +23,3 @@ def main():
 
 if __name__ == '__main__':
     main()
-
