@@ -5,8 +5,12 @@ import os
 from celery import Celery
 from celery.schedules import crontab
 
+from .runtime_env import normalize_runtime_environment
+
+normalize_runtime_environment()
+
 # Définir le module de paramètres par défaut
-os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'gestion_eebc.settings')
+os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'gestion_eebc.settings.prod')
 
 app = Celery('gestion_eebc')
 
@@ -109,4 +113,3 @@ app.conf.timezone = 'America/Cayenne'
 @app.task(bind=True, ignore_result=True)
 def debug_task(self):
     print(f'Request: {self.request!r}')
-
