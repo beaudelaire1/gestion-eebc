@@ -1,5 +1,5 @@
 # =============================================================================
-# RENDER BLUEPRINT - Gestion EEBC
+# RENDER BLUEPRINT - Gestion EEBC / branche develop
 # =============================================================================
 # Production topology:
 # - paid web service: SMTP + pre-deploy migrations are required by this project
@@ -16,13 +16,14 @@ services:
   - type: web
     name: gestion-eebc
     runtime: python
+    branch: develop
     region: frankfurt
     plan: 0.5c-512mb
     buildCommand: ./build.sh
     preDeployCommand: python manage.py migrate --noinput && python manage.py setup_sites
     startCommand: ./start.sh
     healthCheckPath: /healthz/ping/
-    autoDeploy: true
+    autoDeployTrigger: commit
     envVars:
       - key: PORT
         value: "10000"
@@ -117,11 +118,12 @@ services:
   - type: worker
     name: gestion-eebc-worker
     runtime: python
+    branch: develop
     region: frankfurt
     plan: 0.5c-512mb
     buildCommand: pip install -r requirements/prod.txt
     startCommand: celery -A gestion_eebc worker --loglevel=info --concurrency=2
-    autoDeploy: true
+    autoDeployTrigger: commit
     envVars:
       - key: DJANGO_SETTINGS_MODULE
         value: gestion_eebc.settings.prod
@@ -195,16 +197,19 @@ services:
     persistenceMode: journal-snapshot
 
   # ---------------------------------------------------------------------------
-  # Daily notification job
+  # Daily notification job: 07:00 America/Cayenne = 10:00 UTC.
+  # Render evaluates all cron schedules in UTC.
   # ---------------------------------------------------------------------------
   - type: cron
     name: eebc-daily-notifications
     runtime: python
+    branch: develop
     region: frankfurt
     plan: 0.5c-512mb
-    schedule: "0 7 * * *"
+    schedule: "0 10 * * *"
     buildCommand: pip install -r requirements/prod.txt
     startCommand: python manage.py run_notifications --all
+    autoDeployTrigger: commit
     envVars:
       - key: DJANGO_SETTINGS_MODULE
         value: gestion_eebc.settings.prod
