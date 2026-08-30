@@ -1,130 +1,78 @@
-# ⚡ GUIDE DÉPLOIEMENT RAPIDE - EEBC PLATFORM
+# Déploiement rapide EEBC — Render
 
-## 🎯 EN 5 MINUTES
+Ce guide est un aide-mémoire. Le runbook complet reste `DEPLOY.md` et l'infrastructure reste définie dans `render.yaml`.
 
-### 1️⃣ BACKUP DB (CRITIQUE !)
-```bash
-# Render Dashboard > PostgreSQL > Backups > Create Manual Backup
+## Avant de synchroniser Render
+
+1. Vérifier que le Blueprint cible bien `develop`.
+2. Examiner les changements de plans proposés par Render : la topologie actuelle utilise des ressources payantes et peut modifier la facturation.
+3. Renseigner les secrets `sync: false`, en particulier :
+
+```text
+CLOUDINARY_URL
+HOSTINGER_EMAIL_HOST_USER
+HOSTINGER_EMAIL_HOST_PASSWORD
 ```
 
-### 2️⃣ VARIABLES D'ENVIRONNEMENT
-```bash
-# Ajouter à Render (Dashboard > Environment Variables)
+Puis les secrets Stripe, Meta, Turnstile et Sentry si ces intégrations sont utilisées.
 
-# CloudFlare Turnstile (gratuit)
-TURNSTILE_SITE_KEY=0x4AAA...      # Obtenir sur https://dash.cloudflare.com/
-TURNSTILE_SECRET_KEY=0x4BBB...    # Menu: Turnstile > Add Site
+## Déployer
+
+Le déploiement doit venir d'un commit sur `develop` :
+
+```bash
+git checkout develop
+git pull origin develop
+git push origin develop
 ```
 
-### 3️⃣ DÉPLOYER
-```bash
-git add .
-git commit -m "perf: +46 indexes DB + CloudFlare Turnstile + multi-rôles fix"
-git push origin main
+Pour un Blueprint existant, vérifier/synchroniser le Blueprint dans Render afin que les modifications de `render.yaml` soient réellement appliquées.
 
-# Render déploiera automatiquement
-# Migrations s'appliquent automatiquement via build command
+Ne pas remplacer la configuration par des réglages manuels divergents dans le Dashboard.
+
+## Ce que Render doit exécuter
+
+Build :
+
+```bash
+./build.sh
 ```
 
-### 4️⃣ VÉRIFIER
+Pre-deploy :
+
 ```bash
-# ✅ Site fonctionne
-https://gestion-eebc.onrender.com/
-
-# ✅ Login affiche widget Turnstile (petit badge CloudFlare)
-
-# ✅ Dashboard rapide (< 500ms)
-
-# ✅ Liste membres rapide (pas de lenteur)
+python manage.py migrate --noinput && python manage.py setup_sites
 ```
 
----
+Start :
 
-## 📊 CE QUI A ÉTÉ FAIT
-
-### ⚡ PERFORMANCE
-- **46 indexes DB ajoutés** → Requêtes -60% plus rapides
-- Migrations générées et prêtes
-
-### 🛡️ SÉCURITÉ
-- **CloudFlare Turnstile** implémenté (gratuit, meilleur que reCAPTCHA)
-- Dual support : Turnstile prioritaire, reCAPTCHA fallback
-
-### 🐛 BUGS CORRIGÉS
-- Multi-rôles fonction `has_role()` réparée
-- DEBUG configuration fixée
-- URL `site_urls` désactivée (évite crash)
-
----
-
-## 🔑 CLÉS TURNSTILE (Gratuit)
-
-### Obtenir en 2 minutes
-1. https://dash.cloudflare.com/
-2. Créer compte (gratuit)
-3. Menu gauche: **Turnstile**
-4. **Add Site**
-5. Domaine: `gestion-eebc.onrender.com` (ou votre domaine)
-6. Copier **Site Key** et **Secret Key**
-7. Ajouter à Render (variables env)
-
----
-
-## ⚠️ SI PROBLÈME AU DÉPLOIEMENT
-
-### Erreur migration
 ```bash
-# Render Dashboard > Shell
-python manage.py migrate --fake-initial
-python manage.py migrate
+./start.sh
 ```
 
-### Indexes pas créés
-```bash
-# Shell PostgreSQL
-python manage.py dbshell
-\di  # Liste tous les indexes (devrait afficher ~100 indexes)
+Health check :
+
+```text
+/healthz/ping/
 ```
 
-### CloudFlare pas actif
-```bash
-# Vérifier variables env dans Render
-echo $TURNSTILE_SITE_KEY
-echo $TURNSTILE_SECRET_KEY
+## Validation minimale
 
-# Si vides : reCAPTCHA sera utilisé en fallback (OK temporaire)
-```
+Après le déploiement :
 
----
+- le service web reste stable sans boucle de redémarrage ;
+- `healthz/ping` répond correctement ;
+- PostgreSQL est accessible ;
+- Redis est accessible et partagé ;
+- une connexion utilisateur conserve sa session ;
+- un upload média est relu depuis Cloudinary ;
+- un PDF est généré ;
+- un email Hostinger est réellement reçu ;
+- le worker Celery est actif ;
+- les logs ne contiennent pas d'`ImproperlyConfigured`.
 
-## 📈 PERFORMANCES ATTENDUES
+## Si le déploiement échoue
 
-| Métrique | Avant | Après | Gain |
-|----------|-------|-------|------|
-| Liste membres (500+) | 3-5s | < 500ms | **-80%** |
-| Dashboard stats | 2-3s | < 300ms | **-85%** |
-| Rapport finance | 5-10s | < 2s | **-70%** |
-| Export PDF | 8-12s | < 4s | **-60%** |
+Lire la première exception réelle du build/pre-deploy/start. Ne pas la contourner avec `|| true`, un cache local, un secret généré au démarrage ou un fallback de stockage éphémère.
 
----
-
-## ✅ CHECKLIST POST-DÉPLOIEMENT
-
-- [ ] Site accessible
-- [ ] Login fonctionne (avec ou sans Turnstile)
-- [ ] Dashboard charge rapidement
-- [ ] Liste membres rapide
-- [ ] Pas d'erreurs 500 dans Render Logs
-- [ ] Sentry ne montre pas d'erreurs critiques
-
----
-
-## 🎯 OBJECTIF : 9.5/10
-
-**STATUS: ✅ ATTEINT**
-
-Performance ✅ | Sécurité ✅ | Code Quality ✅ | Infrastructure ✅
-
----
-
-**📚 Documentation complète:** Voir [CORRECTIONS_PRODUCTION.md](CORRECTIONS_PRODUCTION.md)
+Pour la procédure de diagnostic et de rollback, utiliser `DEPLOY.md`.
