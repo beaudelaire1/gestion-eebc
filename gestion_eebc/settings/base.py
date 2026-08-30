@@ -115,6 +115,8 @@ SESSION_TIMEOUT_MINUTES = int(os.environ.get('SESSION_TIMEOUT_MINUTES', 30))
 # Paths excluded from session timeout tracking (e.g., API heartbeat endpoints)
 SESSION_TIMEOUT_EXCLUDED_PATHS = [
     '/api/heartbeat/',
+    '/health/ping/',
+    '/healthz/ping/',
     '/static/',
     '/media/',
 ]
@@ -241,6 +243,8 @@ RATE_LIMIT_WINDOW = int(os.environ.get('RATE_LIMIT_WINDOW', 60))
 
 # Paths excluded from rate limiting
 RATE_LIMIT_EXCLUDED_PATHS = [
+    '/health/ping/',
+    '/healthz/ping/',
     '/static/',
     '/media/',
     '/admin/jsi18n/',

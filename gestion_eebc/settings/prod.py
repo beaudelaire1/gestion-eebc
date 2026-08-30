@@ -58,7 +58,14 @@ SECRET_KEY = _env_secret
 
 # Render terminates TLS at its edge.
 SECURE_SSL_REDIRECT = True
-SECURE_REDIRECT_EXEMPT = [r'^health/?$', r'^health/lite/?$', r'^healthz/?$', r'^healthz/lite/?$']
+SECURE_REDIRECT_EXEMPT = [
+    r'^health/?$',
+    r'^health/lite/?$',
+    r'^health/ping/?$',
+    r'^healthz/?$',
+    r'^healthz/lite/?$',
+    r'^healthz/ping/?$',
+]
 SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
 SESSION_COOKIE_SECURE = True
 CSRF_COOKIE_SECURE = True

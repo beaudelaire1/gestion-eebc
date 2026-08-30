@@ -15,6 +15,12 @@ logger = logging.getLogger(__name__)
 
 
 @require_http_methods(["GET"])
+def health_check_ping(request):
+    """Return a dependency-free liveness response for platform probes."""
+    return JsonResponse({'status': 'ok'})
+
+
+@require_http_methods(["GET"])
 def health_check(request):
     """
     GET /health/
