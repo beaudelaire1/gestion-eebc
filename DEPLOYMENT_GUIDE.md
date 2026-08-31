@@ -1,16 +1,29 @@
 # Guide de déploiement EEBC
 
-Ce document historique a été retiré comme procédure opérationnelle : il décrivait une ancienne livraison ponctuelle et contenait des instructions désormais incompatibles avec l'architecture de production.
+## Cible en cours : OVH + Coolify
 
-La procédure de référence est maintenant :
+La procédure de migration et de production cible est maintenant décrite dans :
 
-- `DEPLOY.md` pour le runbook complet ;
-- `render.yaml` pour l'infrastructure Render ;
-- `.python-version` pour le runtime Python ;
-- `requirements/prod.txt` pour les dépendances de production ;
-- `build.sh` pour le build ;
-- `start.sh` pour le démarrage.
+- `DEPLOY_COOLIFY.md` : runbook OVH/Coolify ;
+- `Dockerfile` : image de production reproductible ;
+- `docker-compose.coolify.yml` : services applicatifs Coolify ;
+- `.python-version` : runtime Python ;
+- `requirements/prod.txt` : dépendances Python ;
+- `gestion_eebc/settings/prod.py` : invariants runtime ;
+- `start.sh` : démarrage Gunicorn.
 
-Branche actuellement ciblée par le Blueprint : `develop`.
+La recette de migration doit être faite depuis `coolify-migration`. Après validation et merge, la branche suivie par Coolify doit devenir `develop`.
 
-Ne pas reprendre les anciennes instructions qui demandaient un déploiement manuel depuis `main`, un cache local, des migrations pendant le build ou un statut « production ready » sans tests réellement exécutés.
+## Render
+
+`render.yaml` et `DEPLOY.md` décrivent l'infrastructure Render existante. Ils sont conservés temporairement pour permettre un rollback pendant la migration. Ils ne sont plus la source de vérité de la cible OVH/Coolify.
+
+Ne pas supprimer l'environnement Render avant :
+
+1. validation des parcours critiques sur Coolify ;
+2. migration complète des données ;
+3. validation du stockage média ;
+4. sauvegarde PostgreSQL et test de restauration ;
+5. validation du worker Celery et de la tâche planifiée ;
+6. bascule DNS réussie ;
+7. expiration de la fenêtre de rollback décidée.

@@ -1,32 +1,25 @@
 #!/usr/bin/env bash
 # =============================================================================
-# Démarrage Render - Gestion EEBC
+# Production startup - Gestion EEBC
 # =============================================================================
 
 set -o errexit
 set -o nounset
 set -o pipefail
 
-PORT="${PORT:-10000}"
+PORT="${PORT:-8000}"
 WORKERS="${WEB_CONCURRENCY:-2}"
+FORWARDED_ALLOW_IPS="${GUNICORN_FORWARDED_ALLOW_IPS:-*}"
 export DJANGO_SETTINGS_MODULE="${DJANGO_SETTINGS_MODULE:-gestion_eebc.settings.prod}"
 
-# Backward-compatible migration path for existing Render services created
-# before REDIS_URL was introduced. The Celery broker is already a shared
-# Redis-compatible Render Key Value, so it is valid to reuse it for Django's
-# shared cache until the Blueprint has been resynchronised.
+# Compatibility: one shared Redis instance can serve Django cache, sessions and
+# Celery. Prefer defining REDIS_URL explicitly in the deployment platform.
 if [[ -z "${REDIS_URL:-}" && -n "${CELERY_BROKER_URL:-}" ]]; then
     export REDIS_URL="${CELERY_BROKER_URL}"
-    echo "REDIS_URL absent: utilisation du Redis CELERY_BROKER_URL existant."
 fi
 
 if [[ -z "${REDIS_URL:-}" ]]; then
     echo "ERREUR: REDIS_URL (ou CELERY_BROKER_URL Redis) est requis en production." >&2
-    exit 1
-fi
-
-if [[ -z "${CLOUDINARY_URL:-}" ]]; then
-    echo "ERREUR: CLOUDINARY_URL est requis en production pour les médias persistants." >&2
     exit 1
 fi
 
@@ -40,7 +33,6 @@ echo "Settings: ${DJANGO_SETTINGS_MODULE}"
 # invariants are invalid. Do not swallow startup exceptions.
 python manage.py check --deploy --fail-level ERROR
 
-# Verify Django can fully initialise with the production configuration.
 python - <<'PY'
 import django
 
@@ -59,6 +51,7 @@ exec gunicorn gestion_eebc.wsgi:application \
     --keep-alive 5 \
     --max-requests 1000 \
     --max-requests-jitter 50 \
+    --forwarded-allow-ips "${FORWARDED_ALLOW_IPS}" \
     --access-logfile - \
     --error-logfile - \
     --log-level info

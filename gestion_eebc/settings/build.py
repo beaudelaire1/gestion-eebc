@@ -1,9 +1,8 @@
-"""Django settings used only during the immutable Render build phase.
+"""Django settings used only during the immutable application build phase.
 
-The build must be able to install dependencies, validate imports and collect
-static assets without connecting to PostgreSQL, Redis, Cloudinary or email.
-Runtime production invariants remain enforced by ``settings.prod`` and
-``start.sh``.
+The build must be able to validate imports and collect static assets without
+connecting to PostgreSQL, Redis, media storage or email. Runtime production
+invariants remain enforced by ``settings.prod`` and ``start.sh``.
 """
 
 from .base import *
@@ -26,7 +25,7 @@ DATABASES = {
 CACHES = {
     'default': {
         'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
-        'LOCATION': 'eebc-render-build',
+        'LOCATION': 'eebc-immutable-build',
     }
 }
 

@@ -6,7 +6,7 @@ Plateforme de gestion complète pour l'Église Évangélique Baptiste de Cayenne
 
 | Composant | Technologie |
 |---|---|
-| Backend | Django 4.2, Python 3.11 |
+| Backend | Django 5.2 LTS, Python 3.13 |
 | Frontend | HTMX, Alpine.js, Bootstrap 5 |
 | Base de données | PostgreSQL (prod), SQLite (dev) |
 | API REST | Django REST Framework, JWT |
@@ -15,7 +15,7 @@ Plateforme de gestion complète pour l'Église Évangélique Baptiste de Cayenne
 | Email | Hostinger SMTP |
 | Messagerie | Meta WhatsApp Cloud API |
 | Tâches async | Celery + Redis |
-| Hébergement | Render |
+| Hébergement cible | OVH VPS + Coolify |
 | Mobile | Flutter (iOS & Android) |
 
 ## Modules applicatifs (18 apps)
@@ -70,28 +70,35 @@ python manage.py runserver
 pytest                              # Tests
 pytest --cov=apps                   # Tests + couverture
 python manage.py check --deploy     # Vérification sécurité
-python manage.py collectstatic      # Fichiers statiques
+docker build -t gestion-eebc .     # Image de production
 ```
 
 ## Structure du projet
 
+```text
+gestion_eebc/settings/       # Configuration Django (base/dev/prod/test/build)
+apps/                        # 18 applications métier
+templates/                   # Templates HTML
+static/                      # CSS, JS, images
+Dockerfile                   # Runtime Python/WeasyPrint reproductible
+docker-compose.coolify.yml   # Web + worker + migrations Coolify
+.skill/                      # Méthodologie Atlas Prime (agents IA)
+.plan/                       # Plans de travail en cours
+.github/workflows/           # CI/CD (tests, qualité, image Docker)
+docs/                        # Documentation détaillée
 ```
-gestion_eebc/settings/   # Configuration Django (base/dev/prod/test)
-apps/                    # 18 applications métier
-templates/               # 293 templates HTML
-static/                  # CSS, JS, images
-.skill/                  # Méthodologie Atlas Prime (agents IA)
-.plan/                   # Plans de travail en cours
-.github/workflows/       # CI/CD (tests, qualité, déploiement)
-docs/                    # Documentation détaillée
-```
+
+## Déploiement
+
+- [DEPLOY_COOLIFY.md](DEPLOY_COOLIFY.md) — procédure cible OVH + Coolify
+- [DEPLOYMENT_GUIDE.md](DEPLOYMENT_GUIDE.md) — point d'entrée déploiement
+- [DEPLOY.md](DEPLOY.md) et `render.yaml` — ancienne infrastructure Render conservée temporairement pour rollback pendant la migration
 
 ## Documentation
 
 - [LIRE_DABORD.md](LIRE_DABORD.md) — Point d'entrée rapide
 - [docs/GUIDE_UTILISATEUR.md](docs/GUIDE_UTILISATEUR.md) — Guide utilisateur
 - [docs/API_DOCUMENTATION.md](docs/API_DOCUMENTATION.md) — Documentation API
-- [DEPLOYMENT_GUIDE.md](DEPLOYMENT_GUIDE.md) — Guide de déploiement
 
 ## Méthodologie
 

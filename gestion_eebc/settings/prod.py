@@ -1,9 +1,9 @@
 """
-Django settings - Production (Render)
+Django settings - Production.
 
-Runtime invariants are strict for the live application. The single exception is
-``collectstatic``: static asset compilation is a build-time operation and must
-not require PostgreSQL, Redis, Cloudinary or SMTP to be reachable.
+Runtime invariants are strict for the live application. Static asset compilation
+uses ``settings.build`` and therefore does not require PostgreSQL, Redis, media
+storage or SMTP to be reachable.
 """
 
 import os
@@ -12,33 +12,26 @@ import re as _re
 import dj_database_url
 from django.core.exceptions import ImproperlyConfigured
 
-from gestion_eebc.runtime_env import is_static_asset_build, normalize_runtime_environment
+from gestion_eebc.runtime_env import normalize_runtime_environment
 from .base import *
 from .csp_policy import apply_csp4
 
 apply_csp4(globals())
 normalize_runtime_environment()
-STATIC_ASSET_BUILD = is_static_asset_build()
+
+
+def _csv_env(name, default=''):
+    return [item.strip() for item in os.environ.get(name, default).split(',') if item.strip()]
+
 
 # =============================================================================
 # SECURITY
 # =============================================================================
 DEBUG = False
 
-ALLOWED_HOSTS = [
-    host.strip()
-    for host in os.environ.get('ALLOWED_HOSTS', '').split(',')
-    if host.strip()
-]
-
-RENDER_EXTERNAL_HOSTNAME = os.environ.get('RENDER_EXTERNAL_HOSTNAME', '').strip()
-if RENDER_EXTERNAL_HOSTNAME and RENDER_EXTERNAL_HOSTNAME not in ALLOWED_HOSTS:
-    ALLOWED_HOSTS.append(RENDER_EXTERNAL_HOSTNAME)
+ALLOWED_HOSTS = _csv_env('ALLOWED_HOSTS')
 if not ALLOWED_HOSTS:
-    if STATIC_ASSET_BUILD:
-        ALLOWED_HOSTS = ['build.local']
-    else:
-        raise ImproperlyConfigured('ALLOWED_HOSTS must be configured in production.')
+    raise ImproperlyConfigured('ALLOWED_HOSTS must be configured in production.')
 
 _env_secret = os.environ.get('SECRET_KEY', '').strip()
 _secret_is_valid = (
@@ -48,15 +41,13 @@ _secret_is_valid = (
     and len(set(_env_secret)) >= 5
 )
 if not _secret_is_valid:
-    if STATIC_ASSET_BUILD:
-        _env_secret = 'eebc-static-build-secret-not-used-at-runtime-2026'
-    else:
-        raise ImproperlyConfigured(
-            'SECRET_KEY must be a stable production secret with at least 32 characters.'
-        )
+    raise ImproperlyConfigured(
+        'SECRET_KEY must be a stable production secret with at least 32 characters.'
+    )
 SECRET_KEY = _env_secret
 
-# Render terminates TLS at its edge.
+# TLS terminates at the platform reverse proxy (Traefik on Coolify, or an
+# equivalent trusted edge). The application port must not be published directly.
 SECURE_SSL_REDIRECT = True
 SECURE_REDIRECT_EXEMPT = [
     r'^health/?$',
@@ -76,102 +67,80 @@ SECURE_HSTS_PRELOAD = True
 SECURE_CONTENT_TYPE_NOSNIFF = True
 X_FRAME_OPTIONS = 'DENY'
 
-CSRF_TRUSTED_ORIGINS = [
-    'https://gestion-eebc.onrender.com',
-    'https://eglise-ebc.org',
-    'https://www.eglise-ebc.org',
-]
+CSRF_TRUSTED_ORIGINS = _csv_env(
+    'CSRF_TRUSTED_ORIGINS',
+    'https://eglise-ebc.org,https://www.eglise-ebc.org',
+)
+
+_cors_override = _csv_env('CORS_ALLOWED_ORIGINS')
+if _cors_override:
+    CORS_ALLOWED_ORIGINS = _cors_override
 
 TRUSTED_CLIENT_IP_HEADER = os.environ.get('TRUSTED_CLIENT_IP_HEADER', '').strip()
 
 # =============================================================================
 # DATABASE
 # =============================================================================
-# collectstatic never needs application data. Using SQLite in-memory here keeps
-# the build deterministic even when the production database is unavailable.
-if STATIC_ASSET_BUILD:
+DATABASE_URL = os.environ.get('DATABASE_URL', '').strip()
+if DATABASE_URL:
     DATABASES = {
-        'default': {
-            'ENGINE': 'django.db.backends.sqlite3',
-            'NAME': ':memory:',
-        }
+        'default': dj_database_url.config(
+            default=DATABASE_URL,
+            conn_max_age=600,
+            conn_health_checks=True,
+        )
     }
 else:
-    DATABASE_URL = os.environ.get('DATABASE_URL', '').strip()
-    if DATABASE_URL:
-        DATABASES = {
-            'default': dj_database_url.config(
-                default=DATABASE_URL,
-                conn_max_age=600,
-                conn_health_checks=True,
-            )
+    required_db_env = ('DB_NAME', 'DB_USER', 'DB_PASSWORD', 'DB_HOST')
+    missing_db_env = [name for name in required_db_env if not os.environ.get(name)]
+    if missing_db_env:
+        raise ImproperlyConfigured(
+            'Configure DATABASE_URL or all explicit database variables. Missing: '
+            + ', '.join(missing_db_env)
+        )
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.postgresql',
+            'NAME': os.environ['DB_NAME'],
+            'USER': os.environ['DB_USER'],
+            'PASSWORD': os.environ['DB_PASSWORD'],
+            'HOST': os.environ['DB_HOST'],
+            'PORT': os.environ.get('DB_PORT', '5432'),
+            'CONN_MAX_AGE': 600,
+            'CONN_HEALTH_CHECKS': True,
         }
-    else:
-        required_db_env = ('DB_NAME', 'DB_USER', 'DB_PASSWORD', 'DB_HOST')
-        missing_db_env = [name for name in required_db_env if not os.environ.get(name)]
-        if missing_db_env:
-            raise ImproperlyConfigured(
-                'Configure DATABASE_URL or all explicit database variables. Missing: '
-                + ', '.join(missing_db_env)
-            )
-        DATABASES = {
-            'default': {
-                'ENGINE': 'django.db.backends.postgresql',
-                'NAME': os.environ['DB_NAME'],
-                'USER': os.environ['DB_USER'],
-                'PASSWORD': os.environ['DB_PASSWORD'],
-                'HOST': os.environ['DB_HOST'],
-                'PORT': os.environ.get('DB_PORT', '5432'),
-                'CONN_MAX_AGE': 600,
-                'CONN_HEALTH_CHECKS': True,
-            }
-        }
+    }
 
 # =============================================================================
 # CACHE / SESSIONS
 # =============================================================================
 REDIS_URL = os.environ.get('REDIS_URL', '').strip()
-if REDIS_URL:
-    CACHES = {
-        'default': {
-            'BACKEND': 'django.core.cache.backends.redis.RedisCache',
-            'LOCATION': REDIS_URL,
-            'OPTIONS': {
-                'socket_connect_timeout': 5,
-                'socket_timeout': 5,
-            },
-        }
-    }
-elif STATIC_ASSET_BUILD:
-    CACHES = {
-        'default': {
-            'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
-            'LOCATION': 'eebc-static-build',
-        }
-    }
-else:
+if not REDIS_URL:
     raise ImproperlyConfigured(
         'REDIS_URL is required in production. Security counters and rate limits '
         'must use a cache shared by every application worker.'
     )
 
-if STATIC_ASSET_BUILD:
-    SESSION_ENGINE = 'django.contrib.sessions.backends.cache'
-else:
-    # cached_db keeps sessions durable in PostgreSQL while using Redis for speed.
-    SESSION_ENGINE = 'django.contrib.sessions.backends.cached_db'
+CACHES = {
+    'default': {
+        'BACKEND': 'django.core.cache.backends.redis.RedisCache',
+        'LOCATION': REDIS_URL,
+        'OPTIONS': {
+            'socket_connect_timeout': 5,
+            'socket_timeout': 5,
+        },
+    }
+}
+
+# cached_db keeps sessions durable in PostgreSQL while using Redis for speed.
+SESSION_ENGINE = 'django.contrib.sessions.backends.cached_db'
 SESSION_CACHE_ALIAS = 'default'
 
 # =============================================================================
 # CELERY
 # =============================================================================
-if STATIC_ASSET_BUILD and not REDIS_URL:
-    CELERY_BROKER_URL = 'memory://'
-    CELERY_RESULT_BACKEND = 'cache+memory://'
-else:
-    CELERY_BROKER_URL = os.environ.get('CELERY_BROKER_URL', REDIS_URL).strip()
-    CELERY_RESULT_BACKEND = os.environ.get('CELERY_RESULT_BACKEND', REDIS_URL).strip()
-
+CELERY_BROKER_URL = os.environ.get('CELERY_BROKER_URL', REDIS_URL).strip()
+CELERY_RESULT_BACKEND = os.environ.get('CELERY_RESULT_BACKEND', REDIS_URL).strip()
 CELERY_ACCEPT_CONTENT = ['json']
 CELERY_TASK_SERIALIZER = 'json'
 CELERY_RESULT_SERIALIZER = 'json'
@@ -230,18 +199,13 @@ STORAGES = {
     },
 }
 
-CLOUDINARY_URL = os.environ.get('CLOUDINARY_URL', '').strip()
+MEDIA_STORAGE_BACKEND = os.environ.get('MEDIA_STORAGE_BACKEND', 'cloudinary').strip().lower()
 
-if STATIC_ASSET_BUILD:
-    # No user media is written while collecting static files.
-    STORAGES['default'] = {
-        'BACKEND': 'django.core.files.storage.FileSystemStorage',
-    }
-else:
+if MEDIA_STORAGE_BACKEND == 'cloudinary':
+    CLOUDINARY_URL = os.environ.get('CLOUDINARY_URL', '').strip()
     if not CLOUDINARY_URL:
         raise ImproperlyConfigured(
-            'CLOUDINARY_URL is required in production because Render local media '
-            'storage is ephemeral.'
+            'CLOUDINARY_URL is required when MEDIA_STORAGE_BACKEND=cloudinary.'
         )
 
     if 'cloudinary_storage' not in INSTALLED_APPS:
@@ -270,14 +234,50 @@ else:
             'API_SECRET': os.environ.get('CLOUDINARY_API_SECRET', ''),
         }
 
+elif MEDIA_STORAGE_BACKEND == 's3':
+    required_s3_env = (
+        'AWS_ACCESS_KEY_ID',
+        'AWS_SECRET_ACCESS_KEY',
+        'AWS_STORAGE_BUCKET_NAME',
+        'AWS_S3_ENDPOINT_URL',
+        'AWS_S3_REGION_NAME',
+    )
+    missing_s3_env = [name for name in required_s3_env if not os.environ.get(name)]
+    if missing_s3_env:
+        raise ImproperlyConfigured(
+            'Missing S3 media configuration: ' + ', '.join(missing_s3_env)
+        )
+
+    STORAGES['default'] = {
+        'BACKEND': 'storages.backends.s3.S3Storage',
+    }
+    AWS_ACCESS_KEY_ID = os.environ['AWS_ACCESS_KEY_ID']
+    AWS_SECRET_ACCESS_KEY = os.environ['AWS_SECRET_ACCESS_KEY']
+    AWS_STORAGE_BUCKET_NAME = os.environ['AWS_STORAGE_BUCKET_NAME']
+    AWS_S3_ENDPOINT_URL = os.environ['AWS_S3_ENDPOINT_URL'].rstrip('/')
+    AWS_S3_REGION_NAME = os.environ['AWS_S3_REGION_NAME']
+    AWS_S3_ADDRESSING_STYLE = os.environ.get('AWS_S3_ADDRESSING_STYLE', 'path')
+    AWS_S3_SIGNATURE_VERSION = 's3v4'
+    AWS_DEFAULT_ACL = None
+    AWS_QUERYSTRING_AUTH = True
+    AWS_S3_FILE_OVERWRITE = False
+    AWS_LOCATION = os.environ.get('AWS_LOCATION', 'media').strip('/')
+    AWS_S3_CUSTOM_DOMAIN = os.environ.get('AWS_S3_CUSTOM_DOMAIN', '').strip() or None
+
+else:
+    raise ImproperlyConfigured(
+        'MEDIA_STORAGE_BACKEND must be either "cloudinary" or "s3" in production.'
+    )
+
 if 'whitenoise.middleware.WhiteNoiseMiddleware' not in MIDDLEWARE:
-    MIDDLEWARE.insert(2, 'whitenoise.middleware.WhiteNoiseMiddleware')
+    security_index = MIDDLEWARE.index('django.middleware.security.SecurityMiddleware')
+    MIDDLEWARE.insert(security_index + 1, 'whitenoise.middleware.WhiteNoiseMiddleware')
 
 # =============================================================================
 # SENTRY / LOGGING
 # =============================================================================
 SENTRY_DSN = os.environ.get('SENTRY_DSN', '').strip()
-if SENTRY_DSN and not STATIC_ASSET_BUILD:
+if SENTRY_DSN:
     import sentry_sdk
     from sentry_sdk.integrations.celery import CeleryIntegration
     from sentry_sdk.integrations.django import DjangoIntegration
