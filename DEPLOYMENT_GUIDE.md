@@ -5,6 +5,7 @@
 La procédure de migration et de production cible est maintenant décrite dans :
 
 - `DEPLOY_COOLIFY.md` : runbook OVH/Coolify ;
+- `PRODUCTION_CHECKLIST_COOLIFY.md` : preuves exigées avant validation ;
 - `Dockerfile` : image de production reproductible ;
 - `docker-compose.coolify.yml` : services applicatifs Coolify ;
 - `.python-version` : runtime Python ;
@@ -16,7 +17,7 @@ La recette de migration doit être faite depuis `coolify-migration`. Après vali
 
 ## Render
 
-`render.yaml` et `DEPLOY.md` décrivent l'infrastructure Render existante. Ils sont conservés temporairement pour permettre un rollback pendant la migration. Ils ne sont plus la source de vérité de la cible OVH/Coolify.
+`render.yaml`, `DEPLOY.md` et `PRODUCTION_CHECKLIST.md` décrivent l'infrastructure Render existante. Ils sont conservés temporairement pour permettre un rollback pendant la migration. Ils ne sont plus la source de vérité de la cible OVH/Coolify.
 
 Ne pas supprimer l'environnement Render avant :
 
