@@ -69,9 +69,7 @@ services:
       - sh
       - -c
       - >-
-        python manage.py migrate --noinput &&
-        python manage.py migrate --check &&
-        python manage.py setup_sites
+        python manage.py migrate --noinput
     restart: "no"
     exclude_from_hc: true
     healthcheck:
