@@ -65,11 +65,7 @@ services:
   migrate:
     build: *app-build
     environment: *app-environment
-    command:
-      - sh
-      - -c
-      - >-
-        python manage.py migrate --noinput
+    command: ["./migrate.sh"]
     restart: "no"
     exclude_from_hc: true
     networks:

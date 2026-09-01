@@ -1,0 +1,7 @@
+* text=auto
+
+# Linux containers must receive executable scripts without CRLF characters.
+*.sh text eol=lf
+Dockerfile text eol=lf
+*.yml text eol=lf
+*.yaml text eol=lf

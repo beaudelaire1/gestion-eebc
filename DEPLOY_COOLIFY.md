@@ -1,8 +1,8 @@
 # Déploiement EEBC — OVH + Coolify
 
-Dernière mise à jour : 31 août 2026  
-Branche de migration : `coolify-migration`  
-Branche cible après validation : `develop`
+Dernière mise à jour : 31 août 2026
+Branche suivie : `develop`
+Révision de recette : noter le SHA du commit déployé avant chaque validation
 
 ## 1. Architecture cible
 
@@ -64,7 +64,7 @@ Le Compose réutilise automatiquement cette URL comme broker et backend Celery.
 
 Une application Docker Compose et des ressources PostgreSQL/Redis créées séparément ne partagent pas automatiquement le même réseau applicatif.
 
-Activer **Connect to Predefined Network** pour la stack applicative afin qu'elle puisse joindre les ressources internes Coolify. Utiliser ensuite les noms/URLs internes complets fournis par Coolify pour PostgreSQL et Redis.
+Activer **Connect to Predefined Network** des deux côtés : sur la stack applicative *et* sur les ressources PostgreSQL et Redis. Une ressource base de données Coolify reste sinon isolée sur son propre réseau, et le nom d'hôte interne ne se résout pas depuis les conteneurs de l'application. Utiliser ensuite les noms/URLs internes complets fournis par Coolify pour PostgreSQL et Redis.
 
 Ne pas résoudre ce problème en exposant PostgreSQL ou Redis publiquement.
 
@@ -73,7 +73,7 @@ Ne pas résoudre ce problème en exposant PostgreSQL ou Redis publiquement.
 Dans Coolify :
 
 1. créer une nouvelle ressource depuis le dépôt GitHub `beaudelaire1/gestion-eebc` ;
-2. sélectionner temporairement la branche `coolify-migration` pour la recette ;
+2. sélectionner la branche `develop` et noter le SHA exact utilisé pour la recette ;
 3. choisir le build pack `Docker Compose` ;
 4. définir `docker-compose.coolify.yml` comme emplacement du Compose ;
 5. activer **Connect to Predefined Network** ;
@@ -100,9 +100,15 @@ CSRF_TRUSTED_ORIGINS=https://eglise-ebc.org,https://www.eglise-ebc.org
 DATABASE_URL=<URL PostgreSQL interne Coolify>
 REDIS_URL=<URL Redis interne Coolify>
 TRUSTED_PROXY_IPS=<CIDR réel du réseau/proxy Traefik>
+MEDIA_STORAGE_BACKEND=cloudinary
+CLOUDINARY_URL=cloudinary://API_KEY:API_SECRET@CLOUD_NAME
 SITE_URL=https://eglise-ebc.org
 SITE_NAME=EEBC
 ```
+
+La configuration média fait partie du minimum de démarrage : `settings.prod` la valide à
+l'import, donc une variable média absente fait échouer `migrate`, `web` et `worker` avant
+toute connexion à PostgreSQL. Voir la section 8 pour l'alternative S3.
 
 Ne jamais utiliser :
 
@@ -163,17 +169,31 @@ Ajouter ensuite les secrets Stripe, Meta WhatsApp, Turnstile et Sentry uniquemen
 
 ## 10. Migrations
 
-À chaque déploiement, le service one-shot `migrate` exécute :
+À chaque déploiement, le service one-shot `migrate` exécute `migrate.sh` :
 
-```bash
-python manage.py migrate --noinput
-python manage.py migrate --check
-python manage.py setup_sites
-```
+1. contrôle des variables obligatoires, y compris la configuration média ;
+2. attente bornée de PostgreSQL (`MIGRATE_DB_WAIT_SECONDS`, 90 s par défaut) ;
+3. contrôle d'accès à Redis ;
+4. `python manage.py migrate --noinput` ;
+5. `python manage.py migrate --check` ;
+6. `python manage.py setup_sites`.
 
 `web` et `worker` ne démarrent que si `migrate` termine avec succès.
 
 Les migrations ne sont jamais exécutées pendant la construction de l'image Docker.
+
+### Diagnostiquer un échec de `migrate`
+
+Coolify lance `docker compose up -d` : le journal de déploiement n'affiche que
+`service "migrate" didn't complete successfully: exit 1`, jamais la sortie du conteneur.
+La cause réelle est dans les logs du conteneur, qui reste présent après l'échec :
+
+```bash
+docker logs "$(docker ps -a --filter name=migrate- --format '{{.Names}}' | head -n1)"
+```
+
+`migrate.sh` y écrit une ligne `ERREUR MIGRATION EEBC:` nommant la variable manquante ou
+la dépendance injoignable.
 
 ## 11. Fichiers statiques et PDF
 

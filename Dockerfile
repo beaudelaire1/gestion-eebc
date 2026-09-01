@@ -5,6 +5,9 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
     PIP_DISABLE_PIP_VERSION_CHECK=1 \
     PIP_NO_CACHE_DIR=1 \
     DJANGO_SETTINGS_MODULE=gestion_eebc.settings.prod \
+    LANG=C.UTF-8 \
+    LC_ALL=C.UTF-8 \
+    PYTHONIOENCODING=UTF-8 \
     PORT=8000
 
 WORKDIR /app
@@ -44,7 +47,8 @@ PY
 RUN DJANGO_SETTINGS_MODULE=gestion_eebc.settings.build python manage.py check --fail-level ERROR \
     && DJANGO_SETTINGS_MODULE=gestion_eebc.settings.build python manage.py collectstatic --noinput
 
-RUN chmod +x /app/start.sh \
+RUN sed -i 's/\r$//' /app/start.sh /app/migrate.sh \
+    && chmod +x /app/start.sh /app/migrate.sh \
     && addgroup --system eebc \
     && adduser --system --ingroup eebc --home /app eebc \
     && chown -R eebc:eebc /app
