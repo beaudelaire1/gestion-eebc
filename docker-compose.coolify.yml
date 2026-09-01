@@ -72,6 +72,9 @@ services:
         python manage.py migrate --noinput
     restart: "no"
     exclude_from_hc: true
+    networks:
+      - default
+      - coolify
     healthcheck:
       disable: true
 
@@ -85,6 +88,9 @@ services:
     expose:
       - "8000"
     restart: unless-stopped
+    networks:
+      - default
+      - coolify
     healthcheck:
       test:
         - CMD
@@ -112,5 +118,13 @@ services:
       migrate:
         condition: service_completed_successfully
     restart: unless-stopped
+    networks:
+      - default
+      - coolify
     healthcheck:
       disable: true
+
+networks:
+  coolify:
+    external: true
+    name: coolify
