@@ -624,7 +624,7 @@
 
 {% block content %}
 <!-- Section Navigation Bar -->
-<nav class="section-nav-bar">
+<nav class="section-nav-bar" aria-label="Navigation des sections du tableau de bord">
     <a href="#section-stats" class="nav-pill"><i class="bi bi-graph-up"></i> Statistiques</a>
     <a href="#section-actions" class="nav-pill"><i class="bi bi-lightning"></i> Actions rapides</a>
     <a href="#section-sessions" class="nav-pill"><i class="bi bi-clipboard-check"></i> Sessions</a>
@@ -751,7 +751,7 @@
         </div>
     </a>
 
-    <a href="{% url 'public:donation' %}" class="quick-action" target="_blank">
+    <a href="{% url 'public:donation' %}" class="quick-action" target="_blank" rel="noopener noreferrer">
         <div class="action-icon" style="background: linear-gradient(135deg, #F59E0B 0%, #D97706 100%);">
             <i class="bi bi-heart-fill"></i>
         </div>
@@ -783,7 +783,8 @@
             <div class="card-body text-center">
                 {% if session_stats %}
                 <div class="presence-ring">
-                    <svg width="180" height="180" viewBox="0 0 180 180">
+                    <svg width="180" height="180" viewBox="0 0 180 180" role="img" aria-labelledby="presenceRingTitle">
+                        <title id="presenceRingTitle">Taux de présence à la dernière session : {{ session_stats.rate|floatformat:0 }}%</title>
                         <circle class="ring-bg" cx="90" cy="90" r="80"></circle>
                         <circle class="ring-progress" cx="90" cy="90" r="80" data-progress="{{ session_stats.rate }}">
                         </circle>
@@ -885,7 +886,7 @@
                                 <h6 class="mb-0 fw-bold">{{ campaign.name }}</h6>
                                 <span class="badge bg-{{ campaign.status_color }}">{{ campaign.progress_percentage }}%</span>
                             </div>
-                            <div class="campaign-progress mb-2">
+                            <div class="campaign-progress mb-2" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="{{ campaign.progress_percentage }}" aria-label="Progression de la campagne {{ campaign.name }}">
                                 <div class="campaign-progress-bar" style="width: {{ campaign.progress_percentage }}%;">
                                 </div>
                             </div>
@@ -1190,8 +1191,12 @@
                 if (targetElement) {
                     targetElement.scrollIntoView({ behavior: 'smooth', block: 'start' });
                     // Update active state
-                    document.querySelectorAll('.section-nav-bar .nav-pill').forEach(p => p.classList.remove('active'));
+                    document.querySelectorAll('.section-nav-bar .nav-pill').forEach(p => {
+                        p.classList.remove('active');
+                        p.removeAttribute('aria-current');
+                    });
                     this.classList.add('active');
+                    this.setAttribute('aria-current', 'true');
                 }
             });
         });
@@ -1210,8 +1215,10 @@
             });
             navPills.forEach(pill => {
                 pill.classList.remove('active');
+                pill.removeAttribute('aria-current');
                 if (pill.getAttribute('href') === '#' + current) {
                     pill.classList.add('active');
+                    pill.setAttribute('aria-current', 'true');
                 }
             });
         }
