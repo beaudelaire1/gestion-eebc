@@ -115,7 +115,7 @@ Cette checklist exige des preuves observées sur l'environnement OVH/Coolify. Un
 - [ ] médias transférés si nécessaire.
 - [ ] recette Coolify validée avant changement DNS.
 - [ ] DNS basculé.
-- [ ] Render conservé pendant la fenêtre de rollback.
+- [ ] sauvegarde PostgreSQL Coolify planifiée, copiée hors du VPS, et restauration testée.
 
 ## Verdict
 

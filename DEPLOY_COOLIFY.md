@@ -30,7 +30,9 @@ PostgreSQL et Redis ne sont volontairement pas inclus dans le Compose applicatif
 - `.env.example` : catalogue des variables ;
 - `/healthz/ping/` : liveness sans dépendance externe.
 
-`render.yaml` reste temporairement dans le dépôt uniquement comme référence de rollback pendant la migration. Il ne doit pas être utilisé comme source de vérité Coolify.
+La migration est terminée et les ressources Render ont été supprimées le 1er septembre 2026. `render.yaml` ne décrit donc plus rien d'accessible et n'est plus une source de vérité ; il peut être retiré du dépôt, son historique restant consultable dans Git.
+
+Il n'existe plus de plateforme de repli : les sauvegardes PostgreSQL de la section 13 sont désormais le seul filet de sécurité de la production.
 
 ## 3. Créer PostgreSQL dans Coolify
 
