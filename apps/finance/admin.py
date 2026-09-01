@@ -510,3 +510,54 @@ class BudgetRequestAdmin(admin.ModelAdmin):
         )
         self.message_user(request, f"{updated} demande(s) rejetée(s).")
     reject_requests.short_description = "Rejeter les demandes sélectionnées"
+
+# =============================================================================
+# PRÉVISIONNEL BUDGÉTAIRE
+# =============================================================================
+from .models import BudgetForecast, ForecastLine
+
+
+class ForecastLineInline(admin.TabularInline):
+    """Lignes rattachées au prévisionnel.
+
+    Les douze colonnes mensuelles sont trop larges pour un inline lisible : le
+    total annuel suffit ici, le détail se modifie sur la ligne elle-même.
+    """
+
+    model = ForecastLine
+    extra = 0
+    fields = ['label', 'line_type', 'category', 'annual_total']
+    readonly_fields = ['annual_total']
+    show_change_link = True
+
+    @admin.display(description="Total annuel")
+    def annual_total(self, obj):
+        if obj.pk is None:
+            return '—'
+        return f"{obj.amount:,.2f} €".replace(',', ' ')
+
+
+@admin.register(BudgetForecast)
+class BudgetForecastAdmin(admin.ModelAdmin):
+    list_display = ['name', 'year', 'scenario', 'line_count', 'is_active', 'created_at']
+    list_filter = ['year', 'scenario', 'is_active']
+    search_fields = ['name', 'description']
+    date_hierarchy = 'created_at'
+    readonly_fields = ['created_at', 'updated_at']
+    inlines = [ForecastLineInline]
+
+    @admin.display(description="Lignes")
+    def line_count(self, obj):
+        return obj.lines.count()
+
+
+@admin.register(ForecastLine)
+class ForecastLineAdmin(admin.ModelAdmin):
+    list_display = ['label', 'forecast', 'line_type', 'category', 'annual_total']
+    list_filter = ['line_type', 'forecast__year', 'forecast__scenario', 'category']
+    search_fields = ['label', 'notes']
+    list_select_related = ['forecast', 'category']
+
+    @admin.display(description="Total annuel")
+    def annual_total(self, obj):
+        return f"{obj.amount:,.2f} €".replace(',', ' ')
