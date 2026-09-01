@@ -1,5 +1,6 @@
 {% extends 'base.html' %}
 {% load humanize %}
+{% load sanitize_tags %}
 
 {% block title %}Tableau de bord - EEBC{% endblock %}
 {% block page_title %}Tableau de bord{% endblock %}
@@ -927,7 +928,7 @@
                                 </h6>
                                 <small class="text-muted">{{ announcement.created_at|naturalday }}</small>
                             </div>
-                            <p class="mb-0 text-muted small">{{ announcement.content|truncatewords:40 }}</p>
+                            <p class="mb-0 text-muted small">{{ announcement.content|sanitize|striptags|truncatewords:40 }}</p>
                         </div>
                     </div>
                     {% endfor %}

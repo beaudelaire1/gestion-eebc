@@ -1,5 +1,6 @@
 {% extends 'public/base.html' %}
 {% load static %}
+{% load sanitize_tags %}
 
 {% block title %}Accueil - {{ settings.site_name|default:'EEBC' }}{% endblock %}
 {% block meta_description %}Bienvenue à {{ settings.site_name|default:'EEBC' }}. Découvrez nos services, événements et actualités.{% endblock %}
@@ -259,6 +260,41 @@
             <a href="{% url 'public:events_list' %}" class="btn btn-primary btn-lg rounded-pill px-5 section-gradient-button">
                 Tous les événements <i class="bi bi-arrow-right ms-2"></i>
             </a>
+        </div>
+    </div>
+</section>
+{% endif %}
+
+<!-- ============================================================
+     ANNONCES PUBLIQUES
+     ============================================================ -->
+{% if public_announcements %}
+<section class="py-5 section-slab section-slab--announcements">
+    <div class="container">
+        <div class="premium-header reveal-section">
+            <span class="overline">Informations</span>
+            <h2>Annonces</h2>
+            <p class="header-desc">Les informations pratiques de la vie de l'église.</p>
+            <div class="header-divider"></div>
+        </div>
+
+        <div class="row g-4 stagger-children">
+            {% for announcement in public_announcements %}
+            <div class="col-md-6">
+                <div class="article-card-premium h-100">
+                    <div class="article-body">
+                        <div class="mb-2">
+                            <small class="text-muted">{{ announcement.created_at|date:"d M Y" }}</small>
+                        </div>
+                        <h5 class="fw-bold mb-2">
+                            {% if announcement.is_pinned %}<i class="bi bi-pin-angle-fill text-warning me-1"></i>{% endif %}
+                            {{ announcement.title }}
+                        </h5>
+                        <p class="text-muted mb-0">{{ announcement.content|sanitize|striptags|truncatewords:40 }}</p>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
         </div>
     </div>
 </section>

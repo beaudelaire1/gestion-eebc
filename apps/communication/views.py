@@ -355,17 +355,10 @@ def notifications_count(request):
 @login_required
 def announcements_list(request):
     """Liste des annonces."""
-    from django.db.models import Q
-    now = timezone.now()
-    
-    # Annonces actives
-    active_announcements = Announcement.objects.filter(
-        is_active=True
-    ).filter(
-        Q(start_date__isnull=True) | Q(start_date__lte=now)
-    ).filter(
-        Q(end_date__isnull=True) | Q(end_date__gte=now)
-    ).order_by('-is_pinned', '-created_at')
+    from .selectors import get_active_announcements
+
+    # Une seule definition de "annonce active", partagee avec le site public.
+    active_announcements = get_active_announcements()
     
     # Toutes les annonces pour les admins
     all_announcements = None

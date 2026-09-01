@@ -75,7 +75,15 @@ class HomeView(PublicMixin, TemplateView):
         
         # Sites avec leurs infos
         context['church_sites'] = Site.objects.filter(is_active=True)
-        
+
+        # Annonces publiques : le champ visibilite proposait "Public" sans
+        # qu'aucune page publique ne consomme les annonces. Seules les annonces
+        # explicitement publiques, actives et dans leur fenetre de publication
+        # sortent du portail interne.
+        from apps.communication.selectors import get_public_announcements
+
+        context['public_announcements'] = get_public_announcements()[:4]
+
         return context
 
 

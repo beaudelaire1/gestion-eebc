@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% load sanitize_tags %}
 
 {% block title %}Supprimer l'annonce - {{ settings.site_name|default:'EEBC' }}{% endblock %}
 
@@ -22,7 +23,7 @@
                     
                     <div class="bg-light p-3 rounded mb-4">
                         <h6 class="fw-bold">{{ announcement.title }}</h6>
-                        <p class="mb-2">{{ announcement.content|truncatewords:20 }}</p>
+                        <p class="mb-2">{{ announcement.content|sanitize|striptags|truncatewords:20 }}</p>
                         <small class="text-muted">
                             Créée par {{ announcement.created_by.get_full_name|default:announcement.created_by.username }}
                             le {{ announcement.created_at|date:"d/m/Y" }}
