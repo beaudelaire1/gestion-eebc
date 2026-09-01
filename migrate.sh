@@ -142,6 +142,23 @@ PY
 echo "=== Migrations ==="
 python manage.py migrate --noinput
 python manage.py migrate --check
-python manage.py setup_sites
+
+# setup_sites est un seed d'installation : il force adresse, telephone, email et
+# horaires avec des valeurs codees en dur. Le rejouer sur une base qui contient
+# deja des sites effacerait toute modification faite depuis l'admin.
+python - <<'PYSEED'
+import django
+
+django.setup()
+
+from apps.core.models import Site
+
+if Site.objects.exists():
+    print(f'{Site.objects.count()} site(s) deja presents : seed setup_sites ignore')
+else:
+    from django.core.management import call_command
+
+    call_command('setup_sites')
+PYSEED
 
 echo "=== Migration terminee avec succes ==="
