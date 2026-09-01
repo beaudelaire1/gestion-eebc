@@ -195,7 +195,9 @@ RECAPTCHA_REQUIRED_SCORE = float(os.environ.get('RECAPTCHA_REQUIRED_SCORE', 0.5)
 # =============================================================================
 STORAGES = {
     'staticfiles': {
-        'BACKEND': 'whitenoise.storage.CompressedManifestStaticFilesStorage',
+        # Manifeste non strict : voir apps/core/storage.py. Un fichier absent
+        # ne doit pas transformer une page entière en erreur 500.
+        'BACKEND': 'apps.core.storage.ResilientManifestStaticFilesStorage',
     },
 }
 
