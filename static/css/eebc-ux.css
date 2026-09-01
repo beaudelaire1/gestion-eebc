@@ -1,0 +1,124 @@
+/* =============================================================================
+   EEBC UX/UI — couche d'accessibilité et de cohérence (audit 2026-09)
+   Périmètre : site public + application interne /app.
+   Objectif : corrections WCAG 2.2 AA / RGAA sans changer le design system existant.
+   ============================================================================= */
+
+/* Lien d'évitement : visible uniquement au focus clavier */
+.skip-link {
+    position: absolute;
+    top: 0.5rem;
+    left: 0.5rem;
+    z-index: 2000;
+    display: inline-block;
+    padding: 0.65rem 1rem;
+    border-radius: 0.6rem;
+    background: var(--eebc-primary, #0A36FF);
+    color: #ffffff;
+    font-weight: 700;
+    text-decoration: none;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.25);
+    transform: translateY(-180%);
+    transition: transform 0.18s ease;
+}
+
+.skip-link:focus,
+.skip-link:focus-visible {
+    transform: translateY(0);
+    color: #ffffff;
+    outline: 3px solid var(--public-accent, #f8b500);
+    outline-offset: 2px;
+}
+
+/* Cible du lien d'évitement : pas de contour permanent, mais focusable */
+#main-content:focus {
+    outline: none;
+}
+
+/* Focus visible homogène, sans casser Bootstrap */
+a:focus-visible,
+button:focus-visible,
+input:focus-visible,
+textarea:focus-visible,
+select:focus-visible,
+[tabindex]:focus-visible,
+.theme-option:focus-visible,
+.carousel-dot:focus-visible,
+.nav-pill:focus-visible {
+    outline: 3px solid var(--eebc-primary, #0A36FF);
+    outline-offset: 2px;
+    box-shadow: 0 0 0 0.2rem rgba(10, 54, 255, 0.18);
+}
+
+/* Zones de défilement ancrées : évite que le contenu passe sous les barres fixes */
+[id^="section-"],
+#main-content {
+    scroll-margin-top: 96px;
+}
+
+/* Les puces de carrousel sont maintenant des boutons : neutralise les styles natifs */
+.carousel-dot {
+    padding: 0;
+    appearance: none;
+    -webkit-appearance: none;
+}
+
+.carousel-dot:focus-visible {
+    outline-color: var(--public-accent, #f8b500);
+}
+
+/* Le sélecteur de thème utilise des boutons : conserve le rendu carte existant */
+.theme-option {
+    color: var(--text-primary);
+}
+
+.theme-option:focus-visible {
+    outline: 3px solid var(--accent-primary, #0A36FF);
+    outline-offset: 3px;
+}
+
+/* Les toasts doivent rester au-dessus sans masquer les erreurs de formulaire */
+#toast-container {
+    max-width: min(420px, calc(100vw - 2rem));
+}
+
+/* Confort de lecture : limite les animations non essentielles si l'utilisateur le demande */
+@media (prefers-reduced-motion: reduce) {
+    html {
+        scroll-behavior: auto !important;
+    }
+
+    *,
+    *::before,
+    *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+    }
+
+    .animate-in,
+    .reveal-left,
+    .reveal-right,
+    .reveal-scale,
+    .reveal-section,
+    .stagger-children > * {
+        opacity: 1 !important;
+        transform: none !important;
+    }
+}
+
+/* Petits écrans : préserve des zones tactiles suffisantes */
+@media (max-width: 576px) {
+    .sidebar-toggle,
+    .theme-toggle,
+    .btn,
+    .nav-link,
+    .dropdown-item {
+        min-height: 44px;
+    }
+
+    .carousel-dot {
+        width: 14px;
+        height: 14px;
+    }
+}
