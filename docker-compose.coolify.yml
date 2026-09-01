@@ -53,6 +53,11 @@ x-app-environment: &app-environment
   META_WHATSAPP_VERIFY_TOKEN: "${META_WHATSAPP_VERIFY_TOKEN:-}"
   META_WHATSAPP_APP_SECRET: "${META_WHATSAPP_APP_SECRET:-}"
   META_WHATSAPP_API_VERSION: "${META_WHATSAPP_API_VERSION:-v23.0}"
+  # Lues directement dans os.environ par apps/communication/multichannel.py :
+  # sans elles, les annonces retombent sur le texte libre, que Meta ne delivre
+  # que dans la fenetre de service client de 24 h.
+  META_WHATSAPP_ANNOUNCEMENT_TEMPLATE: "${META_WHATSAPP_ANNOUNCEMENT_TEMPLATE:-}"
+  META_WHATSAPP_TEMPLATE_LANGUAGE: "${META_WHATSAPP_TEMPLATE_LANGUAGE:-fr}"
 
   TURNSTILE_SITE_KEY: "${TURNSTILE_SITE_KEY:-}"
   TURNSTILE_SECRET_KEY: "${TURNSTILE_SECRET_KEY:-}"
