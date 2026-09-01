@@ -76,8 +76,8 @@
             <i class="bi bi-x-lg"></i>
         </button>
         <div class="sidebar__brand">
-            <h4 class="sidebar__brand-title" style="color:#ffffff !important;"><i class="bi bi-book-half me-2" style="color:#ffffff !important;"></i>EEBC</h4>
-            <small class="sidebar__brand-subtitle" style="color:#ffffff !important;">Système de Gestion</small>
+            <h4 class="sidebar__brand-title"><i class="bi bi-book-half me-2"></i>EEBC</h4>
+            <small class="sidebar__brand-subtitle">Système de Gestion</small>
         </div>
 
         <!-- Scrollable Sidebar Content -->
@@ -97,7 +97,7 @@
                     </a>
                     <a class="nav-link" href="{% url 'public:home' %}" target="_blank" rel="noopener noreferrer">
                         <i class="bi bi-globe nav-link__icon"></i>
-                        <span>Site public <i class="bi bi-box-arrow-up-right ms-1" style="font-size: 0.8em;"></i></span>
+                        <span>Site public <i class="bi bi-box-arrow-up-right ms-1 icon-xs"></i></span>
                     </a>
                 </nav>
             </div>
@@ -127,24 +127,24 @@
                         <span>Trésorerie</span>
                     </a>
                     <!-- Recettes -->
-                    <a class="nav-link {% if request.GET.type == 'dime' %}nav-link--active{% endif %}"
-                        href="{% url 'finance:transaction_list' %}?type=dime" style="padding-left:2.2rem;">
-                        <i class="bi bi-percent nav-link__icon" style="font-size:0.85em;"></i>
+                    <a class="nav-link nav-link--sub {% if request.GET.type == 'dime' %}nav-link--active{% endif %}"
+                        href="{% url 'finance:transaction_list' %}?type=dime">
+                        <i class="bi bi-percent nav-link__icon icon-sm"></i>
                         <span>Dîmes</span>
                     </a>
-                    <a class="nav-link {% if request.GET.type == 'don' %}nav-link--active{% endif %}"
-                        href="{% url 'finance:transaction_list' %}?type=don" style="padding-left:2.2rem;">
-                        <i class="bi bi-gift nav-link__icon" style="font-size:0.85em;"></i>
+                    <a class="nav-link nav-link--sub {% if request.GET.type == 'don' %}nav-link--active{% endif %}"
+                        href="{% url 'finance:transaction_list' %}?type=don">
+                        <i class="bi bi-gift nav-link__icon icon-sm"></i>
                         <span>Dons</span>
                     </a>
-                    <a class="nav-link {% if request.GET.type == 'offrande' %}nav-link--active{% endif %}"
-                        href="{% url 'finance:transaction_list' %}?type=offrande" style="padding-left:2.2rem;">
-                        <i class="bi bi-flower1 nav-link__icon" style="font-size:0.85em;"></i>
+                    <a class="nav-link nav-link--sub {% if request.GET.type == 'offrande' %}nav-link--active{% endif %}"
+                        href="{% url 'finance:transaction_list' %}?type=offrande">
+                        <i class="bi bi-flower1 nav-link__icon icon-sm"></i>
                         <span>Offrandes</span>
                     </a>
-                    <a class="nav-link {% if request.GET.type == 'depense' %}nav-link--active{% endif %}"
-                        href="{% url 'finance:transaction_list' %}?type=depense" style="padding-left:2.2rem;">
-                        <i class="bi bi-cart-dash nav-link__icon" style="font-size:0.85em;"></i>
+                    <a class="nav-link nav-link--sub {% if request.GET.type == 'depense' %}nav-link--active{% endif %}"
+                        href="{% url 'finance:transaction_list' %}?type=depense">
+                        <i class="bi bi-cart-dash nav-link__icon icon-sm"></i>
                         <span>Dépenses</span>
                     </a>
                     <a class="nav-link {% if 'online-donations' in request.path %}nav-link--active{% endif %}"
@@ -188,8 +188,8 @@
                         <span>Prévisionnel</span>
                     </a>
                     <a class="nav-link" href="{% url 'public:donation' %}" target="_blank" rel="noopener noreferrer">
-                        <i class="bi bi-heart-fill nav-link__icon" style="color: #EC4899;"></i>
-                        <span>Faire un don <i class="bi bi-box-arrow-up-right ms-1" style="font-size: 0.7em;"></i></span>
+                        <i class="bi bi-heart-fill nav-link__icon text-donation"></i>
+                        <span>Faire un don <i class="bi bi-box-arrow-up-right ms-1 icon-xxs"></i></span>
                     </a>
                 </nav>
             </div>
@@ -475,7 +475,7 @@
                 </div>
                 <div class="ms-auto d-flex align-items-center gap-2">
                     <!-- Recherche globale -->
-                    <form action="{% url 'dashboard:search' %}" method="get" class="d-none d-md-block" style="min-width:250px;" role="search" aria-label="Recherche globale">
+                    <form action="{% url 'dashboard:search' %}" method="get" class="d-none d-md-block app-search" role="search" aria-label="Recherche globale">
                         <div class="input-group input-group-sm">
                             <span class="input-group-text bg-transparent border-end-0"><i class="bi bi-search text-muted"></i></span>
                             <input type="text" name="q" class="form-control border-start-0" placeholder="Rechercher..." value="{{ request.GET.q }}" aria-label="Rechercher dans l’application">
@@ -524,8 +524,7 @@
                         <li>
                             <form method="post" action="{% url 'accounts:logout' %}" class="d-inline m-0">
                                 {% csrf_token %}
-                                <button type="submit" class="dropdown-item text-danger"
-                                    style="border: none; background: none; width: 100%; text-align: left; padding: 0.375rem 1rem;">
+                                <button type="submit" class="dropdown-item text-danger dropdown-item-btn">
                                     <i class="bi bi-box-arrow-right me-2"></i>Déconnexion
                                 </button>
                             </form>
@@ -723,10 +722,10 @@
     </script>
 
     <!-- Toast Container -->
-    <div id="toast-container" class="toast-container position-fixed top-0 end-0 p-3" style="z-index: 9999;"></div>
+    <div id="toast-container" class="toast-container position-fixed top-0 end-0 p-3"></div>
 
     <!-- Django Messages Container (hidden, converted to toasts) -->
-    <div class="django-messages" style="display: none;">
+    <div class="django-messages">
         {% if messages %}
         {% for message in messages %}
         <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
@@ -736,27 +735,22 @@
         {% endif %}
     </div>
 
-    <!-- Bannière RGPD - Consentement cookies -->
-    <div id="cookie-banner" style="display:none; position:fixed; bottom:0; left:0; right:0; z-index:99999;
-         background:#1a1a2e; color:#fff; padding:1rem 1.5rem; box-shadow:0 -4px 20px rgba(0,0,0,0.3);">
-        <div style="max-width:1200px; margin:0 auto; display:flex; align-items:center; gap:1rem; flex-wrap:wrap; justify-content:space-between;">
-            <div style="flex:1; min-width:250px;">
-                <strong><i class="bi bi-shield-lock me-2"></i>Cookies &amp; Confidentialité</strong>
-                <p style="margin:0.25rem 0 0; font-size:0.87rem; opacity:0.85;">
-                    Ce site utilise des cookies essentiels à son fonctionnement (session, sécurité CSRF).
-                    En continuant, vous acceptez leur utilisation conformément à notre politique de confidentialité.
+    <!-- Bannière RGPD - Consentement cookies (styles mutualisés dans eebc-ux.css) -->
+    <div id="cookie-banner" class="cookie-banner" role="region" aria-label="Bandeau de consentement aux cookies" aria-live="polite">
+        <div class="cookie-banner__inner">
+            <div class="cookie-banner__text">
+                <strong><i class="bi bi-shield-lock me-2" aria-hidden="true"></i>Cookies &amp; Confidentialité</strong>
+                <p class="cookie-banner__note">
+                    Ce site utilise uniquement des cookies strictement nécessaires à son fonctionnement
+                    (session, sécurité CSRF). Aucun cookie tiers ni traceur publicitaire n'est déposé.
+                    Une question ? <a href="{% url 'public:contact' %}">Contactez-nous</a>.
                 </p>
             </div>
-            <div style="display:flex; gap:0.75rem; flex-shrink:0;">
-                <button onclick="setCookieConsent('refused')"
-                        style="background:transparent; border:1px solid rgba(255,255,255,0.4); color:#fff;
-                               padding:0.5rem 1rem; border-radius:6px; cursor:pointer; font-size:0.875rem;">
+            <div class="cookie-banner__actions">
+                <button type="button" class="cookie-banner__btn" onclick="setCookieConsent('refused')">
                     Refuser
                 </button>
-                <button onclick="setCookieConsent('accepted')"
-                        style="background:#0A36FF; border:none; color:#fff;
-                               padding:0.5rem 1.25rem; border-radius:6px; cursor:pointer;
-                               font-size:0.875rem; font-weight:600;">
+                <button type="button" class="cookie-banner__btn cookie-banner__btn--accept" onclick="setCookieConsent('accepted')">
                     Tout accepter
                 </button>
             </div>
@@ -764,13 +758,25 @@
     </div>
     <script>
     (function() {
-        var consent = localStorage.getItem('eebc_cookie_consent');
-        if (!consent) {
+        // Consentement valable 6 mois (recommandation CNIL)
+        var CONSENT_TTL_MS = 180 * 24 * 60 * 60 * 1000;
+        try {
+            var raw = localStorage.getItem('eebc_cookie_consent');
+            if (raw) {
+                var data = JSON.parse(raw);
+                if (data && data.v && data.t && (Date.now() - data.t) < CONSENT_TTL_MS) {
+                    return; // consentement encore valide
+                }
+            }
+            document.getElementById('cookie-banner').style.display = 'block';
+        } catch (e) {
             document.getElementById('cookie-banner').style.display = 'block';
         }
     })();
     function setCookieConsent(value) {
-        localStorage.setItem('eebc_cookie_consent', value);
+        try {
+            localStorage.setItem('eebc_cookie_consent', JSON.stringify({ v: value, t: Date.now() }));
+        } catch (e) {}
         document.getElementById('cookie-banner').style.display = 'none';
     }
     </script>
