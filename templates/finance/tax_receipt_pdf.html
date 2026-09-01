@@ -46,6 +46,18 @@
                     <td class="info-label">Adresse</td>
                     <td class="info-value">{{ church_address }}</td>
                 </tr>
+                {% if church_phone %}
+                <tr>
+                    <td class="info-label">Téléphone</td>
+                    <td class="info-value">{{ church_phone }}</td>
+                </tr>
+                {% endif %}
+                {% if church_email %}
+                <tr>
+                    <td class="info-label">Email</td>
+                    <td class="info-value">{{ church_email }}</td>
+                </tr>
+                {% endif %}
                 {% if church_siret %}
                 <tr>
                     <td class="info-label">SIRET</td>
@@ -208,6 +220,8 @@
     <div class="footer">
         <div class="footer-gold"></div>
         {{ church_name }} — {{ church_address }}
+        {% if church_phone %} — {{ church_phone }}{% endif %}
+        {% if church_email %} — {{ church_email }}{% endif %}
         {% if church_siret %} — SIRET {{ church_siret }}{% endif %}
     </div>
 </body>

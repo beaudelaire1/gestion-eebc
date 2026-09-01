@@ -38,6 +38,15 @@ x-app-environment: &app-environment
   HOSTINGER_EMAIL_HOST_PASSWORD: "${HOSTINGER_EMAIL_HOST_PASSWORD:-}"
   DEFAULT_FROM_EMAIL: "${DEFAULT_FROM_EMAIL:-EEBC <contact@eglise-ebc.org>}"
 
+  # Identite de l'organisme imprimee sur les recus fiscaux et les recus de don.
+  CHURCH_NAME: "${CHURCH_NAME:-}"
+  CHURCH_ADDRESS: "${CHURCH_ADDRESS:-}"
+  CHURCH_CITY: "${CHURCH_CITY:-Cayenne}"
+  CHURCH_PHONE: "${CHURCH_PHONE:-}"
+  CHURCH_EMAIL: "${CHURCH_EMAIL:-contact@eglise-ebc.org}"
+  CHURCH_SIRET: "${CHURCH_SIRET:-}"
+  CHURCH_RNA: "${CHURCH_RNA:-}"
+
   SITE_URL: "${SITE_URL:-https://eglise-ebc.org}"
   SITE_NAME: "${SITE_NAME:-EEBC}"
   SENTRY_DSN: "${SENTRY_DSN:-}"

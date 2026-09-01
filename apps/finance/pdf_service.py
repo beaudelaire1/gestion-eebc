@@ -20,13 +20,24 @@ logger = logging.getLogger(__name__)
 
 
 # ─── Informations de l'église (centralisées) ────────────────────────────────
+def _church_env(name, fallback=""):
+    """Valeur d'environnement en traitant une chaîne vide comme absente.
+
+    Une plateforme de déploiement peut définir la variable à vide : le défaut de
+    ``os.environ.get`` ne s'appliquerait alors pas, et le reçu fiscal partirait
+    sans dénomination ni adresse de l'organisme.
+    """
+
+    return os.environ.get(name, '').strip() or fallback
+
+
 CHURCH_INFO = {
-    'name': os.environ.get('CHURCH_NAME', "Église Évangélique Baptiste de Cabassou"),
-    'address': os.environ.get('CHURCH_ADDRESS', "11 lot Calimbé 2, rte de Cabassou, 97300 Cayenne"),
-    'phone': os.environ.get('CHURCH_PHONE', ""),
-    'email': os.environ.get('CHURCH_EMAIL', "contact@eglise-ebc.org"),
-    'siret': os.environ.get('CHURCH_SIRET', ""),
-    'rna': os.environ.get('CHURCH_RNA', ""),
+    'name': _church_env('CHURCH_NAME', "Église Évangélique Baptiste de Cabassou"),
+    'address': _church_env('CHURCH_ADDRESS', "11 lot Calimbé 2, rte de Cabassou, 97300 Cayenne"),
+    'phone': _church_env('CHURCH_PHONE'),
+    'email': _church_env('CHURCH_EMAIL', "contact@eglise-ebc.org"),
+    'siret': _church_env('CHURCH_SIRET'),
+    'rna': _church_env('CHURCH_RNA'),
 }
 
 DONATION_RECEIPT_TEMPLATE_DIR = Path(settings.BASE_DIR) / 'apps' / 'finance' / 'pdf_templates'
@@ -34,6 +45,28 @@ FRENCH_MONTHS = (
     'janvier', 'fevrier', 'mars', 'avril', 'mai', 'juin',
     'juillet', 'aout', 'septembre', 'octobre', 'novembre', 'decembre',
 )
+
+
+def build_tax_receipt_context(tax_receipt):
+    """Contexte du reçu fiscal.
+
+    Le reçu fiscal est le seul document que le donateur conserve et présente à
+    l'administration. Il doit donc porter de quoi joindre l'organisme : sans
+    téléphone ni email, un donateur qui conteste un montant ou signale une
+    erreur d'adresse n'a aucun moyen de réponse.
+    """
+
+    return {
+        'receipt': tax_receipt,
+        'logo_base64': _get_logo_base64(),
+        'church_name': CHURCH_INFO['name'],
+        'church_address': CHURCH_INFO['address'],
+        'church_phone': CHURCH_INFO['phone'],
+        'church_email': CHURCH_INFO['email'],
+        'church_siret': CHURCH_INFO['siret'],
+        'church_rna': CHURCH_INFO['rna'],
+        'amount_words': _amount_to_words(tax_receipt.total_amount),
+    }
 
 
 def generate_tax_receipt_pdf(tax_receipt):
@@ -51,19 +84,7 @@ def generate_tax_receipt_pdf(tax_receipt):
     except ImportError:
         raise ImportError("WeasyPrint n'est pas installé. Installez-le avec: pip install weasyprint")
     
-    # Charger le logo
-    logo_base64 = _get_logo_base64()
-
-    # Contexte pour le template
-    context = {
-        'receipt': tax_receipt,
-        'logo_base64': logo_base64,
-        'church_name': CHURCH_INFO['name'],
-        'church_address': CHURCH_INFO['address'],
-        'church_siret': CHURCH_INFO['siret'],
-        'church_rna': CHURCH_INFO['rna'],
-        'amount_words': _amount_to_words(tax_receipt.total_amount),
-    }
+    context = build_tax_receipt_context(tax_receipt)
     
     # Rendre le template HTML
     html_content = render_to_string('finance/tax_receipt_pdf.html', context)
