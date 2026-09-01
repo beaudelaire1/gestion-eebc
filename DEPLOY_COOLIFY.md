@@ -1,6 +1,6 @@
 # Déploiement EEBC — OVH + Coolify
 
-Dernière mise à jour : 31 août 2026
+Dernière mise à jour : 1er septembre 2026
 Branche suivie : `develop`
 Révision de recette : noter le SHA du commit déployé avant chaque validation
 
@@ -26,6 +26,7 @@ PostgreSQL et Redis ne sont volontairement pas inclus dans le Compose applicatif
 - `docker-compose.coolify.yml` : web, worker et migration ;
 - `gestion_eebc/settings/prod.py` : invariants de production ;
 - `start.sh` : préflight Django puis Gunicorn ;
+- `migrate.sh` : préflight du service one-shot `migrate` puis migrations ;
 - `.env.example` : catalogue des variables ;
 - `/healthz/ping/` : liveness sans dépendance externe.
 
@@ -33,7 +34,9 @@ PostgreSQL et Redis ne sont volontairement pas inclus dans le Compose applicatif
 
 ## 3. Créer PostgreSQL dans Coolify
 
-Créer une ressource PostgreSQL dédiée dans le même projet/environnement Coolify. PostgreSQL 17 convient à la migration actuelle.
+Créer une ressource PostgreSQL dédiée dans le même projet/environnement Coolify.
+
+Choisir une version **au moins égale** à celle de la base à reprendre : un dump ne se restaure jamais vers une version majeure antérieure. La migration de septembre 2026 a été faite en 18.6 des deux côtés.
 
 Après démarrage :
 
@@ -81,13 +84,9 @@ Dans Coolify :
 7. vérifier que Coolify détecte `migrate`, `web` et `worker` ;
 8. rendre public uniquement le service `web`.
 
-Le service public écoute en interne sur le port `8000`. Dans le champ Domains du service web, cibler le port interne, par exemple :
+Le service public écoute en interne sur le port `8000`. Selon la version de Coolify, le champ Domains attend soit `https://eglise-ebc.org:8000`, soit le seul domaine — le gestionnaire de domaines récent déduit le port depuis le `expose` du Compose. Vérifier dans les deux cas que le routeur généré fonctionne (voir l'annexe).
 
-```text
-https://eglise-ebc.org:8000
-```
-
-Ajouter `www.eglise-ebc.org` uniquement si ce nom doit également être servi par cette application.
+Saisir les domaines à la main : un copier-coller depuis un client qui transforme les URL en liens injecte du markdown dans la règle Traefik.
 
 ## 7. Variables obligatoires
 
@@ -176,7 +175,9 @@ Ajouter ensuite les secrets Stripe, Meta WhatsApp, Turnstile et Sentry uniquemen
 3. contrôle d'accès à Redis ;
 4. `python manage.py migrate --noinput` ;
 5. `python manage.py migrate --check` ;
-6. `python manage.py setup_sites`.
+6. `python manage.py setup_sites`, **uniquement si aucun `Site` n'existe**.
+
+Le seed est conditionnel parce qu'il force adresse, téléphone, email et horaires avec des valeurs codées en dur : le rejouer sur une base peuplée effacerait toute modification faite depuis l'admin.
 
 `web` et `worker` ne démarrent que si `migrate` termine avec succès.
 
@@ -274,23 +275,169 @@ Puis vérifier :
 - redémarrage du web sans perte de données ;
 - sauvegarde PostgreSQL puis restauration isolée.
 
-## 15. Bascule
+## 15. Reprise des données depuis l'ancien hébergeur
 
-Ne modifier le DNS de `eglise-ebc.org` qu'après validation de recette.
+### Repérer les noms réels
 
-Ordre recommandé :
+Coolify nomme le conteneur d'une ressource base de données d'après son **UUID**, pas d'après
+« postgres ». La base applicative elle-même porte le nom `postgres`, base de maintenance par
+défaut de l'image. Relever les noms avant toute commande :
 
-1. réduire temporairement le TTL DNS si nécessaire ;
-2. sauvegarder la base source ;
-3. arrêter les écritures sur l'ancien environnement pendant la copie finale ;
-4. restaurer/importer PostgreSQL sur Coolify ;
-5. migrer les médias si le backend change ;
-6. lancer les contrôles de cohérence ;
-7. basculer le DNS ;
-8. surveiller logs, healthchecks, emails et worker ;
-9. conserver Render disponible pendant la fenêtre de rollback définie.
+```bash
+docker ps -a --format '{{.Names}} {{.Status}}'
+```
 
-## 16. Critère de validation
+### Vérifier les versions
+
+Un dump ne se restaure jamais vers une version majeure antérieure. Comparer source et cible
+avant de commencer :
+
+```bash
+docker exec <CONTENEUR_PG> sh -c 'psql -U "$POSTGRES_USER" -d "$POSTGRES_DB" -c "SHOW server_version"'
+```
+
+Si la source est plus récente que la cible, recréer la ressource PostgreSQL Coolify dans la
+bonne version — opération indolore tant que la base cible ne contient que des données de seed,
+impossible une fois les données réelles importées.
+
+### Suspendre les écritures à la source
+
+Avant la copie finale, suspendre le service web **et les tâches planifiées** de l'ancien
+hébergeur. Un cron de notifications resté actif continue d'écrire dans la base et d'envoyer des
+messages aux membres.
+
+### Dump
+
+Lancer `pg_dump` depuis le conteneur PostgreSQL de destination, pour que la version du client
+corresponde à celle du serveur cible :
+
+```bash
+docker exec <CONTENEUR_PG> pg_dump --no-owner --no-privileges -Fc "<URL_EXTERNE_SOURCE>?sslmode=require" > /root/source.dump
+```
+
+Contrôler le contenu, pas seulement la taille du fichier :
+
+```bash
+docker exec -i <CONTENEUR_PG> pg_restore --list < /root/source.dump | grep -c "TABLE DATA"
+```
+
+### Restauration
+
+Sauvegarder d'abord la base actuelle :
+
+```bash
+docker exec <CONTENEUR_PG> sh -c 'pg_dump --no-owner --no-privileges -Fc -U "$POSTGRES_USER" "$POSTGRES_DB"' > /root/avant_restore.dump
+```
+
+Arrêter l'application pour qu'aucune connexion ne se rouvre pendant la bascule :
+
+```bash
+docker stop <CONTENEUR_WEB> <CONTENEUR_WORKER>
+```
+
+Vider le schéma. Ne pas tenter `DROP DATABASE` : la base applicative s'appelant `postgres`, elle
+est ouverte par la connexion courante et le serveur refuse.
+
+```bash
+docker exec <CONTENEUR_PG> sh -c 'psql -U "$POSTGRES_USER" -d "$POSTGRES_DB" -c "DROP SCHEMA public CASCADE" -c "CREATE SCHEMA public" -c "GRANT ALL ON SCHEMA public TO \"$POSTGRES_USER\"" -c "GRANT ALL ON SCHEMA public TO public"'
+```
+
+Restaurer :
+
+```bash
+docker exec -i <CONTENEUR_PG> sh -c 'pg_restore --no-owner --no-privileges -U "$POSTGRES_USER" -d "$POSTGRES_DB"' < /root/source.dump
+```
+
+Redéployer ensuite depuis Coolify plutôt que de relancer les conteneurs à la main : le service
+`migrate` doit rejouer son préflight sur la base restaurée.
+
+### Vérifier
+
+```bash
+docker exec <CONTENEUR_WEB> python manage.py shell -c "from apps.members.models import Member; print(Member.objects.count())"
+```
+
+Trois points à connaître :
+
+- **les sessions restaurées sont invalides** : elles sont signées avec le `SECRET_KEY` de
+  l'ancien environnement. Les empreintes de mots de passe, elles, restent valides ;
+- **les médias suivent sans action** tant que `CLOUDINARY_URL` et `MEDIA_STORAGE_BACKEND` sont
+  inchangés : la base ne stocke que des chemins ;
+- **les fichiers `.dump` contiennent des données personnelles.** Les sortir du serveur ou les
+  supprimer une fois la vérification faite.
+
+## 16. Bascule DNS derrière Cloudflare
+
+Le domaine `eglise-ebc.org` est géré par Cloudflare. La bascule se fait donc dans le DNS
+Cloudflare, pas chez le registrar, et deux réglages Cloudflare peuvent casser le site.
+
+### Valider l'origine avant de toucher au DNS
+
+Forcer la résolution vers le VPS sans rien changer publiquement :
+
+```bash
+curl -k --resolve eglise-ebc.org:443:<IP_DU_VPS> https://eglise-ebc.org/healthz/ping/
+```
+
+Le `-k` est attendu : tant que le DNS public ne pointe pas sur le serveur, Let's Encrypt ne peut
+pas valider le challenge HTTP et Traefik sert un certificat auto-signé. Une réponse `200` prouve
+que le routage Traefik et l'application sont corrects.
+
+### Basculer
+
+1. enregistrement `A` de l'apex et du `www` → IP du VPS ;
+2. statut proxy sur **DNS only** (nuage gris) le temps de l'émission du certificat : le proxy
+   orange fait échouer le challenge HTTP-01 ;
+3. **supprimer tout enregistrement `AAAA` résiduel.** Le VPS n'ayant pas d'IPv6 configurée pour
+   cette application, un `AAAA` pointant vers l'ancien hébergeur enverrait les visiteurs IPv6 au
+   mauvais endroit, avec un site qui fonctionne pour les uns et pas pour les autres ;
+4. vérifier la propagation :
+
+```bash
+dig +short eglise-ebc.org @1.1.1.1
+```
+
+5. déclencher l'émission du certificat, Traefik ne réessayant pas immédiatement après un échec :
+
+```bash
+docker restart coolify-proxy
+```
+
+6. vérifier le certificat réel, sans `-k` :
+
+```bash
+echo | openssl s_client -connect eglise-ebc.org:443 -servername eglise-ebc.org 2>/dev/null | openssl x509 -noout -issuer -dates
+```
+
+### Remettre le proxy Cloudflare
+
+Passer SSL/TLS en **Full (strict)** *avant* de remettre le nuage orange.
+
+Le mode `Flexible` provoquerait une boucle de redirection infinie : Cloudflare parlerait en HTTP
+à l'origine, Django verrait `X-Forwarded-Proto: http` et renverrait une redirection vers HTTPS,
+indéfiniment.
+
+Une fois le proxy rétabli, `TRUSTED_CLIENT_IP_HEADER=HTTP_CF_CONNECTING_IP` n'est fiable que si
+le VPS n'est pas joignable en direct : sans filtrage du port 443 sur les plages Cloudflare,
+l'en-tête est falsifiable et le rate limiting contournable.
+
+### Validation navigateur
+
+Elle n'est possible qu'après l'obtention du certificat. `SECURE_HSTS_SECONDS` valant un an avec
+`preload`, les navigateurs ayant déjà visité le site refusent toute exception de certificat, y
+compris via le fichier `hosts`. Avant la bascule, seuls les contrôles `curl` sont exploitables.
+
+## 17. Démantèlement de l'ancien hébergeur
+
+Une fois la recette validée et la fenêtre de rollback écoulée :
+
+1. supprimer les services applicatifs ;
+2. supprimer **les tâches planifiées** en priorité : un cron de notifications resté actif
+   enverrait des messages en double aux membres ;
+3. régénérer le mot de passe de la base source ;
+4. conserver un dump hors ligne avant suppression définitive de la base.
+
+## 18. Critère de validation
 
 OVH + Coolify est déclaré prêt uniquement lorsque :
 
@@ -303,3 +450,55 @@ OVH + Coolify est déclaré prêt uniquement lorsque :
 7. une sauvegarde PostgreSQL est créée et restaurée avec succès ;
 8. la tâche quotidienne est exécutée au bon fuseau ;
 9. le déploiement depuis GitHub fonctionne après un nouveau commit.
+
+## Annexe — diagnostics
+
+### `service "migrate" didn't complete successfully: exit 1`
+
+Coolify lance `docker compose up -d` : la sortie du conteneur `migrate` n'apparaît jamais dans le
+journal de déploiement. Le conteneur, lui, reste présent après l'échec :
+
+```bash
+docker logs "$(docker ps -a --filter name=migrate- --format '{{.Names}}' | head -n1)"
+```
+
+`migrate.sh` y écrit une ligne `ERREUR MIGRATION EEBC:` nommant la variable manquante ou la
+dépendance injoignable. Au-delà, c'est une traceback Django.
+
+### `no available server`
+
+Réponse du routeur attrape-tout de Coolify : aucun routeur Traefik ne correspond au domaine
+demandé. Vérifier les règles réellement générées :
+
+```bash
+docker inspect -f '{{range $k,$v := .Config.Labels}}{{$k}}={{$v}}{{"\n"}}{{end}}' <CONTENEUR_WEB> | grep -i rule
+```
+
+Les labels Traefik sont figés à la **création** du conteneur : après modification des domaines,
+un redéploiement est nécessaire, un simple enregistrement ne suffit pas.
+
+Saisir les domaines **à la main** dans l'interface. Un copier-coller depuis un client qui
+transforme les URL en liens injecte du markdown dans la règle, et le routeur ne correspond alors
+à rien.
+
+### `503` sur toutes les URL
+
+Les conteneurs sont en cours de recréation, ou `migrate` a échoué : avec
+`depends_on: service_completed_successfully`, `web` et `worker` ne sont jamais créés si la
+migration échoue.
+
+```bash
+docker ps -a --format '{{.Names}} {{.Status}}'
+```
+
+### `400 Bad Request` sur une sonde locale
+
+Django rejette tout `Host` absent de `ALLOWED_HOSTS`. Une sonde qui appelle `127.0.0.1` doit se
+présenter avec un hôte autorisé, sinon le healthcheck reste `unhealthy` en permanence — et
+Traefik écarte les conteneurs qui ne sont pas `healthy`.
+
+### `500` sur toutes les pages, santé à `200`
+
+`CompressedManifestStaticFilesStorage` lève une `ValueError` au rendu pour tout fichier absent du
+manifeste. Les endpoints de santé ne rendant aucun template, ils continuent de répondre `200`.
+Le test `apps/core/test_static_template_references.py` vérifie ce cas hors production.
