@@ -96,19 +96,21 @@ class ThemeManager {
         selector.id = 'themeSelector';
         selector.className = 'theme-selector';
         selector.innerHTML = `
-            <div class="theme-selector__content">
+            <div class="theme-selector__content" role="dialog" aria-modal="true" aria-label="Sélecteur de thème">
                 <div class="theme-selector__header">
                     <h6 class="theme-selector__title">
                         <i class="bi bi-palette me-2"></i>
                         Choisir un thème
                     </h6>
-                    <button class="theme-selector__close" onclick="themeManager.hideThemeSelector()">
-                        <i class="bi bi-x"></i>
+                    <button class="theme-selector__close" type="button" onclick="themeManager.hideThemeSelector()" aria-label="Fermer le sélecteur de thème">
+                        <i class="bi bi-x" aria-hidden="true"></i>
                     </button>
                 </div>
                 <div class="theme-selector__grid">
                     ${this.themes.map(theme => `
-                        <div class="theme-option ${theme.id === this.currentTheme ? 'theme-option--active' : ''}" 
+                        <button type="button" class="theme-option ${theme.id === this.currentTheme ? 'theme-option--active' : ''}"
+                             aria-pressed="${theme.id === this.currentTheme}"
+                             aria-label="Appliquer le thème ${theme.name}"
                              data-theme="${theme.id}"
                              onclick="themeManager.selectTheme('${theme.id}')">
                             <div class="theme-option__preview" data-preview-theme="${theme.id}">
@@ -125,7 +127,7 @@ class ThemeManager {
                                 </div>
                                 <div class="theme-option__description">${theme.description}</div>
                             </div>
-                        </div>
+                        </button>
                     `).join('')}
                 </div>
             </div>
@@ -139,6 +141,8 @@ class ThemeManager {
         if (selector) {
             selector.classList.add('theme-selector--visible');
             document.body.classList.add('theme-selector-open');
+            document.getElementById('themeToggle')?.setAttribute('aria-expanded', 'true');
+            selector.querySelector('.theme-option--active')?.focus();
         }
     }
 
@@ -147,6 +151,7 @@ class ThemeManager {
         if (selector) {
             selector.classList.remove('theme-selector--visible');
             document.body.classList.remove('theme-selector-open');
+            document.getElementById('themeToggle')?.setAttribute('aria-expanded', 'false');
         }
     }
 
@@ -154,11 +159,13 @@ class ThemeManager {
         // Mettre à jour l'état actif
         document.querySelectorAll('.theme-option').forEach(option => {
             option.classList.remove('theme-option--active');
+            option.setAttribute('aria-pressed', 'false');
         });
         
         const selectedOption = document.querySelector(`[data-theme="${themeId}"]`);
         if (selectedOption) {
             selectedOption.classList.add('theme-option--active');
+            selectedOption.setAttribute('aria-pressed', 'true');
         }
 
         // Appliquer le thème
@@ -217,7 +224,7 @@ class ThemeManager {
             const themeButton = document.getElementById('themeToggle');
             
             if (selector && selector.classList.contains('theme-selector--visible')) {
-                if (!selector.contains(e.target) && !themeButton.contains(e.target)) {
+                if (!selector.contains(e.target) && !(themeButton && themeButton.contains(e.target))) {
                     this.hideThemeSelector();
                 }
             }
