@@ -14,7 +14,7 @@
     <!-- E1: Open Graph Meta Tags (social sharing) — URLs absolues obligatoires -->
     <meta property="og:title" content="{% block og_title %}{{ block.super|truncatewords:8 }}{% endblock %}">
     <meta property="og:description" content="{% block og_description %}{{ block.super|default:settings.meta_description|default:'Église Évangélique Baptiste de Cabassou'|truncatewords:30 }}{% endblock %}">
-    <meta property="og:image" content="{% block og_image %}{% if settings.og_image_url %}{{ settings.og_image_url }}{% else %}{{ request.scheme }}://{{ request.get_host }}{% static 'img/og-image.png' %}{% endif %}{% endblock %}">
+    <meta property="og:image" content="{% block og_image %}{% if settings.og_image_url %}{{ settings.og_image_url }}{% else %}{{ request.scheme }}://{{ request.get_host }}{% static 'images/eebc-logo.png' %}{% endif %}{% endblock %}">
     <meta property="og:image:alt" content="{% block og_image_alt %}{{ settings.site_name|default:'EEBC' }}{% endblock %}">
     <meta property="og:type" content="{% block og_type %}website{% endblock %}">
     <meta property="og:url" content="{{ request.build_absolute_uri }}">
@@ -25,7 +25,7 @@
     <meta name="twitter:card" content="summary_large_image">
     <meta name="twitter:title" content="{% block twitter_title %}{{ block.super|truncatewords:8 }}{% endblock %}">
     <meta name="twitter:description" content="{% block twitter_description %}{{ block.super|default:settings.meta_description|default:'Église Évangélique Baptiste de Cabassou'|truncatewords:30 }}{% endblock %}">
-    <meta name="twitter:image" content="{% block twitter_image %}{% if settings.og_image_url %}{{ settings.og_image_url }}{% else %}{{ request.scheme }}://{{ request.get_host }}{% static 'img/og-image.png' %}{% endif %}{% endblock %}">
+    <meta name="twitter:image" content="{% block twitter_image %}{% if settings.og_image_url %}{{ settings.og_image_url }}{% else %}{{ request.scheme }}://{{ request.get_host }}{% static 'images/eebc-logo.png' %}{% endif %}{% endblock %}">
     <meta name="twitter:image:alt" content="{% block twitter_image_alt %}{{ settings.site_name|default:'EEBC' }}{% endblock %}">
     
     <title>{% block title %}{{ settings.site_name|default:'EEBC' }}{% endblock %}</title>
@@ -63,7 +63,7 @@
         "name": "{{ settings.site_name|default:'EEBC' }}",
         "alternateName": "Église Évangélique Baptiste de Cabassou",
         "url": "{{ request.scheme }}://{{ request.get_host }}/",
-        "logo": "{{ request.scheme }}://{{ request.get_host }}{% static 'img/logo.png' %}",
+        "logo": "{{ request.scheme }}://{{ request.get_host }}{% static 'images/eebc-logo.png' %}",
         "description": "{{ settings.meta_description|default:'Église Évangélique Baptiste de Cabassou' }}"{% if settings.facebook_url or settings.instagram_url %},
         "sameAs": [{% if settings.facebook_url %}"{{ settings.facebook_url }}"{% endif %}{% if settings.facebook_url and settings.instagram_url %}, {% endif %}{% if settings.instagram_url %}"{{ settings.instagram_url }}"{% endif %}]{% endif %}{% if settings.phone %},
         "telephone": "{{ settings.phone }}"{% endif %}{% if sites %},

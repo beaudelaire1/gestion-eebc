@@ -7,7 +7,7 @@
 
 {% block og_title %}{{ event.title }}{% endblock %}
 {% block og_description %}{{ event.description|truncatewords:30|default:settings.meta_description }}{% endblock %}
-{% block og_image %}{{ event.image.url|default:settings.og_image_url|default:'/static/img/og-image.png' }}{% endblock %}
+{% block og_image %}{% if event.image %}{{ event.image.url }}{% else %}{{ block.super }}{% endif %}{% endblock %}
 {% block og_type %}event{% endblock %}
 
 {% block json_ld %}
