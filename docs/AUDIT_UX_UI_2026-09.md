@@ -36,7 +36,7 @@ L’objectif est d’améliorer l’expérience publique et l’application inte
 ### Majeur
 
 5. **Styles inline massifs dans les templates.**  
-   Analyse statique : 950 occurrences de `style=` sur 364 templates, dont beaucoup hors emails. Cela fragmente la charte et complique les thèmes sombres.
+   Analyse statique : 949 occurrences de `style=`, réparties ainsi : 489 dans les templates d'e-mails (le CSS inline y est **requis** par les clients de messagerie : ne pas convertir), ~36 dans les documents print/PDF (rendus autonomes WeasyPrint), 82 valeurs dynamiques (`{{ ... }}`) et ~330 statiques dans les pages web. Ce sont ces ~330 qui fragmentent la charte et compliquent les thèmes sombres.
 
 6. **Règles CSS trop globales.**  
    `components.css` applique `*` pour la police et `themes.css` impose une transition sur tous les éléments. La couche d’application des thèmes utilise ensuite de nombreux `!important`, ce qui rend les contrastes difficiles à garantir sur les 23 thèmes.
@@ -67,16 +67,25 @@ L’objectif est d’améliorer l’expérience publique et l’application inte
 - `templates/public/home.html` : carrousel déclaré comme région `carrousel`, puces transformées en boutons avec `aria-label` et `aria-current`, slides masquées via `aria-hidden`.
 - `templates/dashboard/home.html` : navigation de section nommée, `aria-current`, progression des campagnes en `role="progressbar"`, anneau de présence avec `<title>`, lien externe de don sécurisé.
 
+### Sortie du CSS inline (gabarits partagés)
+
+- `static/css/eebc-ux.css` : ajout d'une section d'utilitaires (`nav-link--sub`, `icon-sm/xs/xxs`, `text-donation`, `app-search`, `dropdown-item-btn`, `bg-gradient-*`, `bg-soft-*`, `stat-subbreakdown`, `event-color-dot`, bandeau `.cookie-banner` BEM, `#scrollTopBtn`).
+- `templates/base.html` : **25 attributs `style` → 0**. Suppression de styles redondants avec `components.css` (marque sidebar), sous-liens de navigation et bouton de déconnexion classés, bandeau cookies unifié avec le site public (même markup BEM, `role="region"`, `aria-live`, consentement valable 6 mois façon CNIL, `type="button"` sur les boutons).
+- `templates/public/base.html` : **10 attributs `style` → 0**. Bandeau cookies classé, bouton retour-en-haut déplacé en CSS.
+- `templates/dashboard/home.html` : **20 attributs `style` → 6**, tous légitimes : 4 propriétés personnalisées `--card-accent` (pattern recommandé), la couleur d'événement migrée en `--event-color`, la largeur dynamique de la barre de progression. Suppression de 3 fonds d'icônes redondants (déjà couverts par `--card-accent` hérité).
+- Règle durable documentée : statique récurrent → classe utilitaire ; valeur dynamique → propriété personnalisée inline ; e-mail → inline conservé.
+
 ## 5. Validations effectuées
 
 - Téléchargement de la branche `develop` et analyse statique de 364 templates.
 - Compteurs avant correction : 950 styles inline, 83 `onclick`, 60 images (aucune sans `alt` détectée), 35 boutons sans `type`, 156 tables, 44 liens `target="_blank"`.
 - Vérification des points d’entrée : site public via `apps/core/urls.py`, application interne sous `/app` via `gestion_eebc/urls.py`.
 - Contrôles locaux : `git diff --check`, vérification des marqueurs critiques et `node --check` sur le JavaScript modifié.
+- Vérification de redondance avant suppression (ex. marque sidebar déjà forcée en blanc par `components.css`, fonds d'icônes déjà couverts par `--card-accent`) et parité de cascade vérifiée contre `themes.css` (aucun override `!important` sur les éléments convertis).
 
 ## 6. Risques restants et prochaines étapes
 
-- **Refactor CSS nécessaire** : réduire progressivement les `!important` de la couche thème et remplacer les styles inline par des classes utilitaires.
+- **Refactor CSS nécessaire** : réduire progressivement les `!important` de la couche thème et étendre la sortie du CSS inline aux ~275 occurrences statiques restantes, hors gabarits partagés (pages métier), en suivant la règle ci-dessus. Les 489 occurrences des e-mails et les documents print/PDF ne sont **pas** à convertir.
 - **Titres du carrousel** : décider si seule la première slide active porte le `h1`, ou passer les slides en `h2` avec un `h1` fixe masqué visuellement.
 - **Recherche mobile** : ajouter un bouton recherche dans le top bar mobile ou une page `/app/search/` dédiée.
 - **Tests à brancher** : ajouter un contrôle automatisé d’accessibilité (axe-core ou pa11y) sur `/`, `/contact/`, `/inscription/`, `/app/` et une page formulaire avec erreurs.
