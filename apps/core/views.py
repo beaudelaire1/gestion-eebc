@@ -15,9 +15,19 @@ logger = logging.getLogger(__name__)
 
 from .models import (
     Site, PageContent, NewsArticle, ContactMessage, 
-    VisitorRegistration, PublicEvent, Slider, SiteSettings
+    VisitorRegistration, PublicEvent, Slider, SiteSettings, WorshipSchedule
 )
 from .utils.turnstile import validate_turnstile_with_ip
+
+
+def get_sites_with_schedules():
+    """Sites actifs avec leurs horaires de culte actifs préchargés."""
+    return Site.objects.filter(is_active=True).prefetch_related(
+        models.Prefetch(
+            'worship_schedules_list',
+            queryset=WorshipSchedule.objects.filter(is_active=True),
+        )
+    )
 
 
 def get_visible_articles_queryset():
@@ -44,7 +54,7 @@ class PublicMixin:
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context['settings'] = SiteSettings.get_settings()
-        context['sites'] = Site.objects.filter(is_active=True)
+        context['sites'] = get_sites_with_schedules()
         context['menu_pages'] = PageContent.objects.filter(
             is_published=True, 
             show_in_menu=True
@@ -74,7 +84,7 @@ class HomeView(PublicMixin, TemplateView):
         ).order_by('start_date')[:4]
         
         # Sites avec leurs infos
-        context['church_sites'] = Site.objects.filter(is_active=True)
+        context['church_sites'] = get_sites_with_schedules()
         
         return context
 
@@ -243,7 +253,7 @@ class SitesView(PublicMixin, TemplateView):
     
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context['church_sites'] = Site.objects.filter(is_active=True)
+        context['church_sites'] = get_sites_with_schedules()
         return context
 
 

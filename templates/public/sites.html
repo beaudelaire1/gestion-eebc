@@ -1,5 +1,5 @@
 {% extends 'public/base.html' %}
-{% load l10n %}
+{% load l10n schedule_tags %}
 
 {% block title %}Nos Églises - {{ settings.site_name|default:'EEBC' }}{% endblock %}
 {% block meta_description %}Trouvez nos différents sites et localisations. Horaires des services et adresses de contact.{% endblock %}
@@ -50,13 +50,44 @@
                             <h3 class="h5 text-primary mb-3">
                                 <i class="bi bi-clock me-2" aria-hidden="true"></i>Horaires
                             </h3>
-                            {% if site.worship_schedule %}
+                            {% with schedules=site.worship_schedules_list.all %}
+                            {% if schedules %}
                             <div class="schedule-organized">
-                                <p class="mb-0">{{ site.worship_schedule|linebreaksbr }}</p>
+                                <div class="activity-list">
+                                    {% for schedule in schedules %}
+                                    <div class="activity-item">
+                                        <div class="activity-icon" aria-hidden="true">
+                                            <i class="bi {{ schedule.name|schedule_icon }}"></i>
+                                        </div>
+                                        <div class="activity-details">
+                                            <strong>{{ schedule.name }}</strong>
+                                            <span>{{ schedule.get_day_of_week_display }} · {{ schedule.start_time|time:"G\hi" }}{% if schedule.end_time %} – {{ schedule.end_time|time:"G\hi" }}{% endif %}</span>
+                                            {% if schedule.description %}<span>{{ schedule.description }}</span>{% endif %}
+                                        </div>
+                                    </div>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                            {% elif site.worship_schedule %}
+                            <div class="schedule-organized">
+                                <div class="activity-list">
+                                    {% for item in site.worship_schedule|parse_schedule %}
+                                    <div class="activity-item">
+                                        <div class="activity-icon" aria-hidden="true">
+                                            <i class="bi {{ item.label|schedule_icon }}"></i>
+                                        </div>
+                                        <div class="activity-details">
+                                            <strong>{{ item.label }}</strong>
+                                            {% if item.detail %}<span>{{ item.detail }}</span>{% endif %}
+                                        </div>
+                                    </div>
+                                    {% endfor %}
+                                </div>
                             </div>
                             {% else %}
                             <p class="mb-0">Culte le dimanche matin — contactez-nous pour les horaires exacts.</p>
                             {% endif %}
+                            {% endwith %}
                         </div>
 
                         <!-- Contact -->
