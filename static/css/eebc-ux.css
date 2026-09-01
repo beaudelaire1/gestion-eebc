@@ -1,0 +1,308 @@
+/* =============================================================================
+   EEBC UX/UI — couche d'accessibilité et de cohérence (audit 2026-09)
+   Périmètre : site public + application interne /app.
+   Objectif : corrections WCAG 2.2 AA / RGAA sans changer le design system existant.
+   ============================================================================= */
+
+/* Lien d'évitement : visible uniquement au focus clavier */
+.skip-link {
+    position: absolute;
+    top: 0.5rem;
+    left: 0.5rem;
+    z-index: 2000;
+    display: inline-block;
+    padding: 0.65rem 1rem;
+    border-radius: 0.6rem;
+    background: var(--eebc-primary, #0A36FF);
+    color: #ffffff;
+    font-weight: 700;
+    text-decoration: none;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.25);
+    transform: translateY(-180%);
+    transition: transform 0.18s ease;
+}
+
+.skip-link:focus,
+.skip-link:focus-visible {
+    transform: translateY(0);
+    color: #ffffff;
+    outline: 3px solid var(--public-accent, #f8b500);
+    outline-offset: 2px;
+}
+
+/* Cible du lien d'évitement : pas de contour permanent, mais focusable */
+#main-content:focus {
+    outline: none;
+}
+
+/* Focus visible homogène, sans casser Bootstrap */
+a:focus-visible,
+button:focus-visible,
+input:focus-visible,
+textarea:focus-visible,
+select:focus-visible,
+[tabindex]:focus-visible,
+.theme-option:focus-visible,
+.carousel-dot:focus-visible,
+.nav-pill:focus-visible {
+    outline: 3px solid var(--eebc-primary, #0A36FF);
+    outline-offset: 2px;
+    box-shadow: 0 0 0 0.2rem rgba(10, 54, 255, 0.18);
+}
+
+/* Zones de défilement ancrées : évite que le contenu passe sous les barres fixes */
+[id^="section-"],
+#main-content {
+    scroll-margin-top: 96px;
+}
+
+/* Les puces de carrousel sont maintenant des boutons : neutralise les styles natifs */
+.carousel-dot {
+    padding: 0;
+    appearance: none;
+    -webkit-appearance: none;
+}
+
+.carousel-dot:focus-visible {
+    outline-color: var(--public-accent, #f8b500);
+}
+
+/* Le sélecteur de thème utilise des boutons : conserve le rendu carte existant */
+.theme-option {
+    color: var(--text-primary);
+}
+
+.theme-option:focus-visible {
+    outline: 3px solid var(--accent-primary, #0A36FF);
+    outline-offset: 3px;
+}
+
+/* Les toasts doivent rester au-dessus sans masquer les erreurs de formulaire */
+#toast-container {
+    max-width: min(420px, calc(100vw - 2rem));
+    z-index: 9999;
+}
+
+/* Confort de lecture : limite les animations non essentielles si l'utilisateur le demande */
+@media (prefers-reduced-motion: reduce) {
+    html {
+        scroll-behavior: auto !important;
+    }
+
+    *,
+    *::before,
+    *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+    }
+
+    .animate-in,
+    .reveal-left,
+    .reveal-right,
+    .reveal-scale,
+    .reveal-section,
+    .stagger-children > * {
+        opacity: 1 !important;
+        transform: none !important;
+    }
+}
+
+/* Petits écrans : préserve des zones tactiles suffisantes */
+@media (max-width: 576px) {
+    .sidebar-toggle,
+    .theme-toggle,
+    .btn,
+    .nav-link,
+    .dropdown-item {
+        min-height: 44px;
+    }
+
+    .carousel-dot {
+        width: 14px;
+        height: 14px;
+    }
+}
+
+/* =============================================================================
+   UTILITAIRES ISSUS DE L'AUDIT CSS INLINE (2026-09)
+   Regroupe les styles recurrents sortis des attributs style="".
+   Regles durables :
+   - statique recurrent -> classe utilitaire ici ;
+   - valeur dynamique -> propriete personnalisee inline (style="--var: ...") ;
+   - templates d'e-mails -> CSS inline conserve (requis par les clients mail).
+   ============================================================================= */
+
+/* Sidebar : liens secondaires et tailles d'icones */
+.nav-link--sub {
+    padding-left: 2.2rem;
+}
+
+.icon-sm {
+    font-size: 0.85em;
+}
+
+.icon-xs {
+    font-size: 0.8em;
+}
+
+.icon-xxs {
+    font-size: 0.7em;
+}
+
+.text-donation {
+    color: #EC4899;
+}
+
+/* Recherche globale du top bar (/app) */
+.app-search {
+    min-width: 250px;
+}
+
+/* Bouton de deconnexion dans le menu utilisateur */
+.dropdown-item-btn {
+    border: none;
+    background: none;
+    width: 100%;
+    text-align: left;
+    padding: 0.375rem 1rem;
+}
+
+/* Conteneur technique : messages Django convertis en toasts */
+.django-messages {
+    display: none;
+}
+
+/* Tableau de bord : degrades et fonds doux recurrents */
+.bg-gradient-brand {
+    background: linear-gradient(135deg, var(--eebc-primary, #0A36FF) 0%, #3b82f6 100%);
+}
+
+.bg-gradient-green {
+    background: linear-gradient(135deg, #10B981 0%, #059669 100%);
+}
+
+.bg-gradient-purple {
+    background: linear-gradient(135deg, #8B5CF6 0%, #7C3AED 100%);
+}
+
+.bg-gradient-pink {
+    background: linear-gradient(135deg, #EC4899 0%, #BE185D 100%);
+}
+
+.bg-gradient-orange {
+    background: linear-gradient(135deg, #F59E0B 0%, #D97706 100%);
+}
+
+.bg-soft-success {
+    background: rgba(16, 185, 129, 0.1);
+}
+
+.bg-soft-danger {
+    background: rgba(239, 68, 68, 0.1);
+}
+
+.bg-soft-neutral {
+    background: var(--eebc-gray-50, #f8f9fa);
+}
+
+.stat-subbreakdown {
+    font-size: 0.72rem;
+    opacity: 0.75;
+    margin-top: 0.3rem;
+    line-height: 1.5;
+}
+
+/* Pastille de couleur d'evenement : la couleur dynamique arrive via --event-color */
+.event-color-dot {
+    width: 14px;
+    height: 14px;
+    background: var(--event-color, #0A36FF);
+    flex-shrink: 0;
+}
+
+/* Bandeau de consentement cookies (mutualise public + /app) */
+.cookie-banner {
+    display: none;
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    z-index: 99999;
+    background: #0f1738;
+    color: #ffffff;
+    padding: 1rem 1.5rem;
+    box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.35);
+    border-top: 1px solid rgba(255, 255, 255, 0.16);
+}
+
+.cookie-banner__inner {
+    max-width: 1200px;
+    margin: 0 auto;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    flex-wrap: wrap;
+    justify-content: space-between;
+}
+
+.cookie-banner__text {
+    flex: 1;
+    min-width: 250px;
+}
+
+.cookie-banner__note {
+    margin: 0.35rem 0 0;
+    font-size: 0.95rem;
+    line-height: 1.45;
+    color: #ffffff;
+}
+
+.cookie-banner__note a {
+    color: #ffffff;
+    text-decoration: underline;
+}
+
+.cookie-banner__actions {
+    display: flex;
+    gap: 0.75rem;
+    flex-shrink: 0;
+}
+
+.cookie-banner__btn {
+    background: rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(255, 255, 255, 0.65);
+    color: #ffffff;
+    padding: 0.5rem 1rem;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 0.875rem;
+}
+
+.cookie-banner__btn--accept {
+    background: #0A36FF;
+    border: none;
+    padding: 0.5rem 1.25rem;
+    font-weight: 600;
+}
+
+/* Bouton retour en haut (site public) */
+#scrollTopBtn {
+    display: none;
+    position: fixed;
+    bottom: 80px;
+    right: 24px;
+    z-index: 9998;
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    border: none;
+    background: linear-gradient(135deg, #0A36FF, #3b82f6);
+    color: #ffffff;
+    font-size: 1.3rem;
+    cursor: pointer;
+    box-shadow: 0 4px 15px rgba(10, 54, 255, 0.4);
+    transition: all 0.3s ease;
+    opacity: 0;
+    transform: translateY(20px);
+}

@@ -53,6 +53,9 @@
     
     <!-- Animated Verse Banner CSS -->
     <link rel="stylesheet" href="{% static 'css/animated-verse-banner.css' %}">
+
+    <!-- Couche UX/accessibilité mutualisée (audit 2026-09) -->
+    <link rel="stylesheet" href="{% static 'css/eebc-ux.css' %}">
     
     <!-- E3: JSON-LD Structured Data (Church Organization) -->
     {% block json_ld %}
@@ -332,14 +335,7 @@
 </head>
 <body>
     <!-- A1: Skip to content link for accessibility -->
-    <a href="#main-content" class="btn btn-primary position-absolute top-0 start-0 m-2" style="z-index: 9999; transform: translateY(-200%)" id="skip-link">Aller au contenu principal</a>
-    <style>
-        #skip-link:focus {
-            transform: translateY(0);
-            top: 0 !important;
-            left: 0 !important;
-        }
-    </style>
+    <a href="#main-content" class="skip-link" id="skip-link">Aller au contenu principal</a>
     
     <!-- Navigation -->
     <nav class="navbar navbar-expand-lg navbar-light bg-white sticky-top" role="navigation" aria-label="Navigation principale">
@@ -507,28 +503,22 @@
     
     {% block extra_js %}{% endblock %}
 
-    <!-- Bannière RGPD - Consentement cookies -->
-    <div id="cookie-banner" style="display:none; position:fixed; bottom:0; left:0; right:0; z-index:99999;
-         background:#0f1738; color:#fff; padding:1rem 1.5rem; box-shadow:0 -4px 20px rgba(0,0,0,0.35); border-top:1px solid rgba(255,255,255,0.16);">
-        <div style="max-width:1200px; margin:0 auto; display:flex; align-items:center; gap:1rem; flex-wrap:wrap; justify-content:space-between;">
-            <div style="flex:1; min-width:250px;">
-                <strong style="color:#ffffff;"><i class="bi bi-shield-lock me-2" aria-hidden="true"></i>Cookies &amp; Confidentialité</strong>
-                <p style="margin:0.35rem 0 0; font-size:0.95rem; line-height:1.45; color:#ffffff; opacity:1;">
+    <!-- Bannière RGPD - Consentement cookies (styles mutualisés dans eebc-ux.css) -->
+    <div id="cookie-banner" class="cookie-banner" role="region" aria-label="Bandeau de consentement aux cookies" aria-live="polite">
+        <div class="cookie-banner__inner">
+            <div class="cookie-banner__text">
+                <strong><i class="bi bi-shield-lock me-2" aria-hidden="true"></i>Cookies &amp; Confidentialité</strong>
+                <p class="cookie-banner__note">
                     Ce site utilise uniquement des cookies strictement nécessaires à son fonctionnement
                     (session, sécurité CSRF). Aucun cookie tiers ni traceur publicitaire n'est déposé.
-                    Une question ? <a href="{% url 'public:contact' %}" style="color:#ffffff; text-decoration:underline;">Contactez-nous</a>.
+                    Une question ? <a href="{% url 'public:contact' %}">Contactez-nous</a>.
                 </p>
             </div>
-            <div style="display:flex; gap:0.75rem; flex-shrink:0;">
-                <button onclick="setCookieConsent('refused')"
-                        style="background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.65); color:#fff;
-                               padding:0.5rem 1rem; border-radius:6px; cursor:pointer; font-size:0.875rem;">
+            <div class="cookie-banner__actions">
+                <button type="button" class="cookie-banner__btn" onclick="setCookieConsent('refused')">
                     Refuser
                 </button>
-                <button onclick="setCookieConsent('accepted')"
-                        style="background:#0A36FF; border:none; color:#fff;
-                               padding:0.5rem 1.25rem; border-radius:6px; cursor:pointer;
-                               font-size:0.875rem; font-weight:600;">
+                <button type="button" class="cookie-banner__btn cookie-banner__btn--accept" onclick="setCookieConsent('accepted')">
                     Tout accepter
                 </button>
             </div>
@@ -560,12 +550,7 @@
     </script>
 
     <!-- Bouton retour en haut -->
-    <button id="scrollTopBtn" onclick="window.scrollTo({top:0,behavior:'smooth'})" aria-label="Retour en haut"
-        style="display:none;position:fixed;bottom:80px;right:24px;z-index:9998;
-               width:48px;height:48px;border-radius:50%;border:none;
-               background:linear-gradient(135deg,#0A36FF,#3b82f6);color:#fff;
-               font-size:1.3rem;cursor:pointer;box-shadow:0 4px 15px rgba(10,54,255,0.4);
-               transition:all 0.3s ease;opacity:0;transform:translateY(20px);">
+    <button id="scrollTopBtn" type="button" onclick="window.scrollTo({top:0,behavior:'smooth'})" aria-label="Retour en haut">
         <i class="bi bi-chevron-up" aria-hidden="true"></i>
     </button>
     <script>
