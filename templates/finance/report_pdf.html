@@ -1,3 +1,4 @@
+{% load church_tags %}
 <!DOCTYPE html>
 <html lang="fr">
 <head>
@@ -28,8 +29,9 @@ h2 { color: #0A36FF; font-size: 12pt; margin: 20px 0 10px; border-bottom: 1px so
 </head>
 <body>
 <div class="header">
-    <h1>Église Évangélique Baptiste de Cabassou</h1>
-    <p>11 lot Calimbé 2, rte de Cabassou, 97300 Cayenne — contact@eglise-ebc.org</p>
+    <h1>{% church_name %}</h1>
+    {% church_contact as contact %}
+    <p>{% church_address %}{% if contact %} — {{ contact }}{% endif %}</p>
 </div>
 <div class="gold-bar"></div>
 <div class="period">Rapport financier — {% if month %}Mois {{ month }}/{% endif %}{{ year }}</div>

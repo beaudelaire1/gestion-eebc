@@ -1,3 +1,4 @@
+{% load church_tags %}
 <!DOCTYPE html>
 <html lang="fr">
 <head>
@@ -235,6 +236,14 @@
             font-weight: 500;
         }
 
+        .footer-contact {
+            margin-top: 10px;
+            padding-top: 6px;
+            border-top: 1px solid #e2e8f0;
+            text-align: center;
+            font-size: 8pt;
+            color: #7a8699;
+        }
         .footer-signature {
             margin-top: 20px;
             padding-top: 14px;
@@ -273,6 +282,11 @@
 
         <div class="footer-signature">
             {% block footer_signature %}Signature : ___________________________{% endblock %}
+        </div>
+
+        {% church_contact as contact %}
+        <div class="footer-contact">
+            {% church_name %} — {% church_address %}{% if contact %} — {{ contact }}{% endif %}
         </div>
     </div>
 </body>
