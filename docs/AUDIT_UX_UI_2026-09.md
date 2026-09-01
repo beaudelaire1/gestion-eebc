@@ -66,6 +66,7 @@ L’objectif est d’améliorer l’expérience publique et l’application inte
 - `templates/public/base.html` : skip-link centralisé en CSS, bandeau cookies en région nommée avec `aria-live`.
 - `templates/public/home.html` : carrousel déclaré comme région `carrousel`, puces transformées en boutons avec `aria-label` et `aria-current`, slides masquées via `aria-hidden`.
 - `templates/dashboard/home.html` : navigation de section nommée, `aria-current`, progression des campagnes en `role="progressbar"`, anneau de présence avec `<title>`, lien externe de don sécurisé.
+- Bloc « Horaires » des pages publiques « Nos Églises » et « Contact » : le texte libre brut est remplacé par des cartes d'activités (icônes colorées, jour, plage horaire) alimentées par le modèle structuré `WorshipSchedule`, avec repli élégant sur l'ancien texte libre via le nouveau filtre `parse_schedule` ; même traitement sur la fiche site de `/app` (suppression du `<pre>` en style inline).
 
 ### Sortie du CSS inline (gabarits partagés)
 
