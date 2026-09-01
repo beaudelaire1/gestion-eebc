@@ -13,6 +13,7 @@
             {% if theme.hero_overline %}<div class="brand-overline">{{ theme.hero_overline }}</div>{% endif %}
             <div class="brand-title">{{ theme.institution_name }}</div>
             <div class="brand-motto">{{ theme.institution_motto }}</div>
+            <div class="brand-contact">{{ theme.institution_address }}{% if theme.institution_contact %} — {{ theme.institution_contact }}{% endif %}</div>
         </div>
     </div>
 </header>
@@ -42,7 +43,9 @@
 <footer class="page-footer">
     <span>{{ theme.footer_label }}</span>
     <span>{{ doc.reference|default:"Référence en cours" }}</span>
-    <span>{{ theme.institution_name }}</span>
+    <span class="page-footer__contact">
+        {{ theme.institution_address }}{% if theme.institution_contact %} — {{ theme.institution_contact }}{% endif %}
+    </span>
 </footer>
 
 {% if doc.kind == 'courrier' %}

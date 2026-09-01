@@ -11,8 +11,15 @@ from django.utils import timezone
 from .richtext import sanitize_generated_document_html
 
 
+from apps.core.church import CHURCH_INFO, church_contact_line
+
+
 BASE_THEME = {
-    'institution_name': "Église Évangélique Baptiste de Cabassou",
+    'institution_name': CHURCH_INFO['name'],
+    # Un courrier ou une attestation doit permettre de joindre l'organisme :
+    # sans adresse ni contact, le destinataire n'a aucun moyen de réponse.
+    'institution_address': CHURCH_INFO['address'],
+    'institution_contact': church_contact_line(),
     'institution_motto': "« La Bible, notre seule source d'autorité »",
     'document_city': getattr(settings, 'DOCUMENT_CITY', 'Cayenne'),
     'paper_style': 'standard-brief',

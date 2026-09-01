@@ -20,25 +20,8 @@ logger = logging.getLogger(__name__)
 
 
 # ─── Informations de l'église (centralisées) ────────────────────────────────
-def _church_env(name, fallback=""):
-    """Valeur d'environnement en traitant une chaîne vide comme absente.
+from apps.core.church import CHURCH_INFO  # noqa: F401  (identité partagée)
 
-    Une plateforme de déploiement peut définir la variable à vide : le défaut de
-    ``os.environ.get`` ne s'appliquerait alors pas, et le reçu fiscal partirait
-    sans dénomination ni adresse de l'organisme.
-    """
-
-    return os.environ.get(name, '').strip() or fallback
-
-
-CHURCH_INFO = {
-    'name': _church_env('CHURCH_NAME', "Église Évangélique Baptiste de Cabassou"),
-    'address': _church_env('CHURCH_ADDRESS', "11 lot Calimbé 2, rte de Cabassou, 97300 Cayenne"),
-    'phone': _church_env('CHURCH_PHONE'),
-    'email': _church_env('CHURCH_EMAIL', "contact@eglise-ebc.org"),
-    'siret': _church_env('CHURCH_SIRET'),
-    'rna': _church_env('CHURCH_RNA'),
-}
 
 DONATION_RECEIPT_TEMPLATE_DIR = Path(settings.BASE_DIR) / 'apps' / 'finance' / 'pdf_templates'
 FRENCH_MONTHS = (

@@ -12,6 +12,7 @@ from types import SimpleNamespace
 
 from django.template.loader import render_to_string
 
+from apps.core import church
 from apps.finance import pdf_service
 
 
@@ -42,11 +43,12 @@ def test_identity_survives_environment_variables_set_to_empty(monkeypatch):
     for name in ('CHURCH_NAME', 'CHURCH_ADDRESS', 'CHURCH_EMAIL'):
         monkeypatch.setenv(name, '')
 
-    reloaded = importlib.reload(pdf_service)
+    reloaded = importlib.reload(church)
     try:
         assert reloaded.CHURCH_INFO['name']
         assert reloaded.CHURCH_INFO['address']
         assert reloaded.CHURCH_INFO['email']
     finally:
         monkeypatch.undo()
+        importlib.reload(church)
         importlib.reload(pdf_service)
