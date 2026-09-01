@@ -32,8 +32,15 @@ def test_create_template_exposes_complete_multichannel_form(client):
     assert b'name="start_date"' in response.content
     assert b'name="end_date"' in response.content
     assert b'name="notify_by_email"' in response.content
-    assert "Notifier les destinataires par email + WhatsApp" in response.content.decode()
-    assert "Respect des préférences membres" in response.content.decode()
+    assert b'name="notify_by_sms"' in response.content
+
+    body = response.content.decode()
+    # Both channels are offered separately, and the billed one says so: email is
+    # free and unlimited, every WhatsApp recipient is charged by Meta.
+    assert "Notifier par email" in body
+    assert "Notifier aussi par WhatsApp" in body
+    assert "chaque destinataire" in body
+    assert "Respect des préférences membres" in body
 
 
 def test_detail_template_exposes_requested_delivery_channels(client):

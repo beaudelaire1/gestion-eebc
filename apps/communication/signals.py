@@ -12,18 +12,27 @@ logger = logging.getLogger(__name__)
 
 @receiver(post_save, sender="communication.Announcement")
 def handle_announcement_multichannel(sender, instance, created, **kwargs):
-    """Deliver a requested announcement through email and WhatsApp.
+    """Deliver an announcement on the channels it actually requested.
 
-    The legacy model still exposes ``notify_by_email`` and ``notify_by_sms``.
-    Until a schema migration renames the latter, either notification checkbox
-    means "deliver the announcement" and the delivery engine uses both channels,
-    respecting each member's own email/WhatsApp opt-in.
+    The two checkboxes are independent: ``notify_by_email`` sends the email,
+    ``notify_by_sms`` — historical name, WhatsApp in practice — sends the
+    WhatsApp message. They used to trigger both channels at once, which made
+    every announcement a paid WhatsApp broadcast: Meta bills each recipient of a
+    business-initiated message. Email stays the free, unlimited channel and
+    WhatsApp becomes a deliberate choice.
+
+    Each channel still respects the member's own opt-in.
 
     ``notify_by_sms`` is cleared only on the in-memory instance so the legacy
     view does not immediately send a duplicate WhatsApp message after save. The
     persisted value is deliberately left untouched for backward compatibility.
     """
-    if not created or not (instance.notify_by_email or instance.notify_by_sms):
+    if not created:
+        return
+
+    wants_email = bool(instance.notify_by_email)
+    wants_whatsapp = bool(instance.notify_by_sms)
+    if not (wants_email or wants_whatsapp):
         return
 
     # Prevent the legacy announcement_create view from performing a second,
@@ -43,14 +52,19 @@ def handle_announcement_multichannel(sender, instance, created, **kwargs):
             send_announcement_whatsapp,
         )
 
+        signatures = []
+        if wants_email:
+            signatures.append(send_announcement_email_task.s(announcement_id))
+        if wants_whatsapp:
+            signatures.append(send_announcement_whatsapp_task.s(announcement_id))
+
         try:
-            group(
-                send_announcement_email_task.s(announcement_id),
-                send_announcement_whatsapp_task.s(announcement_id),
-            ).apply_async()
+            group(*signatures).apply_async()
             logger.info(
-                "Announcement %s queued for email + WhatsApp delivery",
+                "Announcement %s queued for delivery (email=%s whatsapp=%s)",
                 announcement_id,
+                wants_email,
+                wants_whatsapp,
             )
         except Exception:
             # A broker outage must not silently lose an announcement. The HTTP
@@ -61,8 +75,10 @@ def handle_announcement_multichannel(sender, instance, created, **kwargs):
                 announcement_id,
             )
             announcement = sender.objects.get(pk=announcement_id)
-            email_result = send_announcement_email(announcement)
-            whatsapp_result = send_announcement_whatsapp(announcement)
+            email_result = send_announcement_email(announcement) if wants_email else None
+            whatsapp_result = (
+                send_announcement_whatsapp(announcement) if wants_whatsapp else None
+            )
             logger.info(
                 "Announcement %s synchronous delivery email=%s whatsapp=%s",
                 announcement_id,

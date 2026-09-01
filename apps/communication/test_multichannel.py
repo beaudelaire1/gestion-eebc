@@ -1,5 +1,7 @@
 """Regression tests for EEBC multichannel announcement delivery."""
 
+from itertools import count
+
 import pytest
 from django.core import mail
 
@@ -13,6 +15,8 @@ from .multichannel import (
 )
 
 pytestmark = [pytest.mark.django_db, pytest.mark.security]
+
+_PHONE_SEQUENCE = count(1)
 
 
 def make_member(
@@ -35,7 +39,7 @@ def make_member(
         first_name=name.capitalize(),
         last_name="Test",
         email=f"{name}@example.test" if email else "",
-        whatsapp_number="0694123456" if whatsapp else "",
+        whatsapp_number=f"0694{next(_PHONE_SEQUENCE):06d}" if whatsapp else "",
         notify_by_email=notify_email,
         notify_by_whatsapp=notify_whatsapp,
         status=Member.Status.ACTIF,
@@ -131,3 +135,30 @@ def test_requested_announcement_attempts_email_and_whatsapp(
     announcement.refresh_from_db()
     assert announcement.notify_by_email is True
     assert announcement.notify_by_sms is True
+
+
+def test_email_only_announcement_does_not_send_whatsapp(
+    django_capture_on_commit_callbacks,
+):
+    """Email is the free channel: it must not drag a billed WhatsApp send along."""
+    member = make_member("emailonly")
+
+    with django_capture_on_commit_callbacks(execute=True):
+        make_announcement(notify_by_email=True, notify_by_sms=False)
+
+    assert EmailLog.objects.filter(recipient_email=member.email).exists()
+    assert len(mail.outbox) == 1
+    assert not SMSLog.objects.exists()
+
+
+def test_whatsapp_only_announcement_does_not_send_email(
+    django_capture_on_commit_callbacks,
+):
+    member = make_member("waonly")
+
+    with django_capture_on_commit_callbacks(execute=True):
+        make_announcement(notify_by_email=False, notify_by_sms=True)
+
+    assert SMSLog.objects.filter(recipient_name=member.full_name).exists()
+    assert not EmailLog.objects.exists()
+    assert mail.outbox == []

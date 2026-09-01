@@ -78,20 +78,31 @@
         <div class="d-flex align-items-start justify-content-between gap-3 flex-wrap">
             <div>
                 <h2 class="h5 mb-1">Diffusion multicanal</h2>
-                <p class="text-muted small mb-0">Une seule publication, deux canaux déclenchés simultanément.</p>
+                <p class="text-muted small mb-0">Choisissez les canaux à déclencher pour cette publication.</p>
             </div>
             <span class="badge text-bg-light border px-3 py-2">Respect des préférences membres</span>
         </div>
     </div>
     <div class="card-body p-4">
-        {{ form.notify_by_sms }}
-        <div class="form-check form-switch mb-4">
+        <div class="form-check form-switch mb-3">
             {{ form.notify_by_email }}
             <label class="form-check-label fw-semibold" for="{{ form.notify_by_email.id_for_label }}">
-                Notifier les destinataires par email + WhatsApp
+                Notifier par email
             </label>
-            <div class="form-text">EEBC enverra les deux canaux après la publication, uniquement aux membres ayant autorisé chacun d'eux.</div>
+            <div class="form-text">Gratuit et sans limite de volume. Envoyé aux membres ayant autorisé les notifications email.</div>
             {% for error in form.notify_by_email.errors %}<div class="invalid-feedback d-block">{{ error }}</div>{% endfor %}
+        </div>
+
+        <div class="form-check form-switch mb-4">
+            {{ form.notify_by_sms }}
+            <label class="form-check-label fw-semibold" for="{{ form.notify_by_sms.id_for_label }}">
+                Notifier aussi par WhatsApp
+            </label>
+            <div class="form-text text-warning-emphasis">
+                <i class="bi bi-exclamation-triangle me-1"></i>
+                Facturé par Meta pour <strong>chaque destinataire</strong>. À réserver aux annonces importantes : convocation, annulation de culte, urgence.
+            </div>
+            {% for error in form.notify_by_sms.errors %}<div class="invalid-feedback d-block">{{ error }}</div>{% endfor %}
         </div>
 
         <div class="row g-3">
@@ -103,7 +114,7 @@
                         </span>
                         <div>
                             <div class="fw-semibold">Email</div>
-                            <div class="text-muted small">Message complet et mis en forme</div>
+                            <div class="text-muted small">Message complet et mis en forme — gratuit</div>
                         </div>
                     </div>
                     <p class="small text-muted mb-0">Destinataires actifs avec email renseigné, notifications email autorisées et sans désabonnement applicable.</p>
@@ -117,7 +128,7 @@
                         </span>
                         <div>
                             <div class="fw-semibold">WhatsApp</div>
-                            <div class="text-muted small">Notification Meta Cloud API</div>
+                            <div class="text-muted small">Meta Cloud API — facturé par destinataire</div>
                         </div>
                     </div>
                     <p class="small text-muted mb-0">Destinataires actifs avec numéro WhatsApp renseigné et consentement WhatsApp activé.</p>
