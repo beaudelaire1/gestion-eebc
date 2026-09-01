@@ -3,7 +3,7 @@ from django.contrib.auth.decorators import login_required
 from django.core.exceptions import ValidationError
 from django.http import HttpResponse
 from django.shortcuts import get_object_or_404, render
-from django.views.decorators.http import require_POST
+from django.views.decorators.http import require_http_methods, require_POST
 
 from apps.core.permissions import role_required
 from apps.core.upload_security import validate_spreadsheet_upload
@@ -75,7 +75,7 @@ def tax_receipt_bulk_send(request):
     return views.tax_receipt_bulk_send(request)
 
 
-@require_POST
+@require_http_methods(['GET', 'POST'])
 def budget_approve_detailed(request, budget_id):
     return budget_views.budget_approve_detailed(request, budget_id)
 

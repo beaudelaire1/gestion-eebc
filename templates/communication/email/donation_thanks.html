@@ -1,4 +1,7 @@
 {% extends 'emails/base_email.html' %}
+{% block title %}Merci pour votre don · EEBC{% endblock %}
+{% block preheader %}L'EEBC vous remercie chaleureusement pour votre générosité.{% endblock %}
+{% block header_title %}Finance · dons{% endblock %}
 {% block content %}
 <h2 style="color:#0A36FF;margin:0 0 15px;font-size:18px;">🙏 Merci pour votre don</h2>
 <p style="color:#333;font-size:15px;line-height:1.7;">Bonjour {{ donor_name|default:"Frère/Sœur" }},</p>

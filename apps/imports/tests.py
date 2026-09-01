@@ -1,10 +1,13 @@
 """
 Tests pour l'app imports — modèle ImportLog.
 """
+import io
+
 import pytest
 from django.core.files.storage import FileSystemStorage
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.urls import reverse
+from openpyxl import Workbook
 
 from apps.accounts.models import User
 from apps.imports.models import ImportLog
@@ -47,9 +50,14 @@ class TestImportCreateView:
 
         monkeypatch.setattr('apps.imports.views.ExcelImportService.process_import', _noop_process_import)
 
+        workbook = Workbook()
+        workbook.active.append(['nom', 'prenom'])
+        workbook.active.append(['Doe', 'Jane'])
+        workbook_data = io.BytesIO()
+        workbook.save(workbook_data)
         uploaded = SimpleUploadedFile(
             'children.xlsx',
-            b'fake-xlsx-content',
+            workbook_data.getvalue(),
             content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
         )
 

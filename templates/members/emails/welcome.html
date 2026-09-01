@@ -1,4 +1,7 @@
 {% extends 'emails/base_email.html' %}
+{% block title %}Bienvenue à l'EEBC{% endblock %}
+{% block preheader %}Votre espace membre EEBC est prêt.{% endblock %}
+{% block header_title %}Accueil des membres{% endblock %}
 {% block content %}
 <h2 style="color:#0A36FF;margin:0 0 15px;font-size:18px;">🎉 Bienvenue à l'EEBC !</h2>
 <p style="color:#333;font-size:15px;line-height:1.7;">Bonjour {{ user.first_name|default:"Frère/Sœur" }},</p>

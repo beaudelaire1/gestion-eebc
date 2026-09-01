@@ -22,7 +22,6 @@ Travailler sur ce dépôt sans casser les flux existants.
 - apps/*/views.py
 - templates/
 - conftest.py
-- render.yaml
 
 ## Commandes
 - Tests : pytest

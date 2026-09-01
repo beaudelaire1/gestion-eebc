@@ -1,88 +1,57 @@
-{% extends 'emails/base_email.html' %}
+{% extends "emails/base_email.html" %}
 
 {% block title %}Invitation à rejoindre {{ site_name }}{% endblock %}
+{% block preheader %}Votre compte EEBC a été créé. Activez-le en choisissant votre mot de passe.{% endblock %}
+{% block header_title %}Accès à la plateforme{% endblock %}
 
 {% block content %}
-<div style="background: #ffffff; padding: 40px 30px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
-    <h2 style="color: #1e3a5f; margin: 0 0 20px; font-size: 24px;">
-        Bienvenue dans l'équipe {{ site_name }} !
-    </h2>
-    
-    <p style="color: #495057; margin: 0 0 20px; line-height: 1.6;">
-        Bonjour <strong>{{ user.first_name }} {{ user.last_name }}</strong>,
-    </p>
-    
-    <p style="color: #495057; margin: 0 0 20px; line-height: 1.6;">
-        {{ created_by.get_full_name }} vous a créé un compte sur la plateforme de gestion de l'EEBC.
-        Voici vos identifiants de connexion :
-    </p>
-    
-    <div style="background: #f8f9fa; padding: 20px; border-radius: 6px; margin: 20px 0; border-left: 4px solid #0A36FF;">
-        <h3 style="color: #1e3a5f; margin: 0 0 15px; font-size: 18px;">
-            🔑 Vos identifiants
-        </h3>
-        <p style="margin: 0 0 10px;">
-            <strong>Nom d'utilisateur :</strong> 
-            <code style="background: #e9ecef; padding: 4px 8px; border-radius: 4px; font-family: monospace;">{{ username }}</code>
-        </p>
-        <p style="margin: 0;">
-            <strong>Mot de passe temporaire :</strong> 
-            <code style="background: #e9ecef; padding: 4px 8px; border-radius: 4px; font-family: monospace;">{{ password }}</code>
-        </p>
-    </div>
-    
-    <div style="text-align: center; margin: 30px 0;">
-        <a href="{{ password_change_url }}" 
-           style="display: inline-block; background: #0A36FF; color: #ffffff; padding: 12px 30px; text-decoration: none; border-radius: 6px; font-weight: 600;">
-            Activer mon compte
-        </a>
-    </div>
-    
-    <div style="background: #fff3cd; padding: 15px; border-radius: 6px; margin: 20px 0; border-left: 4px solid #ffc107;">
-        <p style="color: #856404; margin: 0; font-size: 14px;">
-            ⚠️ <strong>Important :</strong> Ce lien vous mènera directement à la page de changement de mot de passe. Vous devrez choisir un nouveau mot de passe sécurisé.
-        </p>
-    </div>
-    
-    <h3 style="color: #1e3a5f; margin: 30px 0 15px; font-size: 18px;">
-        📋 Votre rôle
-    </h3>
-    <p style="color: #495057; margin: 0 0 20px;">
-        Vous avez été assigné(e) au rôle : <strong>{{ user.get_role_display }}</strong>
-    </p>
-    
-    <h3 style="color: #1e3a5f; margin: 30px 0 15px; font-size: 18px;">
-        🚀 Prochaines étapes
-    </h3>
-    <ol style="color: #495057; margin: 0 0 20px; padding-left: 20px;">
-        <li style="margin-bottom: 8px;">Cliquez sur le bouton "Activer mon compte" ci-dessus</li>
-        <li style="margin-bottom: 8px;">Choisissez un nouveau mot de passe sécurisé</li>
-        <li style="margin-bottom: 8px;">Complétez votre profil si nécessaire</li>
-        <li style="margin-bottom: 8px;">Commencez à utiliser la plateforme</li>
-    </ol>
-    
-    <div style="background: #d1ecf1; padding: 15px; border-radius: 6px; margin: 20px 0; border-left: 4px solid #17a2b8;">
-        <p style="color: #0c5460; margin: 0; font-size: 14px;">
-            💡 <strong>Besoin d'aide ?</strong> N'hésitez pas à contacter {{ created_by.get_full_name }} ou l'équipe technique.
-        </p>
-    </div>
-    
-    <p style="color: #495057; margin: 20px 0 0; line-height: 1.6;">
-        Nous sommes ravis de vous accueillir dans l'équipe !
-    </p>
-    
-    <p style="color: #495057; margin: 10px 0 0; line-height: 1.6;">
-        Que Dieu vous bénisse,<br>
-        <strong>L'équipe {{ site_name }}</strong>
-    </p>
-</div>
+<p style="margin:0 0 10px;font-size:10px;font-weight:bold;letter-spacing:.14em;text-transform:uppercase;color:#A8790C;">
+    Votre compte utilisateur
+</p>
+<h1 style="margin:0 0 20px;font-family:Georgia,'Times New Roman',serif;font-size:29px;font-weight:normal;line-height:1.25;color:#10245D;">
+    Bienvenue dans l'équipe EEBC
+</h1>
 
-<div style="text-align: center; margin-top: 30px; padding-top: 20px; border-top: 1px solid #e2e8f0;">
-    <p style="color: #64748b; margin: 0; font-size: 14px;">
-        EEBC - Église Évangélique Baptiste de Cabassou
-    </p>
-    <p style="color: #94a3b8; margin: 10px 0 0; font-size: 12px;">
-        Cet email a été envoyé automatiquement. Merci de ne pas y répondre.
-    </p>
-</div>
+<p style="margin:0 0 17px;font-size:15px;line-height:1.7;color:#33405A;">
+    Bonjour <strong>{{ user.first_name }} {{ user.last_name }}</strong>,
+</p>
+<p style="margin:0 0 24px;font-size:15px;line-height:1.7;color:#4E5A72;">
+    {{ created_by.get_full_name }} a créé votre accès à la plateforme de gestion. Vous pourrez choisir un mot de passe personnel lors de l'activation.
+</p>
+
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin:0 0 23px;background-color:#F5F7FC;border:1px solid #E3E8F3;border-radius:6px;">
+    <tr>
+        <td style="padding:19px 22px;">
+            <p style="margin:0 0 13px;font-size:11px;font-weight:bold;letter-spacing:.1em;text-transform:uppercase;color:#0A36FF;">Identifiants temporaires</p>
+            <p style="margin:0 0 8px;font-size:13px;color:#59647A;">
+                Nom d'utilisateur<br>
+                <code style="display:inline-block;margin-top:3px;padding:4px 7px;background-color:#E8ECF5;border-radius:3px;font-family:Consolas,monospace;font-size:14px;color:#10245D;">{{ username }}</code>
+            </p>
+            <p style="margin:0;font-size:13px;color:#59647A;">
+                Mot de passe temporaire<br>
+                <code style="display:inline-block;margin-top:3px;padding:4px 7px;background-color:#E8ECF5;border-radius:3px;font-family:Consolas,monospace;font-size:14px;color:#10245D;">{{ password }}</code>
+            </p>
+        </td>
+    </tr>
+</table>
+
+<p style="margin:0 0 23px;">
+    <a class="button" href="{{ password_change_url }}" style="display:inline-block;padding:13px 24px;background-color:#0A36FF;color:#FFFFFF;text-decoration:none;border-radius:5px;font-size:13px;font-weight:bold;">
+        Activer mon compte&nbsp; →
+    </a>
+</p>
+
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin:0 0 21px;background-color:#FFF9E9;border-left:4px solid #D4A11E;border-radius:0 5px 5px 0;">
+    <tr>
+        <td style="padding:15px 18px;font-size:12px;line-height:1.65;color:#6B541B;">
+            Ce lien est personnel. Lors de votre première connexion, remplacez immédiatement le mot de passe temporaire et ne le transmettez à personne.
+        </td>
+    </tr>
+</table>
+
+<p style="margin:0;font-size:13px;line-height:1.65;color:#667086;">
+    Rôle attribué : <strong style="color:#33405A;">{{ user.get_role_display }}</strong>
+</p>
 {% endblock %}
+
+{% block signature %}L'équipe Administration EEBC{% endblock %}

@@ -1,31 +1,134 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="fr">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="color-scheme" content="light">
+    <meta name="supported-color-schemes" content="light">
+    <title>{% block title %}EEBC{% endblock %}</title>
+    <style>
+        @media only screen and (max-width: 640px) {
+            .email-shell { width: 100% !important; }
+            .email-header { padding: 24px !important; }
+            .email-body { padding: 32px 24px !important; }
+            .email-footer { padding-left: 24px !important; padding-right: 24px !important; }
+            .brand-logo { width: 76px !important; height: auto !important; }
+            .brand-name { font-size: 16px !important; }
+            .contact-cell { display: block !important; width: 100% !important; padding: 0 0 14px !important; }
+            .button { display: block !important; text-align: center !important; }
+        }
+        {% block extra_css %}{% endblock %}
+    </style>
 </head>
-<body style="margin:0;padding:0;background:#f4f6f9;font-family:'Segoe UI',Tahoma,Geneva,Verdana,sans-serif;">
-<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f4f6f9;padding:30px 0;">
-<tr><td align="center">
-<table role="presentation" width="600" cellpadding="0" cellspacing="0" style="background:#fff;border-radius:12px;overflow:hidden;box-shadow:0 4px 20px rgba(0,0,0,0.08);">
-<tr><td style="background:linear-gradient(135deg,#0A36FF 0%,#1e3a5f 100%);padding:24px 40px;text-align:center;">
-    <h1 style="color:#fff;margin:0;font-size:20px;font-weight:700;">Église Évangélique Baptiste de Cabassou</h1>
-    <p style="color:rgba(255,255,255,0.8);margin:4px 0 0;font-size:12px;">11 lot Calimbé 2, rte de Cabassou, 97300 Cayenne</p>
-</td></tr>
-<tr><td style="background:linear-gradient(90deg,#b8860b,#d4a11e,#f0c850);height:4px;"></td></tr>
-<tr><td style="padding:30px 40px;">
-{% block content %}{% endblock %}
-</td></tr>
-<tr><td style="padding:0 40px;"><hr style="border:none;border-top:1px solid #e8ecf4;margin:0;"></td></tr>
-<tr><td style="padding:20px 40px;">
-    <p style="color:#0A36FF;font-size:14px;font-weight:700;margin:0 0 4px;">{% block signature %}L'équipe EEBC{% endblock %}</p>
-    <p style="color:#666;font-size:12px;margin:0;">Église Évangélique Baptiste de Cabassou<br>97300 Cayenne, Guyane française</p>
-</td></tr>
-<tr><td style="background:#1e3a5f;padding:16px 40px;text-align:center;">
-    <p style="color:rgba(255,255,255,0.6);font-size:11px;margin:0;">© 2026 EEBC — contact@eglise-ebc.org | eglise-ebc.org</p>
-</td></tr>
-</table>
-</td></tr>
-</table>
+<body style="margin:0;padding:0;background-color:#F1F4FB;font-family:Arial,Helvetica,sans-serif;color:#27324A;-webkit-font-smoothing:antialiased;">
+    {% firstof EMAIL_LOGO_CID email_logo_cid as logo_cid %}
+    {% firstof EMAIL_LOGO_URL email_logo_url "https://eglise-ebc.org/static/images/eebc-logo.png" as logo_url %}
+    {% firstof EMAIL_SITE_URL SITE_URL "https://eglise-ebc.org" as church_url %}
+    {% firstof EMAIL_CONTACT contact_email "contact@eglise-ebc.org" as church_email %}
+
+    <div style="display:none;max-height:0;overflow:hidden;opacity:0;color:transparent;mso-hide:all;">
+        {% block preheader %}Une information de l'Église Évangélique Baptiste de Cabassou.{% endblock %}
+    </div>
+
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="#F1F4FB" style="width:100%;background-color:#F1F4FB;">
+        <tr>
+            <td align="center" style="padding:40px 14px;">
+                <table class="email-shell" role="presentation" width="640" cellpadding="0" cellspacing="0" border="0"
+                       style="width:640px;max-width:640px;background-color:#FFFFFF;border-collapse:separate;border-spacing:0;border-radius:10px;box-shadow:0 12px 34px rgba(18,39,94,.13);overflow:hidden;">
+                    <tr>
+                        <td class="email-header" bgcolor="#10245D"
+                            style="padding:27px 38px 25px;background-color:{% block header_color %}#10245D{% endblock %};border-bottom:5px solid #D4A11E;">
+                            <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+                                <tr>
+                                    <td width="104" valign="middle" style="width:104px;padding-right:22px;">
+                                        <table role="presentation" cellpadding="0" cellspacing="0" border="0">
+                                            <tr>
+                                                <td bgcolor="#FFFFFF" style="padding:7px;background-color:#FFFFFF;border-radius:9px;">
+                                                    <img class="brand-logo"
+                                                         src="{% if logo_cid %}cid:{{ logo_cid }}{% else %}{{ logo_url }}{% endif %}"
+                                                         width="90" alt="Logo EEBC"
+                                                         style="display:block;width:90px;max-width:90px;height:auto;border:0;">
+                                                </td>
+                                            </tr>
+                                        </table>
+                                    </td>
+                                    <td valign="middle">
+                                        <p style="margin:0 0 7px;font-size:10px;line-height:1.4;font-weight:bold;letter-spacing:.16em;text-transform:uppercase;color:#f0c850;">
+                                            {% block header_icon %}{% endblock %}{% block header_title %}Communication EEBC{% endblock %}
+                                        </p>
+                                        <p class="brand-name" style="margin:0;font-family:Georgia,'Times New Roman',serif;font-size:19px;line-height:1.3;color:#FFFFFF;">
+                                            Église Évangélique Baptiste<br>de Cabassou
+                                        </p>
+                                        {% block header_subtitle %}
+                                        <p style="margin:7px 0 0;font-size:11px;line-height:1.5;color:#C9D3EE;">
+                                            La Bible, notre seule source d'autorité
+                                        </p>
+                                        {% endblock %}
+                                    </td>
+                                </tr>
+                            </table>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td class="email-body" style="padding:42px 44px 38px;font-size:15px;line-height:1.7;color:#27324A;">
+                            {% block content %}{% endblock %}
+                        </td>
+                    </tr>
+                    <tr>
+                        <td style="padding:0 44px;">
+                            <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+                                <tr><td style="border-top:1px solid #E5EAF4;font-size:0;line-height:0;">&nbsp;</td></tr>
+                            </table>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td style="padding:24px 44px 27px;">
+                            <p style="margin:0 0 3px;font-size:14px;font-weight:bold;color:#0A36FF;">
+                                {% block signature %}L'équipe EEBC{% endblock %}
+                            </p>
+                            <p style="margin:0;font-size:12px;line-height:1.55;color:#6B7488;">
+                                Église Évangélique Baptiste de Cabassou<br>
+                                11 lot Calimbé 2, route de Cabassou · 97300 Cayenne
+                            </p>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td class="email-footer" bgcolor="#F8F4E8"
+                            style="padding:23px 44px 21px;background-color:#F8F4E8;border-top:1px solid #E9DFC2;">
+                            <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+                                <tr>
+                                    <td class="contact-cell" width="50%" valign="top" style="padding-right:18px;">
+                                        <p style="margin:0 0 4px;font-size:10px;font-weight:bold;letter-spacing:.12em;text-transform:uppercase;color:#9A6D08;">Nous écrire</p>
+                                        <p style="margin:0;font-size:12px;line-height:1.55;">
+                                            <a href="mailto:{{ church_email }}" style="color:#10245D;text-decoration:none;">{{ church_email }}</a>
+                                        </p>
+                                    </td>
+                                    <td class="contact-cell" width="50%" valign="top">
+                                        <p style="margin:0 0 4px;font-size:10px;font-weight:bold;letter-spacing:.12em;text-transform:uppercase;color:#9A6D08;">En ligne</p>
+                                        <p style="margin:0;font-size:12px;line-height:1.55;">
+                                            <a href="{{ church_url }}" style="color:#10245D;text-decoration:none;">eglise-ebc.org</a>
+                                        </p>
+                                    </td>
+                                </tr>
+                            </table>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td class="email-footer" bgcolor="#091634" style="padding:22px 44px 24px;background-color:#091634;text-align:center;">
+                            {% block footer %}
+                            <p style="margin:0 0 6px;font-family:Georgia,'Times New Roman',serif;font-size:14px;font-style:italic;color:#F4D77E;">
+                                « La Bible, notre seule source d'autorité »
+                            </p>
+                            <p style="margin:0;font-size:10px;line-height:1.6;color:#8996B7;">
+                                © {% now "Y" %} EEBC · Message envoyé automatiquement par la plateforme de l'église.<br>
+                                Merci de ne pas répondre directement à ce message.
+                            </p>
+                            {% endblock %}
+                        </td>
+                    </tr>
+                </table>
+            </td>
+        </tr>
+    </table>
 </body>
 </html>

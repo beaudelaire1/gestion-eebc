@@ -1,6 +1,6 @@
 """
 Commande de backup de la base de données.
-Fonctionne sans Celery — peut être lancée via cron Render.
+Fonctionne sans Celery — peut être lancée via une tâche planifiée.
 
 Usage:
     python manage.py backup_db

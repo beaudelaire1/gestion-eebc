@@ -115,7 +115,7 @@ def validate_safe_filename(value):
     
     # Extensions interdites
     forbidden_extensions = ['.exe', '.bat', '.cmd', '.scr', '.pif', '.com']
-    _, ext = os.path.splitext(value.lower())
+    ext = os.path.splitext(value.lower())[1]
     if ext in forbidden_extensions:
         raise ValidationError(_("Type de fichier non autorisé."))
 

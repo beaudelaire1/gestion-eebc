@@ -119,17 +119,11 @@ def get_client_ip(request) -> str:
     Returns:
         str: Adresse IP du client
     """
-    # Vérifier les headers de proxy (Cloudflare, Render, etc.)
-    ip = request.META.get('HTTP_CF_CONNECTING_IP')  # CloudFlare
-    if not ip:
-        ip = request.META.get('HTTP_X_FORWARDED_FOR')  # Proxy standard
-        if ip:
-            # Prendre la première IP si plusieurs
-            ip = ip.split(',')[0].strip()
-    if not ip:
-        ip = request.META.get('REMOTE_ADDR')  # IP directe
-    
-    return ip or '0.0.0.0'
+    # Centralise la politique de confiance proxy afin de ne jamais accepter un
+    # X-Forwarded-For fourni directement par un client non fiable.
+    from apps.core.security import get_trusted_client_ip
+
+    return get_trusted_client_ip(request)
 
 
 def validate_turnstile_with_ip(request) -> tuple[bool, str | None]:

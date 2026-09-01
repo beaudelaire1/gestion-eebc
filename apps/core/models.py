@@ -1474,4 +1474,3 @@ class WorshipSchedule(models.Model):
     
     def __str__(self):
         return f"{self.site.name} - {self.get_day_of_week_display()} {self.start_time}"
-

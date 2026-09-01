@@ -7,7 +7,7 @@ from pathlib import Path
 BASE_DIR = Path(__file__).resolve().parents[2]
 
 
-def _clean_env():
+def _clean_env(settings_module='gestion_eebc.settings.prod'):
     env = os.environ.copy()
     for key in (
         'REDIS_URL',
@@ -23,16 +23,17 @@ def _clean_env():
         'SECRET_KEY',
         'SENTRY_DSN',
     ):
-        env.pop(key, None)
-    env['DJANGO_SETTINGS_MODULE'] = 'gestion_eebc.settings.prod'
+        # Prevent settings/base.py from reloading a developer value from .env.
+        env[key] = ''
+    env['DJANGO_SETTINGS_MODULE'] = settings_module
     return env
 
 
-def test_collectstatic_with_prod_settings_does_not_require_runtime_services():
+def test_collectstatic_with_build_settings_does_not_require_runtime_services():
     result = subprocess.run(
         [sys.executable, 'manage.py', 'collectstatic', '--noinput', '--dry-run'],
         cwd=BASE_DIR,
-        env=_clean_env(),
+        env=_clean_env('gestion_eebc.settings.build'),
         capture_output=True,
         text=True,
         timeout=120,

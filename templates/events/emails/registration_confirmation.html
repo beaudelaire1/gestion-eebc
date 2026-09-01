@@ -1,4 +1,7 @@
 {% extends 'emails/base_email.html' %}
+{% block title %}Inscription confirmée · EEBC{% endblock %}
+{% block preheader %}Votre inscription à l'événement est bien enregistrée.{% endblock %}
+{% block header_title %}Inscription événement{% endblock %}
 {% block content %}
 <h2 style="color:#16a34a;margin:0 0 15px;font-size:18px;">✅ Inscription confirmée</h2>
 <p style="color:#333;font-size:15px;line-height:1.7;">Bonjour {{ registration.name }},</p>

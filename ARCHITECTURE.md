@@ -13,7 +13,7 @@
 ```
 ┌─────────────────────────────────────────────────────────────────┐
 │                         GESTION-EEBC                            │
-│            Django 4.2 + Bootstrap 5.3 + HTMX + Celery           │
+│          Django 5.2 LTS + Bootstrap 5.3 + HTMX + Celery         │
 └─────────────────────────────────────────────────────────────────┘
 
 PUBLIC LAYER (No Auth Required)
@@ -492,20 +492,21 @@ static/js/toasts.js           — Single source (no duplication)
 ### Infrastructure
 
 **Stack**
-- **Hosting** : Render (Django + PostgreSQL + Redis)
+- **Hosting** : VPS OVHcloud + Coolify (Django/Gunicorn + worker Celery)
+- **Data** : PostgreSQL et Redis comme ressources Coolify privées et séparées
 - **DNS** : CloudFlare
 - **Email** : Hostinger SMTP (outbound)
 - **Payment** : Stripe (PCI-DSS certified)
 - **CDN** : Optional (CloudFlare)
 
 **Scaling**
-- Horizontal: Render auto-scales dynos (web + worker)
+- Horizontal: réplicas web/worker ajustés dans Coolify après validation de charge
 - Vertical: PostgreSQL upgraded as needed
 - Cache: Redis shared across web + worker
 
 ### Health Checks
 
-**Endpoint** : `GET /health/`
+**Endpoint de liveness** : `GET /healthz/ping/`
 ```json
 {
   "status": "ok",

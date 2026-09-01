@@ -65,8 +65,8 @@ class CoreConfig(AppConfig):
                 ]
             elif is_production_runtime and not trusted_header:
                 raise ImproperlyConfigured(
-                    'Configure TRUSTED_CLIENT_IP_HEADER=HTTP_CF_CONNECTING_IP on Render '
-                    'or TRUSTED_PROXY_IPS with explicit reverse-proxy CIDRs. '
+                    'Configure TRUSTED_CLIENT_IP_HEADER=HTTP_CF_CONNECTING_IP behind '
+                    'Cloudflare, or TRUSTED_PROXY_IPS with explicit reverse-proxy CIDRs. '
                     'X-Forwarded-For is intentionally ignored without a trust boundary.'
                 )
             elif is_production_runtime:

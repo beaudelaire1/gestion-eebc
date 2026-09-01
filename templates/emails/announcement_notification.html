@@ -1,54 +1,38 @@
+{% extends "emails/base_email.html" %}
 {% load sanitize_tags %}
-<!DOCTYPE html>
-<html lang="fr">
-<head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>{{ announcement.title }}</title>
-</head>
-<body style="margin:0;padding:0;background:#f3f5f9;font-family:Arial,Helvetica,sans-serif;color:#172033;">
-    <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="background:#f3f5f9;padding:28px 12px;">
-        <tr>
-            <td align="center">
-                <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="max-width:660px;background:#ffffff;border-radius:16px;overflow:hidden;border:1px solid #e6e9ef;">
-                    <tr>
-                        <td style="padding:18px 32px;background:#0A36FF;color:#ffffff;font-size:13px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;">
-                            EEBC · {{ priority_label }}
-                        </td>
-                    </tr>
-                    <tr>
-                        <td style="padding:32px 32px 10px 32px;">
-                            {% if recipient_name %}
-                            <p style="margin:0 0 14px 0;font-size:15px;color:#64748b;">Bonjour {{ recipient_name }},</p>
-                            {% endif %}
-                            <h1 style="margin:0;font-size:28px;line-height:1.25;color:#111827;">{{ announcement.title }}</h1>
-                            <div style="margin-top:14px;font-size:13px;color:#64748b;">
-                                {{ announcement.get_visibility_display }}
-                                {% if announcement.start_date %} · À partir du {{ announcement.start_date|date:'d/m/Y à H:i' }}{% endif %}
-                                {% if announcement.end_date %} · Jusqu'au {{ announcement.end_date|date:'d/m/Y à H:i' }}{% endif %}
-                            </div>
-                        </td>
-                    </tr>
-                    <tr>
-                        <td style="padding:18px 32px 30px 32px;font-size:16px;line-height:1.7;color:#334155;">
-                            {{ announcement.content|sanitize }}
-                        </td>
-                    </tr>
-                    <tr>
-                        <td style="padding:0 32px 32px 32px;">
-                            <a href="{{ site_url }}{% url 'communication:announcement_detail' announcement.pk %}" style="display:inline-block;background:#0A36FF;color:#ffffff;text-decoration:none;font-size:14px;font-weight:700;padding:12px 18px;border-radius:9px;">
-                                Voir l'annonce dans EEBC
-                            </a>
-                        </td>
-                    </tr>
-                    <tr>
-                        <td style="padding:20px 32px;background:#f8fafc;border-top:1px solid #e6e9ef;font-size:12px;line-height:1.6;color:#64748b;">
-                            Ce message a été envoyé selon vos préférences de communication EEBC. Les notifications email et WhatsApp sont gérées séparément pour chaque membre.
-                        </td>
-                    </tr>
-                </table>
-            </td>
-        </tr>
-    </table>
-</body>
-</html>
+
+{% block title %}{{ announcement.title }} · EEBC{% endblock %}
+{% block preheader %}{{ announcement.content|striptags|truncatechars:120 }}{% endblock %}
+{% block header_title %}{{ priority_label|default:"Annonce" }} · EEBC{% endblock %}
+
+{% block content %}
+{% if recipient_name %}
+<p style="margin:0 0 18px;font-size:15px;color:#59647A;">Bonjour {{ recipient_name }},</p>
+{% endif %}
+
+<h1 style="margin:0 0 13px;font-family:Georgia,'Times New Roman',serif;font-size:28px;font-weight:normal;line-height:1.3;color:#10245D;">
+    {{ announcement.title }}
+</h1>
+<p style="margin:0 0 26px;font-size:12px;line-height:1.6;color:#7A8498;">
+    {{ announcement.get_visibility_display }}
+    {% if announcement.start_date %} · À partir du {{ announcement.start_date|date:'d/m/Y à H:i' }}{% endif %}
+    {% if announcement.end_date %} · Jusqu'au {{ announcement.end_date|date:'d/m/Y à H:i' }}{% endif %}
+</p>
+
+<div style="margin:0 0 28px;font-size:15px;line-height:1.75;color:#33405A;">
+    {{ announcement.content|sanitize }}
+</div>
+
+<p style="margin:0 0 24px;">
+    <a class="button" href="{{ site_url }}{% url 'communication:announcement_detail' announcement.pk %}"
+       style="display:inline-block;padding:13px 23px;background-color:#0A36FF;color:#FFFFFF;text-decoration:none;border-radius:5px;font-size:13px;font-weight:bold;">
+        Consulter l'annonce&nbsp; →
+    </a>
+</p>
+
+<p style="margin:0;padding:15px 18px;background-color:#F5F7FC;border-left:4px solid #D4A11E;border-radius:0 5px 5px 0;font-size:12px;line-height:1.6;color:#667086;">
+    Ce message respecte vos préférences de communication EEBC. Les notifications par email et WhatsApp se gèrent séparément.
+</p>
+{% endblock %}
+
+{% block signature %}L'équipe Communication EEBC{% endblock %}

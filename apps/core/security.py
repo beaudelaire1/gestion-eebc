@@ -165,15 +165,15 @@ def _validated_single_ip(value: str) -> str | None:
 def get_trusted_client_ip(request) -> str:
     """Resolve a client IP without blindly trusting proxy-supplied headers.
 
-    On platforms that provide a dedicated, overwrite-safe client-IP header
-    (Render's Cloudflare edge uses ``CF-Connecting-IP``), production settings
-    may explicitly name that WSGI ``META`` key via ``TRUSTED_CLIENT_IP_HEADER``.
+    On platforms that provide a dedicated, overwrite-safe client-IP header,
+    production settings may explicitly name that WSGI ``META`` key via
+    ``TRUSTED_CLIENT_IP_HEADER``.
     The value must contain one valid IP address.
 
     Otherwise, ``X-Forwarded-For`` is accepted only when ``REMOTE_ADDR``
     belongs to an explicitly configured trusted proxy/network.
     """
-    remote = (request.META.get('REMOTE_ADDR') or '0.0.0.0').strip()
+    remote = (request.META.get('REMOTE_ADDR') or '').strip()
 
     trusted_header = str(
         getattr(settings, 'TRUSTED_CLIENT_IP_HEADER', '') or ''

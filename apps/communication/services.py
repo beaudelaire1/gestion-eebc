@@ -386,39 +386,6 @@ class NotificationService:
         
         logger.info(f"Notification événement '{event.title}' envoyée à {len(logs)} destinataires")
         return logs
-        logs = []
-        for recipient in recipients:
-            if isinstance(recipient, dict):
-                email = recipient.get('email')
-                name = recipient.get('name', '')
-            elif hasattr(recipient, 'email'):
-                email = recipient.email
-                name = getattr(recipient, 'get_full_name', lambda: '')() or str(recipient)
-            else:
-                email = str(recipient)
-                name = ''
-            
-            if email:
-                try:
-                    # Ajouter le nom du destinataire au contexte
-                    recipient_context = context.copy()
-                    recipient_context['recipient_name'] = name
-                    
-                    log = EmailService.send_email(
-                        recipient_email=email,
-                        subject=subject,
-                        template_name=template_name,
-                        context=recipient_context,
-                        recipient_name=name,
-                        fail_silently=True
-                    )
-                    logs.append(log)
-                except Exception as e:
-                    logger.error(f"Erreur notification événement à {email}: {e}")
-        
-        logger.info(f"Notification événement '{event.title}' envoyée à {len(logs)} destinataires")
-        return logs
-    
     @staticmethod
     def send_reminder(
         event,

@@ -1,4 +1,4 @@
-"""Regression tests for Render/Cloudflare client-IP resolution."""
+"""Regression tests for reverse-proxy / Cloudflare client-IP resolution."""
 
 from django.test import RequestFactory, override_settings
 

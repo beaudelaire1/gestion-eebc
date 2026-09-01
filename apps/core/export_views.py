@@ -10,6 +10,7 @@ from django.views.generic import View, TemplateView
 from django.contrib.auth.mixins import LoginRequiredMixin, PermissionRequiredMixin
 from django.contrib import messages
 from django.http import HttpResponse, JsonResponse
+from django.db.models import F
 from django.shortcuts import get_object_or_404, render, redirect
 from django.utils import timezone
 from datetime import datetime
@@ -1090,7 +1091,7 @@ class InventoryExportView(ExportPermissionMixin, BaseExportView):
         if self.request.GET.get('location_id'):
             queryset = queryset.filter(location_id=self.request.GET.get('location_id'))
         if self.request.GET.get('low_stock') == '1':
-            queryset = queryset.filter(quantity__lte=models.F('min_quantity'))
+            queryset = queryset.filter(quantity__lte=F('min_quantity'))
         
         return queryset.order_by('name')
     

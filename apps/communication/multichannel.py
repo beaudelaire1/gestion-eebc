@@ -13,8 +13,8 @@ import os
 from typing import Dict, List
 
 import requests
+from bs4 import BeautifulSoup
 from django.utils import timezone
-from django.utils.html import strip_tags
 
 from apps.members.models import Member
 
@@ -102,7 +102,7 @@ def _priority_label(announcement: Announcement) -> str:
 
 def _plain_content(announcement: Announcement) -> str:
     """Convert rich editor markup to readable WhatsApp text."""
-    raw = strip_tags(announcement.content or "")
+    raw = BeautifulSoup(announcement.content or "", "html.parser").get_text(" ")
     return " ".join(html.unescape(raw).split())
 
 

@@ -14,10 +14,10 @@ dj-database-url>=2.1.0
 # Static files
 whitenoise>=6.6.0
 
-# Cache et sessions (optionnel)
+# Cache partagé et sessions (requis en production)
 redis>=5.0.0
 
-# Tâches asynchrones (optionnel)
+# Tâches asynchrones (worker requis en production)
 celery>=5.3.0
 
 # Notifications multicanales
@@ -33,6 +33,6 @@ django-storages>=1.14.0
 # Monitoring
 sentry-sdk>=1.29.0
 
-# Stockage médias cloud (Render filesystem éphémère)
+# Stockage médias persistant hors conteneur
 django-cloudinary-storage>=0.3.0
 cloudinary>=1.36.0

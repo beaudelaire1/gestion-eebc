@@ -469,8 +469,6 @@ class HostingerEmailService:
             from_email=from_email,
             to=[recipient_email]
         )
-        email._eebc_email_log_id = log.id
-        
         # Ajouter le contenu HTML
         if html_content:
             email.attach_alternative(html_content, "text/html")
@@ -489,6 +487,7 @@ class HostingerEmailService:
             body=text_content or html_content,
             status='pending'
         )
+        email._eebc_email_log_id = log.id
         
         try:
             # Utiliser le backend Hostinger

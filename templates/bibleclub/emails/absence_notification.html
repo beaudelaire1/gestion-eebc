@@ -1,4 +1,7 @@
 {% extends 'emails/base_email.html' %}
+{% block title %}Absence au Club Biblique · EEBC{% endblock %}
+{% block preheader %}Information concernant la présence de votre enfant au Club Biblique.{% endblock %}
+{% block header_title %}Club Biblique{% endblock %}
 {% block content %}
 <h2 style="color:#d97706;margin:0 0 15px;font-size:18px;">Absence au Club Biblique</h2>
 <p style="color:#333;font-size:15px;line-height:1.7;">Bonjour {{ parent_name|default:"Cher parent" }},</p>

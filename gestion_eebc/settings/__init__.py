@@ -22,10 +22,12 @@ if settings_module and settings_module != 'gestion_eebc.settings':
 else:
     env = os.environ.get('DJANGO_ENV', 'dev')
 
-    # Sécurité : ne jamais charger dev si on détecte un environnement de production
-    if os.environ.get('RENDER') and env == 'dev':
+    # Sécurité : ne jamais charger les réglages de développement sur une
+    # plateforme d'hébergement, reconnue à ses propres marqueurs.
+    PLATFORM_MARKERS = ('COOLIFY_RESOURCE_UUID', 'COOLIFY_CONTAINER_NAME', 'COOLIFY_URL')
+    if env == 'dev' and any(os.environ.get(marker) for marker in PLATFORM_MARKERS):
         raise RuntimeError(
-            "DJANGO_ENV='dev' détecté sur Render. "
+            "DJANGO_ENV='dev' détecté sur une plateforme d'hébergement. "
             "Utilisez DJANGO_SETTINGS_MODULE=gestion_eebc.settings.prod"
         )
 

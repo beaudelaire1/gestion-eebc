@@ -1,6 +1,6 @@
 """
 Commande de gestion pour exécuter les notifications sans Celery.
-Peut être lancée via cron Render ou manuellement.
+Peut être lancée via une tâche planifiée ou manuellement.
 
 Usage:
     python manage.py run_notifications              # Tout exécuter

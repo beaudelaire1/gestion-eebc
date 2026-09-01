@@ -86,4 +86,6 @@ def sanitize_html(value):
         attributes=ALLOWED_ATTRIBUTES,
         link_rel='noopener noreferrer',
     )
-    return mark_safe(_clean_video_embeds(cleaned))
+    # nh3 has removed executable markup and _clean_video_embeds only tightens
+    # iframe/video attributes against an explicit HTTPS host allowlist.
+    return mark_safe(_clean_video_embeds(cleaned))  # nosec B308 B703

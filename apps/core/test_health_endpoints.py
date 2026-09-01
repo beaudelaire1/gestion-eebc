@@ -34,9 +34,9 @@ class HealthEndpointTests(SimpleTestCase):
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.json(), {"status": "ok"})
 
-    def test_render_blueprint_uses_the_declared_ping_route(self):
-        blueprint = (Path(settings.BASE_DIR) / "render.yaml").read_text(
+    def test_deployment_blueprint_probes_the_declared_ping_route(self):
+        blueprint = (Path(settings.BASE_DIR) / "docker-compose.coolify.yml").read_text(
             encoding="utf-8"
         )
 
-        self.assertIn("healthCheckPath: /healthz/ping/", blueprint)
+        self.assertIn("/healthz/ping/", blueprint)

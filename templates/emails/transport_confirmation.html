@@ -1,4 +1,7 @@
 {% extends 'emails/base_email.html' %}
+{% block title %}Confirmation de transport · EEBC{% endblock %}
+{% block preheader %}Votre demande de transport est bien enregistrée.{% endblock %}
+{% block header_title %}Transport · EEBC{% endblock %}
 {% block content %}
 <h2 style="color:#0A36FF;margin:0 0 15px;font-size:18px;">🚐 Confirmation de transport</h2>
 <p style="color:#333;font-size:15px;line-height:1.7;">Bonjour{% if recipient_name %} {{ recipient_name }}{% endif %},</p>

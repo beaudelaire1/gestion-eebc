@@ -109,7 +109,13 @@ class TinyMCEWidget(forms.Textarea):
         
         # Script d'initialisation
         import json
-        config_json = json.dumps(config)
+        # Prevent an admin-supplied widget option from terminating the script.
+        config_json = (
+            json.dumps(config)
+            .replace('<', r'\u003c')
+            .replace('>', r'\u003e')
+            .replace('&', r'\u0026')
+        )
         
         script = f'''
         <script>
@@ -131,4 +137,6 @@ class TinyMCEWidget(forms.Textarea):
         </script>
         '''
         
-        return mark_safe(textarea + script)
+        # The textarea is rendered/escaped by Django and the only interpolated
+        # configuration above is JSON-encoded with HTML delimiters neutralised.
+        return mark_safe(textarea + script)  # nosec B308 B703

@@ -3,6 +3,7 @@ Health check endpoints for monitoring.
 
 Provides system health status: DB, cache, Celery, and overall status.
 """
+from django.conf import settings
 from django.http import JsonResponse
 from django.views.decorators.http import require_http_methods
 from django.db import connections
@@ -77,6 +78,7 @@ def health_check(request):
         'celery': {
             'status': celery_status['status'],
             'workers': celery_status.get('workers', 0),
+            'mode': celery_status.get('mode', 'worker'),
         },
     }
     
@@ -137,8 +139,14 @@ def _check_cache():
 
 def _check_celery():
     """Check Celery broker and active workers."""
+    if getattr(settings, 'CELERY_TASK_ALWAYS_EAGER', False):
+        return {
+            'status': 'ok',
+            'mode': 'eager',
+            'workers': 0,
+        }
+
     try:
-        from celery import Celery
         from gestion_eebc import celery_app
         
         # Inspect active tasks / workers

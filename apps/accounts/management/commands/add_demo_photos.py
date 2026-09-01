@@ -36,7 +36,8 @@ class Command(BaseCommand):
                     
                     # Télécharger l'image
                     req = urllib.request.Request(url, headers={'User-Agent': 'Mozilla/5.0'})
-                    response = urllib.request.urlopen(req, timeout=10)
+                    # URL is assembled above with a fixed HTTPS DiceBear host.
+                    response = urllib.request.urlopen(req, timeout=10)  # nosec B310
                     image_data = response.read()
                     
                     # Sauvegarder
@@ -59,7 +60,8 @@ class Command(BaseCommand):
                         url = f"https://api.dicebear.com/7.x/avataaars/png?seed={seed}&backgroundColor=ffd5dc"
                     
                     req = urllib.request.Request(url, headers={'User-Agent': 'Mozilla/5.0'})
-                    response = urllib.request.urlopen(req, timeout=10)
+                    # URL is assembled above with a fixed HTTPS DiceBear host.
+                    response = urllib.request.urlopen(req, timeout=10)  # nosec B310
                     image_data = response.read()
                     
                     filename = f"member_{member.id}_{member.first_name.lower()}.png"

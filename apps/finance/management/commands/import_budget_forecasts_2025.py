@@ -1,3 +1,4 @@
+import runpy
 from pathlib import Path
 
 from django.core.management.base import BaseCommand
@@ -8,6 +9,5 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options):
         script_path = Path(__file__).resolve().parents[2] / 'import_bilan_2025_complet.py'
-        namespace = {'__name__': '__main__'}
-        exec(script_path.read_text(encoding='utf-8'), namespace)
+        runpy.run_path(str(script_path), run_name='__main__')
         self.stdout.write(self.style.SUCCESS('Import des prévisionnels 2025 terminé.'))

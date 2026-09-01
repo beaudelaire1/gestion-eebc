@@ -1,157 +1,69 @@
-{% extends 'emails/base.html' %}
+{% extends "emails/base_email.html" %}
 {% load humanize %}
 
-{% block title %}Confirmation requise - {{ role_display }}{% endblock %}
+{% block title %}Confirmation requise · {{ role_display }}{% endblock %}
+{% block preheader %}Merci de confirmer votre disponibilité pour le service du {{ service_date|date:"d/m/Y" }}.{% endblock %}
+{% block header_title %}Service & ministère{% endblock %}
 
 {% block content %}
-<div class="email-header">
-    <h1>🙏 Confirmation requise</h1>
-    <p>Service de culte du {{ service_date|date:"l d F Y" }}</p>
-</div>
+<p style="margin:0 0 10px;font-size:10px;font-weight:bold;letter-spacing:.14em;text-transform:uppercase;color:#A8790C;">Planning du culte</p>
+<h1 style="margin:0 0 19px;font-family:Georgia,'Times New Roman',serif;font-size:28px;font-weight:normal;line-height:1.3;color:#10245D;">
+    Pouvez-vous assurer ce service ?
+</h1>
+<p style="margin:0 0 17px;font-size:15px;line-height:1.7;color:#33405A;">
+    Bonjour <strong>{{ member_name }}</strong>,
+</p>
+<p style="margin:0 0 24px;font-size:15px;line-height:1.7;color:#4E5A72;">
+    Vous êtes sollicité(e) pour participer au prochain culte. Merci de vérifier les informations et de confirmer votre disponibilité.
+</p>
 
-<div class="email-content">
-    <p>Bonjour <strong>{{ member_name }}</strong>,</p>
-    
-    <p>Vous êtes sollicité(e) pour participer au culte suivant :</p>
-    
-    <div class="service-details">
-        <div class="detail-item">
-            <span class="icon">📅</span>
-            <span class="label">Date :</span>
-            <span class="value">{{ service_date|date:"l d F Y" }}</span>
-        </div>
-        <div class="detail-item">
-            <span class="icon">⏰</span>
-            <span class="label">Heure :</span>
-            <span class="value">{{ service_time|time:"H:i" }}</span>
-        </div>
-        <div class="detail-item">
-            <span class="icon">📍</span>
-            <span class="label">Lieu :</span>
-            <span class="value">{{ site_name }}</span>
-        </div>
-        <div class="detail-item">
-            <span class="icon">🎯</span>
-            <span class="label">Rôle :</span>
-            <span class="value role-highlight">{{ role_display }}</span>
-        </div>
-        {% if theme %}
-        <div class="detail-item">
-            <span class="icon">📖</span>
-            <span class="label">Thème :</span>
-            <span class="value">{{ theme }}</span>
-        </div>
-        {% endif %}
-    </div>
-    
-    <p>Merci de confirmer votre disponibilité :</p>
-    
-    <div class="action-buttons">
-        <a href="{{ confirm_url }}" class="btn btn-accept">
-            ✅ J'ACCEPTE
-        </a>
-        <a href="{{ decline_url }}" class="btn btn-decline">
-            ❌ JE REFUSE
-        </a>
-    </div>
-    
-    {% if expires_at %}
-    <div class="deadline-notice">
-        <p>⏰ Merci de répondre avant le <strong>{{ expires_at|date:"d/m/Y à H:i" }}</strong>.</p>
-    </div>
-    {% endif %}
-</div>
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin:0 0 25px;background-color:#F5F7FC;border:1px solid #E3E8F3;border-radius:6px;">
+    <tr>
+        <td style="padding:19px 21px;">
+            <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+                <tr>
+                    <td width="35%" valign="top" style="padding:5px 12px 5px 0;font-size:11px;font-weight:bold;text-transform:uppercase;color:#727D92;">Date</td>
+                    <td valign="top" style="padding:5px 0;font-size:14px;color:#27324A;">{{ service_date|date:"l d F Y" }}</td>
+                </tr>
+                <tr>
+                    <td width="35%" valign="top" style="padding:5px 12px 5px 0;font-size:11px;font-weight:bold;text-transform:uppercase;color:#727D92;">Heure</td>
+                    <td valign="top" style="padding:5px 0;font-size:14px;color:#27324A;">{{ service_time|time:"H:i" }}</td>
+                </tr>
+                <tr>
+                    <td width="35%" valign="top" style="padding:5px 12px 5px 0;font-size:11px;font-weight:bold;text-transform:uppercase;color:#727D92;">Lieu</td>
+                    <td valign="top" style="padding:5px 0;font-size:14px;color:#27324A;">{{ site_name }}</td>
+                </tr>
+                <tr>
+                    <td width="35%" valign="top" style="padding:5px 12px 5px 0;font-size:11px;font-weight:bold;text-transform:uppercase;color:#727D92;">Rôle</td>
+                    <td valign="top" style="padding:5px 0;font-size:14px;font-weight:bold;color:#0A36FF;">{{ role_display }}</td>
+                </tr>
+                {% if theme %}
+                <tr>
+                    <td width="35%" valign="top" style="padding:5px 12px 5px 0;font-size:11px;font-weight:bold;text-transform:uppercase;color:#727D92;">Thème</td>
+                    <td valign="top" style="padding:5px 0;font-size:14px;color:#27324A;">{{ theme }}</td>
+                </tr>
+                {% endif %}
+            </table>
+        </td>
+    </tr>
+</table>
 
-<div class="email-footer">
-    <p>Fraternellement,<br>{{ site_name }}</p>
-</div>
+<table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin:0 0 23px;">
+    <tr>
+        <td style="padding:0 10px 10px 0;">
+            <a class="button" href="{{ confirm_url }}" style="display:inline-block;padding:13px 22px;background-color:#197044;color:#FFFFFF;text-decoration:none;border-radius:5px;font-size:13px;font-weight:bold;">Je suis disponible</a>
+        </td>
+        <td style="padding:0 0 10px 0;">
+            <a class="button" href="{{ decline_url }}" style="display:inline-block;padding:12px 22px;background-color:#FFFFFF;color:#9C3030;text-decoration:none;border:1px solid #C95B5B;border-radius:5px;font-size:13px;font-weight:bold;">Je ne suis pas disponible</a>
+        </td>
+    </tr>
+</table>
+
+{% if expires_at %}
+<p style="margin:0;padding:14px 17px;background-color:#FFF9E9;border-left:4px solid #D4A11E;border-radius:0 5px 5px 0;font-size:12px;line-height:1.6;color:#6B541B;">
+    Merci de répondre avant le <strong>{{ expires_at|date:"d/m/Y à H:i" }}</strong> afin de faciliter l'organisation du culte.
+</p>
+{% endif %}
 {% endblock %}
 
-{% block extra_css %}
-<style>
-    .service-details {
-        background: #f8f9fa;
-        border: 1px solid #e9ecef;
-        border-radius: 8px;
-        padding: 20px;
-        margin: 20px 0;
-    }
-    
-    .detail-item {
-        display: flex;
-        align-items: center;
-        margin: 8px 0;
-        padding: 5px 0;
-    }
-    
-    .detail-item .icon {
-        width: 30px;
-        font-size: 16px;
-    }
-    
-    .detail-item .label {
-        font-weight: 600;
-        color: #495057;
-        min-width: 80px;
-    }
-    
-    .detail-item .value {
-        color: #212529;
-    }
-    
-    .role-highlight {
-        color: #0A36FF !important;
-        font-weight: 700;
-    }
-    
-    .action-buttons {
-        text-align: center;
-        margin: 30px 0;
-    }
-    
-    .btn {
-        display: inline-block;
-        padding: 15px 40px;
-        margin: 10px;
-        text-decoration: none;
-        border-radius: 8px;
-        font-weight: 700;
-        font-size: 16px;
-        transition: all 0.3s ease;
-    }
-    
-    .btn-accept {
-        background: #28a745;
-        color: white;
-    }
-    
-    .btn-accept:hover {
-        background: #218838;
-        transform: translateY(-2px);
-    }
-    
-    .btn-decline {
-        background: #dc3545;
-        color: white;
-    }
-    
-    .btn-decline:hover {
-        background: #c82333;
-        transform: translateY(-2px);
-    }
-    
-    .deadline-notice {
-        background: #fff3cd;
-        border: 1px solid #ffeaa7;
-        border-radius: 6px;
-        padding: 15px;
-        margin: 20px 0;
-        color: #856404;
-    }
-    
-    .deadline-notice p {
-        margin: 0;
-        font-size: 14px;
-    }
-</style>
-{% endblock %}
+{% block signature %}L'équipe Culte & Planning EEBC{% endblock %}

@@ -857,5 +857,3 @@ def service_delete(request, pk):
         'event': event,
     }
     return render(request, 'worship/service_delete_confirm.html', context)
-    
-    return redirect('worship:template_detail', pk=template_pk)

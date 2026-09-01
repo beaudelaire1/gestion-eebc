@@ -1,4 +1,7 @@
 {% extends 'emails/base_email.html' %}
+{% block title %}Suivi des absences · Club Biblique EEBC{% endblock %}
+{% block preheader %}Un point de suivi concernant les absences au Club Biblique.{% endblock %}
+{% block header_title %}Club Biblique{% endblock %}
 {% block content %}
 <h2 style="color:#dc2626;margin:0 0 15px;font-size:18px;">⚠️ Absences récurrentes</h2>
 <p style="color:#333;font-size:15px;line-height:1.7;">Bonjour {{ parent_name|default:"Cher parent" }},</p>
