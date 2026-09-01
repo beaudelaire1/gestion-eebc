@@ -16,7 +16,7 @@
      ============================================================ -->
 {% if slides %}
 <!-- HERO CAROUSEL (slides gérées depuis l'admin) -->
-<section class="hero-carousel" id="heroCarousel">
+<section class="hero-carousel" id="heroCarousel" role="region" aria-roledescription="carrousel" aria-label="À la une">
     {% for slide in slides %}
     <div class="hero-slide {% if forloop.first %}active{% endif %}" data-index="{{ forloop.counter0 }}">
         <div class="hero-slide-bg" data-image-url="{{ slide.image.url }}"></div>
@@ -47,9 +47,9 @@
         <i class="bi bi-chevron-right"></i>
     </button>
 
-    <div class="carousel-nav">
+    <div class="carousel-nav" role="group" aria-label="Choisir une diapositive">
         {% for slide in slides %}
-        <div class="carousel-dot {% if forloop.first %}active{% endif %}" data-index="{{ forloop.counter0 }}" onclick="goToSlide({{ forloop.counter0 }})"></div>
+        <button type="button" class="carousel-dot {% if forloop.first %}active{% endif %}" data-index="{{ forloop.counter0 }}" onclick="goToSlide({{ forloop.counter0 }})" aria-label="Aller à la diapositive {{ forloop.counter }}"{% if forloop.first %} aria-current="true"{% endif %}></button>
         {% endfor %}
     </div>
 
@@ -652,6 +652,7 @@
         currentSlide = index;
         slides.forEach(function(slide, i) {
             slide.classList.remove('active');
+            slide.setAttribute('aria-hidden', i === index ? 'false' : 'true');
             if (i === index) {
                 slide.classList.add('active');
                 var h1 = slide.querySelector('h1');
@@ -662,7 +663,14 @@
                 if (bg) { bg.style.animation = 'none'; bg.offsetHeight; bg.style.animation = null; }
             }
         });
-        dots.forEach(function(dot, i) { dot.classList.toggle('active', i === index); });
+        dots.forEach(function(dot, i) {
+            dot.classList.toggle('active', i === index);
+            if (i === index) {
+                dot.setAttribute('aria-current', 'true');
+            } else {
+                dot.removeAttribute('aria-current');
+            }
+        });
     }
 
     window.changeSlide = function(dir) { showSlide(currentSlide + dir); resetAutoSlide(); };
