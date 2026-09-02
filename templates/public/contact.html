@@ -1,8 +1,12 @@
 {% extends 'public/base.html' %}
 {% load schedule_tags %}
 
-{% block title %}Contact - {{ settings.site_name|default:'EEBC' }}{% endblock %}{% block meta_description %}Contactez {{ settings.site_name|default:'EEBC' }} pour toute question ou prendre rendez-vous.{% endblock %}
-{% block og_title %}Contactez-nous{% endblock %}
+{% block title %}Contact — église évangélique en Guyane ({{ settings.site_name|default:'EEBC' }}){% endblock %}
+{% block meta_description %}Contactez notre église évangélique baptiste en Guyane : adresse à Cayenne (Cabassou), téléphone, e-mail, horaires des cultes et demande de prière.{% endblock %}
+{% block og_title %}Contacter notre église évangélique en Guyane{% endblock %}
+{% block og_description %}Adresse, téléphone, e-mail et horaires de notre église évangélique baptiste à Cayenne, en Guyane française.{% endblock %}
+{% block twitter_title %}Contacter notre église évangélique en Guyane{% endblock %}
+{% block twitter_description %}Adresse, téléphone, e-mail et horaires de notre église évangélique baptiste à Cayenne, en Guyane française.{% endblock %}
 {% block extra_head_js %}
 {% if turnstile_site_key %}
 <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>

@@ -2,9 +2,12 @@
 {% load static %}
 {% load sanitize_tags %}
 
-{% block title %}Accueil - {{ settings.site_name|default:'EEBC' }}{% endblock %}
-{% block meta_description %}Bienvenue à {{ settings.site_name|default:'EEBC' }}. Découvrez nos services, événements et actualités.{% endblock %}
-{% block og_title %}Accueil - {{ settings.site_name|default:'EEBC' }}{% endblock %}
+{% block title %}Église évangélique en Guyane — {{ settings.site_name|default:'EEBC' }}, Cayenne &amp; Macouria{% endblock %}
+{% block meta_description %}Église évangélique baptiste en Guyane française : cultes le dimanche à Cayenne (Cabassou) et à Macouria. Horaires, événements, prière et contact.{% endblock %}
+{% block og_title %}Église évangélique en Guyane — {{ settings.site_name|default:'EEBC' }}{% endblock %}
+{% block og_description %}Église évangélique baptiste en Guyane française : cultes le dimanche à Cayenne (Cabassou) et à Macouria.{% endblock %}
+{% block twitter_title %}Église évangélique en Guyane — {{ settings.site_name|default:'EEBC' }}{% endblock %}
+{% block twitter_description %}Église évangélique baptiste en Guyane française : cultes le dimanche à Cayenne (Cabassou) et à Macouria.{% endblock %}
 
 {% block extra_css %}
 <link rel="stylesheet" href="{% static 'css/home-animations.css' %}?v=20260505">
@@ -25,7 +28,7 @@
         <div class="hero-content">
             <div class="container">
                 <div class="hero-text">
-                    <h1>{{ slide.title }}</h1>
+                    {% if forloop.first %}<h1>{{ slide.title }}</h1>{% else %}<h2>{{ slide.title }}</h2>{% endif %}
                     {% if slide.subtitle %}
                     <p>{{ slide.subtitle }}</p>
                     {% endif %}
@@ -87,7 +90,7 @@
             <span class="verse-ref">— Jean 3:16</span>
         </div>
 
-        <h1>Église Évangélique Baptiste de Cabassou</h1>
+        <h1>Église Évangélique Baptiste de Cabassou, Guyane</h1>
         <p class="hero-tagline">La Bible, notre seule source d'autorité</p>
 
         <div class="hero-cta-group">
@@ -172,7 +175,7 @@
     <div class="container">
         <div class="premium-header reveal-section">
             <span class="overline">Nos Communautés</span>
-            <h2>Nos Églises</h2>
+            <h2>Nos églises évangéliques en Guyane</h2>
             <p class="header-desc">Deux lieux de culte pour vous accueillir en Guyane, unis par la même foi et le même amour.</p>
             <div class="header-divider"></div>
         </div>

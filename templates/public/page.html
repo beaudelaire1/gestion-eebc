@@ -1,8 +1,15 @@
 {% extends 'public/base.html' %}
 {% load sanitize_tags %}
+{% load seo_tags %}
 
-{% block title %}{{ page.title }} - {{ settings.site_name|default:'EEBC' }}{% endblock %}
-{% block meta_description %}{{ page.meta_description|default:page.subtitle }}{% endblock %}
+{% block title %}{{ page.title }} — {{ settings.site_name|default:'EEBC' }}, église évangélique en Guyane{% endblock %}
+{% block meta_description %}{% if page.meta_description %}{{ page.meta_description }}{% elif page.subtitle %}{{ page.subtitle|striptags|truncatechars:155 }}{% else %}{{ page.title }} — {% seo_default_description %}{% endif %}{% endblock %}
+{% block og_title %}{{ page.title }}{% endblock %}
+{% block og_description %}{% if page.meta_description %}{{ page.meta_description }}{% else %}{{ page.subtitle|striptags|truncatechars:200 }}{% endif %}{% endblock %}
+{% block og_type %}article{% endblock %}
+{% block og_image %}{% if page.header_image %}{{ request.scheme }}://{{ request.get_host }}{{ page.header_image.url }}{% else %}{% seo_image %}{% endif %}{% endblock %}
+{% block twitter_title %}{{ page.title }}{% endblock %}
+{% block twitter_description %}{% if page.meta_description %}{{ page.meta_description }}{% else %}{{ page.subtitle|striptags|truncatechars:200 }}{% endif %}{% endblock %}
 
 {% block content %}
 <!-- Header -->

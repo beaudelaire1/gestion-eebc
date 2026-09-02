@@ -1,35 +1,52 @@
 {% load static %}
+{% load seo_tags %}
 <!DOCTYPE html>
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="description" content="{% block meta_description %}{{ settings.meta_description|default:'Église Évangélique Baptiste de Cabassou - Guyane' }}{% endblock %}">
-    
-    <!-- E2: Canonical URL (prevent duplicate content) -->
-    {% block canonical %}
-    <link rel="canonical" href="{{ request.build_absolute_uri }}">
+    <!-- ==========================================================
+         SEO — cible principale : « église évangélique en Guyane ».
+         Le titre et la description portent la dénomination, la ville et le
+         territoire : une page dont le titre ignore le lieu ne remonte pas sur
+         une recherche locale.
+         ========================================================== -->
+    <title>{% block title %}Église évangélique en Guyane — {{ settings.site_name|default:'EEBC' }}, Cayenne et Macouria{% endblock %}</title>
+    <meta name="description" content="{% block meta_description %}{% seo_default_description %}{% endblock %}">
+
+    <!-- Autorise l'aperçu large et le snippet complet : sans quoi Google
+         n'affiche ni grande image ni extrait enrichi. -->
+    {% block robots %}
+    <meta name="robots" content="index, follow, max-snippet:-1, max-image-preview:large, max-video-preview:-1">
+    <meta name="googlebot" content="index, follow, max-snippet:-1, max-image-preview:large">
     {% endblock %}
-    
-    <!-- E1: Open Graph Meta Tags (social sharing) — URLs absolues obligatoires -->
-    <meta property="og:title" content="{% block og_title %}{{ block.super|truncatewords:8 }}{% endblock %}">
-    <meta property="og:description" content="{% block og_description %}{{ block.super|default:settings.meta_description|default:'Église Évangélique Baptiste de Cabassou'|truncatewords:30 }}{% endblock %}">
-    <meta property="og:image" content="{% block og_image %}{% if settings.og_image_url %}{{ settings.og_image_url }}{% else %}{{ request.scheme }}://{{ request.get_host }}{% static 'images/eebc-logo.png' %}{% endif %}{% endblock %}">
-    <meta property="og:image:alt" content="{% block og_image_alt %}{{ settings.site_name|default:'EEBC' }}{% endblock %}">
+    <meta name="author" content="{{ settings.site_name|default:'EEBC' }}">
+
+    <!-- Canonique débarrassée des paramètres de tracking : une URL par contenu -->
+    {% block canonical %}
+    <link rel="canonical" href="{% canonical_url %}">
+    {% endblock %}
+
+    <!-- Ancrage géographique (Guyane française) -->
+    {% geo_meta %}
+
+    <!-- Open Graph — URLs absolues obligatoires -->
+    <meta property="og:title" content="{% block og_title %}Église évangélique en Guyane — {{ settings.site_name|default:'EEBC' }}{% endblock %}">
+    <meta property="og:description" content="{% block og_description %}{% seo_default_description %}{% endblock %}">
+    <meta property="og:image" content="{% block og_image %}{% seo_image %}{% endblock %}">
+    <meta property="og:image:alt" content="{% block og_image_alt %}{{ settings.site_name|default:'EEBC' }} — église évangélique en Guyane{% endblock %}">
     <meta property="og:type" content="{% block og_type %}website{% endblock %}">
-    <meta property="og:url" content="{{ request.build_absolute_uri }}">
+    <meta property="og:url" content="{% canonical_url %}">
     <meta property="og:site_name" content="{{ settings.site_name|default:'EEBC' }}">
     <meta property="og:locale" content="fr_FR">
-    
-    <!-- E1: Twitter Card Meta Tags -->
+
+    <!-- Twitter Card -->
     <meta name="twitter:card" content="summary_large_image">
-    <meta name="twitter:title" content="{% block twitter_title %}{{ block.super|truncatewords:8 }}{% endblock %}">
-    <meta name="twitter:description" content="{% block twitter_description %}{{ block.super|default:settings.meta_description|default:'Église Évangélique Baptiste de Cabassou'|truncatewords:30 }}{% endblock %}">
-    <meta name="twitter:image" content="{% block twitter_image %}{% if settings.og_image_url %}{{ settings.og_image_url }}{% else %}{{ request.scheme }}://{{ request.get_host }}{% static 'images/eebc-logo.png' %}{% endif %}{% endblock %}">
+    <meta name="twitter:title" content="{% block twitter_title %}Église évangélique en Guyane — {{ settings.site_name|default:'EEBC' }}{% endblock %}">
+    <meta name="twitter:description" content="{% block twitter_description %}{% seo_default_description %}{% endblock %}">
+    <meta name="twitter:image" content="{% block twitter_image %}{% seo_image %}{% endblock %}">
     <meta name="twitter:image:alt" content="{% block twitter_image_alt %}{{ settings.site_name|default:'EEBC' }}{% endblock %}">
-    
-    <title>{% block title %}{{ settings.site_name|default:'EEBC' }}{% endblock %}</title>
-    
+
     <!-- PWA Meta Tags -->
     <meta name="theme-color" content="#0A36FF">
     <meta name="apple-mobile-web-app-capable" content="yes">
@@ -42,7 +59,10 @@
     <link rel="stylesheet" href="{% static 'vendor/bootstrap/bootstrap.min.css' %}">
     <!-- Bootstrap Icons -->
     <link rel="stylesheet" href="{% static 'vendor/bootstrap-icons/bootstrap-icons.css' %}">
-    <!-- Google Fonts -->
+    <!-- Google Fonts — preconnect : la police bloque le premier rendu, et le
+         LCP entre dans le classement (Core Web Vitals). -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     
     <!-- Public Pages CSS (thème fixe) -->
@@ -57,32 +77,15 @@
     <!-- Couche UX/accessibilité mutualisée (audit 2026-09) -->
     <link rel="stylesheet" href="{% static 'css/eebc-ux.css' %}">
     
-    <!-- E3: JSON-LD Structured Data (Church Organization) -->
+    <!-- Donnees structurees : un seul graphe (eglise + site web + lieux de
+         culte) relie par @id, serialise cote Python pour rester du JSON valide. -->
     {% block json_ld %}
-    <script type="application/ld+json">
-    {
-        "@context": "https://schema.org",
-        "@type": "Church",
-        "name": "{{ settings.site_name|default:'EEBC' }}",
-        "alternateName": "Église Évangélique Baptiste de Cabassou",
-        "url": "{{ request.scheme }}://{{ request.get_host }}/",
-        "logo": "{{ request.scheme }}://{{ request.get_host }}{% static 'images/eebc-logo.png' %}",
-        "description": "{{ settings.meta_description|default:'Église Évangélique Baptiste de Cabassou' }}"{% if settings.facebook_url or settings.instagram_url %},
-        "sameAs": [{% if settings.facebook_url %}"{{ settings.facebook_url }}"{% endif %}{% if settings.facebook_url and settings.instagram_url %}, {% endif %}{% if settings.instagram_url %}"{{ settings.instagram_url }}"{% endif %}]{% endif %}{% if settings.phone %},
-        "telephone": "{{ settings.phone }}"{% endif %}{% if sites %},
-        "address": [{% for site in sites %}{% if site.address %}
-            {
-                "@type": "PostalAddress",
-                "streetAddress": "{{ site.address }}",
-                "addressLocality": "{{ site.city }}",
-                "addressCountry": "GF"
-            }{% if not forloop.last %},{% endif %}{% endif %}{% endfor %}
-        ],
-        "areaServed": "GF"{% endif %}
-    }
-    </script>
+    <script type="application/ld+json">{% organization_jsonld %}</script>
     {% endblock %}
-    
+    {% breadcrumb_jsonld as breadcrumb_data %}{% if breadcrumb_data %}
+    <script type="application/ld+json">{{ breadcrumb_data }}</script>
+    {% endif %}
+
     <style>
         :root {
             --primary-color: #0A36FF;
@@ -341,7 +344,7 @@
     <nav class="navbar navbar-expand-lg navbar-light bg-white sticky-top" role="navigation" aria-label="Navigation principale">
         <div class="container">
             <a class="navbar-brand text-primary" href="{% url 'public:home' %}">
-                <img src="{% static 'images/eebc-logo.png' %}" alt="{{ settings.site_name|default:'EEBC' }}" height="40">
+                <img src="{% static 'images/eebc-logo.png' %}" alt="{{ settings.site_name|default:'EEBC' }} — Église Évangélique Baptiste de Cabassou, Guyane" width="44" height="44">
             </a>
             
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav"

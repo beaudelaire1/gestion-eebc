@@ -1,8 +1,11 @@
 {% extends 'public/base.html' %}
 
-{% block title %}Inscription - {{ settings.site_name|default:'EEBC' }}{% endblock %}
-{% block meta_description %}Inscrivez-vous auprès de {{ settings.site_name|default:'EEBC' }} pour recevoir nos actualités et rejoindre notre communauté.{% endblock %}
-{% block og_title %}Inscription{% endblock %}
+{% block title %}Rejoindre notre église évangélique en Guyane — {{ settings.site_name|default:'EEBC' }}{% endblock %}
+{% block meta_description %}Vous cherchez une église évangélique en Guyane ? Faites-vous connaître : nous vous accueillons à Cayenne (Cabassou) et à Macouria.{% endblock %}
+{% block og_title %}Rejoindre notre église évangélique en Guyane{% endblock %}
+{% block og_description %}Faites-vous connaître : nous vous accueillons à Cayenne (Cabassou) et à Macouria, en Guyane française.{% endblock %}
+{% block twitter_title %}Rejoindre notre église évangélique en Guyane{% endblock %}
+{% block twitter_description %}Faites-vous connaître : nous vous accueillons à Cayenne (Cabassou) et à Macouria, en Guyane française.{% endblock %}
 {% block extra_head_js %}
 {% if turnstile_site_key %}
 <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>

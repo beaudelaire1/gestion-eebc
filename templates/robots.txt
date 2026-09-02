@@ -1,8 +1,32 @@
+# Église Évangélique Baptiste de Cabassou — Guyane française
+# Site vitrine : tout est explorable sauf l'application de gestion.
+
 User-agent: *
 Allow: /
+
+# Espaces privés : aucune valeur en recherche, et ils consommeraient le budget
+# d'exploration au détriment des pages publiques.
 Disallow: /admin/
 Disallow: /app/
 Disallow: /api/
+Disallow: /accounts/
+Disallow: /health/
+Disallow: /healthz/
 Disallow: /static/admin/
+Disallow: /don/succes/
+Disallow: /don/annule/
+Disallow: /don/recu/
+Disallow: /offline/
 
-Sitemap: https://eglise-ebc.org/sitemap.xml
+# Paramètres de tracking : ils créent une URL différente pour un contenu
+# identique. La balise canonique les neutralise déjà, ceci évite l'exploration.
+Disallow: /*?*utm_
+Disallow: /*?*fbclid=
+Disallow: /*?*gclid=
+
+# Les images et les feuilles de style doivent rester accessibles, sans quoi
+# Google juge la page sur un rendu cassé.
+Allow: /static/
+Allow: /media/
+
+Sitemap: {{ request.scheme }}://{{ request.get_host }}/sitemap.xml

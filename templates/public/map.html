@@ -1,9 +1,12 @@
 {% extends 'public/base.html' %}
 {% load l10n %}
 
-{% block title %}Carte des églises - {{ settings.site_name|default:'EEBC' }}{% endblock %}
-{% block meta_description %}Localisez nos sites sur la carte interactive de {{ settings.site_name|default:'EEBC' }}.{% endblock %}
-{% block og_title %}Carte des sites{% endblock %}
+{% block title %}Carte des églises évangéliques en Guyane — {{ settings.site_name|default:'EEBC' }}{% endblock %}
+{% block meta_description %}Carte interactive de nos églises évangéliques en Guyane : localisation à Cayenne (Cabassou) et Macouria, itinéraires et horaires des cultes.{% endblock %}
+{% block og_title %}Carte de nos églises évangéliques en Guyane{% endblock %}
+{% block og_description %}Localisez nos lieux de culte en Guyane française et calculez votre itinéraire.{% endblock %}
+{% block twitter_title %}Carte de nos églises évangéliques en Guyane{% endblock %}
+{% block twitter_description %}Localisez nos lieux de culte en Guyane française et calculez votre itinéraire.{% endblock %}
 
 {% block extra_css %}
 <!-- Leaflet CSS -->
