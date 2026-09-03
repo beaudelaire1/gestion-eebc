@@ -434,3 +434,46 @@ a.text-primary {
         animation: none;
     }
 }
+
+/* -----------------------------------------------------------------------------
+   12. Bandeaux de statistiques — même traitement que les cartes du tableau
+   de bord, pour que les pages ne parlent pas deux langages différents.
+   Cinq dégradés pleins de 50px alignés en haut de page pesaient plus lourd
+   que les chiffres qu'ils annonçaient.
+   -------------------------------------------------------------------------- */
+.mini-stat__icon {
+    width: 34px;
+    height: 34px;
+    border-radius: 10px;
+    font-size: .95rem;
+}
+
+.mini-stat__icon--primary { background: rgba(37, 99, 235, .14); color: #2563eb; }
+.mini-stat__icon--success { background: rgba(22, 163, 74, .14); color: #16a34a; }
+.mini-stat__icon--purple  { background: rgba(139, 92, 246, .14); color: #7c3aed; }
+.mini-stat__icon--blue    { background: rgba(59, 130, 246, .14); color: #2563eb; }
+.mini-stat__icon--pink    { background: rgba(236, 72, 153, .14); color: #db2777; }
+
+[data-theme="darkly"] .mini-stat__icon--primary,
+[data-theme="cyborg"] .mini-stat__icon--primary,
+[data-theme="slate"] .mini-stat__icon--primary,
+[data-theme="superhero"] .mini-stat__icon--primary,
+[data-theme="darkly"] .mini-stat__icon--blue,
+[data-theme="cyborg"] .mini-stat__icon--blue,
+[data-theme="slate"] .mini-stat__icon--blue,
+[data-theme="superhero"] .mini-stat__icon--blue { color: #7fb2e5; }
+
+[data-theme="darkly"] .mini-stat__icon--success,
+[data-theme="cyborg"] .mini-stat__icon--success,
+[data-theme="slate"] .mini-stat__icon--success,
+[data-theme="superhero"] .mini-stat__icon--success { color: #34d399; }
+
+[data-theme="darkly"] .mini-stat__icon--purple,
+[data-theme="cyborg"] .mini-stat__icon--purple,
+[data-theme="slate"] .mini-stat__icon--purple,
+[data-theme="superhero"] .mini-stat__icon--purple { color: #a78bfa; }
+
+[data-theme="darkly"] .mini-stat__icon--pink,
+[data-theme="cyborg"] .mini-stat__icon--pink,
+[data-theme="slate"] .mini-stat__icon--pink,
+[data-theme="superhero"] .mini-stat__icon--pink { color: #f472b6; }

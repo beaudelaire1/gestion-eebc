@@ -43,31 +43,6 @@
         box-shadow: 0 10px 30px rgba(10, 54, 255, 0.1);
     }
     
-    .mini-stat-icon {
-        width: 50px;
-        height: 50px;
-        border-radius: 14px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 1.25rem;
-        color: white;
-    }
-    
-    .mini-stat-value {
-        font-size: 1.75rem;
-        font-weight: 800;
-        font-family: 'JetBrains Mono', monospace;
-        color: var(--eebc-black);
-        line-height: 1;
-    }
-    
-    .mini-stat-label {
-        font-size: 0.85rem;
-        color: var(--eebc-gray-500);
-        font-weight: 500;
-    }
-    
     /* Filter Card */
     .filter-card {
         background: var(--eebc-white);
@@ -114,164 +89,171 @@
     /* Member Card */
     .member-card {
         background: var(--eebc-white);
-        border-radius: 24px;
+        border-radius: 18px;
         overflow: hidden;
-        box-shadow: 0 10px 40px rgba(11, 15, 25, 0.06);
-        transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-        border: 2px solid transparent;
+        display: flex;
+        flex-direction: column;
+        box-shadow: 0 1px 3px rgba(11, 15, 25, 0.08);
+        border: 1px solid var(--border-color, #eef0f4);
+        transition:
+            transform .26s cubic-bezier(.22, 1, .36, 1),
+            box-shadow .26s cubic-bezier(.22, 1, .36, 1),
+            border-color .26s cubic-bezier(.22, 1, .36, 1);
     }
     
+    /* Un bond de 8px sur une grille de fiches donne une page qui tressaute ;
+       les règles de mouvement retenues plafonnent le survol à 4px. */
     .member-card:hover {
-        transform: translateY(-8px);
-        box-shadow: 0 25px 60px rgba(10, 54, 255, 0.15);
-        border-color: var(--eebc-primary);
+        transform: translateY(-3px);
+        box-shadow: 0 12px 28px rgba(11, 15, 25, 0.12);
+        border-color: var(--accent-on-surface, #2563eb);
     }
     
-    /* Zone photo */
-    .member-photo-zone {
-        position: relative;
-        height: 160px;
-        overflow: hidden;
-        background: #f0f2f5;
-    }
-    
-    .member-photo-zone.homme {
-        background: linear-gradient(135deg, #0A36FF 0%, #1d4ed8 100%);
-    }
-    
-    .member-photo-zone.femme {
-        background: linear-gradient(135deg, #8b5cf6 0%, #6d28d9 100%);
-    }
-    
-    /* Quand il y a une photo, pas de fond coloré */
-    .member-photo-zone.has-photo {
-        background: #f0f2f5;
-    }
-    
-    .member-photo-zone img {
-        width: 100%;
-        height: 100%;
-        object-fit: contain;
-        object-position: center center;
-        background: #f0f2f5;
-    }
-    
-    .member-photo-zone .initials {
-        width: 100%;
-        height: 100%;
+    /* -------------------------------------------------------------------
+       Fiche membre
+       La carte s'ouvrait sur un aplat dégradé de 160px portant des initiales
+       de 4rem — soit 40% de sa hauteur en pure décoration, et l'élément le
+       plus voyant d'un annuaire dont le sujet est le nom des gens.
+
+       Ce dégradé encodait surtout le genre : bleu pour homme, violet pour
+       femme. Cela faisait du genre le premier attribut visible de chaque
+       personne, avant son nom, et une information portée par la seule couleur
+       n'existe ni pour un daltonien ni pour un lecteur d'écran. Le genre reste
+       écrit en toutes lettres sous le nom, là où il était déjà.
+       ---------------------------------------------------------------- */
+    .member-card-head {
         display: flex;
         align-items: center;
-        justify-content: center;
-        font-size: 4rem;
-        font-weight: 800;
-        color: rgba(255, 255, 255, 0.9);
-        text-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+        gap: .85rem;
+        padding: 1.15rem 1.25rem .35rem;
     }
-    
-    /* Badge statut */
-    .status-badge-card {
-        position: absolute;
-        top: 12px;
-        right: 12px;
-        padding: 0.4rem 0.8rem;
-        border-radius: 20px;
-        font-size: 0.75rem;
-        font-weight: 600;
-        backdrop-filter: blur(8px);
-        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
-    }
-    
-    .status-badge-card.actif {
-        background: rgba(34, 197, 94, 0.9);
-        color: white;
-    }
-    
-    .status-badge-card.inactif {
-        background: rgba(107, 114, 128, 0.9);
-        color: white;
-    }
-    
-    .status-badge-card.visiteur {
-        background: rgba(59, 130, 246, 0.9);
-        color: white;
-    }
-    
-    .status-badge-card.en_attente {
-        background: rgba(245, 158, 11, 0.9);
-        color: white;
-    }
-    
-    /* Badge baptême */
-    .baptism-badge {
-        position: absolute;
-        top: 12px;
-        left: 12px;
-        width: 36px;
-        height: 36px;
+
+    .member-avatar {
+        width: 52px;
+        height: 52px;
+        flex-shrink: 0;
         border-radius: 50%;
-        background: rgba(255, 255, 255, 0.95);
-        backdrop-filter: blur(8px);
+        overflow: hidden;
         display: flex;
         align-items: center;
         justify-content: center;
-        font-size: 1rem;
-        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
-    }
-    
-    .baptism-badge.baptized { color: #22c55e; }
-    .baptism-badge.not-baptized { color: #9ca3af; }
-    
-    /* Corps de la carte */
-    .member-card-body {
-        padding: 1.25rem;
-    }
-    
-    .member-name {
-        font-size: 1.1rem;
+        font-size: 1.05rem;
         font-weight: 700;
-        color: var(--eebc-black);
-        margin-bottom: 0.25rem;
+        letter-spacing: .02em;
+        color: var(--accent-on-surface, #2563eb);
+        background: rgba(37, 99, 235, .12);
     }
-    
+
+    .member-avatar img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
+
+    /* Sans min-width:0, un nom long refuse de se tronquer dans un conteneur
+       flex et pousse la carte au-delà de sa colonne. */
+    .member-card-head__text {
+        min-width: 0;
+    }
+
+    .member-card-head .member-name {
+        font-size: 1rem;
+        font-weight: 650;
+        margin-bottom: .1rem;
+        line-height: 1.25;
+    }
+
     .member-age {
-        font-size: 0.85rem;
-        color: var(--eebc-gray-500);
-        margin-bottom: 0.75rem;
+        font-size: 0.8rem;
+        color: var(--text-muted, #6b7280);
+        margin-bottom: 0;
     }
-    
+
+    /* Les pastilles portent leur sens en toutes lettres, pas en couleur. */
+    .member-chips {
+        display: flex;
+        flex-wrap: wrap;
+        gap: .35rem;
+        padding: .6rem 1.25rem 0;
+    }
+
+    .member-chip {
+        display: inline-flex;
+        align-items: center;
+        gap: .3rem;
+        font-size: .72rem;
+        font-weight: 600;
+        padding: .2rem .55rem;
+        border-radius: 999px;
+        border: 1px solid transparent;
+    }
+
+    .member-chip--actif { background: rgba(16,185,129,.14); color: #047857; }
+    .member-chip--visiteur { background: rgba(245,158,11,.16); color: #b45309; }
+    .member-chip--inactif,
+    .member-chip--transfere { background: rgba(107,114,128,.16); color: #4b5563; }
+    .member-chip--baptise { background: rgba(37,99,235,.12); color: #1d4ed8; }
+    .member-chip--neutre { background: rgba(107,114,128,.12); color: #6b7280; }
+
+    .member-card-body {
+        padding: .9rem 1.25rem 1.15rem;
+        display: flex;
+        flex-direction: column;
+        flex: 1;
+    }
+
     .member-info {
-        padding: 0.85rem;
-        background: var(--eebc-gray-50);
-        border-radius: 12px;
-        margin-bottom: 1rem;
+        display: flex;
+        flex-direction: column;
+        gap: .3rem;
+        /* Pousse les actions en bas : sans cela, une fiche sans téléphone ni
+           courriel désalignait ses boutons par rapport à ses voisines. */
+        flex: 1;
+        margin-bottom: .9rem;
     }
-    
+
     .member-info-item {
         display: flex;
         align-items: center;
         gap: 0.5rem;
         font-size: 0.8rem;
-        color: var(--eebc-gray-600);
+        color: var(--text-secondary, #4b5563);
+        min-width: 0;
     }
-    
+
+    .member-info-item span {
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
     .member-info-item i {
-        color: var(--eebc-primary);
+        color: var(--accent-on-surface, #2563eb);
         width: 14px;
+        flex-shrink: 0;
     }
-    
+
+    .member-info-empty {
+        font-size: .78rem;
+        color: var(--text-muted, #9ca3af);
+        font-style: italic;
+    }
+
     .member-card-actions {
         display: flex;
         gap: 0.5rem;
+        border-top: 1px solid var(--border-color, #eef0f4);
+        padding-top: .85rem;
     }
-    
+
     .member-card-actions .btn {
         flex: 1;
-        padding: 0.6rem;
+        padding: 0.5rem;
         border-radius: 10px;
         font-weight: 600;
         font-size: 0.8rem;
     }
-    
+
     /* Table View */
     .table-view .table th {
         background: var(--eebc-gray-50);
@@ -455,67 +437,79 @@
     <div class="members-grid" id="grid-view">
         {% for member in members %}
         <div class="member-card">
-            <!-- Zone photo -->
-            <div class="member-photo-zone {% if member.photo %}has-photo{% elif member.gender == 'M' %}homme{% else %}femme{% endif %}">
-                {% if member.photo %}
-                <img src="{{ member.photo.url }}" alt="{{ member.full_name }}">
-                {% else %}
-                <div class="initials">
+            <div class="member-card-head">
+                <div class="member-avatar">
+                    {% if member.photo %}
+                    <img src="{{ member.photo.url }}" alt="Photo de {{ member.first_name }} {{ member.last_name }}">
+                    {% else %}
                     {{ member.first_name|slice:":1"|upper }}{{ member.last_name|slice:":1"|upper }}
+                    {% endif %}
                 </div>
-                {% endif %}
-                
-                <!-- Badge baptême -->
-                <div class="baptism-badge {% if member.is_baptized %}baptized{% else %}not-baptized{% endif %}">
-                    <i class="bi bi-{% if member.is_baptized %}droplet-fill{% else %}droplet{% endif %}"></i>
-                </div>
-                
-                <!-- Badge statut -->
-                <div class="status-badge-card {{ member.status }}">
-                    {{ member.get_status_display }}
+                <div class="member-card-head__text">
+                    <h5 class="member-name">{{ member.first_name }} {{ member.last_name }}</h5>
+                    <p class="member-age">
+                        {% if member.age %}{{ member.age }} ans • {% endif %}
+                        {% if member.gender == 'M' %}Homme{% else %}Femme{% endif %}
+                        {% if member.city %} • {{ member.city }}{% endif %}
+                    </p>
                 </div>
             </div>
-            
-            <!-- Infos -->
+
+            {% comment %}
+                Le statut et le baptême étaient des pastilles de couleur posées
+                sur le dégradé. Écrits, ils restent lisibles sans distinguer les
+                teintes et sont annoncés par un lecteur d'écran.
+            {% endcomment %}
+            <div class="member-chips">
+                <span class="member-chip member-chip--{{ member.status|default:'neutre' }}">
+                    {{ member.get_status_display }}
+                </span>
+                {% if member.is_baptized %}
+                <span class="member-chip member-chip--baptise">
+                    <i class="bi bi-droplet-fill" aria-hidden="true"></i> Baptisé
+                </span>
+                {% else %}
+                <span class="member-chip member-chip--neutre">
+                    <i class="bi bi-droplet" aria-hidden="true"></i> Non baptisé
+                </span>
+                {% endif %}
+            </div>
+
             <div class="member-card-body">
-                <h5 class="member-name">{{ member.first_name }} {{ member.last_name }}</h5>
-                <p class="member-age">
-                    {% if member.age %}{{ member.age }} ans • {% endif %}
-                    {% if member.gender == 'M' %}Homme{% else %}Femme{% endif %}
-                    {% if member.city %} • {{ member.city }}{% endif %}
-                </p>
-                
                 <div class="member-info">
                     {% if member.phone %}
                     <div class="member-info-item">
-                        <i class="bi bi-telephone"></i>
+                        <i class="bi bi-telephone" aria-hidden="true"></i>
                         <span>{{ member.phone }}</span>
                     </div>
                     {% endif %}
                     {% if member.email %}
-                    <div class="member-info-item mt-1">
-                        <i class="bi bi-envelope"></i>
-                        <span>{{ member.email|truncatechars:25 }}</span>
+                    <div class="member-info-item">
+                        <i class="bi bi-envelope" aria-hidden="true"></i>
+                        <span>{{ member.email }}</span>
                     </div>
                     {% endif %}
                     {% if member.profession %}
-                    <div class="member-info-item mt-1">
-                        <i class="bi bi-briefcase"></i>
-                        <span>{{ member.profession|truncatechars:25 }}</span>
+                    <div class="member-info-item">
+                        <i class="bi bi-briefcase" aria-hidden="true"></i>
+                        <span>{{ member.profession }}</span>
                     </div>
                     {% endif %}
+                    {% if not member.phone and not member.email and not member.profession %}
+                    <span class="member-info-empty">Aucun contact renseigné</span>
+                    {% endif %}
                 </div>
-                
+
                 <div class="member-card-actions">
                     {% if can_view_member_details %}
                     <a href="{% url 'members:detail' member.pk %}" class="btn btn-outline-secondary">
-                        <i class="bi bi-eye me-1"></i> Voir
+                        <i class="bi bi-eye me-1" aria-hidden="true"></i> Voir
                     </a>
                     <a href="{% url 'members:edit' member.pk %}" class="btn btn-primary">
-                        <i class="bi bi-pencil me-1"></i> Modifier
+                        <i class="bi bi-pencil me-1" aria-hidden="true"></i> Modifier
                     </a>
                     {% else %}
-                    <span class="text-muted small"><i class="bi bi-lock me-1"></i>Accès limité</span>
+                    <span class="text-muted small"><i class="bi bi-lock me-1" aria-hidden="true"></i>Accès limité</span>
                     {% endif %}
                 </div>
             </div>
