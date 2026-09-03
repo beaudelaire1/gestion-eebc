@@ -514,3 +514,30 @@ a.text-primary {
     color: var(--accent-on-surface) !important;
     border-color: var(--accent-on-surface) !important;
 }
+
+/* -----------------------------------------------------------------------------
+   14. Badge de notifications non lues
+   -----------------------------------------------------------------------------
+   Le rouge est ici la couleur d'un compteur, pas d'une erreur : il doit
+   ressortir sur la barre supérieure quel que soit le thème, d'où une valeur
+   fixe plutôt qu'un jeton qui bascule. Le liseré à la couleur du fond détache
+   la pastille du bord de la cloche.
+   -------------------------------------------------------------------------- */
+.notification-badge {
+    position: absolute;
+    top: -6px;
+    right: -6px;
+    min-width: 18px;
+    height: 18px;
+    padding: 0 5px;
+    border-radius: 999px;
+    background: #dc2626;
+    color: #fff;
+    border: 2px solid var(--bg-secondary, #fff);
+    font-size: .68rem;
+    font-weight: 700;
+    line-height: 14px;
+    text-align: center;
+    font-variant-numeric: tabular-nums;
+    pointer-events: none;
+}
