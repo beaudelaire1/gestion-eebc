@@ -323,3 +323,72 @@ def generate_ocr_statistics():
     logger.info(f"OCR Statistics: {stats}")
     
     return stats
+
+
+@shared_task(bind=True, max_retries=3, default_retry_delay=120)
+def send_tax_receipt_email_task(self, receipt_id):
+    """Envoie un reçu fiscal par email, PDF joint.
+
+    Une tâche par reçu, et non une tâche pour tout le lot : un PDF WeasyPrint
+    plus un aller-retour SMTP par destinataire, ce sont plusieurs secondes
+    chacun. Regroupés dans une seule unité de travail, une centaine de reçus
+    dépasse largement le délai du worker, et un échec au 80e perdrait les 20
+    suivants. Découpés, chacun se réessaie seul.
+    """
+    from datetime import date
+    from django.core.mail import EmailMessage
+    from .models import TaxReceipt
+    from .pdf_service import generate_tax_receipt_pdf
+
+    receipt = TaxReceipt.objects.select_related('member').filter(pk=receipt_id).first()
+    if not receipt:
+        logger.warning("Reçu fiscal #%s introuvable pour l'envoi.", receipt_id)
+        return {'status': 'not_found', 'receipt_id': receipt_id}
+
+    recipient = receipt.donor_email or (receipt.member.email if receipt.member else '')
+    if not recipient:
+        return {'status': 'skipped', 'reason': 'no_email', 'receipt_id': receipt_id}
+
+    if receipt.status == 'sent':
+        return {'status': 'already_sent', 'receipt_id': receipt_id}
+
+    recipient_name = receipt.donor_name.split()[0] if receipt.donor_name else 'Cher donateur'
+
+    try:
+        pdf_content = generate_tax_receipt_pdf(receipt)
+        email = EmailMessage(
+            subject=f"Reçu fiscal {receipt.fiscal_year} - {receipt.receipt_number}",
+            body=f"""Bonjour {recipient_name},
+
+Veuillez trouver ci-joint votre reçu fiscal pour l'année {receipt.fiscal_year}.
+
+Montant total des dons : {receipt.total_amount} €
+
+Ce document est à conserver pour votre déclaration d'impôts.
+
+Merci pour votre générosité !
+
+Fraternellement,
+L'équipe EEBC""",
+            from_email=None,
+            to=[recipient],
+        )
+        email.attach(
+            f"recu_fiscal_{receipt.receipt_number}.pdf",
+            pdf_content,
+            'application/pdf',
+        )
+        email.send()
+    except Exception as exc:
+        logger.error(
+            "Échec d'envoi du reçu fiscal %s : %s", receipt.receipt_number, exc
+        )
+        if self.request.retries < self.max_retries:
+            raise self.retry(exc=exc, countdown=120 * (self.request.retries + 1))
+        return {'status': 'failed', 'receipt_id': receipt_id, 'error': str(exc)}
+
+    receipt.status = 'sent'
+    receipt.sent_date = date.today()
+    receipt.save(update_fields=['status', 'sent_date'])
+
+    return {'status': 'sent', 'receipt_id': receipt_id}

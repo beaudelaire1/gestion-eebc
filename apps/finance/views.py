@@ -832,9 +832,17 @@ def tax_receipt_bulk_generate(request):
 @login_required
 @role_required('admin', 'finance')
 def tax_receipt_bulk_send(request):
-    """Envoyer par email tous les relevés fiscaux émis (issued) qui ont un email."""
-    from .pdf_service import generate_tax_receipt_pdf
-    from django.core.mail import EmailMessage as DjangoEmail
+    """Mettre en file l'envoi des relevés fiscaux émis qui ont un email.
+
+    Cette vue rendait auparavant un PDF WeasyPrint et ouvrait une connexion
+    SMTP par reçu, en synchrone dans la requête. Plusieurs secondes par
+    destinataire : au-delà de quelques dizaines de reçus, le worker gunicorn
+    dépassait son délai et était tué, ce que le navigateur reçoit en 502 —
+    y compris pour les autres requêtes en attente pendant ce temps.
+
+    Le travail part donc au worker Celery, une tâche par reçu.
+    """
+    from .tasks import send_tax_receipt_email_task
 
     if request.method == 'POST':
         fiscal_year = request.POST.get('fiscal_year')
@@ -842,54 +850,25 @@ def tax_receipt_bulk_send(request):
         if fiscal_year:
             qs = qs.filter(fiscal_year=int(fiscal_year))
 
-        # Filtrer ceux qui ont un email
-        receipts = [r for r in qs if (r.donor_email or (r.member and r.member.email))]
+        # Le tri se faisait en Python après chargement complet du queryset,
+        # et r.member.email déclenchait une requête par reçu.
+        has_email = (
+            (Q(donor_email__isnull=False) & ~Q(donor_email=''))
+            | (Q(member__email__isnull=False) & ~Q(member__email=''))
+        )
+        receipt_ids = list(qs.filter(has_email).values_list('pk', flat=True))
 
-        sent_count = 0
-        error_count = 0
+        for receipt_id in receipt_ids:
+            send_tax_receipt_email_task.delay(receipt_id)
 
-        for receipt in receipts:
-            recipient_email = receipt.donor_email or receipt.member.email
-            recipient_name = receipt.donor_name.split()[0] if receipt.donor_name else 'Cher donateur'
-
-            try:
-                pdf_content = generate_tax_receipt_pdf(receipt)
-                email = DjangoEmail(
-                    subject=f"Reçu fiscal {receipt.fiscal_year} - {receipt.receipt_number}",
-                    body=f"""Bonjour {recipient_name},
-
-Veuillez trouver ci-joint votre reçu fiscal pour l'année {receipt.fiscal_year}.
-
-Montant total des dons : {receipt.total_amount} €
-
-Ce document est à conserver pour votre déclaration d'impôts.
-
-Merci pour votre générosité !
-
-Fraternellement,
-L'équipe EEBC""",
-                    from_email=None,
-                    to=[recipient_email],
-                )
-                email.attach(
-                    f"recu_fiscal_{receipt.receipt_number}.pdf",
-                    pdf_content,
-                    'application/pdf',
-                )
-                email.send()
-                receipt.status = 'sent'
-                receipt.sent_date = date.today()
-                receipt.save()
-                sent_count += 1
-            except Exception as e:
-                error_count += 1
-                logger.error(f"Failed to send receipt {receipt.receipt_number}: {e}")
-
-        if sent_count:
-            messages.success(request, f"{sent_count} reçu(s) envoyé(s) par email.")
-        if error_count:
-            messages.warning(request, f"{error_count} erreur(s) lors de l'envoi.")
-        if not receipts:
+        if receipt_ids:
+            messages.success(
+                request,
+                f"{len(receipt_ids)} reçu(s) mis en file d'envoi. "
+                "Les emails partent en arrière-plan ; la liste se met à jour "
+                "au fur et à mesure.",
+            )
+        else:
             messages.info(request, "Aucun reçu émis avec email à envoyer.")
 
         return redirect('finance:tax_receipt_list')
