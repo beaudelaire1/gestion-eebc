@@ -7,7 +7,17 @@
 <style>
     @page {
         size: A4;
-        margin: 2.35cm 2cm 2.7cm 2cm;
+        /* Marge haute dimensionnee sur la plus haute des entetes mesurees
+           (158px) plus le retrait de 0,8cm : en dessous, la boite @top-center
+           rognait le logo, ou l'entete mordait sur le corps du texte. */
+        margin: 5.3cm 2cm 2.7cm 2cm;
+        @top-center {
+            content: element(page-header);
+            /* Aligner en haut : cale sur le bas, l'entete debordait par le
+               haut de la feuille et le logo etait rogne. */
+            vertical-align: top;
+            padding-top: 0.8cm;
+        }
         @bottom-left {
             content: element(page-footer);
         }
@@ -49,15 +59,19 @@
         z-index: 1;
     }
     .page-header {
-        position: relative;
+        /* Le pied etait un element courant, l'entete restait dans le flux :
+           l'identite de l'eglise et sa mise en forme disparaissaient des la
+           deuxieme page. Repetee, elle est resserree : un bloc de 4,2 cm en
+           haut de chaque feuille mangerait la page. */
+        position: running(page-header);
         display: block;
-        padding: 14px 0 10px;
+        padding: 10px 0 8px;
         border-bottom: 1px solid #d7deea;
         break-inside: avoid;
         page-break-inside: avoid;
         margin-bottom: 0.4cm;
     }
-    .page-header::before {
+    .page-header__bars::before {
         content: '';
         position: absolute;
         top: 0;
@@ -66,7 +80,7 @@
         height: 7px;
         background: linear-gradient(90deg, #111827 0%, #111827 62%, var(--doc-accent-dark) 62%, var(--doc-accent) 100%);
     }
-    .page-header::after {
+    .page-header__bars::after {
         content: '';
         position: absolute;
         top: 0;
@@ -77,6 +91,14 @@
         transform: skewX(-38deg);
         transform-origin: right top;
     }
+    /* Porte les filets decoratifs de l'entete. .page-header etant devenu un
+       element courant, il n'est plus un bloc positionne : sans cet ancrage,
+       les barres se placaient contre la page et sortaient de la marge. */
+    .page-header__bars {
+        position: relative;
+        display: block;
+        height: 0;
+    }
     .page-header__brand {
         display: flex;
         gap: 10px;
@@ -84,8 +106,8 @@
         min-width: 0;
     }
     .page-header__logo {
-        width: 54px;
-        height: 54px;
+        width: 44px;
+        height: 44px;
         padding: 4px;
         border: 1px solid var(--doc-accent-border);
         background: #ffffff;
@@ -118,7 +140,7 @@
         margin: 0;
         font-family: var(--doc-display-font);
         width: 100%;
-        font-size: 16.4pt;
+        font-size: 14.6pt;
         line-height: 1.02;
         letter-spacing: 0.02em;
         color: var(--doc-accent-dark);
@@ -448,11 +470,11 @@
         padding-bottom: 9px;
         border-bottom: 2px solid var(--doc-accent-dark);
     }
-    body.document-page--meeting-minutes .page-header::before {
+    body.document-page--meeting-minutes .page-header__bars::before {
         height: 4px;
         background: repeating-linear-gradient(90deg, var(--doc-accent-dark) 0 34px, var(--doc-accent) 34px 68px);
     }
-    body.document-page--meeting-minutes .page-header::after {
+    body.document-page--meeting-minutes .page-header__bars::after {
         display: none;
     }
     body.document-page--meeting-minutes .page-header__side {
@@ -527,11 +549,11 @@
         padding-bottom: 13px;
         border-bottom: none;
     }
-    body.document-page--ceremonial-call .page-header::before {
+    body.document-page--ceremonial-call .page-header__bars::before {
         height: 8px;
         background: linear-gradient(90deg, var(--doc-accent-dark) 0%, var(--doc-accent) 14%, var(--doc-accent) 86%, var(--doc-accent-dark) 100%);
     }
-    body.document-page--ceremonial-call .page-header::after {
+    body.document-page--ceremonial-call .page-header__bars::after {
         display: none;
     }
     body.document-page--ceremonial-call .page-header__brand {
@@ -663,13 +685,13 @@
         padding-bottom: 10px;
         border-bottom: none;
     }
-    body.document-page--certificate .page-header::before {
+    body.document-page--certificate .page-header__bars::before {
         left: 12%;
         right: 12%;
         height: 3px;
         background: linear-gradient(90deg, transparent 0%, var(--doc-accent-dark) 20%, var(--doc-accent) 50%, var(--doc-accent-dark) 80%, transparent 100%);
     }
-    body.document-page--certificate .page-header::after {
+    body.document-page--certificate .page-header__bars::after {
         display: none;
     }
     body.document-page--certificate .page-header__brand {
@@ -786,8 +808,8 @@
         background: linear-gradient(120deg, #111827 0%, var(--doc-accent-dark) 58%, var(--doc-accent) 100%);
         margin-bottom: 12px;
     }
-    body.document-page--internal-memo .page-header::before,
-    body.document-page--internal-memo .page-header::after {
+    body.document-page--internal-memo .page-header__bars::before,
+    body.document-page--internal-memo .page-header__bars::after {
         display: none;
     }
     body.document-page--internal-memo .brand-overline,
@@ -856,11 +878,11 @@
         padding-bottom: 10px;
         border-bottom: none;
     }
-    body.document-page--editorial-report .page-header::before {
+    body.document-page--editorial-report .page-header__bars::before {
         height: 3px;
         background: linear-gradient(90deg, #111827 0%, #111827 42%, var(--doc-accent-dark) 42%, var(--doc-accent-dark) 68%, var(--doc-accent) 68%, var(--doc-accent) 100%);
     }
-    body.document-page--editorial-report .page-header::after {
+    body.document-page--editorial-report .page-header__bars::after {
         top: auto;
         left: 0;
         right: auto;
