@@ -1,0 +1,103 @@
+{% extends 'base.html' %}
+
+{% block title %}Codes de secours 2FA - EEBC{% endblock %}
+{% block page_title %}Codes de secours 2FA{% endblock %}
+{% block page_subtitle %}Gérez les codes de récupération de votre compte{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="row justify-content-center">
+        <div class="col-lg-7">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <div>
+                    <h2 class="mb-1">
+                        <i class="bi bi-key me-2"></i>Codes de secours
+                    </h2>
+                    <p class="text-muted mb-0">
+                        Chaque code ne peut être utilisé qu'une seule fois.
+                    </p>
+                </div>
+                <a href="{% url 'accounts:two_factor_setup' %}" class="btn btn-outline-secondary">
+                    Retour
+                </a>
+            </div>
+
+            {% if not has_2fa %}
+            <div class="alert alert-warning">
+                <i class="bi bi-exclamation-triangle me-2"></i>
+                La double authentification doit être activée avant de gérer les codes de secours.
+            </div>
+            <a href="{% url 'accounts:two_factor_setup' %}" class="btn btn-primary">
+                Activer la 2FA
+            </a>
+
+            {% elif show_new_codes and backup_codes %}
+            <div class="alert alert-success">
+                <i class="bi bi-check-circle me-2"></i>
+                De nouveaux codes ont été générés. Les anciens codes sont désormais invalides.
+            </div>
+
+            <div class="card border-warning">
+                <div class="card-header bg-warning text-dark">
+                    <strong>Enregistrez ces codes maintenant</strong>
+                </div>
+                <div class="card-body">
+                    <p class="text-danger fw-bold">
+                        Ils ne seront plus affichés après avoir quitté cette page.
+                    </p>
+
+                    <div class="row">
+                        {% for code in backup_codes %}
+                        <div class="col-6 col-md-4 mb-2">
+                            <code class="d-block p-2 bg-light text-center user-select-all">{{ code }}</code>
+                        </div>
+                        {% endfor %}
+                    </div>
+
+                    <button type="button" class="btn btn-outline-secondary mt-3" onclick="window.print()">
+                        <i class="bi bi-printer me-2"></i>Imprimer
+                    </button>
+                </div>
+            </div>
+
+            {% else %}
+            <div class="alert alert-info">
+                Pour des raisons de sécurité, les codes existants ne peuvent pas être réaffichés.
+                Vous pouvez générer une nouvelle série après vérification de votre identité.
+            </div>
+
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">Régénérer les codes</h5>
+                    <p class="text-muted">
+                        Cette opération invalidera immédiatement tous vos codes de secours actuels.
+                        Entrez un code à 6 chiffres de votre application ou un code de secours XXXX-XXXX.
+                    </p>
+
+                    <form method="post">
+                        {% csrf_token %}
+                        <div class="mb-3">
+                            <label for="id_2fa_code" class="form-label">Code de vérification</label>
+                            <input id="id_2fa_code" type="text" class="form-control"
+                                   name="code" placeholder="000000 ou XXXX-XXXX" maxlength="9" required
+                                   inputmode="text" autocomplete="one-time-code"
+                                   autocapitalize="characters" spellcheck="false">
+                        </div>
+
+                        <button type="submit" class="btn btn-warning">
+                            <i class="bi bi-arrow-repeat me-2"></i>Générer de nouveaux codes
+                        </button>
+                    </form>
+                </div>
+            </div>
+            {% endif %}
+
+            <div class="mt-4">
+                <a href="{% url 'accounts:profile' %}" class="text-decoration-none">
+                    <i class="bi bi-arrow-left me-1"></i>Retour au profil
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

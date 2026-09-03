@@ -8,30 +8,44 @@
 <div class="container py-4">
     <div class="row justify-content-center">
         <div class="col-lg-8">
-            
+
             <h2 class="mb-4">
                 <i class="bi bi-shield-lock me-2"></i>
                 Double Authentification (2FA)
             </h2>
-            
+
             {% if is_enabled %}
             <div class="alert alert-success">
                 <i class="bi bi-check-circle me-2"></i>
                 La double authentification est <strong>activée</strong> sur votre compte.
             </div>
-            
+
+            <div class="card mb-4">
+                <div class="card-body">
+                    <h5 class="card-title">Codes de secours</h5>
+                    <p class="text-muted">
+                        Régénérez vos codes de secours si vous les avez perdus ou si vous pensez qu'ils ont été compromis.
+                    </p>
+                    <a href="{% url 'accounts:two_factor_backup_codes' %}" class="btn btn-outline-primary">
+                        <i class="bi bi-key me-2"></i>Gérer les codes de secours
+                    </a>
+                </div>
+            </div>
+
             <div class="card">
                 <div class="card-body">
                     <h5 class="card-title">Désactiver la 2FA</h5>
                     <p class="text-muted">
-                        Pour désactiver la double authentification, entrez un code de vérification.
+                        Pour désactiver la double authentification, entrez un code à 6 chiffres
+                        ou un code de secours au format XXXX-XXXX.
                     </p>
                     <form method="post" action="{% url 'accounts:two_factor_disable' %}">
                         {% csrf_token %}
                         <div class="mb-3">
-                            <input type="text" class="form-control" name="code" 
-                                   placeholder="Code à 6 chiffres" maxlength="6" required
-                                   pattern="[0-9]{6}" inputmode="numeric">
+                            <input type="text" class="form-control" name="code"
+                                   placeholder="000000 ou XXXX-XXXX" maxlength="9" required
+                                   inputmode="text" autocomplete="one-time-code"
+                                   autocapitalize="characters" spellcheck="false">
                         </div>
                         <button type="submit" class="btn btn-danger">
                             <i class="bi bi-shield-x me-2"></i>Désactiver
@@ -39,14 +53,14 @@
                     </form>
                 </div>
             </div>
-            
+
             {% else %}
-            
+
             <div class="alert alert-info">
                 <i class="bi bi-info-circle me-2"></i>
                 La double authentification ajoute une couche de sécurité supplémentaire à votre compte.
             </div>
-            
+
             <div class="row">
                 <!-- Étape 1 : QR Code -->
                 <div class="col-md-6 mb-4">
@@ -58,7 +72,7 @@
                             {% if qr_code %}
                             <img src="{{ qr_code }}" alt="QR Code 2FA" class="img-fluid mb-3" style="max-width: 200px;">
                             {% endif %}
-                            
+
                             <p class="text-muted small">
                                 Scannez ce code avec une application d'authentification :
                             </p>
@@ -67,15 +81,15 @@
                                 <li>Microsoft Authenticator</li>
                                 <li>Authy</li>
                             </ul>
-                            
+
                             <hr>
-                            
+
                             <p class="small text-muted mb-1">Ou entrez manuellement :</p>
                             <code class="user-select-all">{{ secret }}</code>
                         </div>
                     </div>
                 </div>
-                
+
                 <!-- Étape 2 : Vérification -->
                 <div class="col-md-6 mb-4">
                     <div class="card h-100">
@@ -86,11 +100,11 @@
                             <p class="text-muted">
                                 Entrez le code à 6 chiffres affiché dans votre application.
                             </p>
-                            
+
                             <form method="post">
                                 {% csrf_token %}
                                 <div class="mb-3">
-                                    <input type="text" class="form-control form-control-lg text-center" 
+                                    <input type="text" class="form-control form-control-lg text-center"
                                            name="code" placeholder="000000" maxlength="6" required
                                            pattern="[0-9]{6}" inputmode="numeric" autocomplete="one-time-code">
                                 </div>
@@ -104,7 +118,7 @@
                     </div>
                 </div>
             </div>
-            
+
             {% if show_backup_codes and backup_codes %}
             <!-- Codes de secours -->
             <div class="card border-warning">
@@ -121,7 +135,7 @@
                     <p class="text-muted">
                         Utilisez ces codes si vous perdez l'accès à votre application d'authentification.
                     </p>
-                    
+
                     <div class="row">
                         {% for code in backup_codes %}
                         <div class="col-6 col-md-4 mb-2">
@@ -129,7 +143,7 @@
                         </div>
                         {% endfor %}
                     </div>
-                    
+
                     <div class="mt-3">
                         <button class="btn btn-outline-secondary" onclick="window.print()">
                             <i class="bi bi-printer me-2"></i>Imprimer
@@ -138,9 +152,9 @@
                 </div>
             </div>
             {% endif %}
-            
+
             {% endif %}
-            
+
         </div>
     </div>
 </div>

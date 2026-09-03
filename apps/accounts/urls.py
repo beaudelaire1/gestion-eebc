@@ -2,6 +2,7 @@ from django.urls import path
 from . import views
 from . import security_views as sv
 from . import import_security as import_sv
+from .two_factor_gate import first_login_password_change_with_mfa
 from .two_factor_views import (
     TwoFactorSetupView,
     TwoFactorDisableView,
@@ -14,7 +15,11 @@ urlpatterns = [
     # Authentification
     path('login/', sv.secure_login_view, name='login'),
     path('logout/', views.logout_view, name='logout'),
-    path('first-login-password-change/', views.first_login_password_change, name='first_login_password_change'),
+    path(
+        'first-login-password-change/',
+        first_login_password_change_with_mfa,
+        name='first_login_password_change',
+    ),
 
     # Profil
     path('profile/', views.profile_view, name='profile'),

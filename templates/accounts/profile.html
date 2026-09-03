@@ -83,6 +83,38 @@
                 </form>
             </div>
         </div>
+
+        <div class="card mt-4">
+            <div class="card-header">
+                <h6 class="card-title"><i class="bi bi-shield-lock me-2"></i>Sécurité du compte</h6>
+            </div>
+            <div class="card-body">
+                <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3">
+                    <div>
+                        <h6 class="mb-1">Double authentification (2FA)</h6>
+                        {% if request.user.two_factor_enabled %}
+                        <p class="text-success mb-0">
+                            <i class="bi bi-check-circle me-1"></i>Activée
+                        </p>
+                        {% else %}
+                        <p class="text-muted mb-0">
+                            Ajoutez un second facteur avec une application d'authentification.
+                        </p>
+                        {% endif %}
+                    </div>
+                    <div class="d-flex flex-wrap gap-2">
+                        <a href="{% url 'accounts:two_factor_setup' %}" class="btn btn-outline-primary">
+                            {% if request.user.two_factor_enabled %}Gérer la 2FA{% else %}Activer la 2FA{% endif %}
+                        </a>
+                        {% if request.user.two_factor_enabled %}
+                        <a href="{% url 'accounts:two_factor_backup_codes' %}" class="btn btn-outline-secondary">
+                            Codes de secours
+                        </a>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
 </div>
 {% endblock %}
