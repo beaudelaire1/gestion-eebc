@@ -2,29 +2,31 @@
 Vues admin personnalisées pour les membres.
 Inclut une carte interactive des membres par quartier/famille.
 """
-import math
+
 import hashlib
 import logging
+import math
 
-from django.contrib.admin.views.decorators import staff_member_required
 from django.contrib.auth.decorators import login_required
-from django.shortcuts import render
-from django.http import JsonResponse
 from django.db.models import Count, Q
+from django.http import JsonResponse
+from django.shortcuts import render
+from django.urls import reverse
 
-from .models import Member
+from apps.core.models import City, Family, Neighborhood, Site
+from apps.core.permissions import role_required
+
 from .geocoding import (
-    geocode_address_with_metadata,
     build_canonical_address,
-    deterministic_offset_coords as stable_offset_coords,
+)
+from .geocoding import deterministic_offset_coords as stable_offset_coords
+from .geocoding import (
     house_number_offset_coords,
     is_valid_geocoded_coords,
     normalize_address_component,
     street_key_from_address,
 )
-from apps.core.models import Site, Neighborhood, Family, City
-from apps.core.permissions import role_required, has_role
-
+from .models import GeocodedAddress, Member
 
 logger = logging.getLogger(__name__)
 
@@ -33,7 +35,15 @@ logger = logging.getLogger(__name__)
 # GPS OBFUSCATION UTILITIES
 # =============================================================================
 
-def obfuscate_coordinates(lat, lng, member_id=None, address_seed=None, min_offset_meters=8, max_offset_meters=15):
+
+def obfuscate_coordinates(
+    lat,
+    lng,
+    member_id=None,
+    address_seed=None,
+    min_offset_meters=8,
+    max_offset_meters=15,
+):
     """
     Ajoute un décalage déterministe aux coordonnées GPS pour protéger la vie privée.
     L'offset est basé sur l'adresse (même adresse = même point) + micro-jitter par membre.
@@ -42,14 +52,20 @@ def obfuscate_coordinates(lat, lng, member_id=None, address_seed=None, min_offse
 
     # Seed principal basé sur l'adresse pour grouper les membres de la même adresse
     primary_seed = str(address_seed or f"{lat:.6f},{lng:.6f}")
-    primary_hash = hashlib.sha256(primary_seed.encode('utf-8')).hexdigest()
+    primary_hash = hashlib.sha256(primary_seed.encode("utf-8")).hexdigest()
     angle = (int(primary_hash[:8], 16) / 0xFFFFFFFF) * 2 * math.pi
-    distance_meters = min_offset_meters + (int(primary_hash[8:16], 16) / 0xFFFFFFFF) * (max_offset_meters - min_offset_meters)
+    distance_meters = min_offset_meters + (int(primary_hash[8:16], 16) / 0xFFFFFFFF) * (
+        max_offset_meters - min_offset_meters
+    )
 
     lat_offset = (distance_meters * math.cos(angle)) / METERS_PER_DEGREE_LAT
     clamped_lat = max(-89.9, min(89.9, lat))
     meters_per_degree_lng = METERS_PER_DEGREE_LAT * math.cos(math.radians(clamped_lat))
-    lng_offset = (distance_meters * math.sin(angle)) / meters_per_degree_lng if meters_per_degree_lng > 0.01 else 0
+    lng_offset = (
+        (distance_meters * math.sin(angle)) / meters_per_degree_lng
+        if meters_per_degree_lng > 0.01
+        else 0
+    )
 
     return (lat + lat_offset, lng + lng_offset)
 
@@ -57,135 +73,201 @@ def obfuscate_coordinates(lat, lng, member_id=None, address_seed=None, min_offse
 def should_obfuscate_for_user(user):
     """
     Détermine si les coordonnées doivent être obfusquées pour un utilisateur.
-    
+
     Args:
         user: L'utilisateur faisant la requête
-    
+
     Returns:
         bool: True si les coordonnées doivent être obfusquées, False sinon
-    
+
     Notes:
         - Les admins et superusers voient les coordonnées exactes
         - Tous les autres utilisateurs voient des coordonnées obfusquées
     """
     return not (
-        user
-        and user.is_authenticated
-        and (user.is_superuser or user.has_role('admin'))
+        user and user.is_authenticated and (user.is_superuser or user.has_role("admin"))
     )
 
 
 @login_required
-@role_required('admin', 'secretariat')
+@role_required("admin", "secretariat")
 def members_map_view(request):
     """Vue carte des membres (accessible aux admin et secretariat uniquement)."""
-    
+
     # Filtres
-    site_id = request.GET.get('site')
-    neighborhood_id = request.GET.get('neighborhood')
-    status = request.GET.get('status')
-    
+    site_id = request.GET.get("site", "").strip()
+    neighborhood_id = request.GET.get("neighborhood")
+    status = request.GET.get("status", "").strip()
+
     # Sites pour le filtre
     sites = Site.objects.filter(is_active=True)
-    neighborhoods = Neighborhood.objects.filter(is_active=True).select_related('city')
-    
+    neighborhoods = Neighborhood.objects.filter(is_active=True).select_related("city")
+
     context = {
-        'title': 'Carte des membres',
-        'sites': sites,
-        'neighborhoods': neighborhoods,
-        'selected_site': site_id,
-        'selected_neighborhood': neighborhood_id,
-        'selected_status': status,
-        'status_choices': Member.Status.choices if hasattr(Member, 'Status') else [],
+        "title": "Carte des membres",
+        "sites": sites,
+        "neighborhoods": neighborhoods,
+        "selected_site": site_id,
+        "selected_neighborhood": neighborhood_id,
+        "selected_status": status,
+        "selected_city": request.GET.get("city", "").strip(),
+        "status_choices": Member.Status.choices if hasattr(Member, "Status") else [],
+        "coordinates_obfuscated": should_obfuscate_for_user(request.user),
+        "map_data_url": reverse("members:map_data"),
     }
-    
-    # Utiliser le template admin ou app selon le chemin
-    if '/admin/' in request.path:
-        return render(request, 'admin/members/members_map.html', context)
-    return render(request, 'members/members_map.html', context)
+
+    return render(request, "members/members_map.html", context)
 
 
 @login_required
-@role_required('admin', 'secretariat')
+@role_required("admin", "secretariat")
 def members_map_data(request):
-    """API JSON pour les données de la carte avec géocodage."""
-    
+    """Retourne les points de carte sans appel réseau dans le cycle HTTP."""
+
     # Filtres
-    site_id = request.GET.get('site')
-    status = request.GET.get('status')
-    city_filter = request.GET.get('city')
-    
+    site_id = request.GET.get("site", "").strip()
+    status = request.GET.get("status", "").strip()
+    city_filter = request.GET.get("city", "").strip()
+
+    try:
+        site_id = int(site_id) if site_id else None
+    except (TypeError, ValueError):
+        site_id = None
+
+    valid_statuses = {choice for choice, _label in Member.Status.choices}
+    if status not in valid_statuses:
+        status = ""
+
+    def apply_member_filters(queryset):
+        if site_id:
+            queryset = queryset.filter(site_id=site_id)
+        if status:
+            queryset = queryset.filter(status=status)
+        if city_filter:
+            queryset = queryset.filter(
+                Q(city__iexact=city_filter)
+                | Q(family__city__iexact=city_filter)
+                | Q(site__city__iexact=city_filter)
+            )
+        return queryset
+
+    filtered_members_qs = apply_member_filters(Member.objects.all())
+
     # Déterminer si les coordonnées doivent être obfusquées
     obfuscate = should_obfuscate_for_user(request.user)
-    
+
     # Données des sites (églises) - pas d'obfuscation pour les sites publics
     sites_data = []
     sites_qs = Site.objects.filter(
-        is_active=True,
-        latitude__isnull=False,
-        longitude__isnull=False
+        is_active=True, latitude__isnull=False, longitude__isnull=False
     )
-    
+
+    if site_id:
+        sites_qs = sites_qs.filter(id=site_id)
+    if city_filter:
+        sites_qs = sites_qs.filter(city__iexact=city_filter)
+
+    member_counts_by_site = {
+        row["site_id"]: row["total"]
+        for row in filtered_members_qs.exclude(site_id=None)
+        .values("site_id")
+        .annotate(total=Count("id"))
+    }
+
     for site in sites_qs:
-        member_count = Member.objects.filter(site=site).count()
-        sites_data.append({
-            'type': 'site',
-            'id': site.id,
-            'name': site.name,
-            'lat': float(site.latitude),
-            'lng': float(site.longitude),
-            'address': site.address,
-            'city': site.city,
-            'member_count': member_count,
-        })
-    
+        sites_data.append(
+            {
+                "type": "site",
+                "id": site.id,
+                "name": site.name,
+                "lat": float(site.latitude),
+                "lng": float(site.longitude),
+                "address": site.address,
+                "city": site.city,
+                "member_count": member_counts_by_site.get(site.id, 0),
+            }
+        )
+
     # Données des membres avec adresse ou rattachés à un site géolocalisé
     members_data = []
-    members_qs = Member.objects.filter(
-        (Q(address__isnull=False) & ~Q(address='')) |
-        (Q(family__address__isnull=False) & ~Q(family__address='')) |
-        (Q(family__latitude__isnull=False) & Q(family__longitude__isnull=False)) |
-        (Q(site__latitude__isnull=False) & Q(site__longitude__isnull=False))  # fallback: coordonnées du site
-    ).select_related('site', 'family')
-    
-    if site_id:
-        members_qs = members_qs.filter(site_id=site_id)
-    if status:
-        members_qs = members_qs.filter(status=status)
-    if city_filter:
-        members_qs = members_qs.filter(
-            Q(city__icontains=city_filter) |
-            Q(family__city__icontains=city_filter) |
-            Q(site__city__icontains=city_filter)
-        )
-    
+    members_qs = filtered_members_qs.filter(
+        (Q(address__isnull=False) & ~Q(address=""))
+        | (Q(family__address__isnull=False) & ~Q(family__address=""))
+        | (Q(family__latitude__isnull=False) & Q(family__longitude__isnull=False))
+    ).select_related("site", "family__neighborhood__city")
+
     # Coordonnées fallback par ville (évite de perdre des marqueurs si le géocodage échoue)
     city_coords = {
         normalize_address_component(c.name): (float(c.latitude), float(c.longitude))
         for c in City.objects.filter(latitude__isnull=False, longitude__isnull=False)
     }
 
-    # Cache pour éviter de géocoder plusieurs fois la même adresse
-    geocode_cache = {}
+    # Préparer les adresses puis charger leur cache en une seule requête.
+    # Les adresses manquantes sont pré-géocodées hors requête via
+    # ``python manage.py geocode_members``.
+    prepared_members = []
+    address_keys = set()
 
-    def deterministic_offset_coords(base_lat, base_lng, seed_value, min_offset_meters=80, max_offset_meters=220):
-        seed = hashlib.sha256(str(seed_value).encode('utf-8')).hexdigest()
+    for member in members_qs:
+        base_address = (member.address or "").strip() or (
+            (member.family.address or "").strip() if member.family else ""
+        )
+        base_city = (
+            (member.city or "").strip()
+            or ((member.family.city or "").strip() if member.family else "")
+            or ((member.site.city or "").strip() if member.site else "")
+        )
+        base_postal_code = (member.postal_code or "").strip() or (
+            (member.family.postal_code or "").strip() if member.family else ""
+        )
+        canonical = build_canonical_address(
+            address=base_address,
+            city=base_city,
+            postal_code=base_postal_code,
+        )
+        prepared_members.append((member, base_address, base_city, canonical))
+        if canonical["has_input"]:
+            address_keys.add(canonical["address_key"])
+
+    geocode_cache = {
+        entry.address_key: (
+            float(entry.latitude),
+            float(entry.longitude),
+            entry.provider_precision,
+        )
+        for entry in GeocodedAddress.objects.filter(address_key__in=address_keys)
+    }
+
+    def deterministic_offset_coords(
+        base_lat, base_lng, seed_value, min_offset_meters=80, max_offset_meters=220
+    ):
+        seed = hashlib.sha256(str(seed_value).encode("utf-8")).hexdigest()
         angle_raw = int(seed[:8], 16)
         dist_raw = int(seed[8:16], 16)
 
         angle = (angle_raw / 0xFFFFFFFF) * 2 * math.pi
-        distance_meters = min_offset_meters + ((dist_raw / 0xFFFFFFFF) * (max_offset_meters - min_offset_meters))
+        distance_meters = min_offset_meters + (
+            (dist_raw / 0xFFFFFFFF) * (max_offset_meters - min_offset_meters)
+        )
 
         meters_per_degree_lat = 111320
         lat_offset = (distance_meters * math.cos(angle)) / meters_per_degree_lat
 
         clamped_lat = max(-89.9, min(89.9, base_lat))
-        meters_per_degree_lng = meters_per_degree_lat * math.cos(math.radians(clamped_lat))
-        lng_offset = (distance_meters * math.sin(angle)) / meters_per_degree_lng if meters_per_degree_lng > 0.01 else 0
+        meters_per_degree_lng = meters_per_degree_lat * math.cos(
+            math.radians(clamped_lat)
+        )
+        lng_offset = (
+            (distance_meters * math.sin(angle)) / meters_per_degree_lng
+            if meters_per_degree_lng > 0.01
+            else 0
+        )
 
         return (base_lat + lat_offset, base_lng + lng_offset)
 
-    def street_fallback_coords(base_lat, base_lng, city_seed, base_address, address_key):
+    def street_fallback_coords(
+        base_lat, base_lng, city_seed, base_address, address_key
+    ):
         street_key = street_key_from_address(base_address)
         if not street_key:
             return deterministic_offset_coords(
@@ -210,53 +292,46 @@ def members_map_data(request):
             min_offset_meters=2,
             max_offset_meters=90,
         )
-    
-    for member in members_qs:
-        base_address = (member.address or '').strip() or ((member.family.address or '').strip() if member.family else '')
-        base_city = (member.city or '').strip() or ((member.family.city or '').strip() if member.family else '') or ((member.site.city or '').strip() if member.site else '')
-        base_postal_code = (member.postal_code or '').strip() or ((member.family.postal_code or '').strip() if member.family else '')
 
-        canonical = build_canonical_address(
-            address=base_address,
-            city=base_city,
-            postal_code=base_postal_code,
-        )
-        address_key = canonical['address_key']
-        
-        if address_key in geocode_cache:
-            coords = geocode_cache[address_key]
-        else:
-            geocode_result = geocode_address_with_metadata(
-                address=base_address,
-                city=base_city,
-                postal_code=base_postal_code,
-            )
-            coords = geocode_result['coords']
-            if coords and not is_valid_geocoded_coords(coords[0], coords[1], base_city):
-                logger.warning(
-                    "members_map_reject_invalid_geocode member=%s key=%s coords=%s",
-                    member.id,
-                    address_key[:12],
-                    coords,
-                )
-                coords = None
-            geocode_cache[address_key] = coords
-            logger.info(
-                "members_map_geocode member=%s key=%s from_cache=%s",
+    for member, base_address, base_city, canonical in prepared_members:
+        address_key = canonical["address_key"]
+        cached_location = geocode_cache.get(address_key)
+        coords = cached_location[:2] if cached_location else None
+        location_quality = "precise" if coords else ""
+
+        if coords and not is_valid_geocoded_coords(coords[0], coords[1], base_city):
+            logger.warning(
+                "members_map_reject_invalid_geocode member=%s key=%s coords=%s",
                 member.id,
                 address_key[:12],
-                geocode_result.get('from_cache', False),
+                coords,
             )
+            coords = None
+            location_quality = ""
 
-        if not coords and member.family and member.family.latitude is not None and member.family.longitude is not None:
-            family_coords = (float(member.family.latitude), float(member.family.longitude))
+        if (
+            not coords
+            and member.family
+            and member.family.latitude is not None
+            and member.family.longitude is not None
+        ):
+            family_coords = (
+                float(member.family.latitude),
+                float(member.family.longitude),
+            )
             if is_valid_geocoded_coords(family_coords[0], family_coords[1], base_city):
                 coords = family_coords
+                location_quality = "family"
 
         # NE PAS utiliser les coordonnées du site comme fallback
         # (sinon le membre apparaît à l'église au lieu de chez lui)
 
-        if not coords and member.family and member.family.neighborhood and member.family.neighborhood.city:
+        if (
+            not coords
+            and member.family
+            and member.family.neighborhood
+            and member.family.neighborhood.city
+        ):
             city_obj = member.family.neighborhood.city
             if city_obj.latitude is not None and city_obj.longitude is not None:
                 coords = street_fallback_coords(
@@ -266,6 +341,7 @@ def members_map_data(request):
                     base_address,
                     address_key,
                 )
+                location_quality = "approximate"
 
         if not coords and base_city:
             city_key = normalize_address_component(base_city)
@@ -277,62 +353,83 @@ def members_map_data(request):
                     base_address,
                     address_key,
                 )
+                location_quality = "approximate"
 
         # Pas de fallback par défaut : si on ne peut pas géolocaliser, on n'affiche pas
-        
+
         if coords and is_valid_geocoded_coords(coords[0], coords[1], base_city):
             # Appliquer l'obfuscation si nécessaire (déterministe : même adresse = même position)
             if obfuscate:
                 display_lat, display_lng = obfuscate_coordinates(
-                    coords[0], coords[1],
+                    coords[0],
+                    coords[1],
                     address_seed=address_key,
                 )
             else:
-                # Admin / secrétariat : afficher la position exacte
+                # Administrateur : afficher la position disponible sans décalage
                 # (même adresse = même point sur la carte)
                 display_lat, display_lng = coords[0], coords[1]
-            
-            members_data.append({
-                'type': 'member',
-                'id': member.id,
-                'name': member.full_name,
-                'lat': display_lat,
-                'lng': display_lng,
-                'address': base_address,
-                'city': base_city,
-                'phone': member.phone or '',
-                'status': member.status,
-                'site': member.site.name if member.site else '',
-                'family': member.family.name if member.family else '',
-                'location_key': address_key,
-                'obfuscated': obfuscate,  # Indicateur pour le frontend
-            })
-    
+
+            members_data.append(
+                {
+                    "type": "member",
+                    "id": member.id,
+                    "name": member.full_name,
+                    "lat": display_lat,
+                    "lng": display_lng,
+                    "address": base_address,
+                    "city": base_city,
+                    "phone": member.phone or "",
+                    "status": member.status,
+                    "status_label": member.get_status_display(),
+                    "site": member.site.name if member.site else "",
+                    "family": member.family.name if member.family else "",
+                    "location_key": address_key,
+                    "location_quality": location_quality,
+                    "obfuscated": obfuscate,  # Indicateur pour le frontend
+                    "detail_url": reverse("members:detail", args=[member.pk]),
+                }
+            )
+
     # Statistiques
-    total_members = Member.objects.count()
-    members_with_address = Member.objects.filter(
-        (Q(address__isnull=False) & ~Q(address='')) |
-        (Q(family__address__isnull=False) & ~Q(family__address='')) |
-        (Q(family__latitude__isnull=False) & Q(family__longitude__isnull=False))
+    total_members = filtered_members_qs.count()
+    members_with_address = filtered_members_qs.filter(
+        (Q(address__isnull=False) & ~Q(address=""))
+        | (Q(family__address__isnull=False) & ~Q(family__address=""))
+        | (Q(family__latitude__isnull=False) & Q(family__longitude__isnull=False))
     ).count()
     members_geocoded = len(members_data)
-    
+
     # Villes uniques pour le filtre
     member_cities = Member.objects.exclude(
-        Q(city__isnull=True) | Q(city='')
-    ).values_list('city', flat=True)
+        Q(city__isnull=True) | Q(city="")
+    ).values_list("city", flat=True)
     family_cities = Family.objects.exclude(
-        Q(city__isnull=True) | Q(city='')
-    ).values_list('city', flat=True)
-    cities = sorted(set(list(member_cities) + list(family_cities)))
-    
-    return JsonResponse({
-        'sites': sites_data,
-        'members': members_data,
-        'cities': cities,
-        'stats': {
-            'total_members': total_members,
-            'members_with_address': members_with_address,
-            'members_geocoded': members_geocoded,
+        Q(city__isnull=True) | Q(city="")
+    ).values_list("city", flat=True)
+    cities_by_key = {}
+    for city in list(member_cities) + list(family_cities):
+        clean_city = (city or "").strip()
+        if clean_city:
+            cities_by_key.setdefault(
+                normalize_address_component(clean_city), clean_city
+            )
+    cities = sorted(cities_by_key.values(), key=str.casefold)
+
+    return JsonResponse(
+        {
+            "sites": sites_data,
+            "members": members_data,
+            "cities": cities,
+            "stats": {
+                "total_members": total_members,
+                "members_with_address": members_with_address,
+                "members_geocoded": members_geocoded,
+                "members_unlocated": max(total_members - members_geocoded, 0),
+                "approximate_locations": sum(
+                    member["location_quality"] == "approximate"
+                    for member in members_data
+                ),
+            },
         }
-    })
+    )

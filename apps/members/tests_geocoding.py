@@ -1,12 +1,16 @@
-from unittest.mock import patch
 import math
+from unittest.mock import patch
 
 from django.contrib.auth import get_user_model
 from django.test import Client, TestCase
 from django.urls import reverse
 
-from apps.core.models import Site
-from apps.members.geocoding import build_address_key, geocode_address, geocode_address_with_metadata
+from apps.core.models import City, Site
+from apps.members.geocoding import (
+    build_address_key,
+    geocode_address,
+    geocode_address_with_metadata,
+)
 from apps.members.models import GeocodedAddress, Member
 
 
@@ -25,15 +29,27 @@ class GeocodingConsistencyTests(TestCase):
         GeocodedAddress.objects.all().delete()
 
     def test_address_key_is_stable_for_variants(self):
-        key1 = build_address_key(" 12 rue de l'Église ", city="Cayenne", postal_code="97300")
-        key2 = build_address_key("12 RUE DE L EGLISE", city="  CAYENNE  ", postal_code="97300.0")
+        key1 = build_address_key(
+            " 12 rue de l'Église ", city="Cayenne", postal_code="97300"
+        )
+        key2 = build_address_key(
+            "12 RUE DE L EGLISE", city="  CAYENNE  ", postal_code="97300.0"
+        )
         self.assertEqual(key1, key2)
 
-    @patch('apps.members.geocoding.requests.get')
+    @patch("apps.members.geocoding.requests.get")
     def test_geocode_cache_deduplicates_same_address(self, mock_get):
-        mock_get.return_value = MockResponse([
-            {'lat': '4.9225001', 'lon': '-52.3058001', 'importance': 0.72, 'place_rank': 30, 'type': 'house'}
-        ])
+        mock_get.return_value = MockResponse(
+            [
+                {
+                    "lat": "4.9225001",
+                    "lon": "-52.3058001",
+                    "importance": 0.72,
+                    "place_rank": 30,
+                    "type": "house",
+                }
+            ]
+        )
 
         coords_1 = geocode_address("12 rue X", city="Cayenne", postal_code="97300")
         coords_2 = geocode_address("12 RUE X", city="cayenne", postal_code="97300.0")
@@ -42,70 +58,144 @@ class GeocodingConsistencyTests(TestCase):
         self.assertEqual(mock_get.call_count, 1)
         self.assertEqual(GeocodedAddress.objects.count(), 1)
 
-    @patch('apps.members.geocoding.requests.get')
+    @patch("apps.members.geocoding.requests.get")
     def test_map_data_groups_same_canonical_address(self, mock_get):
-        mock_get.return_value = MockResponse([
-            {'lat': '4.9225002', 'lon': '-52.3058002', 'importance': 0.75, 'place_rank': 30, 'type': 'house'}
-        ])
+        address_key = build_address_key("12 rue X", city="Cayenne", postal_code="97300")
+        GeocodedAddress.objects.create(
+            address_key=address_key,
+            normalized_address="12 rue x",
+            normalized_city="cayenne",
+            normalized_postal_code="97300",
+            latitude="4.922500",
+            longitude="-52.305800",
+            provider="test",
+            provider_precision="housenumber",
+        )
 
         user_model = get_user_model()
-        admin = user_model.objects.create_user(username='geo_admin', password='pass1234', role='admin')
+        admin = user_model.objects.create_user(
+            username="geo_admin", password="pass1234", role="admin"
+        )
 
-        site = Site.objects.create(code='CAB', name='Cabassou', city='Cayenne', is_active=True)
-        Member.objects.create(first_name='Jean', last_name='A', status='actif', site=site, address='12 rue x', city='Cayenne', postal_code='97300')
-        Member.objects.create(first_name='Marie', last_name='B', status='actif', site=site, address='12 RUE X', city='cayenne', postal_code='97300.0')
+        site = Site.objects.create(
+            code="CAB", name="Cabassou", city="Cayenne", is_active=True
+        )
+        Member.objects.create(
+            first_name="Jean",
+            last_name="A",
+            status="actif",
+            site=site,
+            address="12 rue x",
+            city="Cayenne",
+            postal_code="97300",
+        )
+        Member.objects.create(
+            first_name="Marie",
+            last_name="B",
+            status="actif",
+            site=site,
+            address="12 RUE X",
+            city="cayenne",
+            postal_code="97300.0",
+        )
 
         client = Client()
         client.force_login(admin)
 
-        response = client.get(reverse('members:map_data'))
+        response = client.get(reverse("members:map_data"))
         self.assertEqual(response.status_code, 200)
 
         payload = response.json()
-        member_points = payload['members']
+        member_points = payload["members"]
         self.assertEqual(len(member_points), 2)
 
-        keys = {m['location_key'] for m in member_points}
-        coords = {(round(m['lat'], 6), round(m['lng'], 6)) for m in member_points}
+        keys = {m["location_key"] for m in member_points}
+        coords = {(round(m["lat"], 6), round(m["lng"], 6)) for m in member_points}
 
         self.assertEqual(len(keys), 1)
         self.assertEqual(len(coords), 1)
+        mock_get.assert_not_called()
 
-    @patch('apps.members.geocoding.requests.get')
+    @patch("apps.members.geocoding.requests.get")
+    def test_map_data_uses_city_fallback_without_live_geocoding(self, mock_get):
+        user_model = get_user_model()
+        admin = user_model.objects.create_user(
+            username="map_admin", password="pass1234", role="admin"
+        )
+
+        City.objects.create(name="Cayenne", latitude="4.937000", longitude="-52.330000")
+        site = Site.objects.create(
+            code="MAP", name="Carte", city="Cayenne", is_active=True
+        )
+        Member.objects.create(
+            first_name="Sans",
+            last_name="Cache",
+            status="actif",
+            site=site,
+            address="99 rue inconnue",
+            city="Cayenne",
+            postal_code="97300",
+        )
+
+        client = Client()
+        client.force_login(admin)
+
+        response = client.get(reverse("members:map_data"))
+        self.assertEqual(response.status_code, 200)
+
+        payload = response.json()
+        self.assertEqual(len(payload["members"]), 1)
+        self.assertEqual(payload["members"][0]["location_quality"], "approximate")
+        self.assertEqual(payload["stats"]["approximate_locations"], 1)
+        mock_get.assert_not_called()
+
+    @patch("apps.members.geocoding.requests.get")
     def test_neighboring_numbers_use_same_street_anchor(self, mock_get):
         mock_get.side_effect = [
-            MockResponse({
-                'features': [{
-                    'geometry': {'coordinates': [-52.305371, 4.919905]},
-                    'properties': {
-                        'score': 0.92,
-                        'type': 'housenumber',
-                        'city': 'Cayenne',
-                        'postcode': '97300',
-                        'label': '1482 Route de Troubiran 97300 Cayenne',
-                    },
-                }]
-            }),
-            MockResponse({
-                'features': [{
-                    'geometry': {'coordinates': [-52.305903, 4.922092]},
-                    'properties': {
-                        'score': 0.72,
-                        'type': 'street',
-                        'city': 'Cayenne',
-                        'postcode': '97300',
-                        'label': 'Route de Troubiran 97300 Cayenne',
-                    },
-                }]
-            }),
+            MockResponse(
+                {
+                    "features": [
+                        {
+                            "geometry": {"coordinates": [-52.305371, 4.919905]},
+                            "properties": {
+                                "score": 0.92,
+                                "type": "housenumber",
+                                "city": "Cayenne",
+                                "postcode": "97300",
+                                "label": "1482 Route de Troubiran 97300 Cayenne",
+                            },
+                        }
+                    ]
+                }
+            ),
+            MockResponse(
+                {
+                    "features": [
+                        {
+                            "geometry": {"coordinates": [-52.305903, 4.922092]},
+                            "properties": {
+                                "score": 0.72,
+                                "type": "street",
+                                "city": "Cayenne",
+                                "postcode": "97300",
+                                "label": "Route de Troubiran 97300 Cayenne",
+                            },
+                        }
+                    ]
+                }
+            ),
         ]
 
-        first = geocode_address_with_metadata('1482 ROUTE DE TROUBIRAN', 'Cayenne', '97300')
-        second = geocode_address_with_metadata('1483 ROUTE DE TROUBIRAN', 'Cayenne', '97300')
+        first = geocode_address_with_metadata(
+            "1482 ROUTE DE TROUBIRAN", "Cayenne", "97300"
+        )
+        second = geocode_address_with_metadata(
+            "1483 ROUTE DE TROUBIRAN", "Cayenne", "97300"
+        )
 
-        self.assertEqual(first['precision'], 'housenumber')
-        self.assertEqual(second['precision'], 'same-street-anchor')
-        self.assertLess(_distance_meters(first['coords'], second['coords']), 10)
+        self.assertEqual(first["precision"], "housenumber")
+        self.assertEqual(second["precision"], "same-street-anchor")
+        self.assertLess(_distance_meters(first["coords"], second["coords"]), 10)
 
 
 def _distance_meters(coords_a, coords_b):
@@ -118,4 +208,6 @@ def _distance_meters(coords_a, coords_b):
         math.sin(delta_lat / 2) ** 2
         + math.cos(lat_a) * math.cos(lat_b) * math.sin(delta_lon / 2) ** 2
     )
-    return 2 * radius_meters * math.atan2(math.sqrt(haversine), math.sqrt(1 - haversine))
+    return (
+        2 * radius_meters * math.atan2(math.sqrt(haversine), math.sqrt(1 - haversine))
+    )
