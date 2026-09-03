@@ -477,3 +477,40 @@ a.text-primary {
 [data-theme="cyborg"] .mini-stat__icon--pink,
 [data-theme="slate"] .mini-stat__icon--pink,
 [data-theme="superhero"] .mini-stat__icon--pink { color: #f472b6; }
+
+/* -----------------------------------------------------------------------------
+   13. .btn-outline-light — un contour blanc sur une carte blanche
+   -----------------------------------------------------------------------------
+   Bootstrap destine cette variante aux fonds sombres. Le projet l'emploie
+   46 fois dans 22 gabarits, presque toujours dans un pied de carte, où elle
+   devient un bouton invisible : sur la liste des groupes, « Détails » et
+   « Modifier » étaient les seules actions de la carte.
+
+   On la rattache aux jetons du thème plutôt que de corriger chaque
+   emplacement à la main : la carte est claire en thème clair, sombre en
+   thème sombre, et le bouton suit.
+   -------------------------------------------------------------------------- */
+.btn-outline-light {
+    /* Les états de Bootstrap 5.3 passent par ces variables : les reprendre
+       garde survol, focus et état actif cohérents entre eux. */
+    --bs-btn-color: var(--text-primary);
+    --bs-btn-border-color: var(--border-color);
+    --bs-btn-hover-color: var(--accent-on-surface);
+    --bs-btn-hover-bg: var(--accent-soft);
+    --bs-btn-hover-border-color: var(--accent-on-surface);
+    --bs-btn-active-color: var(--accent-on-surface);
+    --bs-btn-active-bg: var(--accent-soft);
+    --bs-btn-active-border-color: var(--accent-on-surface);
+
+    /* components.css pose une couleur en dur sur ce sélecteur : sans le même
+       poids, les variables ci-dessus n'auraient aucun effet sur le texte. */
+    color: var(--text-primary) !important;
+    border-color: var(--border-color) !important;
+}
+
+.btn-outline-light:hover,
+.btn-outline-light:focus-visible {
+    background: var(--accent-soft) !important;
+    color: var(--accent-on-surface) !important;
+    border-color: var(--accent-on-surface) !important;
+}

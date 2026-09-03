@@ -88,15 +88,16 @@
                     <a href="{% url 'groups:detail' group.pk %}" class="btn btn-outline-light btn-sm flex-grow-1">
                         <i class="bi bi-eye me-1"></i>Détails
                     </a>
+                    <a href="{% url 'groups:update' group.pk %}" class="btn btn-outline-light btn-sm"
+                       title="Modifier" aria-label="Modifier {{ group.name }}">
+                        <i class="bi bi-pencil" aria-hidden="true"></i>
+                    </a>
                     {% if user|has_any_role:"admin,secretariat,responsable_groupe" %}
                     <a href="{% url 'groups:delete' group.pk %}" class="btn btn-outline-danger btn-sm"
                        title="Supprimer" aria-label="Supprimer {{ group.name }}">
                         <i class="bi bi-trash" aria-hidden="true"></i>
                     </a>
                     {% endif %}
-                    <a href="{% url 'groups:update' group.pk %}" class="btn btn-outline-light btn-sm">
-                        <i class="bi bi-pencil"></i>
-                    </a>
                 </div>
             </div>
         </div>
