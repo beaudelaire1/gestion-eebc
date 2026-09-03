@@ -99,6 +99,41 @@ def family_detail(request, pk):
 
 
 @login_required
+def family_delete(request, pk):
+    """Supprimer une famille, sans emporter ses membres.
+
+    On pouvait créer et modifier une famille, jamais en supprimer une : la
+    route n'existait pas. Un foyer se dissout pourtant — déménagement,
+    séparation, saisie en double — et la fiche restait indéfiniment.
+
+    Le lien member.family est SET_NULL : supprimer le foyer détache ses
+    membres, il ne les efface pas. La page de confirmation le dit, parce que
+    l'inverse est ce qu'on redoute en cliquant.
+    """
+    family = get_object_or_404(Family, pk=pk)
+    members = family.members.order_by('last_name', 'first_name')
+
+    if request.method == 'POST':
+        name = family.name
+        detached = members.count()
+        family.delete()
+        if detached:
+            messages.success(
+                request,
+                f"Famille '{name}' supprimée. "
+                f"{detached} membre(s) conservé(s), désormais sans famille.",
+            )
+        else:
+            messages.success(request, f"Famille '{name}' supprimée.")
+        return redirect('members:family_list')
+
+    return render(request, 'members/family_delete_confirm.html', {
+        'family': family,
+        'members': members,
+    })
+
+
+@login_required
 def member_api_data(request, pk):
     """Retourne les données d'un membre en JSON pour l'auto-remplissage du formulaire famille.
     

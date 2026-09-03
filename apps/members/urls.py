@@ -23,6 +23,7 @@ urlpatterns = [
     path('families/create/', sv.family_create, name='family_create'),
     path('families/<int:pk>/', sv.family_detail, name='family_detail'),
     path('families/<int:pk>/edit/', sv.family_edit, name='family_edit'),
+    path('families/<int:pk>/delete/', sv.family_delete, name='family_delete'),
     path('families/<int:pk>/add-member/', sv.family_add_member, name='family_add_member'),
     path('api/member/<int:pk>/data/', sv.member_api_data, name='member_api_data'),
 

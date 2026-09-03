@@ -1,0 +1,67 @@
+{% extends 'base.html' %}
+
+{% block title %}Supprimer {{ family.name }} - EEBC{% endblock %}
+{% block page_title %}Supprimer la famille{% endblock %}
+{% block page_subtitle %}{{ family.name }}{% endblock %}
+
+{% block content %}
+<nav aria-label="Fil d'Ariane" class="mb-3">
+    <ol class="breadcrumb mb-0">
+        <li class="breadcrumb-item"><a href="{% url 'members:family_list' %}">Familles</a></li>
+        <li class="breadcrumb-item"><a href="{% url 'members:family_detail' family.pk %}">{{ family.name }}</a></li>
+        <li class="breadcrumb-item active" aria-current="page">Supprimer</li>
+    </ol>
+</nav>
+
+<div class="row justify-content-center">
+    <div class="col-lg-7">
+        <div class="card border-danger">
+            <div class="card-header bg-danger text-white">
+                <h5 class="card-title mb-0">
+                    <i class="bi bi-exclamation-triangle me-2" aria-hidden="true"></i>
+                    Confirmer la suppression
+                </h5>
+            </div>
+            <div class="card-body">
+                <p>
+                    La famille <strong>{{ family.name }}</strong> sera supprimée définitivement.
+                </p>
+
+                {% if members %}
+                {% comment %}
+                    C'est la question qu'on se pose la main sur le bouton :
+                    est-ce que ça efface aussi les personnes ? Non — le lien
+                    est en SET_NULL. Autant l'écrire, et nommer les concernés.
+                {% endcomment %}
+                <div class="alert alert-info">
+                    <i class="bi bi-info-circle me-2" aria-hidden="true"></i>
+                    <strong>{{ members|length }} membre(s) ne seront pas supprimés.</strong>
+                    Ils resteront dans l'annuaire, simplement rattachés à aucune famille.
+                </div>
+
+                <ul class="list-group list-group-flush mb-3">
+                    {% for member in members %}
+                    <li class="list-group-item d-flex justify-content-between align-items-center px-0">
+                        <span>{{ member.first_name }} {{ member.last_name }}</span>
+                        <span class="text-muted small">
+                            {{ member.get_family_role_display|default:"Membre du foyer" }}
+                        </span>
+                    </li>
+                    {% endfor %}
+                </ul>
+                {% else %}
+                <p class="text-muted">Cette famille ne compte aucun membre.</p>
+                {% endif %}
+
+                <form method="post" class="d-flex justify-content-end gap-2">
+                    {% csrf_token %}
+                    <a href="{% url 'members:family_detail' family.pk %}" class="btn btn-secondary">Annuler</a>
+                    <button type="submit" class="btn btn-danger">
+                        <i class="bi bi-trash me-2" aria-hidden="true"></i>Supprimer la famille
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

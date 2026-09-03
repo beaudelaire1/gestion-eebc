@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% load role_tags %}
 
 {% block title %}Groupes - EEBC{% endblock %}
 {% block page_title %}Groupes{% endblock %}
@@ -87,6 +88,12 @@
                     <a href="{% url 'groups:detail' group.pk %}" class="btn btn-outline-light btn-sm flex-grow-1">
                         <i class="bi bi-eye me-1"></i>Détails
                     </a>
+                    {% if user|has_any_role:"admin,secretariat,responsable_groupe" %}
+                    <a href="{% url 'groups:delete' group.pk %}" class="btn btn-outline-danger btn-sm"
+                       title="Supprimer" aria-label="Supprimer {{ group.name }}">
+                        <i class="bi bi-trash" aria-hidden="true"></i>
+                    </a>
+                    {% endif %}
                     <a href="{% url 'groups:update' group.pk %}" class="btn btn-outline-light btn-sm">
                         <i class="bi bi-pencil"></i>
                     </a>

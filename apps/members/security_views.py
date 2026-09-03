@@ -97,6 +97,12 @@ def family_edit(request, pk):
 
 @login_required
 @role_required(*FAMILY_WRITE_ROLES)
+def family_delete(request, pk):
+    return legacy_family.family_delete(request, pk)
+
+
+@login_required
+@role_required(*FAMILY_WRITE_ROLES)
 def family_add_member(request, pk):
     return legacy_family.family_add_member(request, pk)
 

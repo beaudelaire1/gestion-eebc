@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% load role_tags %}
 
 {% block title %}{{ family.name }} - EEBC{% endblock %}
 {% block page_title %}Famille {{ family.name }}{% endblock %}
@@ -264,9 +265,18 @@
         <div class="card mb-4">
             <div class="card-header d-flex justify-content-between align-items-center">
                 <h5 class="card-title mb-0">Informations</h5>
-                <a href="{% url 'members:family_edit' family.pk %}" class="btn btn-sm btn-outline-primary">
-                    <i class="bi bi-pencil"></i>
-                </a>
+                <div class="btn-group btn-group-sm">
+                    <a href="{% url 'members:family_edit' family.pk %}" class="btn btn-outline-primary"
+                       title="Modifier" aria-label="Modifier la famille">
+                        <i class="bi bi-pencil" aria-hidden="true"></i>
+                    </a>
+                    {% if user|has_any_role:"admin,secretariat" %}
+                    <a href="{% url 'members:family_delete' family.pk %}" class="btn btn-outline-danger"
+                       title="Supprimer" aria-label="Supprimer la famille">
+                        <i class="bi bi-trash" aria-hidden="true"></i>
+                    </a>
+                    {% endif %}
+                </div>
             </div>
             <div class="card-body">
                 <div class="mb-3">
@@ -463,7 +473,7 @@
 
 <div class="mt-4">
     <a href="{% url 'members:family_list' %}" class="btn btn-outline-secondary">
-        <i class="bi bi-arrow-left me-1"></i>Retour à la liste
+        <i class="bi bi-arrow-left me-1" aria-hidden="true"></i>Retour à la liste
     </a>
 </div>
 {% endblock %}
