@@ -46,6 +46,11 @@ beautifulsoup4>=4.12.0
 requests>=2.31.0
 urllib3>=2.0.0
 
+# Tâches asynchrones - gestion_eebc/__init__.py importe l'app Celery au
+# démarrage, donc la dépendance est requise dans tous les environnements
+# et pas seulement pour le worker de production.
+celery>=5.3.0
+
 # REST API pour application mobile
 djangorestframework>=3.14.0
 djangorestframework-simplejwt>=5.3.0
