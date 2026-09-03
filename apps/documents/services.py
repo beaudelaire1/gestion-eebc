@@ -226,6 +226,9 @@ def _get_client_ip(request):
 
 TEXT_EXTENSIONS = {'txt', 'csv', 'json', 'xml', 'md', 'log', 'yml', 'yaml', 'ini', 'conf', 'html', 'css'}
 MAX_PREVIEW_SIZE = 512 * 1024  # 512 Ko max pour les previews texte
+# Un classeur est charge entierement en memoire avant lecture : plafonner
+# evite qu'un fichier de plusieurs dizaines de Mo passe par le processus web.
+MAX_OFFICE_PREVIEW_SIZE = 20 * 1024 * 1024  # 20 Mo
 
 
 def generate_preview_html(document):
@@ -320,8 +323,46 @@ def _preview_csv(content, truncated):
     return _wrap_preview(html, truncated, 'CSV')
 
 
+def _iter_docx_blocks(doc):
+    """Parcourt paragraphes et tableaux dans l'ordre du document.
+
+    python-docx expose doc.paragraphs et doc.tables comme deux collections
+    separees. Les lire l'une apres l'autre renvoyait tous les tableaux a la
+    fin de l'apercu : un document « intro, tableau, conclusion » s'affichait
+    « intro, conclusion, tableau ». Seul le corps XML porte l'ordre reel.
+    """
+    from docx.oxml.ns import qn
+    from docx.table import Table
+    from docx.text.paragraph import Paragraph
+
+    for child in doc.element.body.iterchildren():
+        if child.tag == qn('w:p'):
+            yield Paragraph(child, doc)
+        elif child.tag == qn('w:tbl'):
+            yield Table(child, doc)
+
+
+def _docx_table_html(table, escape):
+    parts = ['<div class="table-responsive"><table class="table table-sm table-bordered mb-3">']
+    for i, row in enumerate(table.rows):
+        tag = 'th' if i == 0 else 'td'
+        if i == 0:
+            parts.append('<thead>')
+        elif i == 1:
+            parts.append('</thead><tbody>')
+        parts.append('<tr>')
+        for cell in row.cells:
+            parts.append('<%s>%s</%s>' % (tag, escape(cell.text), tag))
+        parts.append('</tr>')
+    # Fermer ce qui a reellement ete ouvert : un tableau d'une seule ligne
+    # n'a jamais de <tbody>.
+    parts.append('</thead>' if len(table.rows) <= 1 else '</tbody>')
+    parts.append('</table></div>')
+    return parts
+
+
 def _preview_docx(document):
-    """Aperçu d'un fichier Word (.docx) via python-docx."""
+    """Apercu d'un fichier Word (.docx) via python-docx."""
     from docx import Document as DocxDocument
     from django.utils.html import escape
 
@@ -332,32 +373,53 @@ def _preview_docx(document):
         file_obj.close()
 
     parts = []
-    for para in doc.paragraphs:
-        text = para.text.strip()
+    state = {'list': None}
+
+    def close_list():
+        if state['list']:
+            parts.append('</%s>' % state['list'])
+            state['list'] = None
+
+    for block in _iter_docx_blocks(doc):
+        if hasattr(block, 'rows'):
+            close_list()
+            parts.extend(_docx_table_html(block, escape))
+            continue
+
+        text = block.text.strip()
         if not text:
             continue
-        style_name = (para.style.name or '').lower()
-        if 'heading 1' in style_name:
-            parts.append(f'<h3>{escape(text)}</h3>')
-        elif 'heading 2' in style_name:
-            parts.append(f'<h4>{escape(text)}</h4>')
-        elif 'heading 3' in style_name:
-            parts.append(f'<h5>{escape(text)}</h5>')
-        elif 'title' in style_name:
-            parts.append(f'<h2>{escape(text)}</h2>')
-        else:
-            parts.append(f'<p>{escape(text)}</p>')
 
-    # Extraire aussi les tableaux
-    for table in doc.tables:
-        parts.append('<div class="table-responsive"><table class="table table-sm table-bordered mb-3">')
-        for i, row in enumerate(table.rows):
-            tag = 'th' if i == 0 else 'td'
-            parts.append('<tr>')
-            for cell in row.cells:
-                parts.append(f'<{tag}>{escape(cell.text)}</{tag}>')
-            parts.append('</tr>')
-        parts.append('</table></div>')
+        style_name = (block.style.name or '').lower()
+
+        # Les puces et numeros de Word portent un style de liste. Rendus en
+        # <p>, ils perdaient toute marque : une enumeration devenait une suite
+        # de phrases sans lien apparent.
+        if 'list' in style_name:
+            wanted = 'ol' if 'number' in style_name else 'ul'
+            if state['list'] != wanted:
+                close_list()
+                parts.append('<%s>' % wanted)
+                state['list'] = wanted
+            parts.append('<li>%s</li>' % escape(text))
+            continue
+
+        close_list()
+
+        if 'heading 1' in style_name:
+            parts.append('<h3>%s</h3>' % escape(text))
+        elif 'heading 2' in style_name:
+            parts.append('<h4>%s</h4>' % escape(text))
+        elif 'heading 3' in style_name:
+            parts.append('<h5>%s</h5>' % escape(text))
+        elif 'title' in style_name:
+            parts.append('<h2>%s</h2>' % escape(text))
+        elif 'quote' in style_name:
+            parts.append('<blockquote class="blockquote">%s</blockquote>' % escape(text))
+        else:
+            parts.append('<p>%s</p>' % escape(text))
+
+    close_list()
 
     if not parts:
         return _wrap_preview('<p class="text-muted">Document vide.</p>', False, 'Word'), None
@@ -366,46 +428,85 @@ def _preview_docx(document):
     return _wrap_preview(html, False, 'Word (.docx)'), None
 
 
+def _format_cell(value):
+    """Rend une valeur de cellule lisible plutot que sa repr Python."""
+    from datetime import date, datetime, time
+
+    if value is None:
+        return ''
+    if isinstance(value, datetime):
+        # str() donnait « 2026-01-05 00:00:00 » sur une simple date.
+        if (value.hour, value.minute, value.second) == (0, 0, 0):
+            return value.strftime('%d/%m/%Y')
+        return value.strftime('%d/%m/%Y %H:%M')
+    if isinstance(value, date):
+        return value.strftime('%d/%m/%Y')
+    if isinstance(value, time):
+        return value.strftime('%H:%M')
+    if isinstance(value, float) and value.is_integer():
+        # 120.0 pour un montant entier saisi sans decimale.
+        return str(int(value))
+    return str(value)
+
+
 def _preview_xlsx(document):
-    """Aperçu d'un fichier Excel (.xlsx) via openpyxl."""
+    """Apercu d'un fichier Excel (.xlsx) via openpyxl."""
+    import io as _io
+
     from openpyxl import load_workbook
     from django.utils.html import escape
 
+    # read_only=True lit la feuille en flux : openpyxl a encore besoin du
+    # fichier au moment d'itérer les lignes. Le fermer juste apres
+    # load_workbook faisait echouer chaque apercu Excel sur « I/O operation on
+    # closed file ». On charge donc les octets en memoire d'abord.
     file_obj = document.file.open('rb')
     try:
-        wb = load_workbook(file_obj, read_only=True, data_only=True)
+        payload = file_obj.read(MAX_OFFICE_PREVIEW_SIZE)
     finally:
         file_obj.close()
+
+    wb = load_workbook(_io.BytesIO(payload), read_only=True, data_only=True)
 
     parts = []
     for sheet_name in wb.sheetnames[:5]:  # Max 5 feuilles
         ws = wb[sheet_name]
-        parts.append(f'<h5 class="mt-3 mb-2"><i class="bi bi-table me-1"></i>{escape(sheet_name)}</h5>')
+
+        rows = []
+        for row in ws.iter_rows(max_row=100, values_only=True):
+            if any(cell is not None for cell in row):
+                rows.append(row)
+
+        # Une feuille vide affichait un titre suivi d'un tableau sans contenu.
+        if not rows:
+            continue
+
+        parts.append('<h5 class="mt-3 mb-2"><i class="bi bi-table me-1"></i>%s</h5>' % escape(sheet_name))
         parts.append('<div class="table-responsive"><table class="table table-sm table-bordered table-striped mb-3">')
+        parts.append('<thead class="table-dark"><tr>')
+        for cell in rows[0]:
+            parts.append('<th>%s</th>' % escape(_format_cell(cell)))
+        parts.append('</tr></thead>')
 
-        row_count = 0
-        for row in ws.iter_rows(max_row=100, values_only=True):  # Max 100 lignes par feuille
-            tag = 'th' if row_count == 0 else 'td'
-            wrapper = 'thead class="table-dark"' if row_count == 0 else 'tbody' if row_count == 1 else None
-
-            if row_count == 0:
-                parts.append('<thead class="table-dark">')
-            elif row_count == 1:
-                parts.append('</thead><tbody>')
-
-            parts.append('<tr>')
-            for cell in row:
-                val = escape(str(cell)) if cell is not None else ''
-                parts.append(f'<{tag}>{val}</{tag}>')
-            parts.append('</tr>')
-            row_count += 1
-
-        if row_count > 0:
+        # Le <tbody> n'etait ouvert qu'a partir de la deuxieme ligne, alors
+        # qu'il etait toujours ferme en sortie de boucle : une feuille d'une
+        # seule ligne produisait un <thead> ouvert et un </tbody> orphelin.
+        if len(rows) > 1:
+            parts.append('<tbody>')
+            for row in rows[1:]:
+                parts.append('<tr>')
+                for cell in row:
+                    parts.append('<td>%s</td>' % escape(_format_cell(cell)))
+                parts.append('</tr>')
             parts.append('</tbody>')
+
         parts.append('</table></div>')
 
-        if row_count >= 100:
-            parts.append(f'<p class="text-muted"><em>Aperçu limité à 100 lignes pour « {escape(sheet_name)} ».</em></p>')
+        if len(rows) >= 100:
+            parts.append(
+                '<p class="text-muted"><em>Apercu limite a 100 lignes pour « %s ».</em></p>'
+                % escape(sheet_name)
+            )
 
     wb.close()
 
@@ -417,7 +518,7 @@ def _preview_xlsx(document):
 
 
 def _preview_pptx(document):
-    """Aperçu d'un fichier PowerPoint (.pptx) via python-pptx."""
+    """Apercu d'un fichier PowerPoint (.pptx) via python-pptx."""
     from pptx import Presentation
     from django.utils.html import escape
 
@@ -429,17 +530,36 @@ def _preview_pptx(document):
 
     parts = []
     for i, slide in enumerate(prs.slides):
-        parts.append(f'<div class="preview-slide"><h5 class="mb-2"><i class="bi bi-easel me-1"></i>Diapositive {i+1}</h5>')
+        title = ''
+        body = []
+        title_shape = slide.shapes.title
+
         for shape in slide.shapes:
-            if shape.has_text_frame:
-                for para in shape.text_frame.paragraphs:
-                    text = para.text.strip()
-                    if text:
-                        parts.append(f'<p>{escape(text)}</p>')
+            if not shape.has_text_frame:
+                continue
+            for para in shape.text_frame.paragraphs:
+                text = para.text.strip()
+                if not text:
+                    continue
+                # Le titre de la diapositive se retrouvait noye parmi les
+                # autres paragraphes, tous rendus en <p>.
+                if not title and title_shape is not None and shape == title_shape:
+                    title = text
+                else:
+                    body.append(text)
+
+        parts.append('<div class="preview-slide"><h5 class="mb-2">'
+                     '<i class="bi bi-easel me-1"></i>Diapositive %d</h5>' % (i + 1))
+        if title:
+            parts.append('<p class="fw-bold mb-2">%s</p>' % escape(title))
+        for text in body:
+            parts.append('<p>%s</p>' % escape(text))
+        if not title and not body:
+            parts.append('<p class="text-muted mb-0"><em>Diapositive sans texte.</em></p>')
         parts.append('</div>')
 
     if not parts:
-        return _wrap_preview('<p class="text-muted">Présentation vide.</p>', False, 'PowerPoint'), None
+        return _wrap_preview('<p class="text-muted">Presentation vide.</p>', False, 'PowerPoint'), None
 
     html = '\n'.join(parts)
     return _wrap_preview(html, False, 'PowerPoint (.pptx)'), None
