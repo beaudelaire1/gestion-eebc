@@ -1,0 +1,19 @@
+{% comment %}
+    Une fiche de l'arbre du foyer. Le rôle est écrit sous le nom : le tracé
+    situe la personne dans le foyer, le texte dit ce qu'elle y est.
+{% endcomment %}
+<a href="{% url 'members:detail' member.pk %}" class="tree-node">
+    <span class="tree-node__avatar">
+        {% if member.photo %}
+        <img src="{{ member.photo.url }}" alt="">
+        {% else %}
+        {{ member.first_name|slice:":1"|upper }}{{ member.last_name|slice:":1"|upper }}
+        {% endif %}
+    </span>
+    <span class="tree-node__text">
+        <span class="tree-node__name d-block">{{ member.first_name }} {{ member.last_name }}</span>
+        <span class="tree-node__role">
+            {{ member.get_family_role_display|default:"Membre du foyer" }}{% if member.age %} · {{ member.age }} ans{% endif %}
+        </span>
+    </span>
+</a>

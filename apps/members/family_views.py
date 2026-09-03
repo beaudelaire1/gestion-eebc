@@ -38,6 +38,35 @@ def family_list(request):
     return render(request, 'members/family_list.html', context)
 
 
+def _build_household_tree(members):
+    """Range les membres d'un foyer par génération, pour l'arbre.
+
+    Le modèle FamilyRelationship décrit des liens de parenté précis, mais
+    aucune relation n'a jamais été saisie : dessiner à partir de là donnerait
+    un arbre vide pour tout le monde. Member.family_role, lui, est renseigné.
+    L'arbre représente donc le foyer — parents, couple, enfants — c'est-à-dire
+    ce que les données disent réellement, et non une généalogie supposée.
+    """
+    buckets = {'PARENT': [], 'HEAD': [], 'SPOUSE': [], 'CHILD': [], 'OTHER': []}
+    for member in members:
+        buckets.get(member.family_role, buckets['OTHER']).append(member)
+
+    couple = buckets['HEAD'] + buckets['SPOUSE']
+
+    # Sans chef de famille désigné, un foyer d'adultes n'afficherait que des
+    # enfants suspendus dans le vide : le premier membre sert d'ancrage.
+    if not couple and not buckets['PARENT'] and buckets['OTHER']:
+        couple = [buckets['OTHER'].pop(0)]
+
+    return {
+        'parents': buckets['PARENT'],
+        'couple': couple,
+        'children': buckets['CHILD'],
+        'others': buckets['OTHER'],
+        'has_any': any([buckets['PARENT'], couple, buckets['CHILD'], buckets['OTHER']]),
+    }
+
+
 @login_required
 def family_detail(request, pk):
     """Détail d'une famille."""
@@ -61,6 +90,7 @@ def family_detail(request, pk):
     context = {
         'family': family,
         'members': members,
+        'tree': _build_household_tree(members),
         'bibleclub_children': bibleclub_children,
         'young_members': young_members,
     }

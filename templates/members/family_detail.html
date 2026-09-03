@@ -4,7 +4,261 @@
 {% block page_title %}Famille {{ family.name }}{% endblock %}
 {% block page_subtitle %}Détails de la famille{% endblock %}
 
+{% block extra_css %}
+<style>
+    /* -------------------------------------------------------------------
+       Arbre du foyer
+       Tracé en CSS et en bordures, sans bibliothèque de graphes : un foyer
+       compte une poignée de personnes, et d3 ou dagre coûteraient plus cher
+       en poids et en dépendance que ce qu'ils apporteraient ici. L'arbre
+       s'imprime, se met à l'échelle, et reste lisible sans JavaScript.
+       ---------------------------------------------------------------- */
+    .tree {
+        --tree-line: var(--border-color, #dbe0e6);
+        --tree-gap: 2rem;
+        --tree-sib-gap: 1.25rem;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 0;
+        padding: 1.5rem .5rem .5rem;
+        overflow-x: auto;
+    }
+
+    .tree__generation {
+        display: flex;
+        justify-content: center;
+        gap: 1.25rem;
+        flex-wrap: wrap;
+    }
+
+    /* Le trait vertical qui relie une génération à la suivante. */
+    .tree__link {
+        width: 2px;
+        height: var(--tree-gap);
+        background: var(--tree-line);
+        flex-shrink: 0;
+    }
+
+    /* Barre horizontale coiffant une fratrie, avec une descente par enfant.
+
+       Une barre unique posée sur le conteneur devrait connaître la largeur de
+       chaque fiche pour rejoindre le centre des enfants extrêmes. Les fiches
+       n'ont pas la même largeur — les noms diffèrent — et la barre tombait
+       treize pixels trop court de chaque côté. Chaque enfant porte donc son
+       propre segment, qui s'ajuste tout seul quelle que soit sa largeur. */
+    .tree__siblings {
+        display: flex;
+        justify-content: center;
+        gap: var(--tree-sib-gap);
+        flex-wrap: wrap;
+        position: relative;
+    }
+
+    .tree__branch {
+        position: relative;
+        padding-top: var(--tree-gap);
+    }
+
+    /* Le segment déborde d'une demi-gouttière pour rejoindre son voisin. */
+    .tree__branch::after {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: calc(var(--tree-sib-gap) / -2);
+        right: calc(var(--tree-sib-gap) / -2);
+        height: 2px;
+        background: var(--tree-line);
+    }
+
+    .tree__branch:first-child::after { left: 50%; }
+    .tree__branch:last-child::after { right: 50%; }
+
+    /* Un enfant unique n'a pas de fratrie à coiffer. */
+    .tree__branch:only-child::after { content: none; }
+
+    /* La descente, du trait horizontal jusqu'à la fiche. */
+    .tree__branch::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 50%;
+        width: 2px;
+        height: var(--tree-gap);
+        background: var(--tree-line);
+        transform: translateX(-50%);
+    }
+
+    /* Le couple : deux fiches réunies par un trait, pas empilées. */
+    .tree__couple {
+        display: flex;
+        align-items: center;
+        gap: 0;
+    }
+
+    .tree__bond {
+        width: 2.25rem;
+        height: 2px;
+        background: var(--tree-line);
+        flex-shrink: 0;
+    }
+
+    .tree-node {
+        display: flex;
+        align-items: center;
+        gap: .6rem;
+        min-width: 168px;
+        padding: .6rem .75rem;
+        border-radius: 14px;
+        border: 1px solid var(--border-color, #e6e9ee);
+        background: var(--bg-card, #fff);
+        text-decoration: none;
+        color: inherit;
+        box-shadow: 0 1px 2px rgba(11, 15, 25, .07);
+        transition:
+            transform .22s cubic-bezier(.22, 1, .36, 1),
+            box-shadow .22s cubic-bezier(.22, 1, .36, 1),
+            border-color .22s cubic-bezier(.22, 1, .36, 1);
+    }
+
+    .tree-node:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 20px rgba(11, 15, 25, .12);
+        border-color: var(--accent-on-surface, #2563eb);
+        color: inherit;
+    }
+
+    .tree-node__avatar {
+        width: 36px;
+        height: 36px;
+        flex-shrink: 0;
+        border-radius: 50%;
+        overflow: hidden;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: .8rem;
+        font-weight: 700;
+        color: var(--accent-on-surface, #2563eb);
+        background: rgba(37, 99, 235, .12);
+    }
+
+    .tree-node__avatar img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
+
+    .tree-node__text {
+        min-width: 0;
+    }
+
+    .tree-node__name {
+        font-size: .85rem;
+        font-weight: 600;
+        line-height: 1.25;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    /* Le rôle est écrit, jamais rendu par la seule couleur du cadre. */
+    .tree-node__role {
+        font-size: .72rem;
+        color: var(--text-muted, #6b7280);
+    }
+
+    .tree__aside {
+        margin-top: 1.75rem;
+        padding-top: 1.25rem;
+        border-top: 1px dashed var(--tree-line);
+        width: 100%;
+    }
+
+    .tree__aside-label {
+        font-size: .72rem;
+        font-weight: 600;
+        letter-spacing: .06em;
+        text-transform: uppercase;
+        color: var(--text-muted, #6b7280);
+        text-align: center;
+        margin-bottom: .75rem;
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+        .tree-node {
+            transition: none;
+        }
+
+        .tree-node:hover {
+            transform: none;
+        }
+    }
+</style>
+{% endblock %}
+
 {% block content %}
+{% if tree.has_any %}
+<div class="card mb-4">
+    <div class="card-header d-flex justify-content-between align-items-center">
+        <h5 class="card-title mb-0">
+            <i class="bi bi-diagram-3 me-2" aria-hidden="true"></i>Arbre du foyer
+        </h5>
+        <a href="{% url 'members:family_add_member' family.pk %}" class="btn btn-sm btn-outline-primary">
+            <i class="bi bi-person-plus me-1" aria-hidden="true"></i>Ajouter
+        </a>
+    </div>
+    <div class="card-body p-0">
+        {% comment %}
+            Chaque génération est annoncée pour un lecteur d'écran : le tracé
+            n'existe qu'en CSS, il ne dit rien à qui ne le voit pas.
+        {% endcomment %}
+        <div class="tree">
+
+            {% if tree.parents %}
+            <h6 class="visually-hidden">Génération précédente</h6>
+            <div class="tree__generation">
+                {% for m in tree.parents %}{% include "members/_tree_node.html" with member=m %}{% endfor %}
+            </div>
+            {% if tree.couple %}<div class="tree__link"></div>{% endif %}
+            {% endif %}
+
+            {% if tree.couple %}
+            <h6 class="visually-hidden">Foyer</h6>
+            <div class="tree__couple">
+                {% for m in tree.couple %}
+                {% if not forloop.first %}<div class="tree__bond" aria-hidden="true"></div>{% endif %}
+                {% include "members/_tree_node.html" with member=m %}
+                {% endfor %}
+            </div>
+            {% endif %}
+
+            {% if tree.children %}
+            {% if tree.couple %}<div class="tree__link"></div>{% endif %}
+            <h6 class="visually-hidden">Enfants</h6>
+            <div class="tree__siblings">
+                {% for m in tree.children %}
+                <div class="tree__branch">
+                    {% include "members/_tree_node.html" with member=m %}
+                </div>
+                {% endfor %}
+            </div>
+            {% endif %}
+
+            {% if tree.others %}
+            <div class="tree__aside">
+                <div class="tree__aside-label">Autres membres du foyer</div>
+                <div class="tree__generation">
+                    {% for m in tree.others %}{% include "members/_tree_node.html" with member=m %}{% endfor %}
+                </div>
+            </div>
+            {% endif %}
+
+        </div>
+    </div>
+</div>
+{% endif %}
+
 <div class="row">
     <div class="col-lg-4">
         <div class="card mb-4">
