@@ -2,6 +2,7 @@
 
 import pyotp
 import pytest
+from django.contrib import admin
 from django.test import override_settings
 from django.urls import reverse
 
@@ -536,3 +537,121 @@ def test_reset_2fa_status_reports_without_changing_anything():
     user.refresh_from_db()
     assert user.two_factor_enabled is True
     assert user.two_factor_secret == secret
+
+
+# ---------------------------------------------------------------------------
+# Support fallback: the Django admin option
+# ---------------------------------------------------------------------------
+
+# The admin is not mounted on /admin/ in this project.
+ADMIN_USER_CHANGELIST = reverse('admin:accounts_user_changelist')
+
+
+def _admin_actor(username='admin-staff'):
+    return User.objects.create_superuser(
+        username=username,
+        email=f'{username}@example.test',
+        password='SecurePass!2026',
+        role='admin',
+    )
+
+
+def test_admin_action_resets_two_factor_and_records_an_audit_entry(client):
+    from apps.core.models import AuditLog
+
+    actor = _admin_actor()
+    target, _ = _make_mfa_user('admin-resets-me', role='finance')
+    client.force_login(actor)
+
+    response = client.post(
+        ADMIN_USER_CHANGELIST,
+        {
+            'action': 'reset_two_factor',
+            '_selected_action': [str(target.pk)],
+        },
+        follow=True,
+    )
+    assert response.status_code == 200
+
+    target.refresh_from_db()
+    assert target.two_factor_enabled is False
+    assert target.two_factor_secret == ''
+    assert target.two_factor_backup_codes == ''
+
+    entry = AuditLog.objects.filter(
+        object_id=str(target.pk),
+        model_name='User',
+    ).first()
+    assert entry is not None
+    assert entry.user == actor
+    assert entry.changes == {'two_factor': 'reset'}
+
+
+def test_admin_action_refuses_a_privileged_target_for_a_non_admin_actor(client):
+    """Stripping a pastor's second factor is not a secretariat-level gesture."""
+    from django.contrib.auth.models import Permission
+
+    actor = User.objects.create_user(
+        username='secretariat-staff',
+        email='secretariat-staff@example.test',
+        password='SecurePass!2026',
+        role='secretariat',
+        is_staff=True,
+    )
+    # Staff access to the changelist, but no superuser blanket authority.
+    actor.user_permissions.add(
+        *Permission.objects.filter(
+            content_type__app_label='accounts',
+            codename__in=['view_user', 'change_user'],
+        )
+    )
+    target, secret = _make_mfa_user('protected-pasteur', role='pasteur')
+    client.force_login(actor)
+
+    client.post(
+        ADMIN_USER_CHANGELIST,
+        {
+            'action': 'reset_two_factor',
+            '_selected_action': [str(target.pk)],
+        },
+        follow=True,
+    )
+
+    target.refresh_from_db()
+    assert target.two_factor_enabled is True
+    assert target.two_factor_secret == secret
+
+
+def test_admin_list_flags_an_unfinished_2fa_setup():
+    """The account believes it is protected; the admin must say otherwise."""
+    from apps.accounts.admin import UserAdmin
+
+    user = User.objects.create_user(
+        username='half-enrolled',
+        email='half-enrolled@example.test',
+        password='SecurePass!2026',
+        role='finance',
+    )
+    user.start_two_factor_enrollment()
+    user.refresh_from_db()
+
+    rendered = UserAdmin(User, admin.site).two_factor_state(user)
+
+    assert 'Configuration inachev' in rendered
+    assert user.two_factor_enabled is False
+
+
+@override_settings(TWO_FACTOR_ENFORCED_FOR_PRIVILEGED_ROLES=True)
+def test_admin_list_marks_a_missing_but_mandatory_second_factor():
+    from apps.accounts.admin import UserAdmin
+
+    user = User.objects.create_user(
+        username='admin-no-2fa-listed',
+        email='admin-no-2fa-listed@example.test',
+        password='SecurePass!2026',
+        role='admin',
+    )
+
+    rendered = UserAdmin(User, admin.site).two_factor_state(user)
+
+    assert 'obligatoire' in rendered
