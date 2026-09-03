@@ -484,3 +484,36 @@ class TestAccountsViews:
         client.force_login(admin)
         response = client.get(reverse('accounts:user_detail', args=[member.pk]))
         assert response.status_code == 200
+
+
+class TestGeneratedPasswordClasses:
+    """Le mot de passe généré doit toujours porter les quatre classes.
+
+    Quatre corrections successives remplaçaient le même dernier caractère :
+    celle du chiffre écrasait la majuscule que la précédente venait d'ajouter.
+    Le test d'origine ne tirait qu'un mot de passe et échouait donc au hasard.
+    """
+
+    def test_every_class_is_present_over_many_draws(self):
+        from apps.accounts.services import AccountsService
+
+        symbols = set("!@#$%&*")
+        for _ in range(400):
+            pwd = AccountsService.generate_password()
+            assert any(c.isupper() for c in pwd), pwd
+            assert any(c.islower() for c in pwd), pwd
+            assert any(c.isdigit() for c in pwd), pwd
+            assert any(c in symbols for c in pwd), pwd
+
+    def test_requested_length_is_respected(self):
+        from apps.accounts.services import AccountsService
+
+        assert len(AccountsService.generate_password()) == 12
+        assert len(AccountsService.generate_password(length=20)) == 20
+
+    def test_classes_are_not_always_in_the_same_positions(self):
+        from apps.accounts.services import AccountsService
+
+        first_chars = {AccountsService.generate_password()[0] for _ in range(60)}
+        # Sans mélange, les quatre classes tomberaient toujours en tête.
+        assert len(first_chars) > 5

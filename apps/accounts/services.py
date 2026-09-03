@@ -342,19 +342,31 @@ class AccountsService:
         symbols = "!@#$%&*"
         chars = letters + digits + symbols
         
-        password = ''.join(secrets.choice(chars) for _ in range(length))
-        
-        # S'assurer qu'il y a au moins une majuscule, une minuscule, un chiffre et un symbole
-        if not any(c.isupper() for c in password):
-            password = password[:-1] + secrets.choice(string.ascii_uppercase.replace('O', '').replace('I', ''))
-        if not any(c.islower() for c in password):
-            password = password[:-1] + secrets.choice(string.ascii_lowercase.replace('l', ''))
-        if not any(c.isdigit() for c in password):
-            password = password[:-1] + secrets.choice(digits)
-        if not any(c in symbols for c in password):
-            password = password[:-1] + secrets.choice(symbols)
-        
-        return password
+        # Garantir chaque classe par construction.
+        #
+        # Quatre corrections successives remplaçaient auparavant le MÊME
+        # dernier caractère : un mot de passe sans majuscule ni chiffre
+        # recevait une majuscule en dernière position, que le contrôle suivant
+        # écrasait par un chiffre. Le mot de passe repartait alors sans
+        # majuscule, et pouvait être refusé par les validateurs Django au
+        # moment où l'utilisateur s'en servait.
+        uppercase = string.ascii_uppercase.replace('O', '').replace('I', '')
+        lowercase = string.ascii_lowercase.replace('l', '')
+
+        required = [
+            secrets.choice(uppercase),
+            secrets.choice(lowercase),
+            secrets.choice(digits),
+            secrets.choice(symbols),
+        ]
+        filler = [secrets.choice(chars) for _ in range(max(0, length - len(required)))]
+
+        characters = required + filler
+        # Sans mélange, les quatre classes tomberaient toujours dans le même
+        # ordre en tête du mot de passe.
+        secrets.SystemRandom().shuffle(characters)
+
+        return ''.join(characters)
     
     @classmethod
     def create_user_by_team(
