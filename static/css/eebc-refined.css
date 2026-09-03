@@ -1,0 +1,333 @@
+/* =============================================================================
+   EEBC — Couche de raffinement de l'interface /app
+   =============================================================================
+
+   Chargée en dernier, elle corrige trois défauts systémiques mesurés sur le
+   tableau de bord plutôt que de repeindre chaque page :
+
+   1. Les thèmes sombres réutilisent des gris pensés pour un fond blanc.
+      --text-muted (#6c757d) sur une carte #303030 donne 2,81:1, sous le seuil
+      WCAG AA de 4,5:1 : c'est ce qui rend le texte secondaire délavé partout.
+
+   2. --accent-primary est une couleur de FOND Bootswatch (#375A7F) réemployée
+      comme couleur de TEXTE. Les liens tombent à 1,84:1, presque invisibles.
+      D'où un jeu de jetons distinct pour l'accent posé sur une surface.
+
+   3. Chaque bloc cumule bordure + dégradé + halo + ombre. Sans hiérarchie,
+      l'œil n'a nulle part où se poser. Une seule profondeur par niveau.
+
+   ========================================================================== */
+
+/* -----------------------------------------------------------------------------
+   1. Jetons — échelles partagées
+   -------------------------------------------------------------------------- */
+:root {
+    /* Espacement : une gamme géométrique, pas des marges au jugé. */
+    --sp-1: 0.25rem;
+    --sp-2: 0.5rem;
+    --sp-3: 0.75rem;
+    --sp-4: 1rem;
+    --sp-5: 1.5rem;
+    --sp-6: 2rem;
+    --sp-7: 3rem;
+
+    /* Rayons : trois valeurs suffisent à toute l'interface. */
+    --r-sm: 10px;
+    --r-md: 16px;
+    --r-lg: 22px;
+
+    /* Profondeur : l'ombre porte l'élévation, la bordure n'est qu'un liseré. */
+    --elev-1: 0 1px 2px rgba(0, 0, 0, .18), 0 1px 1px rgba(0, 0, 0, .10);
+    --elev-2: 0 4px 12px rgba(0, 0, 0, .22), 0 2px 4px rgba(0, 0, 0, .12);
+    --elev-3: 0 12px 32px rgba(0, 0, 0, .28), 0 4px 8px rgba(0, 0, 0, .14);
+
+    /* Mouvement : une courbe unique donne sa signature au produit. */
+    --ease: cubic-bezier(.22, .61, .36, 1);
+    --ease-out: cubic-bezier(.16, 1, .3, 1);
+    --dur-1: 140ms;
+    --dur-2: 260ms;
+    --dur-3: 420ms;
+
+    /* Accent lisible posé sur une surface, distinct de l'accent de fond. */
+    --accent-on-surface: #2563eb;
+    --accent-soft: rgba(37, 99, 235, .10);
+    --focus-ring: #2563eb;
+}
+
+/* Thèmes sombres : les gris clairs deviennent illisibles, on les relève.
+   Le sélecteur liste les thèmes sombres existants plutôt que d'imposer
+   prefers-color-scheme, que ce projet n'utilise pas. */
+[data-theme="darkly"],
+[data-theme="cyborg"],
+[data-theme="slate"],
+[data-theme="superhero"],
+[data-theme="solar"],
+[data-theme="vapor"] {
+    /* 4,99:1 sur #303030 — au-dessus du seuil, sans écraser la hiérarchie. */
+    --text-muted: #9aa4ae;
+    --accent-on-surface: #7fb2e5;   /* 5,69:1 sur #303030 */
+    --accent-soft: rgba(127, 178, 229, .12);
+    --focus-ring: #7fb2e5;
+}
+
+/* -----------------------------------------------------------------------------
+   2. Typographie — une seule famille, une échelle qui respire
+   -------------------------------------------------------------------------- */
+/* Le corps de texte était en system-ui pendant que les titres étaient en
+   Poppins : deux voix dans la même phrase. */
+body {
+    font-family: 'Poppins', system-ui, -apple-system, 'Segoe UI', sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+}
+
+/* L'échelle allait de 24 à 20 à 15 : trois pas trop serrés pour hiérarchiser.
+   On écarte les extrêmes et on laisse le poids et la couleur travailler. */
+.page-title {
+    font-size: clamp(1.75rem, 1.4rem + 1.2vw, 2.25rem);
+    font-weight: 700;
+    letter-spacing: -.02em;
+    line-height: 1.15;
+}
+
+.section-header h2,
+.section-header h3,
+.section-header .h5 {
+    font-size: 1.0625rem;
+    font-weight: 600;
+    letter-spacing: .01em;
+    text-transform: none;
+}
+
+.stat-number {
+    font-size: clamp(2rem, 1.6rem + 1.4vw, 2.75rem);
+    font-weight: 700;
+    letter-spacing: -.03em;
+    line-height: 1;
+    font-variant-numeric: tabular-nums;
+}
+
+.stat-label {
+    font-size: .8125rem;
+    font-weight: 500;
+    letter-spacing: .02em;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+}
+
+/* -----------------------------------------------------------------------------
+   3. En-tête — le titre était décalé de 72px par rapport à la ligne du dessous
+   -------------------------------------------------------------------------- */
+.page-title,
+.page-title + * {
+    margin-left: 0;
+}
+
+.topbar,
+.page-header {
+    padding-block: var(--sp-4);
+    gap: var(--sp-2);
+}
+
+/* -----------------------------------------------------------------------------
+   4. Surfaces — une seule profondeur par niveau
+   -------------------------------------------------------------------------- */
+.modern-card,
+.stat-card-premium,
+.card {
+    border-radius: var(--r-md);
+    border: 1px solid var(--border-color);
+    box-shadow: var(--elev-1);
+    background: var(--bg-card);
+    transition:
+        transform var(--dur-2) var(--ease-out),
+        box-shadow var(--dur-2) var(--ease-out),
+        border-color var(--dur-2) var(--ease-out);
+}
+
+/* Le liseré dégradé en haut des cartes doublait la bordure. */
+.stat-card-premium::before,
+.modern-card::before {
+    display: none;
+}
+
+.modern-card:hover,
+.stat-card-premium:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--elev-3);
+    border-color: color-mix(in srgb, var(--accent-on-surface) 35%, var(--border-color));
+}
+
+.stat-card-premium {
+    padding: var(--sp-5);
+}
+
+/* -----------------------------------------------------------------------------
+   5. Pastilles d'icône — le halo coloré passait devant la donnée
+   -------------------------------------------------------------------------- */
+.icon-wrapper,
+.action-icon {
+    border-radius: var(--r-sm);
+    box-shadow: none;            /* le halo saturé écrasait le chiffre */
+    filter: none;
+    width: 42px;
+    height: 42px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    transition: transform var(--dur-2) var(--ease-out);
+}
+
+.stat-card-premium .icon-wrapper {
+    /* Une pastille discrète en haut de carte : c'est le chiffre qui compte. */
+    width: 36px;
+    height: 36px;
+    opacity: .92;
+}
+
+.quick-action:hover .action-icon {
+    transform: scale(1.06);
+}
+
+/* Les en-têtes de section portaient la même pastille pleine que les cartes,
+   ce qui mettait un repère fort sur un simple intitulé. */
+.section-header .icon-wrapper {
+    width: 30px;
+    height: 30px;
+    background: var(--accent-soft) !important;
+    color: var(--accent-on-surface);
+    opacity: 1;
+}
+
+.section-header .icon-wrapper i {
+    color: var(--accent-on-surface);
+}
+
+/* -----------------------------------------------------------------------------
+   6. Liens et texte secondaire — les deux échecs de contraste mesurés
+   -------------------------------------------------------------------------- */
+a:not(.btn):not(.nav-link):not(.dropdown-item) {
+    color: var(--accent-on-surface);
+    text-underline-offset: .18em;
+    transition: color var(--dur-1) var(--ease);
+}
+
+.text-muted {
+    color: var(--text-muted) !important;
+}
+
+/* components.css pose --accent-primary en couleur de texte avec !important sur
+   une douzaine de sélecteurs. Sur fond sombre, #375A7F tombe à 1,84:1. On
+   redirige ces cas précis vers l'accent prévu pour être posé sur une surface,
+   sans toucher aux emplois où --accent-primary sert bien de fond. */
+.sidebar .nav-link:hover,
+.sidebar .nav-link--active,
+.dropdown-item:hover,
+.text-primary,
+a.text-primary {
+    color: var(--accent-on-surface) !important;
+}
+
+/* -----------------------------------------------------------------------------
+   7. Actions rapides
+   -------------------------------------------------------------------------- */
+.quick-action {
+    border-radius: var(--r-md);
+    padding: var(--sp-4);
+    gap: var(--sp-3);
+    transition:
+        background-color var(--dur-2) var(--ease-out),
+        transform var(--dur-2) var(--ease-out);
+}
+
+.quick-action:hover {
+    background: var(--accent-soft);
+    transform: translateY(-1px);
+}
+
+.action-text {
+    font-weight: 600;
+    letter-spacing: -.01em;
+}
+
+.action-desc {
+    color: var(--text-muted);
+    font-size: .8125rem;
+}
+
+/* -----------------------------------------------------------------------------
+   8. Barre de navigation par pastilles — le débordement était muet
+   -------------------------------------------------------------------------- */
+.nav-pill {
+    border-radius: 999px;
+    transition:
+        background-color var(--dur-1) var(--ease),
+        color var(--dur-1) var(--ease),
+        border-color var(--dur-1) var(--ease);
+}
+
+.nav-pill:hover {
+    background: var(--accent-soft);
+    color: var(--accent-on-surface);
+}
+
+/* -----------------------------------------------------------------------------
+   9. Accessibilité — anneau de focus visible (WCAG 2.4.7) et cibles tactiles
+   -------------------------------------------------------------------------- */
+:focus-visible {
+    outline: 2px solid var(--focus-ring);
+    outline-offset: 2px;
+    border-radius: 6px;
+}
+
+/* Les liens de la barre latérale et les pastilles descendaient sous 44px. */
+.sidebar a,
+.nav-pill,
+.quick-action {
+    min-height: 44px;
+}
+
+/* -----------------------------------------------------------------------------
+   10. Mouvement — entrée échelonnée, courte et amortie
+   -------------------------------------------------------------------------- */
+@keyframes eebc-rise {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+    to {
+        opacity: 1;
+        transform: none;
+    }
+}
+
+.animate-in {
+    animation: eebc-rise var(--dur-3) var(--ease-out) both;
+}
+
+/* L'échelonnement fait lire la page de haut en bas plutôt que d'un bloc. */
+.animate-in:nth-child(1) { animation-delay: 0ms; }
+.animate-in:nth-child(2) { animation-delay: 45ms; }
+.animate-in:nth-child(3) { animation-delay: 90ms; }
+.animate-in:nth-child(4) { animation-delay: 135ms; }
+.animate-in:nth-child(5) { animation-delay: 180ms; }
+.animate-in:nth-child(6) { animation-delay: 225ms; }
+
+/* Une animation qui ne peut pas être refusée est un défaut d'accessibilité,
+   pas un effet. */
+@media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+        animation-duration: .001ms !important;
+        animation-delay: 0ms !important;
+        transition-duration: .001ms !important;
+        scroll-behavior: auto !important;
+    }
+
+    .modern-card:hover,
+    .stat-card-premium:hover,
+    .quick-action:hover {
+        transform: none;
+    }
+}

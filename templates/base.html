@@ -47,6 +47,9 @@
     <!-- Couche UX/accessibilité mutualisée (audit 2026-09) -->
     <link rel="stylesheet" href="{% static 'css/eebc-ux.css' %}">
 
+    <!-- Raffinement visuel : chargé en dernier pour corriger les jetons de thème -->
+    <link rel="stylesheet" href="{% static 'css/eebc-refined.css' %}">
+
     {% block extra_css %}{% endblock %}
 
     <!-- Theme initialization (prevent flash) -->
