@@ -1129,6 +1129,17 @@ class BudgetRequest(models.Model):
         verbose_name="Montant approuvé"
     )
     
+    @property
+    def amount_difference(self):
+        """Écart entre l'approuvé et le demandé, négatif si l'on a rogné.
+
+        Le gabarit tentait la soustraction avec un filtre `sub` qui n'existe
+        pas, après avoir converti les deux montants via floatformat|add : la
+        page levait une erreur de syntaxe et ne s'ouvrait pas du tout. Le
+        calcul appartient au modèle, où les deux valeurs sont des Decimal.
+        """
+        return (self.approved_amount or Decimal('0.00')) - (self.requested_amount or Decimal('0.00'))
+    
     # Catégorie et entité
     category = models.ForeignKey(
         BudgetCategory,

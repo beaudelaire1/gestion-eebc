@@ -46,8 +46,7 @@
                         <a href="{% url 'campaigns:detail' campaign.pk %}" class="btn btn-secondary">Retour</a>
                         <button type="submit"
                             class="btn {% if donation.is_cancelled %}btn-success{% else %}btn-warning{% endif %}">
-                            {% if donation.is_cancelled %}Confirmer la réactivation{% else %}Confirmer l'annulation{%
-                            endif %}
+                            {% if donation.is_cancelled %}Confirmer la réactivation{% else %}Confirmer l'annulation{% endif %}
                         </button>
                     </div>
                 </form>

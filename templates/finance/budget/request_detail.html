@@ -170,11 +170,7 @@
                     <div class="d-flex justify-content-between align-items-center">
                         <span>Différence</span>
                         <span class="fw-bold text-{% if budget_request.approved_amount < budget_request.requested_amount %}danger{% else %}success{% endif %}">
-                            {% with diff=budget_request.approved_amount|floatformat:2|add:0 %}
-                            {% with req=budget_request.requested_amount|floatformat:2|add:0 %}
-                            {{ diff|sub:req|floatformat:2 }}€
-                            {% endwith %}
-                            {% endwith %}
+                            {{ budget_request.amount_difference|floatformat:2 }}€
                         </span>
                     </div>
                     {% endif %}
