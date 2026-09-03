@@ -1,10 +1,26 @@
 {% extends 'base.html' %}
+{% load role_tags %}
 
 {% block title %}{{ group.name }} - EEBC{% endblock %}
 {% block page_title %}{{ group.name }}{% endblock %}
 {% block page_subtitle %}{{ group.get_group_type_display }}{% endblock %}
 
 {% block content %}
+{% comment %}
+    La fiche ne proposait aucun retour : une fois entré dans un groupe, il
+    fallait repasser par le volet latéral pour en ressortir.
+{% endcomment %}
+<nav aria-label="Fil d'Ariane" class="mb-3">
+    <ol class="breadcrumb mb-0">
+        <li class="breadcrumb-item">
+            <a href="{% url 'groups:list' %}">
+                <i class="bi bi-arrow-left me-1" aria-hidden="true"></i>Groupes
+            </a>
+        </li>
+        <li class="breadcrumb-item active" aria-current="page">{{ group.name }}</li>
+    </ol>
+</nav>
+
 <div class="row g-4">
     <div class="col-lg-4">
         <div class="card mb-4" style="border-top: 4px solid {{ group.color }};">
@@ -46,6 +62,11 @@
                     <a href="{% url 'groups:statistics' group.pk %}" class="btn btn-outline-info">
                         <i class="bi bi-graph-up me-2"></i>Statistiques
                     </a>
+                    {% if user|has_any_role:"admin,secretariat,responsable_groupe" %}
+                    <a href="{% url 'groups:delete' group.pk %}" class="btn btn-outline-danger">
+                        <i class="bi bi-trash me-2"></i>Supprimer le groupe
+                    </a>
+                    {% endif %}
                 </div>
             </div>
         </div>

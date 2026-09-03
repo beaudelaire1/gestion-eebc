@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% load role_tags %}
 
 {% block title %}{{ document.title }} - Documents EEBC{% endblock %}
 {% block page_title %}{{ document.title }}{% endblock %}
@@ -131,18 +132,18 @@
         <i class="bi bi-download me-1"></i>Télécharger
     </a>
     {% if not document.is_confidential %}
-        {% if request.user.is_superuser or request.user.is_admin or request.user.role == 'admin' or request.user.role == 'secretariat' or request.user.role == 'finance' %}
+        {% if request.user.is_superuser or request.user.is_admin or request.user|has_any_role:"admin,secretariat,finance" %}
         <a href="{% url 'documents:share' document.pk %}" class="btn btn-outline-primary">
             <i class="bi bi-share me-1"></i>Partager par email
         </a>
         {% endif %}
     {% endif %}
-    {% if request.user.is_superuser or request.user.is_admin or request.user.role == 'admin' or request.user.role == 'secretariat' or request.user.role == 'finance' %}
+    {% if request.user.is_superuser or request.user.is_admin or request.user|has_any_role:"admin,secretariat,finance" %}
     <a href="{% url 'documents:edit' document.pk %}" class="btn btn-outline-secondary">
         <i class="bi bi-pencil me-1"></i>Modifier
     </a>
     {% endif %}
-    {% if request.user.is_superuser or request.user.is_admin or request.user.role == 'admin' %}
+    {% if request.user.is_superuser or request.user.is_admin or request.user|has_any_role:"admin" %}
     <a href="{% url 'documents:delete' document.pk %}" class="btn btn-outline-danger">
         <i class="bi bi-trash me-1"></i>Supprimer
     </a>

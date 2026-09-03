@@ -1,3 +1,4 @@
+{% load role_tags %}
 <!-- Events List Content Partial for HTMX -->
 {% if events %}
 <div class="row">
@@ -62,7 +63,7 @@
                                 <a href="{% url 'events:detail' event.pk %}" class="btn btn-outline-primary btn-sm">
                                     <i class="bi bi-eye"></i>
                                 </a>
-                                {% if user.role == 'admin' or user.role == 'secretariat' or user in event.organizers.all %}
+                                {% if user|has_any_role:"admin,secretariat" or user in event.organizers.all %}
                                     <a href="{% url 'events:update' event.pk %}" class="btn btn-outline-secondary btn-sm">
                                         <i class="bi bi-pencil"></i>
                                     </a>

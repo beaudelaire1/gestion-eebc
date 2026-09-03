@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% load role_tags %}
 
 {% block title %}Calendrier Intelligent - EEBC{% endblock %}
 {% block page_title %}Calendrier Intelligent{% endblock %}
@@ -429,7 +430,7 @@
             <div class="section-title">
                 <i class="bi bi-lightning-charge"></i> Actions rapides
             </div>
-            {% if user.role == 'admin' or user.role == 'secretariat' %}
+            {% if user|has_any_role:"admin,secretariat" %}
                 <a href="{% url 'events:create' %}" class="action-btn">
                     <i class="bi bi-calendar-plus"></i>
                     Nouvel événement
@@ -551,7 +552,7 @@ document.addEventListener('DOMContentLoaded', function() {
         },
         
         // Clic sur une date pour créer un événement
-        {% if user.role == 'admin' or user.role == 'secretariat' %}
+        {% if user|has_any_role:"admin,secretariat" %}
         dateClick: function(info) {
             // Créer un nouvel événement à cette date
             var createUrl = '{% url "events:create" %}' + '?date=' + info.dateStr;
@@ -662,7 +663,7 @@ document.addEventListener('DOMContentLoaded', function() {
     // Raccourcis clavier
     document.addEventListener('keydown', function(e) {
         // Ctrl/Cmd + N pour nouvel événement
-        {% if user.role == 'admin' or user.role == 'secretariat' %}
+        {% if user|has_any_role:"admin,secretariat" %}
         if ((e.ctrlKey || e.metaKey) && e.key === 'n') {
             e.preventDefault();
             window.location.href = '{% url "events:create" %}';
@@ -731,7 +732,7 @@ Vues:
 • Alt + 3 : Vue jour
 • Alt + 4 : Vue liste
 
-{% if user.role == 'admin' or user.role == 'secretariat' %}
+{% if user|has_any_role:"admin,secretariat" %}
 Actions:
 • Ctrl/Cmd + N : Nouvel événement
 • Clic sur une date : Créer un événement

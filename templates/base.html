@@ -1,3 +1,4 @@
+{% load role_tags %}
 {% load static %}
 <!DOCTYPE html>
 <html lang="fr">
@@ -371,7 +372,7 @@
                             <i class="bi bi-calendar3 nav-link__icon"></i>
                             <span>Calendrier transport</span>
                         </a>
-                        {% if request.user.is_admin or request.user.role == 'admin' or request.user.role == 'secretariat' or request.user.role == 'responsable_groupe' %}
+                        {% if request.user.is_admin or request.user|has_any_role:"admin,secretariat,responsable_groupe" %}
                         <a class="nav-link {% if 'transport/drivers/' in request.path and 'transport/drivers/create/' not in request.path %}nav-link--active{% endif %}"
                             href="{% url 'transport:drivers' %}">
                             <i class="bi bi-person-badge nav-link__icon"></i>
@@ -523,7 +524,7 @@
                             <i class="bi bi-upload nav-link__icon"></i>
                             <span>Imports & Exports</span>
                         </a>
-                        {% if request.user.is_admin or request.user.role == 'admin' or request.user.role == 'secretariat' %}
+                        {% if request.user.is_admin or request.user|has_any_role:"admin,secretariat" %}
                         <a class="nav-link {% if 'accounts/users' in request.path %}nav-link--active{% endif %}"
                             href="{% url 'accounts:user_list' %}">
                             <i class="bi bi-people nav-link__icon"></i>

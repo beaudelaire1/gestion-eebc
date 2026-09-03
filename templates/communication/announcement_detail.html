@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% load role_tags %}
 {% load sanitize_tags %}
 
 {% block title %}{{ announcement.title }} - EEBC{% endblock %}
@@ -44,7 +45,7 @@
             </div>
         </article>
 
-        {% if user.is_admin or user.role == 'admin' or user.role == 'secretariat' %}
+        {% if user.is_admin or user|has_any_role:"admin,secretariat" %}
         <div class="card border-0 shadow-sm mb-4">
             <div class="card-body p-4">
                 <div class="d-flex justify-content-between align-items-start gap-3 flex-wrap">
@@ -71,7 +72,7 @@
                 <i class="bi bi-arrow-left me-1"></i>Retour aux annonces
             </a>
 
-            {% if user.is_admin or user.role == 'admin' or user.role == 'secretariat' %}
+            {% if user.is_admin or user|has_any_role:"admin,secretariat" %}
             <div class="d-flex gap-2">
                 <a href="{% url 'communication:announcement_edit' announcement.pk %}" class="btn btn-primary">
                     <i class="bi bi-pencil me-1"></i>Modifier

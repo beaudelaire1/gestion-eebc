@@ -1,10 +1,22 @@
 {% extends 'base.html' %}
+{% load role_tags %}
 
 {% block title %}{{ event.title }} - EEBC{% endblock %}
 {% block page_title %}{{ event.title }}{% endblock %}
 {% block page_subtitle %}{{ event.start_date|date:"l d F Y" }}{% endblock %}
 
 {% block content %}
+<nav aria-label="Fil d'Ariane" class="mb-3">
+    <ol class="breadcrumb mb-0">
+        <li class="breadcrumb-item">
+            <a href="{% url 'events:list' %}">
+                <i class="bi bi-arrow-left me-1" aria-hidden="true"></i>Événements
+            </a>
+        </li>
+        <li class="breadcrumb-item active" aria-current="page">{{ event.title }}</li>
+    </ol>
+</nav>
+
 {% if event.is_cancelled %}
 <div class="alert alert-danger mb-4">
     <i class="bi bi-x-circle me-2"></i>
@@ -105,7 +117,7 @@
                 <i class="bi bi-calendar me-2"></i>Calendrier
             </a>
             
-            {% if user.role == 'admin' or user.role == 'secretariat' or user in event.organizers.all %}
+            {% if user|has_any_role:"admin,secretariat" or user in event.organizers.all %}
                 <a href="{% url 'events:update' event.pk %}" class="btn btn-primary">
                     <i class="bi bi-pencil me-2"></i>Modifier
                 </a>

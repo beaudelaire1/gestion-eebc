@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% load role_tags %}
 
 {% block title %}Inventaire - EEBC{% endblock %}
 {% block page_title %}Inventaire{% endblock %}
@@ -19,7 +20,7 @@
                         <h6 class="mb-0 fw-bold">
                             <i class="bi bi-pie-chart me-2"></i>Lignes budgétaires
                         </h6>
-                        {% if user.role == 'admin' or user.role == 'finance' %}
+                        {% if user|has_any_role:"admin,finance" %}
                         <a href="{% url 'finance:budget_category_list' %}" class="btn btn-sm btn-outline-primary">
                             <i class="bi bi-tags me-1"></i>Gérer les catégories
                         </a>

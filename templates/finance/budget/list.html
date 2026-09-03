@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% load role_tags %}
 
 {% block title %}Liste des Budgets - {{ settings.site_name|default:'EEBC' }}{% endblock %}
 
@@ -152,7 +153,7 @@
                                                 <i class="bi bi-trash"></i>
                                             </a>
                                             {% endif %}
-                                            {% if budget.status == 'submitted' and user.is_admin or user.role == 'finance' %}
+                                            {% if budget.status == 'submitted' and user.is_admin or user|has_any_role:"finance" %}
                                                           <a href="{% url 'finance:budget_approve_detailed' budget_id=budget.id %}" 
                                                class="btn btn-outline-success" title="Approuver">
                                                 <i class="bi bi-check-circle"></i>
