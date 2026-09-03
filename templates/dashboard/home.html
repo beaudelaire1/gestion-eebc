@@ -4,7 +4,7 @@
 
 {% block title %}Tableau de bord - EEBC{% endblock %}
 {% block page_title %}Tableau de bord{% endblock %}
-{% block page_subtitle %}Bienvenue, {{ request.user.first_name|default:request.user.username }} 👋{% endblock %}
+{% block page_subtitle %}{% endblock %}
 
 {% block extra_css %}
 <style>
@@ -47,35 +47,37 @@
     .section-title {
         display: flex;
         align-items: center;
-        gap: 0.75rem;
-        font-size: 1.25rem;
-        font-weight: 700;
+        gap: 0.65rem;
+        font-size: 1.05rem;
+        font-weight: 600;
         color: var(--eebc-black);
         margin: 0;
         letter-spacing: -0.5px;
     }
 
     .section-title .section-icon {
-        width: 42px;
-        height: 42px;
-        border-radius: 12px;
+        width: 30px;
+        height: 30px;
+        border-radius: 9px;
         display: flex;
         align-items: center;
         justify-content: center;
-        font-size: 1.1rem;
-        color: white;
-        background: linear-gradient(135deg, var(--eebc-primary) 0%, #3b82f6 100%);
-        box-shadow: 0 4px 12px rgba(10, 54, 255, 0.25);
+        font-size: .85rem;
+        color: var(--accent-on-surface, #7fb2e5);
+        background: rgba(127, 178, 229, .13);
+        box-shadow: none;
     }
 
     .section-title .section-icon.green {
-        background: linear-gradient(135deg, #10B981 0%, #059669 100%);
-        box-shadow: 0 4px 12px rgba(16, 185, 129, 0.25);
+        color: #34D399;
+        background: rgba(16, 185, 129, .13);
+        box-shadow: none;
     }
 
     .section-title .section-icon.purple {
-        background: linear-gradient(135deg, #8B5CF6 0%, #7C3AED 100%);
-        box-shadow: 0 4px 12px rgba(139, 92, 246, 0.25);
+        color: #A78BFA;
+        background: rgba(139, 92, 246, .13);
+        box-shadow: none;
     }
 
     .section-title .section-icon.orange {
@@ -181,100 +183,188 @@
         }
     }
 
-    /* Stat Cards Premium */
+    /* -------------------------------------------------------------------
+       Bandeau d'ouverture — la page commençait sur une grille de chiffres,
+       sans rien qui situe le lecteur ni ne porte le regard.
+       ---------------------------------------------------------------- */
+    .pulse-band {
+        position: relative;
+        overflow: hidden;
+        border-radius: 24px;
+        padding: 2rem 2.25rem;
+        margin-bottom: 2.5rem;
+        border: 1px solid var(--border-color);
+        background:
+            radial-gradient(120% 140% at 0% 0%, rgba(10, 54, 255, .16) 0%, transparent 55%),
+            radial-gradient(120% 140% at 100% 100%, rgba(139, 92, 246, .13) 0%, transparent 55%),
+            var(--bg-card);
+    }
+
+    .pulse-band__eyebrow {
+        font-size: .75rem;
+        font-weight: 600;
+        letter-spacing: .12em;
+        text-transform: uppercase;
+        color: var(--accent-on-surface, #7fb2e5);
+        margin-bottom: .5rem;
+    }
+
+    .pulse-band__title {
+        font-size: clamp(1.5rem, 1.1rem + 1.6vw, 2.1rem);
+        font-weight: 700;
+        letter-spacing: -.025em;
+        line-height: 1.15;
+        margin-bottom: .35rem;
+    }
+
+    .pulse-band__sub {
+        color: var(--text-muted);
+        margin-bottom: 0;
+        max-width: 52ch;
+    }
+
+    /* -------------------------------------------------------------------
+       Cartes de statistiques
+       Auparavant : un liseré de 5px, un halo radial, une pastille de 64px
+       et une ombre portée. Quatre traitements pour une seule donnée, et le
+       chiffre finissait par être ce qu'on voyait en dernier.
+       ---------------------------------------------------------------- */
     .stat-card-premium {
         background: var(--bg-card);
-        border-radius: 20px;
-        padding: 1.75rem;
+        border-radius: 18px;
+        padding: 1.4rem 1.5rem;
         position: relative;
         overflow: hidden;
         border: 1px solid var(--border-color);
-        box-shadow: var(--shadow-lg);
-        transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        box-shadow: 0 1px 2px rgba(0, 0, 0, .16);
+        transition:
+            transform .28s cubic-bezier(.16, 1, .3, 1),
+            box-shadow .28s cubic-bezier(.16, 1, .3, 1),
+            border-color .28s cubic-bezier(.16, 1, .3, 1);
     }
 
+    /* Un seul repère de couleur : un filet vertical, pas une barre pleine. */
     .stat-card-premium::before {
         content: '';
         position: absolute;
-        top: 0;
+        top: 1.4rem;
+        bottom: 1.4rem;
         left: 0;
-        right: 0;
-        height: 5px;
-        background: var(--accent-primary);
+        width: 3px;
+        border-radius: 0 3px 3px 0;
+        background: var(--card-accent, var(--eebc-primary));
+        opacity: .85;
     }
 
     .stat-card-premium::after {
-        content: '';
-        position: absolute;
-        top: -50%;
-        right: -50%;
-        width: 100%;
-        height: 100%;
-        background: radial-gradient(circle, var(--card-accent, var(--eebc-primary)) 0%, transparent 70%);
-        opacity: 0.03;
-        pointer-events: none;
+        display: none;   /* le halo radial n'apportait rien de lisible */
     }
 
     .stat-card-premium:hover {
-        transform: translateY(-8px) scale(1.02);
-        box-shadow: 0 25px 60px rgba(10, 54, 255, 0.15);
+        transform: translateY(-3px);
+        box-shadow: 0 14px 34px rgba(0, 0, 0, .26);
+        border-color: var(--card-accent, var(--border-color));
     }
 
+    .stat-card-premium__top {
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        gap: .75rem;
+        margin-bottom: 1rem;
+        /* Réserve la hauteur de deux lignes pour que les quatre chiffres
+           restent sur la même ligne de base, quelle que soit l'étiquette. */
+        min-height: 2.4rem;
+    }
+
+    /* La pastille passe de 64px à 34px : elle repère, elle ne domine plus. */
     .stat-card-premium .icon-wrapper {
-        width: 64px;
-        height: 64px;
-        border-radius: 18px;
+        width: 34px;
+        height: 34px;
+        border-radius: 10px;
         display: flex;
         align-items: center;
         justify-content: center;
-        font-size: 1.75rem;
-        color: white;
-        background: var(--card-accent, var(--eebc-primary));
-        box-shadow: 0 8px 20px rgba(var(--card-accent-rgb, 10, 54, 255), 0.3);
-        margin-bottom: 1.25rem;
+        font-size: .95rem;
+        color: var(--card-accent, var(--eebc-primary));
+        background: rgba(var(--card-accent-rgb, 10, 54, 255), .14);
+        box-shadow: none;
+        margin-bottom: 0;
     }
 
     .stat-card-premium .stat-number {
-        font-size: 2.75rem;
-        font-weight: 800;
+        font-size: clamp(2.1rem, 1.7rem + 1.5vw, 2.9rem);
+        font-weight: 700;
         font-family: 'JetBrains Mono', monospace;
-        letter-spacing: -2px;
-        color: var(--eebc-black);
+        letter-spacing: -.04em;
+        color: var(--text-primary);
         line-height: 1;
-        margin-bottom: 0.5rem;
+        margin-bottom: .4rem;
+        font-variant-numeric: tabular-nums;
+    }
+
+    /* Un « 0 » géant fait croire à une panne. À vide, on montre un tiret
+       discret et le chemin pour créer la première entrée. */
+    .stat-card-premium.is-empty .stat-number {
+        color: var(--text-muted);
+        font-weight: 500;
+    }
+
+    .stat-card-premium__empty-cta {
+        display: inline-flex;
+        align-items: center;
+        gap: .3rem;
+        font-size: .8rem;
+        font-weight: 600;
+        color: var(--accent-on-surface, #7fb2e5);
+        text-decoration: none;
+        margin-top: .5rem;
+    }
+
+    .stat-card-premium__empty-cta:hover {
+        text-decoration: underline;
+        text-underline-offset: .18em;
     }
 
     .stat-card-premium .stat-label {
-        font-size: 0.95rem;
+        font-size: .78rem;
         font-weight: 600;
-        color: var(--eebc-gray-500);
+        letter-spacing: .06em;
+        text-transform: uppercase;
+        color: var(--text-muted);
     }
 
     .stat-card-premium .stat-trend {
         display: inline-flex;
         align-items: center;
         gap: 0.25rem;
-        font-size: 0.8rem;
+        font-size: 0.75rem;
         font-weight: 600;
-        padding: 0.25rem 0.5rem;
-        border-radius: 8px;
+        padding: 0.2rem 0.5rem;
+        border-radius: 999px;
         margin-top: 0.75rem;
     }
 
     .stat-trend.up {
-        background: rgba(16, 185, 129, 0.1);
-        color: #059669;
+        background: rgba(16, 185, 129, 0.14);
+        color: #34D399;
     }
 
     .stat-trend.down {
-        background: rgba(239, 68, 68, 0.1);
-        color: #DC2626;
+        background: rgba(239, 68, 68, 0.14);
+        color: #F87171;
+    }
+
+    .stat-subbreakdown {
+        font-size: .78rem;
+        color: var(--text-muted);
+        margin-top: .5rem;
     }
 
     /* Quick Actions Grid */
     .quick-actions {
         display: grid;
-        grid-template-columns: repeat(4, 1fr);
+        grid-template-columns: repeat(auto-fit, minmax(185px, 1fr));
         gap: 1rem;
         margin-bottom: 2rem;
     }
@@ -652,6 +742,20 @@
 </div>
 {% endif %}
 
+<!-- Bandeau d'ouverture : situe le lecteur avant de l'exposer aux chiffres -->
+<div class="pulse-band animate-in">
+    <div class="pulse-band__eyebrow">{% now "l j F Y" %}</div>
+    <h2 class="pulse-band__title">Bonjour {{ request.user.first_name|default:request.user.username }}</h2>
+    <p class="pulse-band__sub">
+        {% if stats.total_members %}
+        {{ stats.total_members }} membre{{ stats.total_members|pluralize }} suivi{{ stats.total_members|pluralize }}
+        {% if stats.total_events %}· {{ stats.total_events }} événement{{ stats.total_events|pluralize }} à venir{% endif %}
+        {% else %}
+        Votre espace de gestion. Commencez par enregistrer les membres de l'église.
+        {% endif %}
+    </p>
+</div>
+
 <!-- Hero Stats -->
 <div id="section-stats" class="section-header">
     <h3 class="section-title">
@@ -660,31 +764,46 @@
     </h3>
 </div>
 <div class="hero-stats">
-    <div class="stat-card-premium animate-in delay-1" style="--card-accent: #0A36FF; --card-accent-rgb: 10, 54, 255;">
-        <div class="icon-wrapper">
-            <i class="bi bi-people-fill"></i>
+    {# La carte vide renvoie vers la création plutôt que d'afficher un 0 mort. #}
+    <div class="stat-card-premium animate-in delay-1{% if not stats.total_children %} is-empty{% endif %}"
+         style="--card-accent: #0A36FF; --card-accent-rgb: 10, 54, 255;">
+        <div class="stat-card-premium__top">
+            <div class="stat-label">Enfants inscrits</div>
+            <div class="icon-wrapper"><i class="bi bi-people-fill"></i></div>
         </div>
+        {% if stats.total_children %}
         <div class="stat-number" data-count="{{ stats.total_children }}">0</div>
-        <div class="stat-label">Enfants inscrits</div>
-        <div class="stat-trend up">
-            <i class="bi bi-arrow-up-short"></i> Actifs
-        </div>
+        <div class="stat-trend up"><i class="bi bi-arrow-up-short"></i> Actifs</div>
+        {% else %}
+        <div class="stat-number">—</div>
+        <a href="{% url 'bibleclub:create_session' %}" class="stat-card-premium__empty-cta">
+            <i class="bi bi-plus-lg"></i> Ouvrir une session
+        </a>
+        {% endif %}
     </div>
 
-    <div class="stat-card-premium animate-in delay-2" style="--card-accent: #10B981; --card-accent-rgb: 16, 185, 129;">
-        <div class="icon-wrapper">
-            <i class="bi bi-collection-fill"></i>
+    <div class="stat-card-premium animate-in delay-2{% if not stats.total_classes %} is-empty{% endif %}"
+         style="--card-accent: #10B981; --card-accent-rgb: 16, 185, 129;">
+        <div class="stat-card-premium__top">
+            <div class="stat-label">Classes actives</div>
+            <div class="icon-wrapper"><i class="bi bi-collection-fill"></i></div>
         </div>
+        {% if stats.total_classes %}
         <div class="stat-number" data-count="{{ stats.total_classes }}">0</div>
-        <div class="stat-label">Classes actives</div>
+        {% else %}
+        <div class="stat-number">—</div>
+        <span class="stat-subbreakdown">Aucune classe ouverte</span>
+        {% endif %}
     </div>
 
-    <div class="stat-card-premium animate-in delay-3" style="--card-accent: #F59E0B; --card-accent-rgb: 245, 158, 11;">
-        <div class="icon-wrapper">
-            <i class="bi bi-person-badge-fill"></i>
+    <div class="stat-card-premium animate-in delay-3{% if not stats.total_members %} is-empty{% endif %}"
+         style="--card-accent: #F59E0B; --card-accent-rgb: 245, 158, 11;">
+        <div class="stat-card-premium__top">
+            <div class="stat-label">Membres église</div>
+            <div class="icon-wrapper"><i class="bi bi-person-badge-fill"></i></div>
         </div>
+        {% if stats.total_members %}
         <div class="stat-number" data-count="{{ stats.total_members }}">0</div>
-        <div class="stat-label">Membres église</div>
         {% if stats.members_actif or stats.members_visiteur or stats.members_inactif or stats.members_transfere %}
         <div class="stat-subbreakdown">
             {% if stats.members_actif %}Actifs : <strong>{{ stats.members_actif }}</strong>{% endif %}
@@ -693,14 +812,28 @@
             {% if stats.members_transfere %}&nbsp;· Transférés : <strong>{{ stats.members_transfere }}</strong>{% endif %}
         </div>
         {% endif %}
+        {% else %}
+        <div class="stat-number">—</div>
+        <a href="{% url 'members:create' %}" class="stat-card-premium__empty-cta">
+            <i class="bi bi-plus-lg"></i> Ajouter un membre
+        </a>
+        {% endif %}
     </div>
 
-    <div class="stat-card-premium animate-in delay-4" style="--card-accent: #8B5CF6; --card-accent-rgb: 139, 92, 246;">
-        <div class="icon-wrapper">
-            <i class="bi bi-calendar-event-fill"></i>
+    <div class="stat-card-premium animate-in delay-4{% if not stats.total_events %} is-empty{% endif %}"
+         style="--card-accent: #8B5CF6; --card-accent-rgb: 139, 92, 246;">
+        <div class="stat-card-premium__top">
+            <div class="stat-label">Événements à venir</div>
+            <div class="icon-wrapper"><i class="bi bi-calendar-event-fill"></i></div>
         </div>
-        <div class="stat-number" data-count="{{ stats.total_events|default:0 }}">0</div>
-        <div class="stat-label">Événements à venir</div>
+        {% if stats.total_events %}
+        <div class="stat-number" data-count="{{ stats.total_events }}">0</div>
+        {% else %}
+        <div class="stat-number">—</div>
+        <a href="{% url 'events:create' %}" class="stat-card-premium__empty-cta">
+            <i class="bi bi-plus-lg"></i> Créer un événement
+        </a>
+        {% endif %}
     </div>
 </div>
 

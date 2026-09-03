@@ -83,11 +83,14 @@ body {
 
 /* L'échelle allait de 24 à 20 à 15 : trois pas trop serrés pour hiérarchiser.
    On écarte les extrêmes et on laisse le poids et la couleur travailler. */
+/* La barre supérieure est du chrome, pas la une du journal : un titre de
+   2,25rem y entrait en collision avec le champ de recherche. Le grand moment
+   typographique appartient au bandeau d'ouverture, dans le contenu. */
 .page-title {
-    font-size: clamp(1.75rem, 1.4rem + 1.2vw, 2.25rem);
-    font-weight: 700;
-    letter-spacing: -.02em;
-    line-height: 1.15;
+    font-size: 1.15rem;
+    font-weight: 600;
+    letter-spacing: -.01em;
+    line-height: 1.25;
 }
 
 .section-header h2,
@@ -226,6 +229,22 @@ a:not(.btn):not(.nav-link):not(.dropdown-item) {
 .text-primary,
 a.text-primary {
     color: var(--accent-on-surface) !important;
+}
+
+/* Boutons discrets : la bordure et le libellé reprenaient #375A7F, illisible
+   sur une carte sombre (« Voir tout », « Toutes », « Historique »). */
+/* components.css pose ces couleurs en !important : il faut le même poids. */
+.btn-outline-primary,
+.btn-outline-secondary {
+    color: var(--accent-on-surface) !important;
+    border-color: color-mix(in srgb, var(--accent-on-surface) 45%, transparent) !important;
+}
+
+.btn-outline-primary:hover,
+.btn-outline-secondary:hover {
+    background: var(--accent-soft) !important;
+    color: var(--accent-on-surface) !important;
+    border-color: var(--accent-on-surface) !important;
 }
 
 /* -----------------------------------------------------------------------------
