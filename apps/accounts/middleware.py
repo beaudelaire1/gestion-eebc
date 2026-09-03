@@ -1,63 +1,179 @@
+"""Account authentication enforcement middleware.
+
+This module enforces two independent invariants for authenticated browser
+sessions:
+- accounts marked ``must_change_password`` cannot access the application before
+  completing the required password change;
+- accounts with 2FA enabled cannot keep an authenticated session unless the
+  current session contains proof that the second factor was verified.
+
+The MFA check is deliberately session-wide rather than tied only to the normal
+login view. This prevents bypasses through Django admin or any other code path
+that calls ``django.contrib.auth.login`` directly.
 """
-Middleware pour forcer le changement de mot de passe.
-"""
+from django.contrib.auth import logout
 from django.shortcuts import redirect
 from django.urls import reverse
-from django.contrib.auth import logout
+
+
+MFA_VERIFIED_SESSION_KEY = 'two_factor_verified_user_id'
+MFA_PENDING_USER_SESSION_KEY = 'two_factor_user_id'
+MFA_PENDING_NEXT_SESSION_KEY = 'two_factor_next'
+MFA_ATTEMPTS_SESSION_KEY = 'two_factor_attempts'
 
 
 class ForcePasswordChangeMiddleware:
-    """
-    Middleware qui force les utilisateurs à changer leur mot de passe
-    s'ils ont le flag must_change_password activé.
-    """
-    
+    """Enforce mandatory password changes and MFA for authenticated sessions."""
+
     def __init__(self, get_response):
         self.get_response = get_response
 
     def __call__(self, request):
-        # Vérifier si l'utilisateur est connecté et doit changer son mot de passe
-        if (request.user.is_authenticated and 
-            hasattr(request.user, 'must_change_password') and 
-            request.user.must_change_password):
-            
-            # URLs autorisées même si l'utilisateur doit changer son mot de passe
-            allowed_paths = [
-                reverse('accounts:first_login_password_change'),
-                reverse('accounts:logout'),
-                '/admin/logout/',
-            ]
-            
-            # URLs qui ne nécessitent pas de vérification
-            exempt_paths = [
-                reverse('accounts:login'),
-                reverse('public:home'),
-                '/admin/login/',
-            ]
-            
-            current_path = request.path
-            
-            # Permettre les URLs autorisées
-            if current_path in allowed_paths:
-                response = self.get_response(request)
-                return response
-            
-            # Permettre les URLs exemptées (mais déconnecter l'utilisateur)
-            if current_path in exempt_paths:
-                from django.contrib.auth import logout
-                logout(request)
-                response = self.get_response(request)
-                return response
-            
-            # Permettre les ressources statiques et media
-            if (current_path.startswith('/static/') or 
-                current_path.startswith('/media/') or
-                current_path.startswith('/favicon.ico')):
-                response = self.get_response(request)
-                return response
-            
-            # Rediriger vers le changement de mot de passe pour toute autre URL
-            return redirect('accounts:first_login_password_change')
-        
+        password_change_response = self._enforce_password_change(request)
+        if password_change_response is not None:
+            return password_change_response
+
+        mfa_response = self._enforce_mfa_before_view(request)
+        if mfa_response is not None:
+            return mfa_response
+
         response = self.get_response(request)
-        return response
+        return self._enforce_mfa_after_view(request, response)
+
+    @staticmethod
+    def _is_asset_path(path):
+        return (
+            path.startswith('/static/')
+            or path.startswith('/media/')
+            or path.startswith('/favicon.ico')
+        )
+
+    def _enforce_password_change(self, request):
+        user = request.user
+        if not (
+            user.is_authenticated
+            and hasattr(user, 'must_change_password')
+            and user.must_change_password
+        ):
+            return None
+
+        allowed_paths = {
+            reverse('accounts:first_login_password_change'),
+            reverse('accounts:logout'),
+            reverse('admin:logout'),
+        }
+        exempt_paths = {
+            reverse('accounts:login'),
+            reverse('public:home'),
+            reverse('admin:login'),
+        }
+        current_path = request.path
+
+        if current_path in allowed_paths or self._is_asset_path(current_path):
+            return self.get_response(request)
+
+        if current_path in exempt_paths:
+            logout(request)
+            return self.get_response(request)
+
+        return redirect('accounts:first_login_password_change')
+
+    @staticmethod
+    def _requires_mfa(user):
+        return bool(
+            user.is_authenticated
+            and getattr(user, 'two_factor_enabled', False)
+        )
+
+    @staticmethod
+    def _has_mfa_proof(request, user):
+        verified_user_id = request.session.get(MFA_VERIFIED_SESSION_KEY)
+        return str(verified_user_id or '') == str(user.pk)
+
+    @staticmethod
+    def _mark_mfa_verified(request, user):
+        request.session[MFA_VERIFIED_SESSION_KEY] = str(user.pk)
+
+    @staticmethod
+    def _clear_mfa_proof(request):
+        request.session.pop(MFA_VERIFIED_SESSION_KEY, None)
+
+    def _begin_mfa_challenge(self, request):
+        user_id = request.user.pk
+        requested_next = request.get_full_path()
+        verify_path = reverse('accounts:two_factor_verify')
+
+        # Avoid returning to the challenge itself after successful verification.
+        if request.path == verify_path:
+            requested_next = reverse('dashboard:home')
+
+        # ``logout`` flushes the authenticated session. Store the pending MFA
+        # state afterwards so no authenticated session survives factor one.
+        logout(request)
+        request.session[MFA_PENDING_USER_SESSION_KEY] = user_id
+        request.session[MFA_PENDING_NEXT_SESSION_KEY] = requested_next
+        request.session[MFA_ATTEMPTS_SESSION_KEY] = 0
+        return redirect('accounts:two_factor_verify')
+
+    def _enforce_mfa_before_view(self, request):
+        user = request.user
+
+        if not user.is_authenticated:
+            return None
+
+        if not self._requires_mfa(user):
+            self._clear_mfa_proof(request)
+            return None
+
+        if self._has_mfa_proof(request, user):
+            return None
+
+        # Logging out must always remain possible without satisfying MFA first.
+        if request.path in {reverse('accounts:logout'), reverse('admin:logout')}:
+            return None
+
+        if self._is_asset_path(request.path):
+            return None
+
+        return self._begin_mfa_challenge(request)
+
+    def _enforce_mfa_after_view(self, request, response):
+        """Catch sessions created inside a view before they can escape unverified.
+
+        This is what closes alternate login paths such as Django admin. A view
+        may call ``login()`` while the request entered this middleware as
+        anonymous; the response-phase check still converts that session into a
+        pending MFA challenge before the browser can reach a protected page.
+        """
+        user = request.user
+
+        if not user.is_authenticated:
+            return response
+
+        if not self._requires_mfa(user):
+            self._clear_mfa_proof(request)
+            return response
+
+        if self._has_mfa_proof(request, user):
+            return response
+
+        current_path = request.path
+        verify_path = reverse('accounts:two_factor_verify')
+        setup_path = reverse('accounts:two_factor_setup')
+
+        # A successful challenge logs the user in inside the verification view.
+        # Mark the just-authenticated session before SessionMiddleware saves it.
+        if current_path == verify_path and request.method == 'POST':
+            self._mark_mfa_verified(request, user)
+            return response
+
+        # Enabling 2FA requires a valid TOTP in TwoFactorSetupView. If the POST
+        # returned with 2FA enabled, that code is valid proof for this session.
+        if current_path == setup_path and request.method == 'POST':
+            self._mark_mfa_verified(request, user)
+            return response
+
+        if current_path in {reverse('accounts:logout'), reverse('admin:logout')}:
+            return response
+
+        return self._begin_mfa_challenge(request)
