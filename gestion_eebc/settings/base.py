@@ -319,6 +319,19 @@ USE_TZ = True
 
 
 # =============================================================================
+# DOUBLE AUTHENTIFICATION (2FA)
+# =============================================================================
+# Les comptes portant un rôle privilégié (tout rôle autre que « membre », plus
+# le staff et les superutilisateurs) doivent enrôler un second facteur avant de
+# pouvoir utiliser l'application. Ce sont les comptes qui accèdent aux données
+# membres, aux finances et aux dossiers pastoraux.
+# Passer à False permet d'étaler le déploiement au lieu de bloquer tous les
+# responsables dès la mise en production.
+TWO_FACTOR_ENFORCED_FOR_PRIVILEGED_ROLES = os.environ.get(
+    'TWO_FACTOR_ENFORCED_FOR_PRIVILEGED_ROLES', 'True'
+).lower() in ('true', '1', 'yes')
+
+# =============================================================================
 # STATIC & MEDIA FILES
 # =============================================================================
 STATIC_URL = 'static/'

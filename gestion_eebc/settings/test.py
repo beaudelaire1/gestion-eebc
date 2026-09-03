@@ -78,6 +78,14 @@ META_WHATSAPP_APP_SECRET = ''
 META_WHATSAPP_API_VERSION = 'v23.0'
 
 # =============================================================================
+# DOUBLE AUTHENTIFICATION (2FA)
+# =============================================================================
+# La contrainte d'enrôlement est désactivée par défaut pour que les tests de
+# vues restent des tests de vues. Les tests qui portent sur la politique
+# elle-même la réactivent explicitement via override_settings.
+TWO_FACTOR_ENFORCED_FOR_PRIVILEGED_ROLES = False
+
+# =============================================================================
 # RATE LIMITING POUR LES TESTS
 # =============================================================================
 RATE_LIMIT_ENABLED = True

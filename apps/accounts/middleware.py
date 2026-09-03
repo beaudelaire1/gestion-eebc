@@ -5,15 +5,20 @@ sessions:
 - accounts marked ``must_change_password`` cannot access the application before
   completing the required password change;
 - accounts with 2FA enabled cannot keep an authenticated session unless the
-  current session contains proof that the second factor was verified.
+  current session contains proof that the second factor was verified;
+- accounts holding a privileged role cannot use the application at all until
+  they have enrolled a second factor.
 
 The MFA check is deliberately session-wide rather than tied only to the normal
 login view. This prevents bypasses through Django admin or any other code path
 that calls ``django.contrib.auth.login`` directly.
 """
-from django.contrib.auth import logout
+from django.conf import settings
+from django.contrib.auth import SESSION_KEY, logout
 from django.shortcuts import redirect
 from django.urls import reverse
+
+from apps.core.security import PRIVILEGED_USER_ROLES
 
 
 MFA_VERIFIED_SESSION_KEY = 'two_factor_verified_user_id'
@@ -37,8 +42,13 @@ class ForcePasswordChangeMiddleware:
         if mfa_response is not None:
             return mfa_response
 
+        enrollment_response = self._enforce_2fa_enrollment(request)
+        if enrollment_response is not None:
+            return enrollment_response
+
         response = self.get_response(request)
-        return self._enforce_mfa_after_view(request, response)
+        response = self._enforce_mfa_after_view(request, response)
+        return self._enforce_2fa_enrollment_after_view(request, response)
 
     @staticmethod
     def _is_asset_path(path):
@@ -77,6 +87,18 @@ class ForcePasswordChangeMiddleware:
             return self.get_response(request)
 
         return redirect('accounts:first_login_password_change')
+
+    @staticmethod
+    def _is_session_authenticated(request):
+        """Whether the browser session itself carries the authenticated user.
+
+        The response phase runs after DRF has resolved a bearer token, so
+        ``request.user`` may be authenticated for this request only, with no
+        session behind it. Both response-phase checks exist to catch sessions
+        created inside a view; applying them to a stateless API call would
+        turn a valid mobile request into an HTML redirect.
+        """
+        return bool(request.session.get(SESSION_KEY))
 
     @staticmethod
     def _requires_mfa(user):
@@ -137,6 +159,69 @@ class ForcePasswordChangeMiddleware:
 
         return self._begin_mfa_challenge(request)
 
+    @staticmethod
+    def _requires_2fa_enrollment(user):
+        """Privileged accounts must carry a second factor; members may opt in.
+
+        These are the accounts that reach member records, finances and
+        pastoral files, so a stolen password must not be enough on its own.
+        Plain members keep 2FA optional: forcing an authenticator app on the
+        whole congregation would lock out everyone without a smartphone.
+        """
+        if not user.is_authenticated:
+            return False
+
+        # The rollout switch. Turning this off lets an installation stage the
+        # requirement instead of locking every leader out at the next deploy.
+        if not getattr(settings, 'TWO_FACTOR_ENFORCED_FOR_PRIVILEGED_ROLES', True):
+            return False
+
+        if getattr(user, 'two_factor_enabled', False):
+            return False
+
+        # Staff and superusers reach Django admin regardless of the CSV role.
+        if user.is_superuser or user.is_staff:
+            return True
+
+        roles = set(user.get_roles_list())
+        return bool(roles & PRIVILEGED_USER_ROLES)
+
+    def _enrollment_allowed_path(self, path):
+        """Paths a privileged account may still reach before enrolling."""
+        allowed = {
+            reverse('accounts:two_factor_setup'),
+            reverse('accounts:logout'),
+            reverse('admin:logout'),
+        }
+        return path in allowed or self._is_asset_path(path)
+
+    def _enforce_2fa_enrollment(self, request):
+        if not self._requires_2fa_enrollment(request.user):
+            return None
+
+        if self._enrollment_allowed_path(request.path):
+            return None
+
+        return redirect('accounts:two_factor_setup')
+
+    def _enforce_2fa_enrollment_after_view(self, request, response):
+        """Catch privileged sessions created inside a view, such as Django admin.
+
+        The request may have entered the middleware anonymous and been logged
+        in by the view itself. Replacing the response with a redirect also
+        stops the first protected page from reaching the browser.
+        """
+        if not self._is_session_authenticated(request):
+            return response
+
+        if not self._requires_2fa_enrollment(request.user):
+            return response
+
+        if self._enrollment_allowed_path(request.path):
+            return response
+
+        return redirect('accounts:two_factor_setup')
+
     def _enforce_mfa_after_view(self, request, response):
         """Catch sessions created inside a view before they can escape unverified.
 
@@ -148,6 +233,9 @@ class ForcePasswordChangeMiddleware:
         user = request.user
 
         if not user.is_authenticated:
+            return response
+
+        if not self._is_session_authenticated(request):
             return response
 
         if not self._requires_mfa(user):

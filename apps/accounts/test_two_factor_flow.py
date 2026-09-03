@@ -273,3 +273,181 @@ def test_resumed_enrolment_still_shows_usable_backup_codes(client):
     assert user.two_factor_enabled is True
     # The codes displayed on the completed page are the ones that work.
     assert user.verify_two_factor_code(shown_codes[0]) is True
+
+
+# ---------------------------------------------------------------------------
+# Mandatory enrolment for privileged roles
+# ---------------------------------------------------------------------------
+
+@override_settings(TWO_FACTOR_ENFORCED_FOR_PRIVILEGED_ROLES=True)
+def test_privileged_account_without_2fa_is_pushed_to_enrolment(client):
+    user = User.objects.create_user(
+        username='finance-no-2fa',
+        email='finance-no-2fa@example.test',
+        password='SecurePass!2026',
+        role='finance',
+    )
+    client.force_login(user)
+
+    response = client.get(reverse('dashboard:home'))
+
+    assert response.status_code == 302
+    assert response.url == reverse('accounts:two_factor_setup')
+
+
+@override_settings(TWO_FACTOR_ENFORCED_FOR_PRIVILEGED_ROLES=True)
+def test_enrolment_page_and_logout_stay_reachable_without_2fa(client):
+    """The forced redirect must not trap the account in a loop."""
+    user = User.objects.create_user(
+        username='pasteur-no-2fa',
+        email='pasteur-no-2fa@example.test',
+        password='SecurePass!2026',
+        role='pasteur',
+    )
+    client.force_login(user)
+
+    setup_page = client.get(reverse('accounts:two_factor_setup'))
+    assert setup_page.status_code == 200
+
+    # GET renders the confirmation page, POST performs the logout. Neither
+    # step may be swallowed by the forced redirect.
+    logout_confirm = client.get(reverse('accounts:logout'))
+    assert logout_confirm.status_code == 200
+
+    logged_out = client.post(reverse('accounts:logout'))
+    assert logged_out.status_code == 302
+    assert logged_out.url != reverse('accounts:two_factor_setup')
+    assert '_auth_user_id' not in client.session
+
+
+@override_settings(TWO_FACTOR_ENFORCED_FOR_PRIVILEGED_ROLES=True)
+def test_superuser_without_a_privileged_role_is_still_forced(client):
+    user = User.objects.create_superuser(
+        username='root-no-2fa',
+        email='root-no-2fa@example.test',
+        password='SecurePass!2026',
+    )
+    client.force_login(user)
+
+    response = client.get(reverse('dashboard:home'))
+
+    assert response.status_code == 302
+    assert response.url == reverse('accounts:two_factor_setup')
+
+
+@override_settings(TWO_FACTOR_ENFORCED_FOR_PRIVILEGED_ROLES=True)
+def test_plain_member_keeps_2fa_optional(client):
+    user = User.objects.create_user(
+        username='membre-no-2fa',
+        email='membre-no-2fa@example.test',
+        password='SecurePass!2026',
+        role='membre',
+    )
+    client.force_login(user)
+
+    response = client.get(reverse('dashboard:home'))
+
+    assert response.status_code == 200
+
+
+@override_settings(TWO_FACTOR_ENFORCED_FOR_PRIVILEGED_ROLES=True)
+def test_privileged_account_is_released_once_enrolled(client):
+    user, _ = _make_mfa_user('finance-with-2fa', role='finance')
+    client.force_login(user)
+    _mark_session_verified(client, user)
+
+    response = client.get(reverse('dashboard:home'))
+
+    assert response.status_code == 200
+
+
+@override_settings(TWO_FACTOR_ENFORCED_FOR_PRIVILEGED_ROLES=True)
+def test_completing_enrolment_ends_the_forced_redirect(client):
+    user = User.objects.create_user(
+        username='secretariat-enrols',
+        email='secretariat-enrols@example.test',
+        password='SecurePass!2026',
+        role='secretariat',
+    )
+    client.force_login(user)
+
+    client.get(reverse('accounts:two_factor_setup'))
+    user.refresh_from_db()
+    client.post(
+        reverse('accounts:two_factor_setup'),
+        {'code': pyotp.TOTP(user.two_factor_secret).now()},
+    )
+
+    user.refresh_from_db()
+    assert user.two_factor_enabled is True
+
+    response = client.get(reverse('dashboard:home'))
+    assert response.status_code == 200
+
+
+@override_settings(DEBUG=True, TURNSTILE_SITE_KEY='', RECAPTCHA_PUBLIC_KEY='')
+@override_settings(TWO_FACTOR_ENFORCED_FOR_PRIVILEGED_ROLES=True)
+def test_privileged_login_lands_on_enrolment_instead_of_dashboard(client):
+    User.objects.create_user(
+        username='admin-logs-in',
+        email='admin-logs-in@example.test',
+        password='SecurePass!2026',
+        role='admin',
+    )
+
+    response = client.post(
+        reverse('accounts:login'),
+        {'username': 'admin-logs-in', 'password': 'SecurePass!2026'},
+        REMOTE_ADDR='198.51.100.40',
+    )
+
+    assert response.status_code == 302
+    assert response.url == reverse('accounts:two_factor_setup')
+
+
+@override_settings(TWO_FACTOR_ENFORCED_FOR_PRIVILEGED_ROLES=True)
+def test_mobile_jwt_api_is_not_caught_by_the_enrolment_redirect(client):
+    """The Flutter app authenticates per request with JWT, not with a session.
+
+    The middleware runs before DRF resolves the bearer token, so it sees an
+    anonymous request and must leave it alone. A redirect here would break the
+    mobile app for every leader who has not enrolled yet.
+    """
+    from rest_framework_simplejwt.tokens import RefreshToken
+
+    user = User.objects.create_user(
+        username='admin-mobile',
+        email='admin-mobile@example.test',
+        password='SecurePass!2026',
+        role='admin',
+    )
+    token = RefreshToken.for_user(user).access_token
+
+    response = client.get(
+        '/api/v1/profile/',
+        HTTP_AUTHORIZATION=f'Bearer {token}',
+    )
+
+    assert response.status_code == 200
+    assert response['Content-Type'].startswith('application/json')
+
+
+def test_mobile_jwt_api_works_for_an_account_with_2fa_enabled(client):
+    """A leader who enrolled 2FA must keep a working mobile app.
+
+    The session-wide MFA check also runs after the view, where DRF has already
+    resolved the bearer token. Without a session-authentication guard it would
+    convert a valid API call into a logout plus an HTML redirect.
+    """
+    from rest_framework_simplejwt.tokens import RefreshToken
+
+    user, _ = _make_mfa_user('admin-mobile-2fa', role='admin')
+    token = RefreshToken.for_user(user).access_token
+
+    response = client.get(
+        '/api/v1/profile/',
+        HTTP_AUTHORIZATION=f'Bearer {token}',
+    )
+
+    assert response.status_code == 200
+    assert response['Content-Type'].startswith('application/json')
