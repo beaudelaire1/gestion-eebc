@@ -218,6 +218,38 @@ class User(AbstractUser):
         
         return backup_codes  # Retourner les codes en clair pour affichage unique
     
+    def start_two_factor_enrollment(self):
+        """Prépare ou reprend une configuration 2FA et rend des codes lisibles.
+
+        Le secret TOTP est conservé d'une visite à l'autre pour qu'un QR code
+        déjà scanné reste valide. Les codes de secours, eux, sont stockés hachés
+        et ne peuvent donc jamais être réaffichés : on en régénère une série à
+        chaque visite tant que la 2FA n'est pas active, sinon une configuration
+        interrompue s'activerait sans que l'utilisateur ait vu un seul code de
+        récupération.
+        """
+        from .two_factor import generate_totp_secret, generate_backup_codes, hash_backup_code
+        import json
+
+        update_fields = []
+
+        if not self.two_factor_secret:
+            self.two_factor_secret = generate_totp_secret()
+            update_fields.append('two_factor_secret')
+
+        backup_codes = generate_backup_codes(10)
+        hashed_codes = [hash_backup_code(code) for code in backup_codes]
+        self.two_factor_backup_codes = json.dumps(hashed_codes)
+        update_fields.append('two_factor_backup_codes')
+
+        if self.two_factor_confirmed:
+            self.two_factor_confirmed = False
+            update_fields.append('two_factor_confirmed')
+
+        self.save(update_fields=update_fields)
+
+        return backup_codes
+
     def get_totp_qr_code(self):
         """Génère le QR code pour configuration."""
         from .two_factor import get_totp_uri, generate_qr_code

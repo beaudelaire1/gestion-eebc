@@ -59,14 +59,63 @@
             <div class="alert alert-info">
                 <i class="bi bi-info-circle me-2"></i>
                 La double authentification ajoute une couche de sécurité supplémentaire à votre compte.
+                Elle se configure en trois étapes, depuis votre téléphone.
+            </div>
+
+            <!-- Étape 1 : Installer une application d'authentification -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0">1. Installer une application d'authentification</h5>
+                </div>
+                <div class="card-body">
+                    <p class="text-muted">
+                        Vous n'avez pas encore d'application d'authentification sur votre téléphone ?
+                        Installez-en une (gratuite), puis revenez sur cette page pour flasher le QR code.
+                    </p>
+                    <div class="row g-3">
+                        <div class="col-md-4">
+                            <div class="border rounded p-3 h-100">
+                                <h6 class="mb-1">Google Authenticator</h6>
+                                <p class="small text-muted mb-2">Android et iPhone</p>
+                                <a class="small" target="_blank" rel="noopener noreferrer"
+                                   href="https://play.google.com/store/apps/details?id=com.google.android.apps.authenticator2">Android</a>
+                                <span class="text-muted small mx-1">·</span>
+                                <a class="small" target="_blank" rel="noopener noreferrer"
+                                   href="https://apps.apple.com/app/google-authenticator/id388497605">iPhone</a>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="border rounded p-3 h-100">
+                                <h6 class="mb-1">Microsoft Authenticator</h6>
+                                <p class="small text-muted mb-2">Android et iPhone</p>
+                                <a class="small" target="_blank" rel="noopener noreferrer"
+                                   href="https://play.google.com/store/apps/details?id=com.azure.authenticator">Android</a>
+                                <span class="text-muted small mx-1">·</span>
+                                <a class="small" target="_blank" rel="noopener noreferrer"
+                                   href="https://apps.apple.com/app/microsoft-authenticator/id983156458">iPhone</a>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="border rounded p-3 h-100">
+                                <h6 class="mb-1">Authy</h6>
+                                <p class="small text-muted mb-2">Android et iPhone</p>
+                                <a class="small" target="_blank" rel="noopener noreferrer"
+                                   href="https://play.google.com/store/apps/details?id=com.authy.authy">Android</a>
+                                <span class="text-muted small mx-1">·</span>
+                                <a class="small" target="_blank" rel="noopener noreferrer"
+                                   href="https://apps.apple.com/app/twilio-authy/id494168017">iPhone</a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
 
             <div class="row">
-                <!-- Étape 1 : QR Code -->
+                <!-- Étape 2 : QR Code -->
                 <div class="col-md-6 mb-4">
                     <div class="card h-100">
                         <div class="card-header">
-                            <h5 class="mb-0">1. Scanner le QR Code</h5>
+                            <h5 class="mb-0">2. Flasher le QR Code</h5>
                         </div>
                         <div class="card-body text-center">
                             {% if qr_code %}
@@ -74,27 +123,25 @@
                             {% endif %}
 
                             <p class="text-muted small">
-                                Scannez ce code avec une application d'authentification :
+                                Dans l'application, choisissez « Ajouter un compte », puis
+                                « Scanner un code QR » et visez cette image.
                             </p>
-                            <ul class="list-unstyled small text-muted">
-                                <li>Google Authenticator</li>
-                                <li>Microsoft Authenticator</li>
-                                <li>Authy</li>
-                            </ul>
 
                             <hr>
 
-                            <p class="small text-muted mb-1">Ou entrez manuellement :</p>
+                            <p class="small text-muted mb-1">
+                                Si votre téléphone ne peut pas flasher le code, saisissez cette clé à la main :
+                            </p>
                             <code class="user-select-all">{{ secret }}</code>
                         </div>
                     </div>
                 </div>
 
-                <!-- Étape 2 : Vérification -->
+                <!-- Étape 3 : Vérification -->
                 <div class="col-md-6 mb-4">
                     <div class="card h-100">
                         <div class="card-header">
-                            <h5 class="mb-0">2. Vérifier le code</h5>
+                            <h5 class="mb-0">3. Vérifier le code</h5>
                         </div>
                         <div class="card-body">
                             <p class="text-muted">
@@ -125,15 +172,18 @@
                 <div class="card-header bg-warning text-dark">
                     <h5 class="mb-0">
                         <i class="bi bi-exclamation-triangle me-2"></i>
-                        Codes de secours - À SAUVEGARDER
+                        4. Codes de secours - À SAUVEGARDER
                     </h5>
                 </div>
                 <div class="card-body">
                     <p class="text-danger fw-bold">
-                        Ces codes ne seront affichés qu'une seule fois. Conservez-les en lieu sûr !
+                        Conservez ces codes en lieu sûr avant d'activer la 2FA : une fois la page
+                        quittée, ils ne peuvent plus être réaffichés.
                     </p>
                     <p class="text-muted">
                         Utilisez ces codes si vous perdez l'accès à votre application d'authentification.
+                        Chaque rechargement de cette page génère une nouvelle série et invalide la
+                        précédente : gardez uniquement les codes ci-dessous.
                     </p>
 
                     <div class="row">

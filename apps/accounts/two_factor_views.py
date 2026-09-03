@@ -19,10 +19,11 @@ class TwoFactorSetupView(LoginRequiredMixin, TemplateView):
         context = super().get_context_data(**kwargs)
         user = self.request.user
         
-        # Si pas encore de secret, en générer un
-        if not user.two_factor_secret:
-            backup_codes = user.setup_two_factor()
-            context['backup_codes'] = backup_codes
+        # Tant que la 2FA n'est pas active, chaque visite affiche le QR code
+        # (secret stable) et une série de codes de secours utilisables : c'est
+        # la seule page où l'utilisateur peut encore les lire.
+        if not user.two_factor_enabled:
+            context['backup_codes'] = user.start_two_factor_enrollment()
             context['show_backup_codes'] = True
         
         context['qr_code'] = user.get_totp_qr_code()

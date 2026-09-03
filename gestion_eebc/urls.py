@@ -83,11 +83,10 @@ if settings.DEBUG:
     urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
     urlpatterns += static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
 
-    try:
-        import debug_toolbar
-    except ImportError:
-        pass
-    else:
+    # The toolbar URLs import its models, so the app must actually be
+    # installed. Test settings run with DEBUG toggled on but without
+    # debug_toolbar in INSTALLED_APPS.
+    if 'debug_toolbar' in settings.INSTALLED_APPS:
         urlpatterns = [
             path('__debug__/', include('debug_toolbar.urls')),
         ] + urlpatterns

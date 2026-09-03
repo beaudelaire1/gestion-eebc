@@ -202,3 +202,74 @@ def test_required_password_change_cannot_bypass_mfa(client):
     user.refresh_from_db()
     assert user.must_change_password is False
     assert user.check_password(new_password)
+
+
+def test_setup_page_offers_a_scannable_qr_code_to_a_user_without_2fa(client):
+    user = User.objects.create_user(
+        username='mfa-enrol-qr',
+        email='mfa-enrol-qr@example.test',
+        password='SecurePass!2026',
+    )
+    client.force_login(user)
+
+    response = client.get(reverse('accounts:two_factor_setup'))
+    body = response.content.decode('utf-8')
+
+    assert response.status_code == 200
+    assert 'data:image/png;base64,' in body
+
+    user.refresh_from_db()
+    assert user.two_factor_secret
+    assert user.two_factor_secret in body
+    assert user.two_factor_enabled is False
+
+
+def test_setup_page_keeps_the_same_secret_across_visits(client):
+    user = User.objects.create_user(
+        username='mfa-enrol-stable',
+        email='mfa-enrol-stable@example.test',
+        password='SecurePass!2026',
+    )
+    client.force_login(user)
+
+    client.get(reverse('accounts:two_factor_setup'))
+    user.refresh_from_db()
+    first_secret = user.two_factor_secret
+
+    client.get(reverse('accounts:two_factor_setup'))
+    user.refresh_from_db()
+
+    # A QR code already scanned in the authenticator app must stay valid.
+    assert user.two_factor_secret == first_secret
+
+
+def test_resumed_enrolment_still_shows_usable_backup_codes(client):
+    """An interrupted setup must not activate 2FA without visible recovery codes."""
+    user = User.objects.create_user(
+        username='mfa-enrol-resume',
+        email='mfa-enrol-resume@example.test',
+        password='SecurePass!2026',
+    )
+    client.force_login(user)
+
+    # First visit: the user leaves without confirming.
+    client.get(reverse('accounts:two_factor_setup'))
+
+    # Second visit: this is the page the user actually completes.
+    second_visit = client.get(reverse('accounts:two_factor_setup'))
+    shown_codes = second_visit.context['backup_codes']
+
+    assert second_visit.context['show_backup_codes'] is True
+    assert len(shown_codes) == 10
+
+    user.refresh_from_db()
+    activated = client.post(
+        reverse('accounts:two_factor_setup'),
+        {'code': pyotp.TOTP(user.two_factor_secret).now()},
+    )
+    assert activated.status_code == 302
+
+    user.refresh_from_db()
+    assert user.two_factor_enabled is True
+    # The codes displayed on the completed page are the ones that work.
+    assert user.verify_two_factor_code(shown_codes[0]) is True
