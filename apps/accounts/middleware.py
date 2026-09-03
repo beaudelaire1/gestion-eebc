@@ -13,12 +13,11 @@ The MFA check is deliberately session-wide rather than tied only to the normal
 login view. This prevents bypasses through Django admin or any other code path
 that calls ``django.contrib.auth.login`` directly.
 """
-from django.conf import settings
 from django.contrib.auth import SESSION_KEY, logout
 from django.shortcuts import redirect
 from django.urls import reverse
 
-from apps.core.security import PRIVILEGED_USER_ROLES
+from .two_factor_policy import requires_2fa_enrollment
 
 
 MFA_VERIFIED_SESSION_KEY = 'two_factor_verified_user_id'
@@ -159,33 +158,6 @@ class ForcePasswordChangeMiddleware:
 
         return self._begin_mfa_challenge(request)
 
-    @staticmethod
-    def _requires_2fa_enrollment(user):
-        """Privileged accounts must carry a second factor; members may opt in.
-
-        These are the accounts that reach member records, finances and
-        pastoral files, so a stolen password must not be enough on its own.
-        Plain members keep 2FA optional: forcing an authenticator app on the
-        whole congregation would lock out everyone without a smartphone.
-        """
-        if not user.is_authenticated:
-            return False
-
-        # The rollout switch. Turning this off lets an installation stage the
-        # requirement instead of locking every leader out at the next deploy.
-        if not getattr(settings, 'TWO_FACTOR_ENFORCED_FOR_PRIVILEGED_ROLES', True):
-            return False
-
-        if getattr(user, 'two_factor_enabled', False):
-            return False
-
-        # Staff and superusers reach Django admin regardless of the CSV role.
-        if user.is_superuser or user.is_staff:
-            return True
-
-        roles = set(user.get_roles_list())
-        return bool(roles & PRIVILEGED_USER_ROLES)
-
     def _enrollment_allowed_path(self, path):
         """Paths a privileged account may still reach before enrolling."""
         allowed = {
@@ -196,7 +168,7 @@ class ForcePasswordChangeMiddleware:
         return path in allowed or self._is_asset_path(path)
 
     def _enforce_2fa_enrollment(self, request):
-        if not self._requires_2fa_enrollment(request.user):
+        if not requires_2fa_enrollment(request.user):
             return None
 
         if self._enrollment_allowed_path(request.path):
@@ -214,7 +186,7 @@ class ForcePasswordChangeMiddleware:
         if not self._is_session_authenticated(request):
             return response
 
-        if not self._requires_2fa_enrollment(request.user):
+        if not requires_2fa_enrollment(request.user):
             return response
 
         if self._enrollment_allowed_path(request.path):

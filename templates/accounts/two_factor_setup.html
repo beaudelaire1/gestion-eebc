@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% load church_tags %}
 
 {% block title %}Configuration 2FA - EEBC{% endblock %}
 {% block page_title %}Double authentification{% endblock %}
@@ -56,11 +57,21 @@
 
             {% else %}
 
+            {% if enrollment_required %}
+            <div class="alert alert-warning">
+                <i class="bi bi-shield-exclamation me-2"></i>
+                <strong>La double authentification est obligatoire pour votre rôle.</strong>
+                Votre compte donne accès à des données sensibles, un mot de passe seul
+                ne suffit donc pas. Configurez-la ci-dessous : l'accès à la plateforme
+                est rétabli dès que c'est fait.
+            </div>
+            {% else %}
             <div class="alert alert-info">
                 <i class="bi bi-info-circle me-2"></i>
                 La double authentification ajoute une couche de sécurité supplémentaire à votre compte.
                 Elle se configure en trois étapes, depuis votre téléphone.
             </div>
+            {% endif %}
 
             <!-- Étape 1 : Installer une application d'authentification -->
             <div class="card mb-4">
@@ -165,6 +176,30 @@
                     </div>
                 </div>
             </div>
+
+            {% if enrollment_required %}
+            <div class="card mb-4 border-secondary">
+                <div class="card-body">
+                    <h6 class="card-title">
+                        <i class="bi bi-life-preserver me-2"></i>Vous êtes bloqué ?
+                    </h6>
+                    <p class="text-muted mb-2">
+                        Si vous n'avez pas de smartphone, si vous ne parvenez pas à flasher
+                        le QR code, ou si vous avez perdu l'accès à votre application
+                        d'authentification, contactez le support : il peut débloquer votre
+                        compte.
+                    </p>
+                    <p class="mb-0">
+                        <a href="mailto:{% church_email %}">{% church_email %}</a>
+                        {% church_phone as support_phone %}
+                        {% if support_phone %}
+                        <span class="text-muted mx-1">—</span>
+                        <a href="tel:{{ support_phone }}">{{ support_phone }}</a>
+                        {% endif %}
+                    </p>
+                </div>
+            </div>
+            {% endif %}
 
             {% if show_backup_codes and backup_codes %}
             <!-- Codes de secours -->

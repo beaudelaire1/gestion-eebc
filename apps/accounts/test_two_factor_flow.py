@@ -6,6 +6,7 @@ from django.test import override_settings
 from django.urls import reverse
 
 from apps.accounts.middleware import MFA_VERIFIED_SESSION_KEY
+from apps.core.church import CHURCH_INFO
 from apps.accounts.models import User
 from apps.accounts.services import AuthenticationService
 
@@ -451,3 +452,87 @@ def test_mobile_jwt_api_works_for_an_account_with_2fa_enabled(client):
 
     assert response.status_code == 200
     assert response['Content-Type'].startswith('application/json')
+
+
+@override_settings(TWO_FACTOR_ENFORCED_FOR_PRIVILEGED_ROLES=True)
+def test_forced_enrolment_page_explains_itself_and_offers_support(client):
+    user = User.objects.create_user(
+        username='ancien-forced',
+        email='ancien-forced@example.test',
+        password='SecurePass!2026',
+        role='ancien',
+    )
+    client.force_login(user)
+
+    response = client.get(reverse('accounts:two_factor_setup'))
+    body = response.content.decode('utf-8')
+
+    assert response.context['enrollment_required'] is True
+    assert 'obligatoire pour votre rôle' in body
+    # The QR code is the first-time path, support is the way out for anyone
+    # who cannot scan it.
+    assert 'data:image/png;base64,' in body
+    assert CHURCH_INFO['email'] in body
+    assert 'mailto:' in body
+
+
+@override_settings(TWO_FACTOR_ENFORCED_FOR_PRIVILEGED_ROLES=True)
+def test_voluntary_enrolment_page_does_not_claim_to_be_mandatory(client):
+    user = User.objects.create_user(
+        username='membre-volontaire',
+        email='membre-volontaire@example.test',
+        password='SecurePass!2026',
+        role='membre',
+    )
+    client.force_login(user)
+
+    response = client.get(reverse('accounts:two_factor_setup'))
+    body = response.content.decode('utf-8')
+
+    assert response.context['enrollment_required'] is False
+    assert 'obligatoire pour votre rôle' not in body
+    assert 'data:image/png;base64,' in body
+
+
+# ---------------------------------------------------------------------------
+# Support fallback: resetting an account that lost its authenticator
+# ---------------------------------------------------------------------------
+
+def test_reset_2fa_command_lets_a_locked_out_account_enrol_again():
+    from django.core.management import call_command
+
+    user, _ = _make_mfa_user('lost-phone', role='finance')
+    assert user.two_factor_secret
+
+    call_command('reset_2fa', 'lost-phone')
+
+    user.refresh_from_db()
+    assert user.two_factor_enabled is False
+    assert user.two_factor_secret == ''
+    assert user.two_factor_backup_codes == ''
+
+    # The account can start over from a brand new QR code.
+    new_codes = user.start_two_factor_enrollment()
+    user.refresh_from_db()
+    assert user.two_factor_secret
+    assert len(new_codes) == 10
+
+
+def test_reset_2fa_command_refuses_an_unknown_account():
+    from django.core.management import call_command
+    from django.core.management.base import CommandError
+
+    with pytest.raises(CommandError):
+        call_command('reset_2fa', 'no-such-user')
+
+
+def test_reset_2fa_status_reports_without_changing_anything():
+    from django.core.management import call_command
+
+    user, secret = _make_mfa_user('status-only', role='admin')
+
+    call_command('reset_2fa', 'status-only', '--status')
+
+    user.refresh_from_db()
+    assert user.two_factor_enabled is True
+    assert user.two_factor_secret == secret

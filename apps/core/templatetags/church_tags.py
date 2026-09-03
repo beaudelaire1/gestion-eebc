@@ -26,3 +26,15 @@ def church_address():
 def church_contact(separator=' — '):
     """Téléphone et email, sans séparateur orphelin si l'un manque."""
     return church_contact_line(separator)
+
+
+@register.simple_tag
+def church_email():
+    """Adresse seule, pour construire un lien mailto."""
+    return CHURCH_INFO['email']
+
+
+@register.simple_tag
+def church_phone():
+    """Numéro seul, vide si l'installation n'en déclare pas."""
+    return CHURCH_INFO['phone']

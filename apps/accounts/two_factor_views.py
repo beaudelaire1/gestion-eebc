@@ -10,6 +10,8 @@ from django.contrib.auth import login, authenticate
 from django.contrib import messages
 from django.http import JsonResponse
 
+from .two_factor_policy import requires_2fa_enrollment
+
 
 class TwoFactorSetupView(LoginRequiredMixin, TemplateView):
     """Configuration de la 2FA."""
@@ -29,6 +31,9 @@ class TwoFactorSetupView(LoginRequiredMixin, TemplateView):
         context['qr_code'] = user.get_totp_qr_code()
         context['secret'] = user.two_factor_secret
         context['is_enabled'] = user.two_factor_enabled
+        # Le middleware a pu rediriger l'utilisateur jusqu'ici. La page doit le
+        # dire, sinon il ne comprend pas pourquoi il ne peut plus rien ouvrir.
+        context['enrollment_required'] = requires_2fa_enrollment(user)
         
         return context
     
