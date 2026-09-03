@@ -350,3 +350,87 @@ a.text-primary {
         transform: none;
     }
 }
+
+/* -----------------------------------------------------------------------------
+   11. Volet latéral — 121 liens répartis en 12 sections, tous toujours ouverts
+   -----------------------------------------------------------------------------
+   Les intitulés de section étaient de simples <div> : aucun repli n'avait été
+   construit. Il fallait faire défiler l'intégralité de l'application pour
+   atteindre la dernière rubrique. Ils deviennent des boutons de divulgation.
+
+   Durée et courbe reprises des valeurs de micro-interaction standard
+   (200–300 ms, power2.out).
+   -------------------------------------------------------------------------- */
+.nav-section__title {
+    width: calc(100% - 1.5rem);
+    border: 0;
+    border-left: 3px solid var(--accent-on-surface);
+    cursor: pointer;
+    font: inherit;
+    font-size: 0.7rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    text-align: left;
+    justify-content: space-between;
+    align-items: center;
+    gap: .5rem;
+}
+
+.nav-section__chevron {
+    font-size: .7rem;
+    flex-shrink: 0;
+    opacity: .7;
+    transition: transform 240ms cubic-bezier(.22, 1, .36, 1);
+}
+
+/* Le repli lui-même est instantané. Une transition sur grid-template-rows
+   restait figée à 0 dans Chrome, et surtout la hauteur est une propriété de
+   mise en page : les règles de mouvement retenues n'animent que transform et
+   opacity. Le contenu se révèle donc par un fondu court, déclenché seulement
+   sur action de l'utilisateur — pas à chaque chargement de page. */
+.nav-section[data-collapsed="true"] .nav-section__panel {
+    display: none;
+}
+
+.nav-section[data-animate="true"] .nav-section__panel > * {
+    animation: nav-panel-in 180ms cubic-bezier(.22, 1, .36, 1) both;
+}
+
+@keyframes nav-panel-in {
+    from {
+        opacity: 0;
+        transform: translateY(-4px);
+    }
+    to {
+        opacity: 1;
+        transform: none;
+    }
+}
+
+.nav-section[data-collapsed="true"] .nav-section__chevron {
+    transform: rotate(-90deg);
+}
+
+/* En mode icônes seules, les intitulés disparaissent : replier laisserait une
+   barre vide. Les listes restent donc dépliées et les chevrons masqués. */
+/* Spécificité alignée sur la règle de repli, sinon les rubriques fermées
+   resteraient invisibles alors que leurs intitulés le sont déjà. */
+.sidebar--collapsed .nav-section[data-collapsed="true"] .nav-section__panel,
+.sidebar--collapsed .nav-section__panel {
+    display: block;
+}
+
+.sidebar--collapsed .nav-section__chevron {
+    display: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .nav-section__chevron {
+        transition: none;
+    }
+
+    .nav-section[data-animate="true"] .nav-section__panel > * {
+        animation: none;
+    }
+}
