@@ -1,6 +1,7 @@
 from django import forms
 from django.core.exceptions import ValidationError
 from .models import Child, BibleClass, AgeGroup
+from apps.core.forms import make_field_searchable
 from apps.transport.models import DriverProfile
 
 
@@ -161,6 +162,10 @@ class ChildForm(forms.ModelForm):
             # Si le modèle DriverProfile n'existe pas encore
             self.fields['assigned_driver'].widget = forms.HiddenInput()
         
+        make_field_searchable(
+            self.fields.get('assigned_driver'), 'Rechercher un chauffeur…'
+        )
+
         # Champs obligatoires
         required_fields = ['first_name', 'last_name', 'date_of_birth', 'gender']
         for field_name in required_fields:

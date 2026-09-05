@@ -226,6 +226,24 @@ class EnhancedForm(FrenchErrorMessagesMixin, HTML5ValidationMixin, forms.Form):
     pass
 
 
+def make_field_searchable(field, placeholder="Rechercher…"):
+    """Transformer un menu déroulant en champ de recherche.
+
+    Les listes de membres, de familles ou de chauffeurs comptent des centaines
+    d'entrées : un ``<select>`` natif oblige à faire défiler tout l'annuaire
+    pour trouver une personne. La classe ``tom-select`` est reprise par
+    l'initialisation automatique de ``base.html``.
+    """
+    if field is None:
+        return field
+    attrs = field.widget.attrs
+    classes = set((attrs.get('class') or '').split())
+    classes.update({'form-select', 'tom-select'})
+    attrs['class'] = ' '.join(sorted(classes))
+    attrs.setdefault('data-placeholder', placeholder)
+    return field
+
+
 class EnhancedModelForm(FrenchErrorMessagesMixin, HTML5ValidationMixin, forms.ModelForm):
     """Formulaire modèle complet avec validation HTML5 et messages français."""
     pass

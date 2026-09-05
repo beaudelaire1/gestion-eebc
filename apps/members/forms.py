@@ -4,6 +4,7 @@ Formulaires pour l'app membres.
 from django import forms
 from django.core.exceptions import ValidationError
 from .models import Member, LifeEvent, VisitationLog
+from apps.core.forms import make_field_searchable
 from apps.core.models import Site, Family
 
 
@@ -133,6 +134,9 @@ class MemberForm(forms.ModelForm):
         
         # Filtrer les sites actifs
         self.fields['site'].queryset = Site.objects.filter(is_active=True).order_by('name')
+
+        # Les familles se comptent par centaines : ce menu doit se chercher.
+        make_field_searchable(self.fields['family'], 'Rechercher une famille…')
     
     def clean_email(self):
         """Valider l'unicité de l'email."""

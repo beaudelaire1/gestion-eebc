@@ -1,7 +1,8 @@
 """Formulaires pour le module Jeunesse."""
 
 from django import forms
-from apps.core.forms import EnhancedModelForm
+from apps.core.forms import EnhancedModelForm, make_field_searchable
+from apps.members.models import Member
 from .models import YoungMember, YouthGroup, YouthEvent, YouthAttendance
 
 
@@ -42,6 +43,26 @@ class YoungMemberForm(EnhancedModelForm):
             ).select_related('user')
         except Exception:
             pass
+
+        # L'annuaire complet n'a pas à être proposé : on relie un jeune à un
+        # membre actif. La fiche déjà reliée reste dans la liste, sinon
+        # rouvrir le formulaire effacerait le lien en enregistrant.
+        member_field = self.fields['linked_member']
+        actifs = Member.objects.filter(status=Member.Status.ACTIF)
+        current = getattr(self.instance, 'linked_member', None)
+        if current is not None:
+            actifs = (actifs | Member.objects.filter(pk=current.pk)).distinct()
+        member_field.queryset = actifs.order_by('last_name', 'first_name')
+
+        # Menus adossés à des listes longues : l'annuaire des membres compte
+        # des centaines d'entrées, impossibles à parcourir à la main.
+        for name, placeholder in (
+            ('linked_member', 'Rechercher un membre (nom ou identifiant)…'),
+            ('family', 'Rechercher une famille…'),
+            ('assigned_driver', 'Rechercher un chauffeur…'),
+            ('site', 'Rechercher un site…'),
+        ):
+            make_field_searchable(self.fields.get(name), placeholder)
 
         # « Groupe » désigne ici une tranche d'âge de la jeunesse, distincte des
         # groupes d'église de la rubrique Gestion. Un menu vide n'expliquait pas
