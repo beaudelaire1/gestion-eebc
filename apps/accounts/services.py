@@ -6,17 +6,23 @@ le rate limiting et la création d'utilisateurs.
 import secrets
 import string
 import unicodedata
+from django.conf import settings
 from django.contrib.auth import authenticate
 from django.core import signing
 from django.core.mail import send_mail
 from django.template.loader import render_to_string
-from django.conf import settings
+from django.urls import reverse
 from django.utils import timezone
 from django.utils.html import strip_tags
 from datetime import timedelta
 from typing import Optional, Tuple
 
 from .models import User, PasswordChangeToken
+
+
+def absolute_app_url(view_name: str) -> str:
+    """Build an external URL from Django's configured application route."""
+    return f"{getattr(settings, 'SITE_URL', '').rstrip('/')}{reverse(view_name)}"
 
 
 class ServiceResult:
@@ -479,8 +485,10 @@ class AccountsService:
                 'username': username,
                 'password': password,
                 'created_by': created_by,
-                'login_url': f"{getattr(settings, 'SITE_URL', '')}/accounts/login/",
-                'password_change_url': f"{getattr(settings, 'SITE_URL', '')}/accounts/first-login-password-change/?token={token}",
+                'login_url': absolute_app_url('accounts:login'),
+                'password_change_url': (
+                    f"{absolute_app_url('accounts:first_login_password_change')}?token={token}"
+                ),
                 'site_name': getattr(settings, 'SITE_NAME', 'EEBC'),
             }
             
@@ -535,7 +543,7 @@ class AccountsService:
                 'username': username,
                 'password': password,
                 'reset_by': reset_by,
-                'login_url': f"{getattr(settings, 'SITE_URL', '')}/accounts/login/",
+                'login_url': absolute_app_url('accounts:login'),
                 'site_name': getattr(settings, 'SITE_NAME', 'EEBC'),
             }
             

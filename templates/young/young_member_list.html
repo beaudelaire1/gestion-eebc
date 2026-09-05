@@ -8,100 +8,123 @@
 <style>
     .young-grid {
         display: grid;
-        grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+        grid-template-columns: repeat(auto-fill, minmax(min(100%, 280px), 1fr));
         gap: 1.5rem;
     }
 
     .young-card {
         background: var(--eebc-white);
-        border-radius: 24px;
+        border-radius: 18px;
         overflow: hidden;
-        box-shadow: 0 10px 40px rgba(11, 15, 25, 0.06);
-        transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-        border: 2px solid transparent;
+        display: flex;
+        flex-direction: column;
+        min-width: 0;
+        box-shadow: 0 1px 3px rgba(11, 15, 25, 0.08);
+        transition: transform .26s ease, box-shadow .26s ease, border-color .26s ease;
+        border: 1px solid var(--border-color, #eef0f4);
     }
 
     .young-card:hover {
-        transform: translateY(-8px);
-        box-shadow: 0 25px 60px rgba(10, 54, 255, 0.15);
-        border-color: var(--eebc-primary);
+        transform: translateY(-3px);
+        box-shadow: 0 12px 28px rgba(11, 15, 25, 0.12);
+        border-color: var(--accent-on-surface, #2563eb);
     }
 
-    .young-photo-zone {
-        position: relative;
-        height: 160px;
+    .young-card:focus-within {
+        border-color: var(--accent-on-surface, #2563eb);
+    }
+
+    .young-card-head {
+        display: flex;
+        align-items: center;
+        gap: .85rem;
+        padding: 1.15rem 1.25rem .35rem;
+    }
+
+    .young-avatar {
+        width: 52px;
+        height: 52px;
+        flex-shrink: 0;
+        border-radius: 50%;
         overflow: hidden;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.05rem;
+        font-weight: 700;
+        color: var(--accent-on-surface, #2563eb);
+        background: rgba(37, 99, 235, .12);
     }
 
-    .young-photo-zone.boy { background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%); }
-    .young-photo-zone.girl { background: linear-gradient(135deg, #ec4899 0%, #be185d 100%); }
-
-    .young-photo-zone img {
+    .young-avatar img {
         width: 100%;
         height: 100%;
         object-fit: cover;
     }
 
-    .young-photo-zone .initials {
-        width: 100%;
-        height: 100%;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 3.5rem;
-        font-weight: 800;
-        color: rgba(255, 255, 255, 0.9);
+    .young-card-head__text {
+        min-width: 0;
     }
 
-    .young-badge {
-        position: absolute;
-        top: 12px;
-        right: 12px;
-        background: rgba(255, 255, 255, 0.95);
-        backdrop-filter: blur(8px);
-        padding: 0.4rem 0.8rem;
-        border-radius: 20px;
-        font-size: 0.75rem;
+    .young-chips {
+        display: flex;
+        flex-wrap: wrap;
+        gap: .35rem;
+        padding: .6rem 1.25rem 0;
+    }
+
+    .young-chip {
+        display: inline-flex;
+        align-items: center;
+        gap: .3rem;
+        font-size: .72rem;
         font-weight: 600;
-        display: flex;
-        align-items: center;
-        gap: 0.3rem;
-        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+        padding: .2rem .55rem;
+        border-radius: 999px;
+        border: 1px solid transparent;
+        max-width: 100%;
+        overflow-wrap: anywhere;
     }
 
-    .young-badge.baptized { color: #8b5cf6; }
-    .young-badge.transport { color: #f59e0b; }
+    .young-chip--actif { background: rgba(16,185,129,.14); color: #047857; }
+    .young-chip--visiteur,
+    .young-chip--transport { background: rgba(245,158,11,.16); color: #92400e; }
+    .young-chip--inactif { background: rgba(107,114,128,.16); color: #4b5563; }
+    .young-chip--baptise { background: rgba(37,99,235,.12); color: #1d4ed8; }
+    .young-chip--groupe { background: var(--eebc-gray-50); color: var(--text-secondary, #4b5563); }
 
-    .young-card-body { padding: 1.25rem; }
+    .young-card-body {
+        padding: .9rem 1.25rem 1.15rem;
+        display: flex;
+        flex-direction: column;
+        flex: 1;
+    }
 
     .young-name {
-        font-size: 1.1rem;
+        font-size: 1rem;
         font-weight: 700;
         color: var(--eebc-black);
-        margin-bottom: 0.25rem;
+        margin-bottom: .1rem;
+        line-height: 1.25;
+        overflow-wrap: anywhere;
     }
 
     .young-age {
-        font-size: 0.85rem;
-        color: var(--eebc-gray-500);
-        margin-bottom: 0.75rem;
-    }
-
-    .young-group-badge {
-        display: inline-block;
-        padding: 0.4rem 0.9rem;
-        border-radius: 30px;
-        font-size: 0.75rem;
-        font-weight: 600;
-        color: white;
-        margin-bottom: 1rem;
+        font-size: .8rem;
+        color: var(--text-muted, #6b7280);
+        margin-bottom: 0;
     }
 
     .young-info {
         padding: 0.85rem;
         background: var(--eebc-gray-50);
         border-radius: 12px;
-        margin-bottom: 1rem;
+        margin-bottom: .9rem;
+        display: flex;
+        flex-direction: column;
+        gap: .3rem;
+        flex: 1;
+        min-height: 78px;
     }
 
     .young-info-item {
@@ -109,17 +132,32 @@
         align-items: center;
         gap: 0.5rem;
         font-size: 0.8rem;
-        color: var(--eebc-gray-600);
+        color: var(--text-secondary, #4b5563);
+        min-width: 0;
+    }
+
+    .young-info-item span {
+        overflow-wrap: anywhere;
+        min-width: 0;
     }
 
     .young-info-item i {
-        color: var(--eebc-primary);
+        color: var(--accent-on-surface, #2563eb);
         width: 14px;
+        flex-shrink: 0;
+    }
+
+    .young-info-empty {
+        font-size: .8rem;
+        color: var(--text-muted, #6b7280);
+        font-style: italic;
     }
 
     .young-card-actions {
         display: flex;
         gap: 0.5rem;
+        border-top: 1px solid var(--border-color, #eef0f4);
+        padding-top: .85rem;
     }
 
     .young-card-actions .btn {
@@ -128,6 +166,12 @@
         border-radius: 10px;
         font-weight: 600;
         font-size: 0.8rem;
+        min-height: 44px;
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+        .young-card { transition: none; }
+        .young-card:hover { transform: none; }
     }
 
     .filter-card {
@@ -225,60 +269,70 @@
 <div class="young-grid">
     {% for member in page_obj %}
     <div class="young-card">
-        <div class="young-photo-zone {% if member.gender == 'M' %}boy{% else %}girl{% endif %}">
-            {% if member.photo %}
-            <img src="{{ member.photo.url }}" alt="{{ member.full_name }}">
-            {% else %}
-            <div class="initials">
-                {{ member.first_name|slice:":1"|upper }}{{ member.last_name|slice:":1"|upper }}
+        <div class="young-card-head">
+            <div class="young-avatar">
+                {% if member.photo %}
+                <img src="{{ member.photo.url }}" alt="Photo de {{ member.full_name }}" loading="lazy">
+                {% else %}
+                <span aria-hidden="true">{{ member.first_name|slice:":1"|upper }}{{ member.last_name|slice:":1"|upper }}</span>
+                {% endif %}
             </div>
-            {% endif %}
+            <div class="young-card-head__text">
+                <h5 class="young-name">{{ member.full_name }}</h5>
+                <p class="young-age">
+                    {{ member.age }} ans{% if member.is_minor %} · Mineur{% endif %}
+                    {% if member.gender == 'M' %} · Masculin{% elif member.gender == 'F' %} · Féminin{% endif %}
+                </p>
+            </div>
+        </div>
 
+        <div class="young-chips">
+            <span class="young-chip young-chip--{{ member.status }}">{{ member.get_status_display }}</span>
             {% if member.is_baptized %}
-            <div class="young-badge baptized">
-                <i class="bi bi-water"></i> Baptisé{{ member.gender|default:"" }}
-            </div>
+            <span class="young-chip young-chip--baptise">
+                <i class="bi bi-droplet-fill" aria-hidden="true"></i> Baptisé{% if member.gender == 'F' %}e{% endif %}
+            </span>
             {% endif %}
-
             {% if member.needs_transport %}
-            <div class="young-badge transport" style="top: {% if member.is_baptized %}48px{% else %}12px{% endif %};">
-                <i class="bi bi-truck"></i> Transport
-            </div>
+            <span class="young-chip young-chip--transport">
+                <i class="bi bi-truck" aria-hidden="true"></i> Transport
+            </span>
+            {% endif %}
+            {% if member.group %}
+            <span class="young-chip young-chip--groupe">
+                <i class="bi bi-people" aria-hidden="true"></i> {{ member.group.name }}
+            </span>
             {% endif %}
         </div>
 
         <div class="young-card-body">
-            <div class="young-name">{{ member.full_name }}</div>
-            <div class="young-age">
-                {{ member.age }} ans
-                {% if member.is_minor %}<span class="text-warning ms-1">(mineur)</span>{% endif %}
-            </div>
-
-            {% if member.group %}
-            <span class="young-group-badge" style="background: {{ member.group.color }};">
-                {{ member.group.name }}
-            </span>
-            {% endif %}
-
             <div class="young-info">
                 {% if member.phone %}
                 <div class="young-info-item">
-                    <i class="bi bi-telephone"></i> {{ member.phone }}
+                    <i class="bi bi-telephone" aria-hidden="true"></i> <span>{{ member.phone }}</span>
+                </div>
+                {% endif %}
+                {% if member.email %}
+                <div class="young-info-item">
+                    <i class="bi bi-envelope" aria-hidden="true"></i> <span>{{ member.email }}</span>
                 </div>
                 {% endif %}
                 {% if member.parent_name %}
-                <div class="young-info-item mt-1">
-                    <i class="bi bi-person"></i> {{ member.parent_name }}
+                <div class="young-info-item">
+                    <i class="bi bi-person" aria-hidden="true"></i> <span>Responsable : {{ member.parent_name }}</span>
                 </div>
+                {% endif %}
+                {% if not member.phone and not member.email and not member.parent_name %}
+                <span class="young-info-empty">Aucun contact renseigné</span>
                 {% endif %}
             </div>
 
             <div class="young-card-actions">
-                <a href="{% url 'young:member_detail' member.pk %}" class="btn btn-outline-primary btn-sm">
-                    <i class="bi bi-eye me-1"></i>Voir
+                <a href="{% url 'young:member_detail' member.pk %}" class="btn btn-outline-primary" aria-label="Voir la fiche de {{ member.full_name }}">
+                    <i class="bi bi-eye me-1" aria-hidden="true"></i>Voir
                 </a>
-                <a href="{% url 'young:member_edit' member.pk %}" class="btn btn-primary btn-sm">
-                    <i class="bi bi-pencil me-1"></i>Modifier
+                <a href="{% url 'young:member_edit' member.pk %}" class="btn btn-primary" aria-label="Modifier la fiche de {{ member.full_name }}">
+                    <i class="bi bi-pencil me-1" aria-hidden="true"></i>Modifier
                 </a>
             </div>
         </div>
