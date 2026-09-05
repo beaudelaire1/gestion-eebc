@@ -65,6 +65,7 @@
                             <small class="text-muted">Actifs</small>
                         </div>
                     </div>
+                    {% if request.user|can_view_contact_details %}
                     <div class="col-6">
                         <div class="border rounded p-2">
                             <div class="fs-4 fw-bold text-info">{{ stats.has_phone }}</div>
@@ -77,6 +78,7 @@
                             <small class="text-muted">Emails</small>
                         </div>
                     </div>
+                    {% endif %}
                 </div>
             </div>
         </div>
@@ -101,8 +103,10 @@
                         <ul class="dropdown-menu dropdown-menu-end">
                             <li><a class="dropdown-item filter-option" href="#" data-filter="all">Tous</a></li>
                             <li><a class="dropdown-item filter-option" href="#" data-filter="active">Actifs seulement</a></li>
+                            {% if request.user|can_view_contact_details %}
                             <li><a class="dropdown-item filter-option" href="#" data-filter="phone">Avec téléphone</a></li>
                             <li><a class="dropdown-item filter-option" href="#" data-filter="email">Avec email</a></li>
+                            {% endif %}
                         </ul>
                     </div>
                 </div>
@@ -114,8 +118,10 @@
                         <thead>
                             <tr>
                                 <th>Nom</th>
+                                {% if request.user|can_view_contact_details %}
                                 <th>Téléphone</th>
                                 <th>Email</th>
+                                {% endif %}
                                 <th>Statut</th>
                             </tr>
                         </thead>
@@ -123,8 +129,10 @@
                             {% for member in members %}
                             <tr class="member-row" 
                                 data-name="{{ member.full_name|lower }}"
+                                {% if request.user|can_view_contact_details %}
                                 data-phone="{{ member.phone|default:'' }}"
                                 data-email="{{ member.email|default:'' }}"
+                                {% endif %}
                                 data-active="{{ member.status|yesno:'actif,inactif' }}">
                                 <td>
                                     <div class="d-flex align-items-center">
@@ -142,6 +150,7 @@
                                         </div>
                                     </div>
                                 </td>
+                                {% if request.user|can_view_contact_details %}
                                 <td>
                                     {% if member.phone %}
                                     <a href="tel:{{ member.phone }}" class="text-decoration-none">
@@ -160,6 +169,7 @@
                                     <span class="text-muted">-</span>
                                     {% endif %}
                                 </td>
+                                {% endif %}
                                 <td>
                                     {% if member.status == 'actif' %}
                                     <span class="badge bg-success">Actif</span>

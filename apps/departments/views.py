@@ -14,7 +14,6 @@ logger = logging.getLogger(__name__)
 
 
 @login_required
-@role_required('admin', 'secretariat')
 def department_list(request):
     """Liste des départements."""
     departments = Department.objects.filter(is_active=True).select_related('leader')
@@ -24,7 +23,6 @@ def department_list(request):
 
 
 @login_required
-@role_required('admin', 'secretariat')
 def department_detail(request, pk):
     """
     Détail d'un département avec liste complète des membres.

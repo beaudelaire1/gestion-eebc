@@ -29,15 +29,25 @@ def family_list(request):
     if neighborhood_id:
         families = families.filter(neighborhood_id=neighborhood_id)
     if search:
-        families = families.filter(name__icontains=search)
-    
+        # Une famille se cherche aussi par le nom d'une des personnes du foyer :
+        # le nom du foyer n'est pas toujours celui qu'on a en tête.
+        families = families.filter(
+            Q(name__icontains=search)
+            | Q(members__first_name__icontains=search)
+            | Q(members__last_name__icontains=search)
+        ).distinct()
+
     context = {
         'families': families,
         'sites': Site.objects.filter(is_active=True),
         'neighborhoods': Neighborhood.objects.filter(is_active=True).select_related('city'),
         'total_count': families.count(),
     }
-    
+
+    # Le formulaire de recherche ne remplace que la liste : renvoyer la page
+    # entière dans #family-content empilerait la page dans elle-même.
+    if getattr(request, 'htmx', False):
+        return render(request, 'members/partials/family_list_content.html', context)
     return render(request, 'members/family_list.html', context)
 
 

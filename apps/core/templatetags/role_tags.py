@@ -10,7 +10,11 @@ chaîne comme il faut.
 
 from django import template
 
-from apps.core.security import PRIVILEGED_USER_ROLES, user_has_any_role
+from apps.core.security import (
+    PRIVILEGED_USER_ROLES,
+    can_view_sensitive_member_data,
+    user_has_any_role,
+)
 
 register = template.Library()
 
@@ -44,3 +48,13 @@ def has_any_role(user, roles):
 def has_management_role(user):
     """Vrai si le compte possède au moins un rôle de gestion EEBC."""
     return user_has_any_role(user, *PRIVILEGED_USER_ROLES)
+
+
+@register.filter
+def can_view_contact_details(user):
+    """Vrai si le compte peut voir les coordonnées personnelles d'un membre.
+
+    Les listes de groupe et de département sont lisibles par toute
+    l'assemblée ; le téléphone et l'e-mail d'une personne, non.
+    """
+    return can_view_sensitive_member_data(user)

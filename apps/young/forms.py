@@ -43,6 +43,19 @@ class YoungMemberForm(EnhancedModelForm):
         except Exception:
             pass
 
+        # « Groupe » désigne ici une tranche d'âge de la jeunesse, distincte des
+        # groupes d'église de la rubrique Gestion. Un menu vide n'expliquait pas
+        # laquelle des deux listes il fallait alimenter.
+        group_field = self.fields['group']
+        group_field.queryset = YouthGroup.objects.filter(is_active=True)
+        group_field.empty_label = "— Aucun groupe —"
+        if not group_field.queryset.exists():
+            group_field.help_text = (
+                "Aucun groupe de jeunesse n'est encore créé. Les groupes de la "
+                "rubrique Gestion sont des groupes d'église, distincts de ceux-ci : "
+                "créez un groupe de jeunesse pour le proposer ici."
+            )
+
     def clean(self):
         cleaned_data = super().clean()
         is_baptized = cleaned_data.get('is_baptized')

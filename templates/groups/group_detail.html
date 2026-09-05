@@ -127,7 +127,9 @@
                         <thead>
                             <tr>
                                 <th>Nom</th>
+                                {% if request.user|can_view_contact_details %}
                                 <th>Contact</th>
+                                {% endif %}
                             </tr>
                         </thead>
                         <tbody>
@@ -141,7 +143,9 @@
                                         <span>{{ member.full_name }}</span>
                                     </div>
                                 </td>
+                                {% if request.user|can_view_contact_details %}
                                 <td>{{ member.phone|default:"-" }}</td>
+                                {% endif %}
                             </tr>
                             {% endfor %}
                         </tbody>

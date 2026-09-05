@@ -7,6 +7,7 @@ from django.db.models import Count, Avg
 from django.utils import timezone
 from datetime import datetime, timedelta
 from apps.core.permissions import role_required
+from apps.core.security import user_has_any_role
 from .models import Group, GroupMeeting
 from .forms import GroupForm, GroupMembersForm, GroupMeetingForm, GroupMeetingAttendanceForm
 from .services import GroupService, GroupMeetingService
@@ -17,7 +18,6 @@ logger = logging.getLogger(__name__)
 
 
 @login_required
-@role_required('admin', 'secretariat', 'responsable_groupe')
 def group_list(request):
     """Liste des groupes."""
     groups = Group.objects.filter(is_active=True).select_related('leader')
@@ -38,21 +38,29 @@ def group_list(request):
 
 
 @login_required
-@role_required('admin', 'secretariat', 'responsable_groupe')
 def group_detail(request, pk):
     """Détail d'un groupe."""
     group = get_object_or_404(Group.objects.select_related('leader'), pk=pk)
     members = group.members.all()
-    recent_meetings = GroupMeetingService.get_recent_meetings(group)
-    
-    # Statistiques de présence
-    meetings_stats = GroupService.get_group_statistics(group)
-    
+
+    # Le suivi des réunions et des présences relève de l'animation du groupe,
+    # comme group_statistics : la composition, elle, est ouverte à l'assemblée.
+    can_view_reporting = user_has_any_role(
+        request.user, 'admin', 'secretariat', 'responsable_groupe'
+    )
+    recent_meetings = (
+        GroupMeetingService.get_recent_meetings(group) if can_view_reporting else []
+    )
+    meetings_stats = (
+        GroupService.get_group_statistics(group) if can_view_reporting else None
+    )
+
     context = {
         'group': group,
         'members': members,
         'recent_meetings': recent_meetings,
         'meetings_stats': meetings_stats,
+        'can_view_group_reporting': can_view_reporting,
     }
     return render(request, 'groups/group_detail.html', context)
 

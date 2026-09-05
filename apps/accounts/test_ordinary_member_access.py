@@ -161,6 +161,8 @@ def test_member_cannot_open_management_urls(member_client, url_name):
     'transport:requests',
     'transport:request_create',
     'public_cms:testimony_share',
+    'groups:list',
+    'departments:list',
 ])
 def test_member_can_open_self_service_urls(member_client, url_name):
     response = member_client.get(reverse(url_name))
@@ -548,3 +550,65 @@ def test_member_answers_for_their_own_worship_slot(member_client, member_profile
 
     assert response.status_code in (200, 302)
     assert own_role.status == ServiceRole.Status.CONFIRME
+
+
+def test_member_reads_groups_without_personal_contact_details(
+    member_client, member_profile
+):
+    """La composition d'un groupe est ouverte, les coordonnées ne le sont pas."""
+    from apps.groups.models import Group
+
+    group = Group.objects.create(name='Cellule Nord')
+    member_profile.phone = '0694001122'
+    member_profile.save(update_fields=['phone'])
+    group.members.add(member_profile)
+
+    listing = member_client.get(reverse('groups:list'))
+    detail = member_client.get(reverse('groups:detail', args=[group.pk]))
+    body = detail.content.decode()
+
+    assert listing.status_code == 200
+    assert detail.status_code == 200
+    assert member_profile.full_name in body
+    assert member_profile.phone not in body
+    assert detail.context['can_view_group_reporting'] is False
+    assert detail.context['meetings_stats'] is None
+
+
+def test_member_reads_departments_without_personal_contact_details(
+    member_client, member_profile
+):
+    from apps.departments.models import Department
+
+    department = Department.objects.create(name='Accueil')
+    member_profile.phone = '0694001122'
+    member_profile.email = 'contact.prive@example.test'
+    member_profile.save(update_fields=['phone', 'email'])
+    department.members.add(member_profile)
+
+    response = member_client.get(reverse('departments:detail', args=[department.pk]))
+    body = response.content.decode()
+
+    assert response.status_code == 200
+    assert member_profile.full_name in body
+    assert member_profile.phone not in body
+    assert member_profile.email not in body
+
+
+def test_group_reporting_stays_with_the_leaders(client, member_profile):
+    from apps.groups.models import Group
+
+    leader = get_user_model().objects.create_user(
+        username='resp.groupe',
+        email='resp@example.test',
+        password='Lead-pass-123!',
+        role='responsable_groupe',
+    )
+    group = Group.objects.create(name='Cellule Nord')
+    group.members.add(member_profile)
+    client.force_login(leader)
+
+    detail = client.get(reverse('groups:detail', args=[group.pk]))
+
+    assert detail.context['can_view_group_reporting'] is True
+    assert member_profile.phone in detail.content.decode() or not member_profile.phone

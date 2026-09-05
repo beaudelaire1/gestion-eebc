@@ -89,6 +89,13 @@ class OrdinaryMemberAccessMiddleware:
         'worship:schedule_detail',
         'worship:role_confirm',
         'worship:role_decline',
+        # Groupes et départements en lecture : savoir qui anime quoi fait
+        # partie de la vie d'église. Les coordonnées des personnes restent
+        # réservées aux rôles qui en ont l'usage.
+        'groups:list',
+        'groups:detail',
+        'departments:list',
+        'departments:detail',
     })
 
     def __init__(self, get_response):
