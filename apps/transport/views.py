@@ -175,17 +175,22 @@ def transport_requests(request):
 
     paginator = Paginator(requests_qs, 25)
     page_obj = paginator.get_page(request.GET.get('page', 1))
+    user_driver_profile = _get_user_driver_profile(request.user)
+    can_manage = _can_manage_transport_requests(request.user)
+    default_titles = (
+        ('Demandes de transport', 'Gestion des demandes de transport')
+        if can_manage or user_driver_profile is not None
+        else ('Mes demandes de transport', 'Vos demandes et leur suivi')
+    )
     transport_page_title, transport_page_subtitle = scope_titles.get(
         transport_scope,
-        ('Demandes de transport', 'Gestion des demandes de transport'),
+        default_titles,
     )
-
-    user_driver_profile = _get_user_driver_profile(request.user)
 
     return render(request, 'transport/transport_requests.html', {
         'requests': page_obj,
         'page_obj': page_obj,
-        'can_manage_transport_requests': _can_manage_transport_requests(request.user),
+        'can_manage_transport_requests': can_manage,
         'is_driver_user': user_driver_profile is not None,
         'transport_scope': transport_scope,
         'transport_page_title': transport_page_title,

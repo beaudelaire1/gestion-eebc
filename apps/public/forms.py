@@ -60,6 +60,46 @@ class TestimonyForm(forms.ModelForm):
             'publish_date': forms.DateInput(format='%Y-%m-%d', attrs={'type': 'date'}),
         }
 
+class MemberTestimonyForm(forms.ModelForm):
+    """Partage d'un témoignage par un membre, sans droit de publication.
+
+    Les champs éditoriaux (``is_published``, ``is_featured``, ``member``,
+    ``author_name``) restent réservés à l'équipe communication : ils sont
+    renseignés par la vue à partir de la session, jamais par le formulaire.
+    """
+
+    class Meta:
+        model = Testimony
+        fields = ['title', 'content']
+        widgets = {
+            'title': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'Ex. Dieu a pourvu pour ma famille',
+            }),
+            'content': forms.Textarea(attrs={
+                'class': 'form-control',
+                'rows': 8,
+                'placeholder': 'Racontez ce que vous souhaitez partager…',
+            }),
+        }
+        labels = {
+            'title': 'Titre (optionnel)',
+            'content': 'Votre témoignage',
+        }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields['content'].required = True
+
+    def clean_content(self):
+        content = (self.cleaned_data.get('content') or '').strip()
+        if len(content) < 20:
+            raise forms.ValidationError(
+                "Merci d'écrire quelques phrases pour que votre témoignage soit publiable."
+            )
+        return content
+
+
 class WorshipScheduleForm(forms.ModelForm):
     class Meta:
         model = WorshipSchedule

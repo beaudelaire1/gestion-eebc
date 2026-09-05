@@ -76,9 +76,13 @@
                         <td>{{ request.passengers_count }}</td>
                         <td>
                             {% if request.driver %}
+                                {% if can_manage_transport_requests %}
                                 <a href="{% url 'transport:driver_detail' request.driver.pk %}" class="text-decoration-none">
                                     {{ request.driver.user.get_full_name }}
                                 </a>
+                                {% else %}
+                                <span>{{ request.driver.user.get_full_name }}</span>
+                                {% endif %}
                                 <div class="mt-1">
                                     <a href="{% url 'transport:request_detail' request.pk %}#driver-live-tracking" class="small text-decoration-none">
                                         <i class="bi bi-geo-alt-fill me-1"></i>Suivre l'arrivée

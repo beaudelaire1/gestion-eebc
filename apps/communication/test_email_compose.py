@@ -29,7 +29,9 @@ class TestEmailCompose:
         member = UserFactory(role='membre')
         client.force_login(member)
         response = client.get(reverse('communication:email_compose'))
-        assert response.status_code == 302
+        # La composition d'e-mails est hors du périmètre libre-service :
+        # OrdinaryMemberAccessMiddleware la refuse avant la vue.
+        assert response.status_code == 403
     
     def test_acces_autorise_secretariat(self, client, comm_admin):
         client.force_login(comm_admin)

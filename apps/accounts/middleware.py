@@ -62,6 +62,15 @@ class OrdinaryMemberAccessMiddleware:
         'communication:notifications_count',
         'communication:announcements',
         'communication:announcement_detail',
+        # Self-service transport: the views below already scope their data to
+        # the signed-in requester or driver.
+        'transport:requests',
+        'transport:request_create',
+        'transport:request_detail',
+        'transport:live_status',
+        'transport:pickup_location_update',
+        # Submitting a testimony for moderation (never publishing one).
+        'public_cms:testimony_share',
     })
 
     def __init__(self, get_response):

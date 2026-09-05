@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+{% load crispy_forms_tags %}
+
+{% block title %}Partager un témoignage - EEBC{% endblock %}
+{% block page_title %}Partager un témoignage{% endblock %}
+{% block page_subtitle %}Racontez ce que Dieu a fait dans votre vie{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-8">
+        <div class="alert alert-info d-flex gap-3" role="status">
+            <i class="bi bi-info-circle-fill fs-4" aria-hidden="true"></i>
+            <div>
+                Votre témoignage est d'abord relu par l'équipe de l'église. Il ne
+                sera visible sur le site public qu'après validation.
+            </div>
+        </div>
+
+        <div class="card border-0 shadow-sm">
+            <div class="card-body p-4">
+                <form method="post">
+                    {% csrf_token %}
+                    {{ form.title|as_crispy_field }}
+                    {{ form.content|as_crispy_field }}
+
+                    <div class="d-flex justify-content-end gap-2 mt-4">
+                        <a href="{% url 'dashboard:home' %}" class="btn btn-outline-secondary">Annuler</a>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="bi bi-send me-2"></i>Envoyer mon témoignage
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -113,6 +113,34 @@
                 </div>
             </div>
 
+            {% if not request.user|has_management_role %}
+            <div class="nav-section" data-nav-section="mes-services">
+                <button type="button" class="nav-section__title"
+                        aria-expanded="true" aria-controls="nav-panel-mes-services">
+                    <span class="nav-section__label">Mes services</span>
+                    <i class="bi bi-chevron-down nav-section__chevron" aria-hidden="true"></i>
+                </button>
+                <div class="nav-section__panel" id="nav-panel-mes-services">
+                    <nav class="nav flex-column">
+                        <a class="nav-link {% if 'transport' in request.path %}nav-link--active{% endif %}"
+                            href="{% url 'transport:requests' %}">
+                            <i class="bi bi-car-front-fill nav-link__icon"></i>
+                            <span>Mes transports</span>
+                        </a>
+                        <a class="nav-link {% if 'testimonies' in request.path %}nav-link--active{% endif %}"
+                            href="{% url 'public_cms:testimony_share' %}">
+                            <i class="bi bi-chat-quote-fill nav-link__icon"></i>
+                            <span>Partager un témoignage</span>
+                        </a>
+                        <a class="nav-link" href="{% url 'public:donation' %}" target="_blank" rel="noopener noreferrer">
+                            <i class="bi bi-heart-fill nav-link__icon"></i>
+                            <span>Faire un don <i class="bi bi-box-arrow-up-right ms-1 icon-xs"></i></span>
+                        </a>
+                    </nav>
+                </div>
+            </div>
+            {% endif %}
+
             {% if request.user|has_management_role %}
             <div class="nav-section" data-nav-section="vie-d-eglise">
                 <button type="button" class="nav-section__title"

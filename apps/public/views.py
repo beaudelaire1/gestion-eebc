@@ -5,7 +5,10 @@ from django.contrib import messages
 from django.shortcuts import redirect
 
 from apps.core.models import NewsArticle, PageContent, Testimony, WorshipSchedule, PublicEvent
-from .forms import NewsArticleForm, PageContentForm, TestimonyForm, WorshipScheduleForm, PublicEventForm
+from .forms import (
+    MemberTestimonyForm, NewsArticleForm, PageContentForm, TestimonyForm,
+    WorshipScheduleForm, PublicEventForm,
+)
 import logging
 
 logger = logging.getLogger(__name__)
@@ -112,6 +115,42 @@ class TestimonyDeleteView(CMSRoleRequiredMixin, DeleteView):
     model = Testimony
     template_name = 'public_cms/testimony_confirm_delete.html'
     success_url = reverse_lazy('public_cms:testimony_list')
+
+class TestimonyShareView(LoginRequiredMixin, CreateView):
+    """Dépôt d'un témoignage par un membre, en attente de relecture.
+
+    Contrairement aux vues CMS, celle-ci est ouverte à tout compte connecté :
+    c'est le seul point d'entrée éditorial d'un membre ordinaire. Le
+    témoignage est créé non publié et rattaché à sa fiche membre, la
+    publication restant une décision de l'équipe communication.
+    """
+
+    model = Testimony
+    form_class = MemberTestimonyForm
+    template_name = 'public_cms/testimony_share.html'
+    success_url = reverse_lazy('dashboard:home')
+
+    def form_valid(self, form):
+        user = self.request.user
+        member = getattr(user, 'member_profile', None)
+
+        form.instance.member = member
+        form.instance.author_name = (
+            (member.full_name if member is not None else '')
+            or user.get_full_name()
+            or user.username
+        )
+        form.instance.is_published = False
+        form.instance.is_featured = False
+        form.instance.publish_date = None
+
+        messages.success(
+            self.request,
+            "Merci ! Votre témoignage a été transmis à l'équipe pour relecture "
+            "avant publication.",
+        )
+        return super().form_valid(form)
+
 
 # ==================== SCHEDULES ====================
 class ScheduleListView(CMSRoleRequiredMixin, ListView):

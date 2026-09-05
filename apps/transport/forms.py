@@ -1,4 +1,7 @@
 from django import forms
+
+from apps.core.security import is_ordinary_member
+from apps.members.models import Member
 from django.contrib.auth import get_user_model
 from .models import DriverProfile, TransportRequest
 
@@ -89,6 +92,9 @@ class TransportRequestForm(forms.ModelForm):
     def __init__(self, *args, current_user=None, **kwargs):
         super().__init__(*args, **kwargs)
 
+        self.current_user = current_user
+        self.forced_member = None
+
         # Rendre certains champs obligatoires
         self.fields['requester_name'].required = True
         self.fields['requester_phone'].required = True
@@ -117,6 +123,32 @@ class TransportRequestForm(forms.ModelForm):
                     self.initial['pickup_postal_code'] = member.postal_code
                 if not self.initial.get('request_type'):
                     self.initial['request_type'] = TransportRequest.RequestType.COVOITURAGE
+
+        # Un membre ordinaire ne demande un transport que pour lui-même : le
+        # sélecteur de membre exposerait l'annuaire complet et permettrait de
+        # créer une demande au nom d'un autre membre.
+        if is_ordinary_member(current_user):
+            self.forced_member = getattr(current_user, 'member_profile', None)
+            field = self.fields['requester_member']
+            field.widget = forms.HiddenInput()
+            field.queryset = (
+                Member.objects.filter(pk=self.forced_member.pk)
+                if self.forced_member is not None
+                else Member.objects.none()
+            )
+            if self.is_bound:
+                # Écraser la valeur postée : un champ caché reste modifiable
+                # côté navigateur.
+                self.data = self.data.copy()
+                self.data[self.add_prefix('requester_member')] = (
+                    str(self.forced_member.pk) if self.forced_member else ''
+                )
+
+    def clean_requester_member(self):
+        """Ignorer toute valeur postée : le demandeur est imposé par la session."""
+        if is_ordinary_member(self.current_user):
+            return self.forced_member
+        return self.cleaned_data.get('requester_member')
 
 
 class DriverAssignmentForm(forms.ModelForm):

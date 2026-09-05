@@ -19,6 +19,8 @@ urlpatterns = [
     # Testimonies
     path('testimonies/', views.TestimonyListView.as_view(), name='testimony_list'),
     path('testimonies/create/', views.TestimonyCreateView.as_view(), name='testimony_create'),
+    # Ouvert à tout compte connecté : dépôt d'un témoignage à relire.
+    path('testimonies/share/', views.TestimonyShareView.as_view(), name='testimony_share'),
     path('testimonies/<int:pk>/edit/', views.TestimonyUpdateView.as_view(), name='testimony_update'),
     path('testimonies/<int:pk>/delete/', views.TestimonyDeleteView.as_view(), name='testimony_delete'),
     

@@ -1,9 +1,14 @@
+from datetime import date, time
+
 import pytest
 from django.contrib.auth import get_user_model
 from django.urls import reverse
 
 from apps.communication.models import Announcement
+from apps.core.models import Testimony
 from apps.dashboard.services import DashboardService
+from apps.members.models import Member
+from apps.transport.models import TransportRequest
 
 
 pytestmark = pytest.mark.django_db
@@ -24,6 +29,23 @@ def ordinary_member():
 def member_client(client, ordinary_member):
     client.force_login(ordinary_member)
     return client
+
+
+@pytest.fixture
+def member_profile(ordinary_member):
+    return Member.objects.create(
+        first_name='Simple',
+        last_name='Membre',
+        user=ordinary_member,
+    )
+
+
+@pytest.fixture
+def other_member():
+    return Member.objects.create(
+        first_name='Autre',
+        last_name='Membre',
+    )
 
 
 def test_member_dashboard_does_not_load_management_statistics(
@@ -80,6 +102,10 @@ def test_member_sidebar_only_shows_member_services(member_client):
     'dashboard:stats',
     'dashboard:search',
     'communication:email_compose',
+    'transport:drivers',
+    'campaigns:donate_general',
+    'campaigns:list',
+    'public_cms:testimony_list',
 ])
 def test_member_cannot_open_management_urls(member_client, url_name):
     response = member_client.get(reverse(url_name))
@@ -93,6 +119,9 @@ def test_member_cannot_open_management_urls(member_client, url_name):
     'events:calendar',
     'communication:notifications',
     'communication:announcements',
+    'transport:requests',
+    'transport:request_create',
+    'public_cms:testimony_share',
 ])
 def test_member_can_open_self_service_urls(member_client, url_name):
     response = member_client.get(reverse(url_name))
@@ -122,3 +151,89 @@ def test_member_cannot_see_staff_announcements(member_client, ordinary_member):
     assert member_announcement.title in listing.content.decode()
     assert staff_announcement.title not in listing.content.decode()
     assert hidden_detail.status_code == 404
+
+
+def test_member_home_offers_the_self_service_actions(member_client):
+    body = member_client.get(reverse('dashboard:home')).content.decode()
+
+    assert reverse('transport:request_create') in body
+    assert reverse('public_cms:testimony_share') in body
+    assert reverse('public:donation') in body
+
+
+def test_member_donation_page_stays_outside_the_finance_module(member_client):
+    """Le don passe par la page publique Stripe, pas par le module finance."""
+    donation_page = member_client.get(reverse('public:donation'))
+    finance_module = member_client.get(reverse('finance:dashboard'))
+
+    assert donation_page.status_code == 200
+    assert finance_module.status_code == 403
+
+
+def test_member_testimony_is_stored_unpublished_for_review(
+    member_client, member_profile
+):
+    response = member_client.post(
+        reverse('public_cms:testimony_share'),
+        {
+            'title': 'Ma reconnaissance',
+            'content': "Je veux témoigner de ce que Dieu a fait cette année.",
+        },
+    )
+
+    testimony = Testimony.objects.get()
+    assert response.status_code == 302
+    assert testimony.is_published is False
+    assert testimony.is_featured is False
+    assert testimony.member == member_profile
+    assert testimony.author_name == member_profile.full_name
+
+
+def test_member_transport_request_is_bound_to_their_own_profile(
+    member_client, member_profile, other_member
+):
+    response = member_client.post(
+        reverse('transport:request_create'),
+        {
+            'request_type': TransportRequest.RequestType.CULTE,
+            # Tentative de déposer la demande au nom d'un autre membre.
+            'requester_member': other_member.pk,
+            'requester_name': 'Simple Membre',
+            'requester_phone': '0694000000',
+            'pickup_address': '1 rue des Palmiers',
+            'event_date': date.today().isoformat(),
+            'event_time': '09:00',
+            'passengers_count': 1,
+        },
+    )
+
+    transport_request = TransportRequest.objects.get()
+    assert response.status_code == 302
+    assert transport_request.requester_member == member_profile
+
+
+def test_member_transport_list_only_shows_their_own_requests(
+    member_client, member_profile, other_member
+):
+    own = TransportRequest.objects.create(
+        requester_member=member_profile,
+        requester_name='Simple Membre',
+        requester_phone='0694000000',
+        pickup_address='1 rue des Palmiers',
+        event_date=date.today(),
+        event_time=time(9, 0),
+    )
+    foreign = TransportRequest.objects.create(
+        requester_member=other_member,
+        requester_name='Autre Membre',
+        requester_phone='0694111111',
+        pickup_address='2 rue des Manguiers',
+        event_date=date.today(),
+        event_time=time(10, 0),
+    )
+
+    body = member_client.get(reverse('transport:requests')).content.decode()
+
+    assert own.requester_name in body
+    assert foreign.requester_name not in body
+    assert reverse('transport:drivers') not in body

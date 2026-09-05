@@ -565,7 +565,10 @@ class TestTransportRequestPermissions:
         response = client.post(reverse('transport:request_accept', args=[req.pk]))
         req.refresh_from_db()
 
-        assert response.status_code == 302
+        # Accepter une course reste hors du périmètre libre-service d'un membre :
+        # OrdinaryMemberAccessMiddleware refuse la vue avant même le contrôle
+        # chauffeur de la vue elle-même.
+        assert response.status_code == 403
         assert req.driver_id is None
         assert req.status == 'pending'
 

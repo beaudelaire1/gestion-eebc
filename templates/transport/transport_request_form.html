@@ -34,6 +34,9 @@
                             {% endif %}
                         </div>
 
+                        {% if form.requester_member.is_hidden %}
+                        {{ form.requester_member }}
+                        {% else %}
                         <div class="col-md-6 mb-3">
                             <label for="{{ form.requester_member.id_for_label }}" class="form-label">
                                 {{ form.requester_member.label }}
@@ -48,6 +51,7 @@
                                 </div>
                             {% endif %}
                         </div>
+                        {% endif %}
                     </div>
 
                     <div class="row">
