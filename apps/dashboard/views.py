@@ -1,9 +1,14 @@
-from django.shortcuts import render, redirect
+from django.shortcuts import render
 from django.contrib.auth.decorators import login_required
-from django.db.models import Count, Sum, Q
 from django.urls import reverse
 from datetime import date, timedelta
 from apps.dashboard.services import DashboardService
+from apps.core.permissions import role_required
+from apps.core.security import (
+    PRIVILEGED_USER_ROLES,
+    event_visibility_q,
+    is_ordinary_member,
+)
 import logging
 
 logger = logging.getLogger(__name__)
@@ -15,6 +20,9 @@ def home(request):
     Page d'accueil / Tableau de bord principal (refactored).
     Utilise DashboardService pour extraction de logique et caching.
     """
+    if is_ordinary_member(request.user):
+        return _member_home(request)
+
     from apps.members.models import LifeEvent, VisitationLog
     from apps.campaigns.models import Campaign
     
@@ -116,7 +124,29 @@ def home(request):
     return render(request, 'dashboard/home.html', context)
 
 
+def _member_home(request):
+    """Dashboard limited to information intended for the signed-in member."""
+    from apps.communication.selectors import get_announcements_for_user
+    from apps.events.models import Event
+
+    today = date.today()
+    upcoming_events = Event.objects.filter(
+        event_visibility_q(request.user),
+        start_date__gte=today,
+        is_cancelled=False,
+    ).select_related('category').distinct().order_by('start_date', 'start_time')[:5]
+    announcements = get_announcements_for_user(request.user)[:4]
+    unread_notifications = request.user.notifications.filter(is_read=False).count()
+    return render(request, 'dashboard/member_home.html', {
+        'upcoming_events': upcoming_events,
+        'announcements': announcements,
+        'unread_notifications': unread_notifications,
+        'today': today,
+    })
+
+
 @login_required
+@role_required(*PRIVILEGED_USER_ROLES)
 def quick_stats(request):
     """Stats rapides pour mise à jour HTMX."""
     from apps.members.models import Member
@@ -130,6 +160,7 @@ def quick_stats(request):
 
 
 @login_required
+@role_required(*PRIVILEGED_USER_ROLES)
 def global_search(request):
     """Recherche globale transversale."""
     from apps.members.models import Member

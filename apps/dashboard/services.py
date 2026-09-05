@@ -243,20 +243,9 @@ class DashboardService:
     @staticmethod
     def get_active_announcements(request) -> List:
         """Get active announcements."""
-        from django.utils import timezone
+        from apps.communication.selectors import get_announcements_for_user
 
-        from apps.communication.models import Announcement
-        
-        now = timezone.now()
-        announcements = Announcement.objects.filter(
-            is_active=True
-        ).filter(
-            Q(start_date__isnull=True) | Q(start_date__lte=now)
-        ).filter(
-            Q(end_date__isnull=True) | Q(end_date__gte=now)
-        ).order_by('-is_pinned', '-created_at')[:4]
-        
-        return list(announcements)
+        return list(get_announcements_for_user(request.user)[:4])
     
     @staticmethod
     def get_events_count(days: int = 30) -> int:

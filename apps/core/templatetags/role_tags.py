@@ -10,6 +10,8 @@ chaîne comme il faut.
 
 from django import template
 
+from apps.core.security import PRIVILEGED_USER_ROLES, user_has_any_role
+
 register = template.Library()
 
 
@@ -36,3 +38,9 @@ def has_any_role(user, roles):
         return False
 
     return bool(wanted & set(get_roles()))
+
+
+@register.filter
+def has_management_role(user):
+    """Vrai si le compte possède au moins un rôle de gestion EEBC."""
+    return user_has_any_role(user, *PRIVILEGED_USER_ROLES)

@@ -1,0 +1,72 @@
+{% extends 'base.html' %}
+{% load sanitize_tags %}
+
+{% block title %}Mon espace - EEBC{% endblock %}
+{% block page_title %}Mon espace{% endblock %}
+{% block page_subtitle %}Bienvenue {{ request.user.first_name|default:request.user.username }}{% endblock %}
+
+{% block content %}
+<div class="row g-4">
+    <div class="col-lg-7">
+        <section class="card border-0 shadow-sm h-100" aria-labelledby="events-title">
+            <div class="card-body p-4">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h2 id="events-title" class="h5 mb-0">Prochains événements</h2>
+                    <a href="{% url 'events:calendar' %}" class="btn btn-sm btn-outline-primary">Voir le calendrier</a>
+                </div>
+                {% for event in upcoming_events %}
+                <a href="{% url 'events:detail' event.pk %}" class="d-flex gap-3 py-3 border-bottom text-decoration-none text-body">
+                    <div class="text-center" style="min-width: 3.5rem;">
+                        <strong class="d-block text-primary fs-4">{{ event.start_date|date:'d' }}</strong>
+                        <small class="text-uppercase text-muted">{{ event.start_date|date:'M' }}</small>
+                    </div>
+                    <div>
+                        <strong>{{ event.title }}</strong>
+                        <div class="small text-muted mt-1">
+                            {% if event.start_time %}{{ event.start_time|time:'H:i' }}{% endif %}
+                            {% if event.location %} · {{ event.location }}{% endif %}
+                        </div>
+                    </div>
+                </a>
+                {% empty %}
+                <p class="text-muted mb-0">Aucun événement à venir.</p>
+                {% endfor %}
+            </div>
+        </section>
+    </div>
+
+    <div class="col-lg-5">
+        <section class="card border-0 shadow-sm mb-4" aria-labelledby="account-title">
+            <div class="card-body p-4">
+                <h2 id="account-title" class="h5">Mon compte</h2>
+                <p class="text-muted">Consultez vos informations personnelles et sécurisez votre accès.</p>
+                <a href="{% url 'accounts:profile' %}" class="btn btn-primary">
+                    <i class="bi bi-person-circle me-1"></i>Voir mon profil
+                </a>
+                {% if unread_notifications %}
+                <a href="{% url 'communication:notifications' %}" class="btn btn-outline-primary ms-2">
+                    {{ unread_notifications }} notification{{ unread_notifications|pluralize }}
+                </a>
+                {% endif %}
+            </div>
+        </section>
+
+        <section class="card border-0 shadow-sm" aria-labelledby="announcements-title">
+            <div class="card-body p-4">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h2 id="announcements-title" class="h5 mb-0">Annonces</h2>
+                    <a href="{% url 'communication:announcements' %}" class="small">Tout voir</a>
+                </div>
+                {% for announcement in announcements %}
+                <a href="{% url 'communication:announcement_detail' announcement.pk %}" class="d-block py-2 border-bottom text-decoration-none text-body">
+                    <strong>{{ announcement.title }}</strong>
+                    <div class="small text-muted">{{ announcement.content|sanitize|striptags|truncatechars:100 }}</div>
+                </a>
+                {% empty %}
+                <p class="text-muted mb-0">Aucune annonce en cours.</p>
+                {% endfor %}
+            </div>
+        </section>
+    </div>
+</div>
+{% endblock %}

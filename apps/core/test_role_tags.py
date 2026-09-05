@@ -4,7 +4,7 @@ import pytest
 from django.template import Context, Template
 
 from apps.accounts.models import User
-from apps.core.templatetags.role_tags import has_any_role
+from apps.core.templatetags.role_tags import has_any_role, has_management_role
 
 pytestmark = pytest.mark.django_db
 
@@ -42,6 +42,11 @@ def test_superuser_passes_every_role_check():
 def test_anonymous_is_refused():
     from django.contrib.auth.models import AnonymousUser
     assert has_any_role(AnonymousUser(), 'admin') is False
+
+
+def test_management_role_distinguishes_member_and_privileged_account():
+    assert has_management_role(_user('membre', suffix='member')) is False
+    assert has_management_role(_user('finance', suffix='finance')) is True
 
 
 def test_empty_role_list_is_refused():

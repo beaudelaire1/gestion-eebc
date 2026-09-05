@@ -97,6 +97,7 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',  # Must be before SessionTimeoutMiddleware
     'apps.accounts.middleware.ForcePasswordChangeMiddleware',
+    'apps.accounts.middleware.OrdinaryMemberAccessMiddleware',
     'apps.core.middleware.SessionTimeoutMiddleware',  # Session timeout middleware
     'apps.core.middleware.RateLimitMiddleware',  # Rate limiting middleware
     'apps.core.signals.AuditMiddleware',  # Audit logging middleware

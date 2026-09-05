@@ -355,10 +355,9 @@ def notifications_count(request):
 @login_required
 def announcements_list(request):
     """Liste des annonces."""
-    from .selectors import get_active_announcements
+    from .selectors import get_announcements_for_user
 
-    # Une seule definition de "annonce active", partagee avec le site public.
-    active_announcements = get_active_announcements()
+    active_announcements = get_announcements_for_user(request.user)
     
     # Toutes les annonces pour les admins
     all_announcements = None
@@ -418,7 +417,15 @@ def announcement_create(request):
 @login_required
 def announcement_detail(request, pk):
     """Détail d'une annonce."""
-    announcement = get_object_or_404(Announcement, pk=pk)
+    from .selectors import get_announcements_for_user
+    from apps.core.security import is_ordinary_member
+
+    queryset = (
+        get_announcements_for_user(request.user)
+        if is_ordinary_member(request.user)
+        else Announcement.objects.all()
+    )
+    announcement = get_object_or_404(queryset, pk=pk)
     return render(request, 'communication/announcement_detail.html', {'announcement': announcement})
 
 

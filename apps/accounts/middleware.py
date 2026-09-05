@@ -14,8 +14,12 @@ login view. This prevents bypasses through Django admin or any other code path
 that calls ``django.contrib.auth.login`` directly.
 """
 from django.contrib.auth import SESSION_KEY, logout
+from django.core.exceptions import PermissionDenied
 from django.shortcuts import redirect
 from django.urls import reverse
+
+from apps.core.permissions import log_access_denied
+from apps.core.security import is_ordinary_member
 
 from .two_factor_policy import requires_2fa_enrollment
 
@@ -24,6 +28,73 @@ MFA_VERIFIED_SESSION_KEY = 'two_factor_verified_user_id'
 MFA_PENDING_USER_SESSION_KEY = 'two_factor_user_id'
 MFA_PENDING_NEXT_SESSION_KEY = 'two_factor_next'
 MFA_ATTEMPTS_SESSION_KEY = 'two_factor_attempts'
+
+
+class OrdinaryMemberAccessMiddleware:
+    """Keep ordinary member sessions inside their self-service perimeter.
+
+    The project contains legacy views that only require authentication.  This
+    boundary prevents a member from reaching those management screens through
+    a copied or guessed URL while those views are migrated to local RBAC.
+    """
+
+    ALLOWED_APP_VIEWS = frozenset({
+        'dashboard:home',
+        'accounts:profile',
+        'accounts:logout',
+        'accounts:first_login_password_change',
+        'accounts:two_factor_setup',
+        'accounts:two_factor_disable',
+        'accounts:two_factor_verify',
+        'accounts:two_factor_backup_codes',
+        'events:list',
+        'events:list_advanced',
+        'events:calendar',
+        'events:calendar_print',
+        'events:calendar_pdf',
+        'events:events_json',
+        'events:detail',
+        'events:upcoming',
+        'communication:notifications',
+        'communication:notification_detail',
+        'communication:notification_mark_read',
+        'communication:notifications_mark_all_read',
+        'communication:notifications_count',
+        'communication:announcements',
+        'communication:announcement_detail',
+    })
+
+    def __init__(self, get_response):
+        self.get_response = get_response
+
+    def __call__(self, request):
+        return self.get_response(request)
+
+    def process_view(self, request, view_func, view_args, view_kwargs):
+        if not is_ordinary_member(request.user):
+            return None
+
+        path = request.path_info
+        if path.startswith('/gestion-eebc/'):
+            self._deny(request, view_func)
+
+        if not path.startswith('/app/'):
+            return None
+
+        view_name = getattr(request.resolver_match, 'view_name', '')
+        if view_name not in self.ALLOWED_APP_VIEWS:
+            self._deny(request, view_func)
+        return None
+
+    @staticmethod
+    def _deny(request, view_func):
+        view_name = getattr(request.resolver_match, 'view_name', '') or getattr(
+            view_func, '__name__', ''
+        )
+        log_access_denied(request, ('management_role',), view_name)
+        raise PermissionDenied(
+            "Cet espace est réservé aux responsables autorisés de l'église."
+        )
 
 
 class ForcePasswordChangeMiddleware:

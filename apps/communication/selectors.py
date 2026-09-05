@@ -8,6 +8,8 @@ le portail interne et le site public divergent.
 from django.db.models import Q
 from django.utils import timezone
 
+from apps.core.security import is_ordinary_member
+
 from .models import Announcement
 
 
@@ -34,3 +36,16 @@ def get_public_announcements(now=None):
     return get_active_announcements(now).filter(
         visibility=Announcement.Visibility.PUBLIC
     )
+
+
+def get_announcements_for_user(user, now=None):
+    """Apply announcement visibility for an authenticated portal user."""
+    announcements = get_active_announcements(now)
+    if is_ordinary_member(user):
+        return announcements.filter(
+            visibility__in=(
+                Announcement.Visibility.PUBLIC,
+                Announcement.Visibility.MEMBERS,
+            )
+        )
+    return announcements

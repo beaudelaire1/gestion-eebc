@@ -52,6 +52,15 @@ def user_has_any_role(user, *roles: str) -> bool:
     return bool(get_user_roles(user).intersection(requested))
 
 
+def is_ordinary_member(user) -> bool:
+    """Return whether an account has no application management role."""
+    if not user or not getattr(user, 'is_authenticated', False):
+        return False
+    if getattr(user, 'is_superuser', False):
+        return False
+    return get_user_roles(user).isdisjoint(PRIVILEGED_USER_ROLES)
+
+
 def can_view_sensitive_member_data(user) -> bool:
     return user_has_any_role(user, *MEMBER_SENSITIVE_ROLES)
 
