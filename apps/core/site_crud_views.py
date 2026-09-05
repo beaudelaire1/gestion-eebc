@@ -5,6 +5,8 @@ Accessible depuis le tableau de bord interne (/app/sites/).
 
 from django.shortcuts import render, get_object_or_404, redirect
 from django.contrib.auth.decorators import login_required
+
+from apps.core.permissions import role_required
 from django.contrib import messages
 from django.http import JsonResponse
 
@@ -13,6 +15,7 @@ from apps.core.forms import SiteForm
 
 
 @login_required
+@role_required('admin')
 def site_list(request):
     """Liste de tous les sites."""
     sites = Site.objects.all().select_related('pastor').order_by('-is_main_site', 'name')
@@ -32,6 +35,7 @@ def site_list(request):
 
 
 @login_required
+@role_required('admin')
 def site_detail(request, pk):
     """Détail d'un site."""
     site = get_object_or_404(Site.objects.select_related('pastor'), pk=pk)

@@ -17,6 +17,7 @@ logger = logging.getLogger(__name__)
 
 
 @login_required
+@role_required('admin', 'finance', 'secretariat')
 def campaign_list(request):
     """Liste des campagnes."""
     campaigns = Campaign.objects.all()
@@ -38,6 +39,7 @@ def campaign_list(request):
 
 
 @login_required
+@role_required('admin', 'finance', 'secretariat')
 def campaign_detail(request, pk):
     """Détail d'une campagne."""
     campaign = get_object_or_404(Campaign, pk=pk)
@@ -163,6 +165,7 @@ def member_info_api(request, pk):
 
 
 @login_required
+@role_required('admin', 'finance', 'secretariat')
 @require_http_methods(["GET"])
 def campaign_progress_api(request, pk):
     """API pour récupérer la progression d'une campagne (pour les mises à jour en temps réel)."""

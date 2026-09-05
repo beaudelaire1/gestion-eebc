@@ -1,5 +1,7 @@
 from django.shortcuts import render, get_object_or_404, redirect
 from django.contrib.auth.decorators import login_required
+
+from apps.core.permissions import role_required
 from django.contrib import messages
 from django.core.paginator import Paginator
 from django.http import JsonResponse, HttpResponse
@@ -25,6 +27,7 @@ def _is_comm_admin(user):
 
 
 @login_required
+@role_required('admin', 'secretariat', 'pasteur')
 def email_smtp_diagnostic(request):
     """Diagnostic SMTP : teste la connexion et l'authentification de chaque boîte.
     
@@ -149,6 +152,7 @@ def email_smtp_diagnostic(request):
 
 
 @login_required
+@role_required('admin', 'secretariat', 'pasteur')
 def email_compose(request):
     """Éditeur d'e-mails : composition et envoi avec département expéditeur."""
     if not _is_comm_admin(request.user):
@@ -477,6 +481,7 @@ def announcement_delete(request, pk):
 
 
 @login_required
+@role_required('admin', 'secretariat', 'pasteur')
 def announcement_toggle_active(request, pk):
     """Activer/désactiver une annonce."""
     if not _is_comm_admin(request.user):
@@ -495,6 +500,7 @@ def announcement_toggle_active(request, pk):
 
 
 @login_required
+@role_required('admin', 'secretariat', 'pasteur')
 def email_logs(request):
     """Logs des emails envoyés avec suppression en masse."""
     if not _is_comm_admin(request.user):
@@ -554,6 +560,7 @@ def email_logs(request):
 
 
 @login_required
+@role_required('admin', 'secretariat', 'pasteur')
 def email_log_delete(request, pk):
     """Supprimer un log d'email."""
     if not _is_comm_admin(request.user):
@@ -573,6 +580,7 @@ def email_log_delete(request, pk):
 
 
 @login_required
+@role_required('admin', 'secretariat', 'pasteur')
 def email_logs_clear_old(request):
     """Supprimer les anciens logs d'emails (plus de 30 jours)."""
     if not _is_comm_admin(request.user):
@@ -599,6 +607,7 @@ def email_logs_clear_old(request):
 
 
 @login_required
+@role_required('admin', 'secretariat', 'pasteur')
 def sms_logs(request):
     """Logs des SMS envoyés."""
     if not _is_comm_admin(request.user):
@@ -637,6 +646,7 @@ def sms_logs(request):
 
 
 @login_required
+@role_required('admin', 'secretariat', 'pasteur')
 def sms_log_delete(request, pk):
     """Supprimer un log de SMS."""
     if not _is_comm_admin(request.user):

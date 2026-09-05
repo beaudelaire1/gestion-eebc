@@ -17,6 +17,7 @@ logger = logging.getLogger(__name__)
 
 
 @login_required
+@role_required('admin', 'secretariat', 'responsable_groupe')
 def group_list(request):
     """Liste des groupes."""
     groups = Group.objects.filter(is_active=True).select_related('leader')
@@ -37,6 +38,7 @@ def group_list(request):
 
 
 @login_required
+@role_required('admin', 'secretariat', 'responsable_groupe')
 def group_detail(request, pk):
     """Détail d'un groupe."""
     group = get_object_or_404(Group.objects.select_related('leader'), pk=pk)
@@ -196,6 +198,7 @@ def group_meeting_update(request, group_pk, meeting_pk):
 
 
 @login_required
+@role_required('admin', 'secretariat', 'responsable_groupe')
 def group_statistics(request, pk):
     """Statistiques de présence d'un groupe."""
     group = get_object_or_404(Group, pk=pk)

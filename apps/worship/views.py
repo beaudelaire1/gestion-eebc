@@ -647,6 +647,7 @@ def service_template_create(request):
 
 
 @login_required
+@role_required('admin', 'responsable_groupe')
 def service_template_detail(request, pk):
     """Détail d'un modèle de service."""
     template = get_object_or_404(

@@ -158,6 +158,7 @@ def import_status(request, pk):
 
 
 @login_required
+@role_required('admin', 'secretariat')
 def download_template(request, import_type):
     """
     Télécharger un template Excel pour l'import.
@@ -298,6 +299,7 @@ def _get_column_formats(import_type):
 
 
 @login_required
+@role_required('admin', 'secretariat')
 def export_members(request):
     """
     Exporte tous les membres actifs vers un fichier Excel.
@@ -344,6 +346,7 @@ def export_members(request):
 
 
 @login_required
+@role_required('admin', 'secretariat')
 def export_children(request):
     """
     Exporte tous les enfants actifs vers un fichier Excel.
@@ -390,6 +393,7 @@ def export_children(request):
 
 
 @login_required
+@role_required('admin', 'secretariat')
 def export_young_members(request):
     """
     Exporte tous les jeunes actifs vers un fichier Excel.
@@ -490,6 +494,7 @@ def export_hub(request):
 
 
 @login_required
+@role_required('admin', 'secretariat')
 def export_groups(request):
     """Exporte les groupes de l'église."""
     from .services import GenericExportService, ExportHistoryService
@@ -532,6 +537,7 @@ def export_groups(request):
 
 
 @login_required
+@role_required('admin', 'secretariat')
 def export_inventory(request):
     """Exporte l'inventaire des équipements."""
     from .services import GenericExportService, ExportHistoryService
@@ -574,6 +580,7 @@ def export_inventory(request):
 
 
 @login_required
+@role_required('admin', 'secretariat')
 def export_transport(request):
     """Exporte les données de transport."""
     from .services import GenericExportService, ExportHistoryService
@@ -616,6 +623,7 @@ def export_transport(request):
 
 
 @login_required
+@role_required('admin', 'secretariat')
 def export_communication(request):
     """Exporte les logs de communication."""
     from .services import GenericExportService, ExportHistoryService
@@ -659,6 +667,7 @@ def export_communication(request):
 
 
 @login_required
+@role_required('admin', 'secretariat')
 def import_delete(request, pk):
     """Supprimer un log d'import et le fichier associé."""
     import_log = get_object_or_404(ImportLog, pk=pk)
@@ -676,6 +685,7 @@ def import_delete(request, pk):
 
 
 @login_required
+@role_required('admin', 'secretariat')
 def import_bulk_delete(request):
     """Suppression de plusieurs logs d'import en une seule opération."""
     if request.method == 'POST':

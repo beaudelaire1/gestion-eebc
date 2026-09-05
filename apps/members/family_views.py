@@ -3,6 +3,8 @@ Vues pour la gestion des familles.
 """
 from django.shortcuts import render, get_object_or_404, redirect
 from django.contrib.auth.decorators import login_required
+
+from apps.core.permissions import role_required
 from django.contrib import messages
 from django.http import JsonResponse
 from django.db.models import Q
@@ -12,6 +14,7 @@ from .models import Member
 
 
 @login_required
+@role_required('admin', 'secretariat', 'encadrant')
 def family_list(request):
     """Liste des familles."""
     families = Family.objects.select_related('site', 'neighborhood', 'neighborhood__city').order_by('name')
@@ -68,6 +71,7 @@ def _build_household_tree(members):
 
 
 @login_required
+@role_required('admin', 'secretariat', 'encadrant')
 def family_detail(request, pk):
     """Détail d'une famille."""
     family = get_object_or_404(
@@ -99,6 +103,7 @@ def family_detail(request, pk):
 
 
 @login_required
+@role_required('admin', 'secretariat')
 def family_delete(request, pk):
     """Supprimer une famille, sans emporter ses membres.
 
@@ -134,6 +139,7 @@ def family_delete(request, pk):
 
 
 @login_required
+@role_required('admin', 'secretariat', 'encadrant')
 def member_api_data(request, pk):
     """Retourne les données d'un membre en JSON pour l'auto-remplissage du formulaire famille.
     
@@ -155,6 +161,7 @@ def member_api_data(request, pk):
 
 
 @login_required
+@role_required('admin', 'secretariat')
 def family_create(request):
     """Créer une nouvelle famille."""
     if request.method == 'POST':
@@ -200,6 +207,7 @@ def family_create(request):
 
 
 @login_required
+@role_required('admin', 'secretariat')
 def family_edit(request, pk):
     """Modifier une famille."""
     family = get_object_or_404(Family, pk=pk)
@@ -231,6 +239,7 @@ def family_edit(request, pk):
 
 
 @login_required
+@role_required('admin', 'secretariat')
 def family_add_member(request, pk):
     """Ajouter à une famille : un membre existant, OU promouvoir un jeune / enfant du club
     en fiche Membre rattachée à la famille."""

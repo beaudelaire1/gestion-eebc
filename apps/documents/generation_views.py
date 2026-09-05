@@ -66,6 +66,7 @@ def generated_list(request):
 
 
 @login_required
+@role_required('admin', 'secretariat', 'finance')
 def generated_create(request):
     if not _user_can_generate(request.user):
         messages.error(request, "Vous n'avez pas les droits pour créer un document.")
@@ -136,6 +137,7 @@ def generated_edit(request, pk):
 
 
 @login_required
+@role_required('admin', 'secretariat', 'finance')
 def generated_preview(request, pk):
     doc = get_object_or_404(GeneratedDocument, pk=pk)
     if not doc.can_be_accessed_by(request.user):
@@ -148,6 +150,7 @@ def generated_preview(request, pk):
 
 
 @login_required
+@role_required('admin', 'secretariat', 'finance')
 def generated_pdf(request, pk):
     doc = get_object_or_404(GeneratedDocument, pk=pk)
     if not doc.can_be_accessed_by(request.user):
@@ -202,6 +205,7 @@ def _finalize_generated_document(request, doc):
 
 
 @login_required
+@role_required('admin', 'secretariat', 'finance')
 @require_POST
 def generated_finalize(request, pk):
     doc = get_object_or_404(GeneratedDocument, pk=pk)
@@ -299,6 +303,7 @@ KIND_TEMPLATES = {
 
 
 @login_required
+@role_required('admin', 'secretariat', 'finance')
 def generated_template_snippet(request):
     """Renvoie un snippet HTML de modèle pour le type demandé."""
     kind = request.GET.get('kind', 'autre')
