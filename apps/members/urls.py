@@ -13,6 +13,16 @@ urlpatterns = [
     path('<int:pk>/edit/', views.member_edit, name='edit'),
     path('<int:pk>/delete/', views.member_delete, name='delete'),
     path('<int:pk>/print/', sv.member_print_registration, name='print_registration'),
+    path(
+        '<int:pk>/link-youth-record/',
+        views.member_link_youth_record,
+        name='link_youth_record',
+    ),
+    path(
+        '<int:pk>/link-bibleclub-record/',
+        views.member_link_bibleclub_record,
+        name='link_bibleclub_record',
+    ),
 
     # Carte des membres
     path('map/', admin_views.members_map_view, name='map'),

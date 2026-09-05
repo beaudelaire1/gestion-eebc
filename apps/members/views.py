@@ -1,12 +1,18 @@
 from django.shortcuts import render, get_object_or_404, redirect
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
+from django.core.exceptions import ValidationError
 from django.core.paginator import Paginator
+from django.db import transaction
 from django.db.models import Q, Count
 from django.http import HttpResponse
+from django.views.decorators.http import require_POST
 from datetime import date, timedelta
 from .models import Member, LifeEvent, VisitationLog
+from .promotion import link_or_create_profile
+from apps.bibleclub.models import Child
 from apps.core.permissions import role_required
+from apps.young.models import YoungMember
 from apps.core.optimization import get_optimized_queryset
 import logging
 
@@ -93,6 +99,40 @@ def member_list(request):
 
 
 @login_required
+@role_required('admin', 'secretariat')
+@require_POST
+def member_link_youth_record(request, pk):
+    """Inscrire un membre à la jeunesse en créant sa fiche jeune."""
+    return _link_member_profile(request, pk, YoungMember, 'la jeunesse')
+
+
+@login_required
+@role_required('admin', 'secretariat')
+@require_POST
+def member_link_bibleclub_record(request, pk):
+    """Inscrire un membre au club biblique en créant sa fiche enfant."""
+    return _link_member_profile(request, pk, Child, 'le club biblique')
+
+
+def _link_member_profile(request, pk, model, label):
+    member = get_object_or_404(Member, pk=pk)
+
+    try:
+        with transaction.atomic():
+            profile, created = link_or_create_profile(member, model)
+    except ValidationError as error:
+        messages.error(request, error.messages[0])
+    else:
+        messages.success(
+            request,
+            f"{member.full_name} est inscrit(e) dans {label}."
+            if created
+            else f"{member.full_name} avait déjà une fiche dans {label}.",
+        )
+    return redirect('members:detail', pk=pk)
+
+
+@login_required
 def member_detail(request, pk):
     """Détail d'un membre. Réservé aux rôles admin/secretariat/encadrant."""
     from apps.core.permissions import has_role
@@ -117,6 +157,7 @@ def member_detail(request, pk):
 
 
 @login_required
+@role_required('admin', 'secretariat', 'encadrant')
 def member_print_registration(request, pk):
     """Télécharge la fiche d'inscription du membre en PDF."""
     from apps.core.pdf_service import PDFService

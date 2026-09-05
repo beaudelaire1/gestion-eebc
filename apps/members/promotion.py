@@ -1,9 +1,12 @@
-"""Création de la fiche membre d'un jeune ou d'un enfant du club biblique.
+"""Passage entre l'annuaire des membres et les fiches jeunesse / club biblique.
 
 Les fiches jeunesse et club biblique vivent à côté de l'annuaire. Tant
 qu'aucune fiche ``Member`` ne leur correspond, la personne reste invisible
 là où l'application ne connaît que ``Member`` : liste des membres,
 rattachement à une famille, sélecteurs de groupe ou de département.
+
+Le rattachement va dans les deux sens : un jeune peut entrer dans l'annuaire,
+et un membre déjà inscrit peut recevoir sa fiche jeunesse ou club biblique.
 
 L'import Excel des jeunes fait le même rattachement dans
 ``apps.imports.young_links``, avec des messages d'erreur qui renvoient aux
@@ -86,3 +89,39 @@ def link_or_create_member(profile):
 
     profile.linked_member = member
     return member, created
+
+
+def link_or_create_profile(member, model):
+    """Créer la fiche jeunesse ou club biblique d'un membre, et la relier.
+
+    Réciproque de :func:`link_or_create_member`. Retourne ``(profile,
+    created)``. Une fiche jeune ou enfant exige une date de naissance et un
+    genre : sans eux, la fiche serait invalide, et deviner l'un ou l'autre
+    reviendrait à inventer une donnée d'état civil.
+    """
+    existing = model.objects.filter(linked_member=member).first()
+    if existing is not None:
+        return existing, False
+
+    missing = [
+        label
+        for field, label in (('date_of_birth', 'date de naissance'), ('gender', 'genre'))
+        if not getattr(member, field, None)
+    ]
+    if missing:
+        raise ValidationError(
+            "Complétez d'abord la fiche membre : " + " et ".join(missing) + "."
+        )
+
+    target_fields = {
+        field.name
+        for field in model._meta.get_fields()
+        if getattr(field, 'concrete', False)
+    }
+    values = {
+        name: getattr(member, name)
+        for name in COPIED_FIELDS
+        if name in target_fields and hasattr(member, name)
+    }
+    values['linked_member'] = member
+    return model.objects.create(**values), True

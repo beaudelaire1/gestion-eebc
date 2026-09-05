@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% load role_tags %}
 
 {% block title %}{{ member.full_name }} - EEBC{% endblock %}
 {% block page_title %}{{ member.full_name }}{% endblock %}
@@ -89,6 +90,44 @@
     </div>
     
     <div class="col-lg-8">
+        <div class="card mb-4">
+            <div class="card-header">
+                <h6 class="card-title"><i class="bi bi-people-fill me-2"></i>Jeunesse et club biblique</h6>
+            </div>
+            <div class="card-body">
+                <p class="mb-1"><strong>Fiche jeunesse :</strong>
+                    {% if member.young_profile %}
+                    <a href="{% url 'young:member_detail' member.young_profile.pk %}">{{ member.young_profile.full_name }}</a>
+                    {% else %}Aucune fiche{% endif %}
+                </p>
+                <p class="mb-0"><strong>Fiche club biblique :</strong>
+                    {% if member.bibleclub_profile %}
+                    <a href="{% url 'bibleclub:child_detail' member.bibleclub_profile.pk %}">{{ member.bibleclub_profile.full_name }}</a>
+                    {% else %}Aucune fiche{% endif %}
+                </p>
+                {% if request.user|has_any_role:"admin,secretariat" %}
+                <div class="d-flex flex-wrap gap-2 mt-3">
+                    {% if not member.young_profile %}
+                    <form method="post" action="{% url 'members:link_youth_record' member.pk %}">
+                        {% csrf_token %}
+                        <button type="submit" class="btn btn-outline-primary btn-sm">
+                            <i class="bi bi-person-plus me-1"></i>Inscrire à la jeunesse
+                        </button>
+                    </form>
+                    {% endif %}
+                    {% if not member.bibleclub_profile %}
+                    <form method="post" action="{% url 'members:link_bibleclub_record' member.pk %}">
+                        {% csrf_token %}
+                        <button type="submit" class="btn btn-outline-primary btn-sm">
+                            <i class="bi bi-person-plus me-1"></i>Inscrire au club biblique
+                        </button>
+                    </form>
+                    {% endif %}
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
         <div class="card mb-4">
             <div class="card-header">
                 <h6 class="card-title"><i class="bi bi-person me-2"></i>Informations personnelles</h6>
