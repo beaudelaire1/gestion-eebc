@@ -6,7 +6,7 @@ from django.conf.urls.static import static
 from django.contrib import admin
 from django.contrib.sitemaps.views import sitemap
 from django.urls import include, path
-from django.views.generic import TemplateView
+from django.views.generic import RedirectView, TemplateView
 
 from apps.communication.views import whatsapp_webhook
 from apps.core.sitemaps import sitemaps
@@ -15,6 +15,27 @@ from apps.members.admin_views import members_map_data, members_map_view
 from apps.worship.confirmation_views import confirm_role, decline_role
 
 urlpatterns = [
+    # Compatibilité avec les emails envoyés avant le montage des comptes sous /app/.
+    # query_string conserve le token personnel lors de la redirection.
+    path(
+        'accounts/first-login-password-change/',
+        RedirectView.as_view(
+            pattern_name='accounts:first_login_password_change',
+            permanent=False,
+            query_string=True,
+        ),
+        name='legacy_first_login_password_change',
+    ),
+    path(
+        'accounts/login/',
+        RedirectView.as_view(
+            pattern_name='accounts:login',
+            permanent=False,
+            query_string=True,
+        ),
+        name='legacy_accounts_login',
+    ),
+
     # SEO
     path(
         'sitemap.xml',

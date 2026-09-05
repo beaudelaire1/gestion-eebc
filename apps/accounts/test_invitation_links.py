@@ -56,6 +56,18 @@ def test_invitation_activation_link_uses_mounted_accounts_route(client, mailoutb
     assert parsed.path == reverse("accounts:first_login_password_change")
     assert parsed.query.startswith("token=")
 
+    legacy_response = client.get(
+        f"/accounts/first-login-password-change/?{parsed.query}"
+    )
+    assert legacy_response.status_code == 302
+    assert legacy_response.url == f"{parsed.path}?{parsed.query}"
+
+    legacy_page = client.get(
+        f"/accounts/first-login-password-change/?{parsed.query}", follow=True
+    )
+    assert legacy_page.status_code == 200
+    assert legacy_page.context["user"].pk == invited.pk
+
     response = client.get(f"{parsed.path}?{parsed.query}")
     assert response.status_code == 200
     assert response.context["user"].pk == invited.pk
@@ -97,3 +109,10 @@ def test_password_reset_email_uses_mounted_login_route(mailoutbox):
     assert len(mailoutbox) == 1
     html = mailoutbox[0].alternatives[0].content
     assert f'https://gestion.example.test{reverse("accounts:login")}' in html
+
+
+def test_legacy_login_route_redirects_to_mounted_accounts_route(client):
+    response = client.get("/accounts/login/?next=/app/profile/")
+
+    assert response.status_code == 302
+    assert response.url == f'{reverse("accounts:login")}?next=/app/profile/'
