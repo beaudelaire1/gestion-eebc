@@ -26,6 +26,11 @@ urlpatterns = [
     path('children/create/', views.child_create, name='child_create'),
     path('children/<int:pk>/', views.child_detail, name='child_detail'),
     path('children/<int:pk>/edit/', views.child_edit, name='child_edit'),
+    path(
+        'children/<int:pk>/link-church-record/',
+        views.child_link_church_record,
+        name='child_link_church_record',
+    ),
     path('children/<int:pk>/delete/', views.child_delete, name='child_delete'),
     path('children/<int:pk>/print/', views.child_print_registration, name='child_print_registration'),
     

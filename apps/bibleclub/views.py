@@ -2,7 +2,9 @@ from django.shortcuts import render, get_object_or_404, redirect
 from django.contrib.auth import get_user_model
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
+from django.core.exceptions import ValidationError
 from django.http import JsonResponse
+from django.views.decorators.http import require_POST
 from django.utils import timezone
 from django.db import transaction
 from django.db.models import Count, Q
@@ -17,6 +19,8 @@ from .permissions import (
     get_user_classes, get_monitor_for_user, can_access_class,
     can_access_child, is_club_admin, is_club_staff
 )
+from apps.core.permissions import role_required
+from apps.members.promotion import link_or_create_member
 from .services import OptimizedBibleClubService
 import logging
 
@@ -399,6 +403,33 @@ def child_delete(request, pk):
         'title': f'Désactiver {child.full_name}'
     }
     return render(request, 'bibleclub/child_confirm_delete.html', context)
+
+
+@login_required
+@role_required('admin', 'secretariat', 'responsable_club')
+@require_POST
+def child_link_church_record(request, pk):
+    """Créer ou relier la fiche membre d'un enfant qui appartient à l'église.
+
+    Sans fiche membre, l'enfant reste absent de l'annuaire et des sélecteurs
+    qui n'interrogent que ``Member`` : famille, groupes, départements.
+    """
+    child = get_object_or_404(Child, pk=pk)
+
+    try:
+        with transaction.atomic():
+            member, created = link_or_create_member(child)
+            child.save(update_fields=['linked_member'])
+    except ValidationError as error:
+        messages.error(request, error.messages[0])
+    else:
+        messages.success(
+            request,
+            f"Fiche membre créée pour {member.full_name}."
+            if created
+            else f"{member.full_name} est relié(e) à la fiche membre {member.member_id}.",
+        )
+    return redirect('bibleclub:child_detail', pk=pk)
 
 
 @login_required

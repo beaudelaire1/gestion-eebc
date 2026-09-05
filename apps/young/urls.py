@@ -11,6 +11,11 @@ urlpatterns = [
     path('members/create/', views.young_member_create, name='member_create'),
     path('members/<int:pk>/', views.young_member_detail, name='member_detail'),
     path('members/<int:pk>/edit/', views.young_member_edit, name='member_edit'),
+    path(
+        'members/<int:pk>/link-church-record/',
+        views.young_member_link_church_record,
+        name='member_link_church_record',
+    ),
     path('members/<int:pk>/delete/', views.young_member_delete, name='member_delete'),
     path('members/<int:pk>/print/', views.young_member_print_registration, name='member_print_registration'),
 
