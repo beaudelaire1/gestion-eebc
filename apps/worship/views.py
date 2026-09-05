@@ -4,15 +4,44 @@ from django.shortcuts import render, get_object_or_404, redirect
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.core.paginator import Paginator
+from django.core.exceptions import PermissionDenied
 from django.http import JsonResponse, HttpResponse
 from django.template.loader import render_to_string
 from django.views.decorators.http import require_POST
 from django.db import models
 from datetime import date, timedelta
 
-from .models import WorshipService, ServiceRole, ServicePlanItem, ServiceTemplate, ServiceTemplateItem
+from .models import (
+    MonthlySchedule, ScheduledService, ServiceNotification,
+    WorshipService, ServiceRole, ServicePlanItem, ServiceTemplate,
+    ServiceTemplateItem,
+)
 from .forms import WorshipServiceForm, ServiceRoleForm, ServicePlanItemForm
 from apps.core.permissions import role_required
+from apps.core.security import user_has_any_role
+
+
+def _can_manage_worship(user):
+    return user_has_any_role(user, 'admin', 'responsable_groupe')
+
+
+def _visible_schedules(user):
+    """Plannings observables : seuls les plannings publiés sortent de l'équipe.
+
+    Un brouillon ou un planning en cours de validation nomme des personnes qui
+    n'ont pas encore accepté de servir.
+    """
+    schedules = MonthlySchedule.objects.all()
+    if _can_manage_worship(user):
+        return schedules
+    return schedules.filter(status=MonthlySchedule.Status.PUBLIE)
+
+
+def _owns_service_role(user, role):
+    """Whether ``user`` is the person this worship role was assigned to."""
+    if role.user_id and role.user_id == user.id:
+        return True
+    return bool(role.member and role.member.user_id == user.id)
 
 
 @login_required
@@ -156,7 +185,9 @@ def role_assign(request, service_pk):
 @require_POST
 def role_confirm(request, pk):
     """Confirmer un rôle (HTMX)."""
-    role = get_object_or_404(ServiceRole, pk=pk)
+    role = get_object_or_404(ServiceRole.objects.select_related('member'), pk=pk)
+    if not (_owns_service_role(request.user, role) or _can_manage_worship(request.user)):
+        raise PermissionDenied("Ce rôle est assigné à une autre personne.")
     role.confirm()
     
     if request.headers.get('HX-Request'):
@@ -173,7 +204,9 @@ def role_confirm(request, pk):
 @require_POST
 def role_decline(request, pk):
     """Décliner un rôle (HTMX)."""
-    role = get_object_or_404(ServiceRole, pk=pk)
+    role = get_object_or_404(ServiceRole.objects.select_related('member'), pk=pk)
+    if not (_owns_service_role(request.user, role) or _can_manage_worship(request.user)):
+        raise PermissionDenied("Ce rôle est assigné à une autre personne.")
     role.decline()
     
     if request.headers.get('HX-Request'):
@@ -288,7 +321,6 @@ def apply_template(request, service_pk, template_pk):
 # PLANIFICATION MENSUELLE DES CULTES
 # =============================================================================
 
-from .models import MonthlySchedule, ScheduledService, ServiceNotification
 import logging
 
 logger = logging.getLogger(__name__)
@@ -297,7 +329,9 @@ logger = logging.getLogger(__name__)
 @login_required
 def monthly_schedule_list(request):
     """Liste des plannings mensuels."""
-    schedules = MonthlySchedule.objects.select_related('site', 'created_by').order_by('-year', '-month')
+    schedules = _visible_schedules(request.user).select_related(
+        'site', 'created_by'
+    ).order_by('-year', '-month')
     
     # Filtre par site
     site_id = request.GET.get('site')
@@ -314,7 +348,9 @@ def monthly_schedule_list(request):
     context = {
         'schedules': schedules,
         'sites': Site.objects.filter(is_active=True),
-        'years': MonthlySchedule.objects.values_list('year', flat=True).distinct().order_by('-year'),
+        'years': _visible_schedules(request.user).values_list(
+            'year', flat=True
+        ).distinct().order_by('-year'),
         'selected_site': site_id,
         'selected_year': year,
     }
@@ -372,7 +408,7 @@ def monthly_schedule_create(request):
 def monthly_schedule_detail(request, pk):
     """Détail d'un planning mensuel avec tous les cultes."""
     schedule = get_object_or_404(
-        MonthlySchedule.objects.select_related('site').prefetch_related(
+        _visible_schedules(request.user).select_related('site').prefetch_related(
             'services', 'services__preacher', 'services__worship_leader',
             'services__choir_leader', 'services__singers', 'services__musicians'
         ),

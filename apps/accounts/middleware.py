@@ -80,6 +80,15 @@ class OrdinaryMemberAccessMiddleware:
         'documents:download',
         'documents:stream',
         'documents:preview',
+        # Worship: the assembly may read the services and the published
+        # schedules, and answer for its own slots. Drafts are filtered out in
+        # the views, and creating or editing a schedule stays with the team.
+        'worship:service_list',
+        'worship:service_detail',
+        'worship:schedule_list',
+        'worship:schedule_detail',
+        'worship:role_confirm',
+        'worship:role_decline',
     })
 
     def __init__(self, get_response):

@@ -90,10 +90,16 @@ def test_member_dashboard_does_not_load_management_statistics(
 def test_member_sidebar_shows_the_non_restricted_sections(member_client):
     body = member_client.get(reverse('dashboard:home')).content.decode()
 
-    for section in ('principal', 'mes-services', 'transport', 'documents', 'communication'):
+    for section in (
+        'principal',
+        'mes-services',
+        'vie-d-eglise',
+        'transport',
+        'documents',
+        'communication',
+    ):
         assert f'data-nav-section="{section}"' in body
     for section in (
-        'vie-d-eglise',
         'finances',
         'gestion',
         'jeunesse',
@@ -117,6 +123,7 @@ def test_member_sidebar_hides_the_management_entries_of_open_sections(member_cli
         'documents:categories',
         'documents:stats',
         'documents:generated_list',
+        'worship:service_create',
         'communication:email_compose',
         'communication:email_logs',
         'dashboard:search',
@@ -443,3 +450,101 @@ def test_member_cannot_reach_the_management_side_of_open_sections(
     member_client, url_name
 ):
     assert member_client.get(reverse(url_name)).status_code == 403
+
+
+@pytest.fixture
+def worship_manager():
+    return get_user_model().objects.create_user(
+        username='worship.lead',
+        email='worship@example.test',
+        password='Worship-pass-123!',
+        role='responsable_groupe',
+    )
+
+
+def _monthly_schedule(status, site):
+    from apps.worship.models import MonthlySchedule
+
+    return MonthlySchedule.objects.create(
+        year=2026,
+        month=9 if status == MonthlySchedule.Status.PUBLIE else 10,
+        site=site,
+        status=status,
+    )
+
+
+@pytest.fixture
+def church_site():
+    from apps.core.models import Site
+
+    site, _ = Site.objects.get_or_create(code='CAY', defaults={'name': 'Cayenne'})
+    return site
+
+
+def test_member_only_reads_published_worship_schedules(member_client, church_site):
+    from apps.worship.models import MonthlySchedule
+
+    published = _monthly_schedule(MonthlySchedule.Status.PUBLIE, church_site)
+    draft = _monthly_schedule(MonthlySchedule.Status.BROUILLON, church_site)
+
+    listing = member_client.get(reverse('worship:schedule_list'))
+    published_detail = member_client.get(
+        reverse('worship:schedule_detail', args=[published.pk])
+    )
+    draft_detail = member_client.get(
+        reverse('worship:schedule_detail', args=[draft.pk])
+    )
+
+    assert listing.status_code == 200
+    assert list(listing.context['schedules']) == [published]
+    assert published_detail.status_code == 200
+    assert draft_detail.status_code == 404
+
+
+def test_member_cannot_answer_for_someone_else_worship_slot(
+    member_client, other_member
+):
+    """Confirmer un service à la place d'un autre n'a jamais été contrôlé."""
+    from apps.events.models import Event
+    from apps.worship.models import ServiceRole, WorshipService
+
+    event = Event.objects.create(title='Culte du dimanche', start_date=date.today())
+    service = WorshipService.objects.create(
+        event=event,
+        service_type=WorshipService.ServiceType.CULTE_DOMINICAL,
+    )
+    someone_else = ServiceRole.objects.create(
+        service=service,
+        role=ServiceRole.RoleType.AUTRE,
+        member=other_member,
+    )
+
+    response = member_client.post(
+        reverse('worship:role_confirm', args=[someone_else.pk])
+    )
+    someone_else.refresh_from_db()
+
+    assert response.status_code == 403
+    assert someone_else.status == ServiceRole.Status.EN_ATTENTE
+
+
+def test_member_answers_for_their_own_worship_slot(member_client, member_profile):
+    from apps.events.models import Event
+    from apps.worship.models import ServiceRole, WorshipService
+
+    event = Event.objects.create(title='Culte du dimanche', start_date=date.today())
+    service = WorshipService.objects.create(
+        event=event,
+        service_type=WorshipService.ServiceType.CULTE_DOMINICAL,
+    )
+    own_role = ServiceRole.objects.create(
+        service=service,
+        role=ServiceRole.RoleType.AUTRE,
+        member=member_profile,
+    )
+
+    response = member_client.post(reverse('worship:role_confirm', args=[own_role.pk]))
+    own_role.refresh_from_db()
+
+    assert response.status_code in (200, 302)
+    assert own_role.status == ServiceRole.Status.CONFIRME
