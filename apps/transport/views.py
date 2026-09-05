@@ -18,6 +18,7 @@ from apps.members.geocoding import build_canonical_address, geocode_address_with
 from apps.members.models import GeocodedAddress
 from .models import DriverProfile, TransportRequest, DriverLiveLocation
 from .forms import DriverProfileForm, TransportRequestForm, DriverAssignmentForm
+from .requesters import is_requester, requester_filter_q, requester_profile
 import logging
 
 logger = logging.getLogger(__name__)
@@ -46,12 +47,13 @@ def _transport_requests_queryset_for_user(user):
         'driver__user',
         'live_location',
         'requester_member__user',
+        'requester_young__user',
     ).order_by('-event_date', '-event_time')
 
     if _can_manage_transport_requests(user):
         return requests_qs
 
-    filters = Q(requester_member__user=user)
+    filters = requester_filter_q(user)
     driver_profile = _get_user_driver_profile(user)
     if driver_profile is not None:
         filters |= Q(driver=driver_profile)
@@ -244,7 +246,13 @@ def transport_request_update(request, pk):
 def transport_request_detail(request, pk):
     """Détail d'une demande de transport."""
     transport_request = get_object_or_404(
-        TransportRequest.objects.select_related('driver__user', 'requester_member__user', 'requester_member__family'), 
+        TransportRequest.objects.select_related(
+            'driver__user',
+            'requester_member__user',
+            'requester_member__family',
+            'requester_young__user',
+            'requester_young__family',
+        ), 
         pk=pk
     )
 
@@ -286,8 +294,7 @@ def _can_access_live_tracking(user, transport_request, for_update=False):
     if for_update:
         return False
 
-    requester_member = transport_request.requester_member
-    if requester_member and requester_member.user_id == user.id:
+    if is_requester(transport_request, user):
         return True
 
     # Un chauffeur peut consulter une demande en attente sans chauffeur pour l'accepter.
@@ -299,8 +306,7 @@ def _can_update_pickup_location(user, transport_request):
         return False
     if _can_manage_transport_requests(user):
         return True
-    requester_member = transport_request.requester_member
-    return bool(requester_member and requester_member.user_id == user.id)
+    return is_requester(transport_request, user)
 
 
 def _pickup_location_from_request_gps(transport_request):
@@ -321,11 +327,11 @@ def _pickup_location_from_request_gps(transport_request):
 
 
 def _pickup_location_from_member(transport_request):
-    requester_member = transport_request.requester_member
-    if not requester_member:
+    requester = requester_profile(transport_request)
+    if not requester:
         return None
 
-    family = requester_member.family
+    family = requester.family
     if family and family.latitude is not None and family.longitude is not None:
         return {
             'has_location': True,
@@ -343,11 +349,11 @@ def _resolve_pickup_city_postal(transport_request):
     """Retourne (city, postal_code) en priorisant les champs de la demande."""
     city = (transport_request.pickup_city or '').strip()
     postal_code = (transport_request.pickup_postal_code or '').strip()
-    requester_member = transport_request.requester_member
-    if not city and requester_member and requester_member.city:
-        city = requester_member.city
-    if not postal_code and requester_member and requester_member.postal_code:
-        postal_code = requester_member.postal_code
+    requester = requester_profile(transport_request)
+    if not city and requester and requester.city:
+        city = requester.city
+    if not postal_code and requester and requester.postal_code:
+        postal_code = requester.postal_code
     return city, postal_code
 
 
@@ -523,7 +529,13 @@ def _build_live_payload(transport_request, allow_provider=False):
 def transport_live_status(request, pk):
     """Retourne la position live d'une demande de transport (JSON)."""
     transport_request = get_object_or_404(
-        TransportRequest.objects.select_related('driver__user', 'requester_member__user', 'requester_member__family'),
+        TransportRequest.objects.select_related(
+            'driver__user',
+            'requester_member__user',
+            'requester_member__family',
+            'requester_young__user',
+            'requester_young__family',
+        ),
         pk=pk,
     )
 
@@ -538,7 +550,13 @@ def transport_live_status(request, pk):
 def transport_pickup_location_update(request, pk):
     """Met à jour la position de prise en charge choisie par le demandeur."""
     transport_request = get_object_or_404(
-        TransportRequest.objects.select_related('driver__user', 'requester_member__user', 'requester_member__family'),
+        TransportRequest.objects.select_related(
+            'driver__user',
+            'requester_member__user',
+            'requester_member__family',
+            'requester_young__user',
+            'requester_young__family',
+        ),
         pk=pk,
     )
 
@@ -590,7 +608,13 @@ def transport_pickup_location_update(request, pk):
 def transport_live_update(request, pk):
     """Met à jour la position GPS live d'un chauffeur (JSON)."""
     transport_request = get_object_or_404(
-        TransportRequest.objects.select_related('driver__user', 'requester_member__user', 'requester_member__family'),
+        TransportRequest.objects.select_related(
+            'driver__user',
+            'requester_member__user',
+            'requester_member__family',
+            'requester_young__user',
+            'requester_young__family',
+        ),
         pk=pk,
     )
 

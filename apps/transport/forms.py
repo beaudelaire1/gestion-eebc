@@ -1,9 +1,12 @@
 from django import forms
 
+from django.contrib.auth import get_user_model
+
 from apps.core.security import is_ordinary_member
 from apps.members.models import Member
-from django.contrib.auth import get_user_model
+
 from .models import DriverProfile, TransportRequest
+from .requesters import member_profile, young_profile
 
 User = get_user_model()
 
@@ -93,7 +96,8 @@ class TransportRequestForm(forms.ModelForm):
         super().__init__(*args, **kwargs)
 
         self.current_user = current_user
-        self.forced_member = None
+        self.forced_member = member_profile(current_user)
+        self.forced_young = young_profile(current_user)
 
         # Rendre certains champs obligatoires
         self.fields['requester_name'].required = True
@@ -104,31 +108,37 @@ class TransportRequestForm(forms.ModelForm):
         self.fields['requester_member'].required = False
         self.fields['requester_member'].empty_label = "— Aucun —"
 
-        # Préremplissage automatique pour un membre connecté (en création uniquement)
-        if current_user is not None and current_user.is_authenticated and not self.instance.pk:
-            member = getattr(current_user, 'member_profile', None)
-            if member is not None:
-                self.fields['requester_member'].initial = member.pk
-                if not self.initial.get('requester_name'):
-                    self.initial['requester_name'] = member.full_name
-                if not self.initial.get('requester_phone') and member.phone:
-                    self.initial['requester_phone'] = member.phone
-                if not self.initial.get('requester_email') and member.email:
-                    self.initial['requester_email'] = member.email
-                if not self.initial.get('pickup_address') and member.address:
-                    self.initial['pickup_address'] = member.address
-                if not self.initial.get('pickup_city') and getattr(member, 'city', ''):
-                    self.initial['pickup_city'] = member.city
-                if not self.initial.get('pickup_postal_code') and getattr(member, 'postal_code', ''):
-                    self.initial['pickup_postal_code'] = member.postal_code
-                if not self.initial.get('request_type'):
-                    self.initial['request_type'] = TransportRequest.RequestType.COVOITURAGE
+        # Préremplissage automatique pour un compte connecté (en création
+        # uniquement). Un jeune non membre de l'église n'a pas de fiche membre :
+        # sa fiche jeune décrit alors le demandeur.
+        profile = self.forced_member or self.forced_young
+        if profile is not None and not self.instance.pk:
+            if self.forced_member is not None:
+                self.fields['requester_member'].initial = self.forced_member.pk
+            pickup = getattr(profile, 'pickup_address', '') or profile.address
+            if not self.initial.get('requester_name'):
+                self.initial['requester_name'] = profile.full_name
+            if not self.initial.get('requester_phone') and profile.phone:
+                self.initial['requester_phone'] = profile.phone
+            if not self.initial.get('requester_email') and profile.email:
+                self.initial['requester_email'] = profile.email
+            if not self.initial.get('pickup_address') and pickup:
+                self.initial['pickup_address'] = pickup
+            if not self.initial.get('pickup_city') and getattr(profile, 'city', ''):
+                self.initial['pickup_city'] = profile.city
+            if not self.initial.get('pickup_postal_code') and getattr(profile, 'postal_code', ''):
+                self.initial['pickup_postal_code'] = profile.postal_code
+            if not self.initial.get('request_type'):
+                self.initial['request_type'] = (
+                    TransportRequest.RequestType.COVOITURAGE
+                    if self.forced_member is not None
+                    else TransportRequest.RequestType.CLUB
+                )
 
         # Un membre ordinaire ne demande un transport que pour lui-même : le
         # sélecteur de membre exposerait l'annuaire complet et permettrait de
         # créer une demande au nom d'un autre membre.
         if is_ordinary_member(current_user):
-            self.forced_member = getattr(current_user, 'member_profile', None)
             field = self.fields['requester_member']
             field.widget = forms.HiddenInput()
             field.queryset = (
@@ -149,6 +159,17 @@ class TransportRequestForm(forms.ModelForm):
         if is_ordinary_member(self.current_user):
             return self.forced_member
         return self.cleaned_data.get('requester_member')
+
+    def save(self, commit=True):
+        """Rattacher la demande à la fiche jeune du demandeur connecté.
+
+        ``requester_young`` n'est pas un champ du formulaire : l'exposer
+        reviendrait à publier la liste des jeunes, dont des mineurs. Il n'est
+        posé que pour la personne qui dépose sa propre demande.
+        """
+        if is_ordinary_member(self.current_user) and not self.instance.pk:
+            self.instance.requester_young = self.forced_young
+        return super().save(commit=commit)
 
 
 class DriverAssignmentForm(forms.ModelForm):

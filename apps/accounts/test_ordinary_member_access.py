@@ -9,6 +9,7 @@ from apps.core.models import Testimony
 from apps.dashboard.services import DashboardService
 from apps.members.models import Member
 from apps.transport.models import TransportRequest
+from apps.young.models import YoungMember
 
 
 pytestmark = pytest.mark.django_db
@@ -45,6 +46,22 @@ def other_member():
     return Member.objects.create(
         first_name='Autre',
         last_name='Membre',
+    )
+
+
+@pytest.fixture
+def young_profile(ordinary_member):
+    """Jeune non membre de l'église : un compte, aucune fiche membre."""
+    return YoungMember.objects.create(
+        first_name='Jeune',
+        last_name='Sansfiche',
+        date_of_birth=date(2010, 5, 12),
+        gender=YoungMember.Gender.MASCULIN,
+        user=ordinary_member,
+        phone='0694222222',
+        address='3 rue des Flamboyants',
+        city='Cayenne',
+        postal_code='97300',
     )
 
 
@@ -237,3 +254,82 @@ def test_member_transport_list_only_shows_their_own_requests(
     assert own.requester_name in body
     assert foreign.requester_name not in body
     assert reverse('transport:drivers') not in body
+
+
+def _transport_payload(**overrides):
+    payload = {
+        'request_type': TransportRequest.RequestType.CLUB,
+        'requester_name': 'Jeune Sansfiche',
+        'requester_phone': '0694222222',
+        'pickup_address': '3 rue des Flamboyants',
+        'event_date': date.today().isoformat(),
+        'event_time': '09:00',
+        'passengers_count': 1,
+    }
+    payload.update(overrides)
+    return payload
+
+
+def test_young_without_church_record_keeps_access_to_their_request(
+    member_client, young_profile
+):
+    """Un jeune non membre a un compte mais aucune fiche membre."""
+    member_client.post(reverse('transport:request_create'), _transport_payload())
+
+    transport_request = TransportRequest.objects.get()
+    listing = member_client.get(reverse('transport:requests'))
+    detail = member_client.get(
+        reverse('transport:request_detail', args=[transport_request.pk])
+    )
+
+    assert transport_request.requester_member is None
+    assert transport_request.requester_young == young_profile
+    assert transport_request.requester_name in listing.content.decode()
+    assert detail.status_code == 200
+
+
+def test_young_who_is_also_a_church_member_is_attached_to_both_records(
+    member_client, member_profile, young_profile
+):
+    young_profile.linked_member = member_profile
+    young_profile.save(update_fields=['linked_member'])
+
+    member_client.post(reverse('transport:request_create'), _transport_payload())
+
+    transport_request = TransportRequest.objects.get()
+    assert transport_request.requester_member == member_profile
+    assert transport_request.requester_young == young_profile
+
+
+def test_young_cannot_reach_the_request_of_another_young(
+    member_client, young_profile
+):
+    other_young = YoungMember.objects.create(
+        first_name='Autre',
+        last_name='Jeune',
+        date_of_birth=date(2011, 3, 4),
+        gender=YoungMember.Gender.FEMININ,
+    )
+    foreign = TransportRequest.objects.create(
+        requester_young=other_young,
+        requester_name='Autre Jeune',
+        requester_phone='0694333333',
+        pickup_address='9 rue Voisine',
+        event_date=date.today(),
+        event_time=time(8, 0),
+    )
+
+    listing = member_client.get(reverse('transport:requests'))
+    detail = member_client.get(
+        reverse('transport:request_detail', args=[foreign.pk])
+    )
+
+    assert foreign.requester_name not in listing.content.decode()
+    assert detail.status_code == 302
+
+
+def test_transport_form_prefills_from_the_youth_record(member_client, young_profile):
+    body = member_client.get(reverse('transport:request_create')).content.decode()
+
+    assert young_profile.full_name in body
+    assert young_profile.address in body

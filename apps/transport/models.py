@@ -83,6 +83,19 @@ class TransportRequest(models.Model):
         help_text="Lié automatiquement si le demandeur est connecté",
     )
 
+    # Un jeune non membre de l'église possède un compte mais aucune fiche
+    # membre : sans ce lien, sa demande ne lui reviendrait jamais dans son
+    # espace.
+    requester_young = models.ForeignKey(
+        'young.YoungMember',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='transport_requests',
+        verbose_name="Jeune demandeur",
+        help_text="Lié automatiquement si le demandeur est connecté",
+    )
+
     request_type = models.CharField(
         max_length=15,
         choices=RequestType.choices,
