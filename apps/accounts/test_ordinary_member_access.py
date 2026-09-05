@@ -2,10 +2,12 @@ from datetime import date, time
 
 import pytest
 from django.contrib.auth import get_user_model
+from django.core.files.uploadedfile import SimpleUploadedFile
 from django.urls import reverse
 
 from apps.communication.models import Announcement
 from apps.core.models import Testimony
+from apps.documents.models import Document
 from apps.dashboard.services import DashboardService
 from apps.members.models import Member
 from apps.transport.models import TransportRequest
@@ -85,28 +87,41 @@ def test_member_dashboard_does_not_load_management_statistics(
     assert 'app-search' not in body
 
 
-def test_member_sidebar_only_shows_member_services(member_client):
+def test_member_sidebar_shows_the_non_restricted_sections(member_client):
     body = member_client.get(reverse('dashboard:home')).content.decode()
 
-    assert 'data-nav-section="principal"' in body
-    assert 'data-nav-section="communication"' in body
-    assert 'Notifications' in body
-    assert 'Annonces' in body
+    for section in ('principal', 'mes-services', 'transport', 'documents', 'communication'):
+        assert f'data-nav-section="{section}"' in body
     for section in (
         'vie-d-eglise',
         'finances',
         'gestion',
         'jeunesse',
         'club-biblique',
-        'transport',
         'ressources',
-        'documents',
         'site-web-cms',
         'administration',
     ):
         assert f'data-nav-section="{section}"' not in body
-    assert 'Composer un e-mail' not in body
-    assert 'Historique emails' not in body
+
+
+def test_member_sidebar_hides_the_management_entries_of_open_sections(member_client):
+    """Une rubrique ouverte garde ses écrans réservés hors de portée."""
+    body = member_client.get(reverse('dashboard:home')).content.decode()
+
+    for url_name in (
+        'transport:drivers',
+        'transport:driver_create',
+        'transport:calendar',
+        'documents:upload',
+        'documents:categories',
+        'documents:stats',
+        'documents:generated_list',
+        'communication:email_compose',
+        'communication:email_logs',
+        'dashboard:search',
+    ):
+        assert reverse(url_name) not in body
 
 
 @pytest.mark.parametrize('url_name', [
@@ -333,3 +348,98 @@ def test_transport_form_prefills_from_the_youth_record(member_client, young_prof
 
     assert young_profile.full_name in body
     assert young_profile.address in body
+
+
+def _create_document(title, *, visibility, uploaded_by, is_confidential=False):
+    content = b"Document de test"
+    return Document.objects.create(
+        title=title,
+        file=SimpleUploadedFile(f'{title}.txt', content, content_type='text/plain'),
+        file_name=f'{title}.txt',
+        file_size=len(content),
+        file_type='text/plain',
+        media_type=Document.MediaType.DOCUMENT,
+        visibility=visibility,
+        is_confidential=is_confidential,
+        uploaded_by=uploaded_by,
+    )
+
+
+@pytest.fixture
+def documents_librarian():
+    return get_user_model().objects.create_user(
+        username='librarian',
+        email='librarian@example.test',
+        password='Lib-pass-123!',
+        role='secretariat',
+    )
+
+
+def test_member_document_library_is_limited_to_public_files(
+    member_client, documents_librarian, settings, tmp_path
+):
+    settings.MEDIA_ROOT = tmp_path
+    public = _create_document(
+        'note-publique',
+        visibility=Document.Visibility.PUBLIC,
+        uploaded_by=documents_librarian,
+    )
+    staff_only = _create_document(
+        'note-equipe',
+        visibility=Document.Visibility.STAFF,
+        uploaded_by=documents_librarian,
+    )
+    confidential = _create_document(
+        'note-confidentielle',
+        visibility=Document.Visibility.PUBLIC,
+        uploaded_by=documents_librarian,
+        is_confidential=True,
+    )
+
+    listing = member_client.get(reverse('documents:list'))
+    body = listing.content.decode()
+
+    assert listing.status_code == 200
+    assert public.title in body
+    assert staff_only.title not in body
+    assert confidential.title not in body
+    assert member_client.get(
+        reverse('documents:detail', args=[public.pk])
+    ).status_code == 200
+    assert member_client.get(
+        reverse('documents:detail', args=[staff_only.pk])
+    ).status_code == 404
+    assert member_client.get(
+        reverse('documents:download', args=[staff_only.pk])
+    ).status_code == 404
+
+
+def test_member_does_not_see_who_else_opened_a_document(
+    member_client, documents_librarian, settings, tmp_path
+):
+    settings.MEDIA_ROOT = tmp_path
+    public = _create_document(
+        'note-publique',
+        visibility=Document.Visibility.PUBLIC,
+        uploaded_by=documents_librarian,
+    )
+
+    response = member_client.get(reverse('documents:detail', args=[public.pk]))
+
+    assert response.status_code == 200
+    assert not response.context['access_logs']
+    assert not response.context['shares']
+
+
+@pytest.mark.parametrize('url_name', [
+    'documents:upload',
+    'documents:categories',
+    'documents:stats',
+    'documents:generated_list',
+    'transport:calendar',
+    'inventory:list',
+])
+def test_member_cannot_reach_the_management_side_of_open_sections(
+    member_client, url_name
+):
+    assert member_client.get(reverse(url_name)).status_code == 403

@@ -71,6 +71,15 @@ class OrdinaryMemberAccessMiddleware:
         'transport:pickup_location_update',
         # Submitting a testimony for moderation (never publishing one).
         'public_cms:testimony_share',
+        # Document library: Document.accessible_queryset and
+        # Document.can_be_accessed_by already restrict a member to public,
+        # non-confidential files. Uploading, editing, sharing, categories and
+        # statistics stay with the teams that own them.
+        'documents:list',
+        'documents:detail',
+        'documents:download',
+        'documents:stream',
+        'documents:preview',
     })
 
     def __init__(self, get_response):

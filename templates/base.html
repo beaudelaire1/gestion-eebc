@@ -122,11 +122,6 @@
                 </button>
                 <div class="nav-section__panel" id="nav-panel-mes-services">
                     <nav class="nav flex-column">
-                        <a class="nav-link {% if 'transport' in request.path %}nav-link--active{% endif %}"
-                            href="{% url 'transport:requests' %}">
-                            <i class="bi bi-car-front-fill nav-link__icon"></i>
-                            <span>Mes transports</span>
-                        </a>
                         <a class="nav-link {% if 'testimonies' in request.path %}nav-link--active{% endif %}"
                             href="{% url 'public_cms:testimony_share' %}">
                             <i class="bi bi-chat-quote-fill nav-link__icon"></i>
@@ -364,6 +359,8 @@
                 </div>
             </div>
 
+            {% endif %}
+
             <div class="nav-section" data-nav-section="transport">
                 <button type="button" class="nav-section__title"
                         aria-expanded="true" aria-controls="nav-panel-transport">
@@ -397,12 +394,12 @@
                             <i class="bi bi-hourglass-split nav-link__icon"></i>
                             <span>Demandes en attente</span>
                         </a>
+                        {% if request.user.is_admin or request.user|has_any_role:"admin,secretariat,responsable_groupe" %}
                         <a class="nav-link {% if 'transport/calendar' in request.path %}nav-link--active{% endif %}"
                             href="{% url 'transport:calendar' %}">
                             <i class="bi bi-calendar3 nav-link__icon"></i>
                             <span>Calendrier transport</span>
                         </a>
-                        {% if request.user.is_admin or request.user|has_any_role:"admin,secretariat,responsable_groupe" %}
                         <a class="nav-link {% if 'transport/drivers/' in request.path and 'transport/drivers/create/' not in request.path %}nav-link--active{% endif %}"
                             href="{% url 'transport:drivers' %}">
                             <i class="bi bi-person-badge nav-link__icon"></i>
@@ -418,6 +415,7 @@
                 </div>
             </div>
 
+            {% if request.user|has_management_role %}
             <div class="nav-section" data-nav-section="ressources">
                 <button type="button" class="nav-section__title"
                         aria-expanded="true" aria-controls="nav-panel-ressources">
@@ -435,6 +433,8 @@
                 </div>
             </div>
 
+            {% endif %}
+
             <div class="nav-section" data-nav-section="documents">
                 <button type="button" class="nav-section__title"
                         aria-expanded="true" aria-controls="nav-panel-documents">
@@ -448,6 +448,7 @@
                             <i class="bi bi-archive nav-link__icon"></i>
                             <span>Documents</span>
                         </a>
+                        {% if request.user|has_management_role %}
                         <a class="nav-link {% if 'documents/generated' in request.path %}nav-link--active{% endif %}"
                             href="{% url 'documents:generated_list' %}">
                             <i class="bi bi-pencil-square nav-link__icon"></i>
@@ -468,11 +469,10 @@
                             <i class="bi bi-bar-chart nav-link__icon"></i>
                             <span>Statistiques</span>
                         </a>
+                        {% endif %}
                     </nav>
                 </div>
             </div>
-
-            {% endif %}
 
             <div class="nav-section" data-nav-section="communication">
                 <button type="button" class="nav-section__title"

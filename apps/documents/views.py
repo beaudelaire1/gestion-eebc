@@ -10,6 +10,7 @@ from django.utils import timezone
 from django.views.decorators.clickjacking import xframe_options_sameorigin
 
 from apps.core.permissions import role_required
+from apps.core.security import PRIVILEGED_USER_ROLES, user_has_any_role
 from .models import Document, DocumentCategory, DocumentShare, GeneratedDocument
 from .forms import DocumentUploadForm, DocumentEditForm, DocumentShareForm, CategoryForm, GeneratedDocumentForm
 from .services import validate_file, detect_media_type, get_mime_type, get_documents_stats, log_access, share_document_by_email, create_default_categories, generate_preview_html
@@ -189,8 +190,20 @@ def document_detail(request, pk):
 
     log_access(doc, request.user, 'view', request)
 
-    access_logs = doc.access_logs.select_related('user').order_by('-accessed_at')[:20]
-    shares = doc.shares.select_related('shared_by').order_by('-shared_at')[:10]
+    # Qui a consulté ou reçu un document relève du suivi documentaire, pas de
+    # la consultation : un lecteur ordinaire n'a pas à voir l'activité des
+    # autres comptes sur un document public.
+    can_audit = user_has_any_role(request.user, *PRIVILEGED_USER_ROLES)
+    access_logs = (
+        doc.access_logs.select_related('user').order_by('-accessed_at')[:20]
+        if can_audit
+        else doc.access_logs.none()
+    )
+    shares = (
+        doc.shares.select_related('shared_by').order_by('-shared_at')[:10]
+        if can_audit
+        else doc.shares.none()
+    )
 
     context = {
         'document': doc,
