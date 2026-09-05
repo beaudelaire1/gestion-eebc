@@ -118,7 +118,7 @@ def young_member_list(request):
 def young_member_detail(request, pk):
     """Fiche détaillée d'un jeune."""
     member = get_object_or_404(
-        YoungMember.objects.select_related('group', 'site', 'family', 'assigned_driver'),
+        YoungMember.objects.select_related('group', 'site', 'family', 'assigned_driver', 'linked_member__user', 'user'),
         pk=pk,
     )
 

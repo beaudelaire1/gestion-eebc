@@ -394,7 +394,11 @@ class ExcelImportService:
     def _import_young_members(self):
         """Importe les jeunes depuis un fichier Excel."""
         with self.import_log.file_path.open('rb') as file_obj:
-            df = pd.read_excel(file_obj)
+            df = pd.read_excel(file_obj, dtype={
+                column: str for column in (
+                    'telephone', 'telephone_parent', 'telephone_urgence', 'code_postal', 'membre_id'
+                )
+            })
         
         expected_columns = {
             'prenom': 'first_name', 'nom': 'last_name', 'date_naissance': 'date_of_birth',
@@ -520,7 +524,8 @@ class ExcelImportService:
         
         # Auto-assignation au groupe selon l'âge
         dob = young_data['date_of_birth']
-        age = (date.today() - dob).days // 365
+        today = date.today()
+        age = today.year - dob.year - ((today.month, today.day) < (dob.month, dob.day))
         youth_group = YouthGroup.objects.filter(
             min_age__lte=age, max_age__gte=age, is_active=True
         ).first()
@@ -531,11 +536,15 @@ class ExcelImportService:
         first = young_data['first_name'].strip()
         last = young_data['last_name'].strip()
         
-        existing = YoungMember.objects.filter(
+        candidates = YoungMember.objects.select_for_update().filter(
             first_name__iexact=first,
             last_name__iexact=last,
             date_of_birth=dob,
-        ).first()
+        )
+        matches = list(candidates[:2])
+        if len(matches) > 1:
+            raise ValidationError("Plusieurs fiches jeunes correspondent ; résoudre le doublon avant l'import.")
+        existing = matches[0] if matches else None
         
         if existing:
             updated_fields = []
@@ -548,12 +557,24 @@ class ExcelImportService:
                     updated_fields.append(field)
             if updated_fields:
                 existing.save(update_fields=updated_fields)
-            self.updated_count += 1
-            self.successes.append(f"Ligne {row_number}: {existing.full_name} existant (inchangé ou complété)")
+            young = existing
         else:
             young = YoungMember.objects.create(**young_data)
+
+        from .young_links import apply_young_links
+
+        changes = apply_young_links(young, row, self.import_log.imported_by)
+        if existing:
+            self.updated_count += 1
+            self.successes.append(f"Ligne {row_number}: {young.full_name} existant (inchangé ou complété)")
+        else:
             self.created_count += 1
             self.successes.append(f"Ligne {row_number}: {young.full_name} créé")
+        if changes:
+            self.successes.append(
+                f"Ligne {row_number}: rattachements enregistrés : {', '.join(changes)}. "
+                "Aucune invitation envoyée ; utiliser la gestion des utilisateurs pour inviter le jeune."
+            )
         
         for w in row_warnings:
             self.warnings.append(f"Ligne {row_number}: {w}")
@@ -670,6 +691,11 @@ def generate_template_excel(import_type):
             'statut': ['actif', 'actif'],
             'notes': ['Leader de louange', 'Nouvelle dans le groupe']
         }
+        sample_data.update({
+            'membre_eglise': ['oui', 'non'],
+            'membre_id': ['', ''],
+            'creer_compte': ['non', 'non'],
+        })
     
     return pd.DataFrame(sample_data)
 
@@ -744,7 +770,7 @@ def export_young_members_to_excel():
     
     young_members = YoungMember.objects.filter(
         is_active=True
-    ).select_related('group').order_by('last_name', 'first_name')
+    ).select_related('group', 'linked_member').order_by('last_name', 'first_name')
     
     export_data = []
     for young in young_members:
@@ -774,7 +800,10 @@ def export_young_members_to_excel():
             'besoin_transport': 'oui' if young.needs_transport else 'non',
             'adresse_ramassage': young.pickup_address or '',
             'statut': young.status or '',
-            'notes': young.notes or ''
+            'notes': young.notes or '',
+            'membre_eglise': 'oui' if young.linked_member_id else '',
+            'membre_id': young.linked_member.member_id if young.linked_member_id else '',
+            'creer_compte': 'non',
         })
     
     return pd.DataFrame(export_data)

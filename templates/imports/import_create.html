@@ -2,7 +2,7 @@
 
 {% block title %}Nouvel Import - EEBC{% endblock %}
 {% block page_title %}Nouvel import de données{% endblock %}
-{% block page_subtitle %}Importer des membres ou enfants depuis Excel{% endblock %}
+{% block page_subtitle %}Importer des membres, enfants ou jeunes depuis Excel{% endblock %}
 
 {% block extra_css %}
 <style>
@@ -188,10 +188,22 @@
         <a href="{% url 'imports:template' 'children' %}" class="template-btn">
             <i class="bi bi-person-hearts me-2"></i>Template Enfants
         </a>
+        <a href="{% url 'imports:template' 'young_members' %}" class="template-btn">
+            <i class="bi bi-people me-2"></i>Template Jeunes
+        </a>
     </div>
 </div>
 
 <!-- Formulaire d'import -->
+<div class="alert alert-info">
+    <strong>Import des jeunes :</strong>
+    indiquez <code>membre_eglise=oui</code> pour créer ou retrouver la fiche membre de l'église.
+    En cas d'homonymie, renseignez son <code>membre_id</code>.
+    La colonne <code>creer_compte=oui</code> crée un compte avec une adresse email valide,
+    même si le jeune n'est pas membre de l'église. Les fonctions du groupe ne donnent aucun droit supplémentaire.
+    Aucun email n'est envoyé à l'import : envoyez ensuite l'invitation depuis la gestion des utilisateurs.
+    Laissez ces colonnes vides pour ne demander aucune création de membre ou de compte.
+</div>
 <div class="card">
     <div class="card__header">
         <h5 class="card__title">

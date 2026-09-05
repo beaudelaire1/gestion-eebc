@@ -92,7 +92,14 @@ def import_create(request):
             try:
                 service = ExcelImportService(import_log)
                 service.process_import()
-                messages.success(request, 'Import terminé avec succès.')
+                if import_log.error_rows:
+                    messages.warning(
+                        request,
+                        f'Import terminé : {import_log.success_rows} ligne(s) réussie(s), '
+                        f'{import_log.error_rows} ligne(s) en erreur. Consultez les détails.'
+                    )
+                else:
+                    messages.success(request, 'Import terminé avec succès.')
             except Exception as e:
                 logger.error(f"Erreur lors de l'import {import_log.pk}: {e}")
                 import_log.status = ImportLog.Status.FAILED
@@ -230,7 +237,10 @@ def _get_column_descriptions(import_type):
             'Baptisé (oui/non)', 'Date de baptême',
             'Né de nouveau (oui/non)', 'Date de conversion',
             'Besoin de transport (oui/non)', 'Adresse de ramassage',
-            'Statut (actif/inactif/visiteur)', 'Notes diverses'
+            'Statut (actif/inactif/visiteur)', 'Notes diverses',
+            "Membre de l'église : oui crée ou retrouve la fiche membre ; vide conserve le lien ; non ne supprime aucun lien.",
+            "ID EEBC du membre existant, en cas d'homonymie (avec membre_eglise=oui).",
+            "oui crée un compte si absent (email requis). Aucune invitation envoyée ; utiliser la gestion des utilisateurs."
         ]
 
 
@@ -253,6 +263,8 @@ def _get_required_columns(import_type):
                    'Non', 'Non',
                    'Non', 'Non']
     
+    if import_type == 'young_members':
+        required.extend(['Non', 'Non', 'Non'])
     return required
 
 
@@ -280,7 +292,8 @@ def _get_column_formats(import_type):
             'oui/non', 'JJ/MM/AAAA',
             'oui/non', 'JJ/MM/AAAA',
             'oui/non', 'Texte',
-            'actif/inactif/visiteur', 'Texte'
+            'actif/inactif/visiteur', 'Texte',
+            'oui/non/vide', 'Texte (ID EEBC)', 'oui/non/vide (défaut : non)'
         ]
 
 

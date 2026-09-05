@@ -41,7 +41,7 @@ class YoungMemberAdmin(admin.ModelAdmin):
         ('Identité', {
             'fields': (
                 'first_name', 'last_name', 'date_of_birth', 'gender',
-                'photo', 'site', 'group', 'linked_member',
+                'photo', 'site', 'group', 'linked_member', 'user',
             ),
         }),
         ('Coordonnées', {

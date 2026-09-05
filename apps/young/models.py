@@ -81,6 +81,14 @@ class YoungMember(models.Model):
     )
 
     # Lien famille / membre existant
+    user = models.OneToOneField(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True, blank=True,
+        related_name='young_profile',
+        verbose_name="Compte utilisateur du jeune",
+        help_text="Compte optionnel, indépendant de l'appartenance à l'église.",
+    )
     family = models.ForeignKey(
         'core.Family',
         on_delete=models.SET_NULL,
@@ -166,6 +174,18 @@ class YoungMember(models.Model):
 
     def __str__(self):
         return f"{self.first_name} {self.last_name}"
+
+    def clean(self):
+        from django.core.exceptions import ValidationError
+        from apps.members.models import Member
+
+        super().clean()
+        if self.user_id and self.linked_member_id:
+            member_user_id = self.linked_member.user_id
+            if member_user_id and member_user_id != self.user_id:
+                raise ValidationError("Le compte diffère de celui de la fiche membre liée.")
+        if self.user_id and Member.objects.filter(user_id=self.user_id).exclude(pk=self.linked_member_id).exists():
+            raise ValidationError("Ce compte est déjà lié à une autre fiche membre.")
 
     @property
     def full_name(self):

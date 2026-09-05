@@ -88,6 +88,20 @@
 
     <!-- Details -->
     <div class="col-lg-8">
+        <div class="card mb-4">
+            <div class="card-header"><h6 class="card-title">Église et compte utilisateur</h6></div>
+            <div class="card-body">
+                <p class="mb-1"><strong>Fiche membre de l'église :</strong>
+                    {% if member.linked_member %}{{ member.linked_member.member_id }} — {{ member.linked_member.full_name }}
+                    {% else %}Aucune fiche liée{% endif %}
+                </p>
+                <p class="mb-0"><strong>Compte utilisateur :</strong>
+                    {% if member.user %}{{ member.user.username }}
+                    {% elif member.linked_member.user %}{{ member.linked_member.user.username }}
+                    {% else %}Aucun compte lié{% endif %}
+                </p>
+            </div>
+        </div>
         <!-- Coordonnées -->
         <div class="card mb-4">
             <div class="card-header">
