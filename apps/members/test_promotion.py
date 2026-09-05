@@ -1,8 +1,12 @@
 """Passage d'une fiche jeunesse ou club biblique à l'annuaire des membres."""
 from datetime import date
 
+import base64
+
 import pytest
 from django.contrib.auth import get_user_model
+from django.core.files.uploadedfile import SimpleUploadedFile
+from django.core.files.uploadedfile import SimpleUploadedFile
 from django.core.exceptions import ValidationError
 from django.urls import reverse
 
@@ -203,3 +207,92 @@ def test_round_trip_keeps_a_single_pair_of_records(secretariat_client, young):
 
     assert YoungMember.objects.count() == 1
     assert Member.objects.filter(last_name='Kaline').count() == 1
+
+
+# ---------------------------------------------------------------------------
+# Photo de profil
+# ---------------------------------------------------------------------------
+
+# 1x1 GIF : le plus petit fichier qu'ImageField accepte comme image.
+PIXEL = base64.b64decode('R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7')
+
+
+def _photo(name):
+    return SimpleUploadedFile(name, PIXEL, content_type='image/gif')
+
+
+@pytest.fixture
+def young_with_photo(young, settings, tmp_path):
+    settings.MEDIA_ROOT = tmp_path
+    young.photo = _photo('naomi.gif')
+    young.save(update_fields=['photo'])
+    return young
+
+
+def test_promotion_carries_the_portrait_to_the_church_record(young_with_photo):
+    """La fiche membre récupérée depuis un jeune n'affichait pas de portrait."""
+    member, _ = link_or_create_member(young_with_photo)
+
+    assert member.photo
+    assert member.photo.name != young_with_photo.photo.name
+    assert member.photo.name.startswith('members/photos/')
+    member.photo.open('rb')
+    assert member.photo.read() == PIXEL
+    member.photo.close()
+
+
+def test_promotion_carries_the_portrait_to_the_youth_record(
+    adult_member, settings, tmp_path
+):
+    settings.MEDIA_ROOT = tmp_path
+    adult_member.photo = _photo('ruth.gif')
+    adult_member.save(update_fields=['photo'])
+
+    young, _ = link_or_create_profile(adult_member, YoungMember)
+
+    assert young.photo
+    assert young.photo.name.startswith('young/photos/')
+
+
+def test_existing_record_keeps_its_own_portrait(young_with_photo, settings, tmp_path):
+    settings.MEDIA_ROOT = tmp_path
+    existing = Member.objects.create(
+        first_name='Naomi',
+        last_name='Kaline',
+        date_of_birth=young_with_photo.date_of_birth,
+        photo=_photo('deja.gif'),
+    )
+    kept = existing.photo.name
+
+    member, created = link_or_create_member(young_with_photo)
+
+    assert created is False
+    assert member.photo.name == kept
+
+
+def test_an_existing_record_without_a_portrait_receives_it(
+    young_with_photo, settings, tmp_path
+):
+    settings.MEDIA_ROOT = tmp_path
+    Member.objects.create(
+        first_name='Naomi',
+        last_name='Kaline',
+        date_of_birth=young_with_photo.date_of_birth,
+    )
+
+    member, created = link_or_create_member(young_with_photo)
+
+    assert created is False
+    assert member.photo
+
+
+def test_a_missing_photo_file_does_not_block_the_promotion(young, settings, tmp_path):
+    """Un fichier absent du stockage ne doit pas empêcher le rattachement."""
+    settings.MEDIA_ROOT = tmp_path
+    young.photo = 'young/photos/disparue.gif'
+    young.save(update_fields=['photo'])
+
+    member, created = link_or_create_member(young)
+
+    assert created is True
+    assert not member.photo

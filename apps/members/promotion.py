@@ -12,7 +12,10 @@ L'import Excel des jeunes fait le même rattachement dans
 ``apps.imports.young_links``, avec des messages d'erreur qui renvoient aux
 colonnes du fichier. Ce module est son équivalent pour la saisie courante.
 """
+import posixpath
+
 from django.core.exceptions import ValidationError
+from django.core.files.base import ContentFile
 
 from .models import Member
 
@@ -33,6 +36,35 @@ COPIED_FIELDS = (
     'is_baptized',
     'baptism_date',
 )
+
+
+def copy_photo(source, target):
+    """Recopier la photo de ``source`` dans le dossier du modèle ``target``.
+
+    Le champ ne peut pas être repris tel quel : deux fiches partageraient
+    alors le même fichier, rangé dans le dossier du modèle d'origine.
+
+    Une photo introuvable dans le stockage n'interrompt rien : elle est un
+    confort, et refuser le rattachement pour autant coûterait plus que de
+    laisser la fiche sans portrait.
+    """
+    photo = getattr(source, 'photo', None)
+    if not photo or getattr(target, 'photo', None):
+        return False
+
+    try:
+        photo.open('rb')
+        content = ContentFile(photo.read())
+    except Exception:
+        return False
+    finally:
+        try:
+            photo.close()
+        except Exception:
+            pass
+
+    target.photo.save(posixpath.basename(photo.name), content, save=False)
+    return True
 
 
 def find_matching_member(profile):
@@ -74,7 +106,10 @@ def link_or_create_member(profile):
     Retourne ``(member, created)``. L'appelant enregistre ``profile``.
     """
     if profile.linked_member_id:
-        return profile.linked_member, False
+        member = profile.linked_member
+        if copy_photo(profile, member):
+            member.save(update_fields=['photo'])
+        return member, False
 
     member = find_matching_member(profile)
     created = member is None
@@ -85,7 +120,11 @@ def link_or_create_member(profile):
             if hasattr(profile, field)
         }
         values['status'] = Member.Status.ACTIF
-        member = Member.objects.create(**values)
+        member = Member(**values)
+        copy_photo(profile, member)
+        member.save()
+    elif copy_photo(profile, member):
+        member.save(update_fields=['photo'])
 
     profile.linked_member = member
     return member, created
@@ -101,6 +140,8 @@ def link_or_create_profile(member, model):
     """
     existing = model.objects.filter(linked_member=member).first()
     if existing is not None:
+        if copy_photo(member, existing):
+            existing.save(update_fields=['photo'])
         return existing, False
 
     missing = [
@@ -124,4 +165,7 @@ def link_or_create_profile(member, model):
         if name in target_fields and hasattr(member, name)
     }
     values['linked_member'] = member
-    return model.objects.create(**values), True
+    profile = model(**values)
+    copy_photo(member, profile)
+    profile.save()
+    return profile, True
