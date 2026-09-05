@@ -11,7 +11,7 @@
             <div class="d-flex justify-content-between align-items-center mb-4">
                 <div>
                     <h1 class="h3 mb-1">Gestion des utilisateurs</h1>
-                    <p class="text-muted">{{ users.count }} utilisateur{{ users.count|pluralize }}</p>
+                    <p class="text-muted">{{ total_count }} utilisateur{{ total_count|pluralize }}</p>
                 </div>
                 <div class="d-flex gap-2">
                     <a href="{% url 'accounts:user_bulk_import' %}" class="btn btn-outline-success">
@@ -25,6 +25,48 @@
         </div>
     </div>
     
+    <div class="row mb-3">
+        <div class="col-12">
+            <form method="get" class="card card-body border-0 shadow-sm">
+                <div class="row g-2 align-items-end">
+                    <div class="col-md-5">
+                        <label for="user-search" class="form-label">Rechercher</label>
+                        <input type="search" id="user-search" name="q" value="{{ search }}"
+                               class="form-control" placeholder="Nom, identifiant ou e-mail">
+                    </div>
+                    <div class="col-md-3">
+                        <label for="user-role" class="form-label">Rôle</label>
+                        <select id="user-role" name="role" class="form-select">
+                            <option value="">Tous les rôles</option>
+                            {% for role in roles %}
+                            <option value="{{ role }}" {% if role == selected_role %}selected{% endif %}>{{ role }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="col-md-2">
+                        <label for="user-status" class="form-label">Statut</label>
+                        <select id="user-status" name="status" class="form-select">
+                            <option value="">Tous</option>
+                            <option value="active" {% if selected_status == 'active' %}selected{% endif %}>Actif</option>
+                            <option value="pending" {% if selected_status == 'pending' %}selected{% endif %}>Invitation en attente</option>
+                            <option value="disabled" {% if selected_status == 'disabled' %}selected{% endif %}>Désactivé</option>
+                        </select>
+                    </div>
+                    <div class="col-md-2 d-flex gap-2">
+                        <button type="submit" class="btn btn-primary flex-grow-1">
+                            <i class="bi bi-funnel me-1"></i>Filtrer
+                        </button>
+                        {% if search or selected_role or selected_status %}
+                        <a href="{% url 'accounts:user_list' %}" class="btn btn-outline-secondary" title="Réinitialiser">
+                            <i class="bi bi-x-lg"></i>
+                        </a>
+                        {% endif %}
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+
     <div class="row">
         <div class="col-12">
             <div class="card">
@@ -139,6 +181,27 @@
                         </table>
                     </div>
                 </div>
+                {% if page_obj.has_other_pages %}
+                <div class="card-footer bg-transparent">
+                    <nav aria-label="Pagination des utilisateurs">
+                        <ul class="pagination pagination-sm mb-0 justify-content-center">
+                            {% if page_obj.has_previous %}
+                            <li class="page-item">
+                                <a class="page-link" href="?{% if search %}q={{ search|urlencode }}&{% endif %}{% if selected_role %}role={{ selected_role|urlencode }}&{% endif %}{% if selected_status %}status={{ selected_status|urlencode }}&{% endif %}page={{ page_obj.previous_page_number }}">Précédent</a>
+                            </li>
+                            {% endif %}
+                            <li class="page-item disabled">
+                                <span class="page-link">Page {{ page_obj.number }} sur {{ page_obj.paginator.num_pages }}</span>
+                            </li>
+                            {% if page_obj.has_next %}
+                            <li class="page-item">
+                                <a class="page-link" href="?{% if search %}q={{ search|urlencode }}&{% endif %}{% if selected_role %}role={{ selected_role|urlencode }}&{% endif %}{% if selected_status %}status={{ selected_status|urlencode }}&{% endif %}page={{ page_obj.next_page_number }}">Suivant</a>
+                            </li>
+                            {% endif %}
+                        </ul>
+                    </nav>
+                </div>
+                {% endif %}
             </div>
         </div>
     </div>

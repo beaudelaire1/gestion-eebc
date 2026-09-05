@@ -6,6 +6,7 @@ from django.http import JsonResponse, HttpResponseRedirect
 from django.views.decorators.http import require_http_methods
 from django.core.exceptions import ValidationError
 from django.contrib.auth.password_validation import validate_password
+from django.core.paginator import Paginator
 from django.db.models import Q
 from django.urls import reverse
 from urllib.parse import urlencode
@@ -16,6 +17,7 @@ User = get_user_model()
 
 
 from django.conf import settings
+from apps.core.security import VALID_USER_ROLES
 from apps.core.utils.recaptcha import validate_recaptcha
 from apps.core.utils.turnstile import validate_turnstile_with_ip
 import logging
@@ -213,9 +215,41 @@ def user_list_view(request):
         return redirect('dashboard:home')
     
     users = User.objects.all().order_by('last_name', 'first_name')
-    
+
+    search = request.GET.get('q', '').strip()
+    if search:
+        users = users.filter(
+            Q(first_name__icontains=search)
+            | Q(last_name__icontains=search)
+            | Q(username__icontains=search)
+            | Q(email__icontains=search)
+        )
+
+    # ``role`` stocke plusieurs rôles séparés par des virgules : une égalité
+    # laisserait de côté un compte « admin,finance ».
+    role = request.GET.get('role', '').strip()
+    if role in VALID_USER_ROLES:
+        users = users.filter(role__regex=r'(^|,)\s*' + role + r'\s*($|,)')
+
+    status = request.GET.get('status', '').strip()
+    if status == 'active':
+        users = users.filter(is_active=True, must_change_password=False)
+    elif status == 'pending':
+        users = users.filter(must_change_password=True)
+    elif status == 'disabled':
+        users = users.filter(is_active=False)
+
+    paginator = Paginator(users, 50)
+    page_obj = paginator.get_page(request.GET.get('page'))
+
     return render(request, 'accounts/user_list.html', {
-        'users': users
+        'users': page_obj,
+        'page_obj': page_obj,
+        'total_count': paginator.count,
+        'roles': sorted(VALID_USER_ROLES),
+        'search': search,
+        'selected_role': role,
+        'selected_status': status,
     })
 
 
